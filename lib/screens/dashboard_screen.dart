@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
 import 'add_appointment_dialog.dart';
 import 'appointment_list_screen.dart';
@@ -30,7 +31,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: const Text('GuwahatiOne Doc Appointment'),
         centerTitle: false,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+            tooltip: 'Logout',
+            onPressed: () {
+              Provider.of<AuthProvider>(context, listen: false).logout();
+            },
+          ),
+        ],
       ),
+
       body: Consumer<ClinicProvider>(
         builder: (context, provider, child) {
           return Padding(

@@ -84,6 +84,9 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                   onChanged: (val) {
                     setState(() {
                       _selectedDoctor = val;
+                      if (_selectedPayment == PaymentType.paid && val != null) {
+                        _amountController.text = "${val.consultationFee}";
+                      }
                     });
                   },
                   validator: (val) =>
@@ -204,7 +207,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                   items: PaymentType.values.map((type) {
                     String label;
                     if (type == PaymentType.paid) {
-                      label = 'Paid (₹${AppConstants.defaultConsultationFee})';
+                      final fee = _selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee;
+                      label = 'Paid (₹$fee)';
                     } else if (type == PaymentType.freeReview) {
                       label = 'FREE (Review)';
                     } else {
@@ -217,7 +221,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                       _selectedPayment = val!;
                       // Auto-set amount logic
                       if (_selectedPayment == PaymentType.paid) {
-                        _amountController.text = "500";
+                        _amountController.text = "${_selectedDoctor?.consultationFee ?? 500}";
                       } else {
                         _amountController.text = "0";
                       }

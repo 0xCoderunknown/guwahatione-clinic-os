@@ -57,8 +57,10 @@ class ClinicProvider with ChangeNotifier {
     String name,
     String specialty,
     String phone,
-    List<String> days,
-  ) async {
+    List<String> days, {
+    String pin = '1234',
+    int consultationFee = 500,
+  }) async {
     _setLoading(true);
     try {
       final newDoctor = Doctor(
@@ -68,6 +70,8 @@ class ClinicProvider with ChangeNotifier {
         phone: phone,
         availableDays: days,
         blockedDates: [],
+        pin: pin,
+        consultationFee: consultationFee,
       );
       await _firebaseService.addDoctor(newDoctor);
     } catch (e) {
@@ -76,6 +80,7 @@ class ClinicProvider with ChangeNotifier {
       _setLoading(false);
     }
   }
+
 
   Future<Patient?> searchPatient(String phoneNumber) async {
     _setLoading(true);
@@ -167,7 +172,10 @@ class ClinicProvider with ChangeNotifier {
 
       final statusEnum = AppointmentStatus.values.firstWhere(
         (e) => e.name == status,
-        orElse: () => AppointmentStatus.pending,
+        orElse: () {
+          if (status == 'cancelled') return AppointmentStatus.absent;
+          return AppointmentStatus.pending;
+        },
       );
 
       await _firebaseService.updateAppointmentStatus(

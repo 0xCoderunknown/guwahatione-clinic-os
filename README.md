@@ -10,14 +10,16 @@ A free and open-source Flutter application for managing doctor appointments at s
 
 ## ✨ Features
 
-- 📅 **Appointment Booking** — Book patients with date, doctor, and payment type
-- 🩺 **Doctor Management** — Add doctors with specialty and available weekdays
-- 👤 **Patient Recognition** — Auto-fills returning patient details by phone number
-- 💳 **Smart Payment Types** — Paid, Free Review (within 15 days), Free Family
-- 📊 **Daily Statistics** — Revenue and patient count grouped by doctor
-- 🔢 **Queue Numbers** — Atomic, race-condition-safe queue numbering per day
-- 🔴 **Real-time Updates** — Firestore live streams; no manual refresh needed
-- 📆 **Date Navigation** — View appointments for any past or future date
+- 🌐 **Web-First Responsive Architecture** — Single codebase for desktop PC at reception counter, mobile phones, and tablets
+- 🩺 **Doctor Chamber Live View (Catalog Mode)** — Dedicated read-only board for consulting doctors with live token sequence, patient queue, and transparent fee share tally
+- 🔒 **Zero-Friction PIN Authentication** — Quick PIN access: Reception PIN (`0000` default) & individual 4-digit Chamber PINs per doctor
+- 🛡️ **Audit-Proof Ledger (Zero Deletions)** — Appointments cannot be deleted once created; token numbers remain strictly consecutive so no patients can be hidden
+- 🚫 **Explicit "Absent / No-Show" Status** — Replaced "Cancel" with "Absent" so slots are preserved on the doctor ledger with ₹0 amount
+- 📅 **Appointment Booking** — Rapid booking with phone-based auto-fill and last-visit detection
+- 💳 **Smart Payment Types** — Paid (per doctor fee), Free Review (within 15 days), Free Family
+- 📊 **Daily Statistics & Chamber Preview** — Real-time revenue analytics and ability for reception to preview any doctor's chamber view
+- 🔢 **Atomic Queue Numbers** — Race-condition-safe queue numbering per day using Firestore transactions
+- 🔴 **Real-time Firestore Streams** — Instant live sync across counter PC and doctor chambers
 
 ---
 
@@ -25,10 +27,13 @@ A free and open-source Flutter application for managing doctor appointments at s
 
 | Layer | Technology |
 |---|---|
-| UI | Flutter (Material 3) |
+| Platforms | Web (Desktop/Tablet/Mobile), Android, iOS |
+| UI Framework | Flutter 3.x (Material 3 Responsive) |
 | State Management | Provider |
 | Backend / DB | Cloud Firestore (Firebase) |
-| Auth | None (single-clinic, trusted network) |
+| Hosting | Firebase Hosting (SPA Web App) |
+| Auth | Role-based PIN Authentication (Owner / Doctor) |
+
 
 ---
 
@@ -96,8 +101,24 @@ time you run a compound query.
 
 ```bash
 flutter pub get
+
+# Run on Desktop Browser (Chrome)
+flutter run -d chrome
+
+# Or run on connected Android Device
 flutter run
 ```
+
+### 5. Deploy to Firebase Hosting (Web Platform)
+
+```bash
+# Build production web bundle
+flutter build web
+
+# Deploy to Firebase Hosting
+firebase deploy --only hosting
+```
+
 
 ---
 

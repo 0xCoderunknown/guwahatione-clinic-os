@@ -103,8 +103,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final pending = doctorAppts
         .where((a) => a.status == AppointmentStatus.pending)
         .length;
-    final cancelled = doctorAppts
-        .where((a) => a.status == AppointmentStatus.cancelled)
+    final absent = doctorAppts
+        .where((a) => a.status == AppointmentStatus.absent)
         .length;
     final free = doctorAppts
         .where((a) => a.paymentType != PaymentType.paid)
@@ -170,10 +170,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   _statItem("Free/Fam", "$free", Colors.blue),
                 ],
               ),
-              if (cancelled > 0) ...[
+              if (absent > 0) ...[
                 const SizedBox(height: 8),
                 Text(
-                  "$cancelled patient(s) cancelled/no-show",
+                  "$absent patient(s) marked absent/no-show",
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.red,
@@ -186,6 +186,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ),
       ),
     );
+
   }
 
   Widget _statItem(String label, String value, Color color) {

@@ -79,7 +79,7 @@ class DoctorDailyDetailsScreen extends StatelessWidget {
                 if (appt.status == AppointmentStatus.completed) {
                   statusColor = Colors.green;
                 }
-                if (appt.status == AppointmentStatus.cancelled) {
+                if (appt.status == AppointmentStatus.absent) {
                   statusColor = Colors.red;
                 }
 

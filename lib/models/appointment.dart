@@ -1,6 +1,36 @@
-enum AppointmentStatus { pending, completed, cancelled }
+enum AppointmentStatus {
+  pending,
+  completed,
+  absent;
 
-enum PaymentType { paid, freeReview, freeFamily }
+  String get displayName {
+    switch (this) {
+      case AppointmentStatus.pending:
+        return 'Pending';
+      case AppointmentStatus.completed:
+        return 'Completed';
+      case AppointmentStatus.absent:
+        return 'Absent';
+    }
+  }
+}
+
+enum PaymentType {
+  paid,
+  freeReview,
+  freeFamily;
+
+  String get displayName {
+    switch (this) {
+      case PaymentType.paid:
+        return 'Paid';
+      case PaymentType.freeReview:
+        return 'Free (Review)';
+      case PaymentType.freeFamily:
+        return 'Free (Family)';
+    }
+  }
+}
 
 class Appointment {
   final String id;
@@ -49,7 +79,10 @@ class Appointment {
       patientName: json['patientName'] as String? ?? 'Unknown Patient',
       status: AppointmentStatus.values.firstWhere(
         (e) => e.name == json['status'],
-        orElse: () => AppointmentStatus.pending,
+        orElse: () {
+          if (json['status'] == 'cancelled') return AppointmentStatus.absent;
+          return AppointmentStatus.pending;
+        },
       ),
       paymentType: PaymentType.values.firstWhere(
         (e) => e.name == json['paymentType'],
@@ -65,3 +98,4 @@ class Appointment {
     );
   }
 }
+

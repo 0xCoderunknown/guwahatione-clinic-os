@@ -5,6 +5,8 @@ class Doctor {
   final String phone;
   final List<String> availableDays; // e.g., ["Mon", "Wed", "Fri"]
   final List<DateTime> blockedDates; // Days they are on leave
+  final String pin; // 4-digit PIN for chamber access
+  final int consultationFee; // Default consultation fee in INR
 
   Doctor({
     required this.id,
@@ -13,6 +15,8 @@ class Doctor {
     required this.phone,
     required this.availableDays,
     required this.blockedDates,
+    this.pin = '1234',
+    this.consultationFee = 500,
   });
 
   Map<String, dynamic> toJson() {
@@ -23,6 +27,8 @@ class Doctor {
       'phone': phone,
       'availableDays': availableDays,
       'blockedDates': blockedDates.map((d) => d.toIso8601String()).toList(),
+      'pin': pin,
+      'consultationFee': consultationFee,
     };
   }
 
@@ -37,6 +43,8 @@ class Doctor {
               ?.map((d) => DateTime.parse(d as String))
               .toList() ??
           [],
+      pin: json['pin'] as String? ?? '1234',
+      consultationFee: (json['consultationFee'] as num?)?.toInt() ?? 500,
     );
   }
-}
+}

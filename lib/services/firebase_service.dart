@@ -87,6 +87,29 @@ class FirebaseService {
         });
   }
 
+  Stream<List<Appointment>> getAppointmentsForDoctorAndDate(
+    String doctorId,
+    DateTime date,
+  ) {
+    final start = DateTime(date.year, date.month, date.day);
+    final end = start.add(const Duration(days: 1));
+
+    return _appointmentsRef
+        .where('doctorId', isEqualTo: doctorId)
+        .where(
+          'scheduledDate',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(start),
+        )
+        .where('scheduledDate', isLessThan: Timestamp.fromDate(end))
+        .orderBy('scheduledDate')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            return _appointmentFromDoc(doc.data());
+          }).toList();
+        });
+  }
+
   // ---------------------------------------------------------------------------
   // Queue Numbers
   //

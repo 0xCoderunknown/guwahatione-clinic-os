@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] — 2026-10-05
+
+### Added
+- **Flutter Web Platform Support** — Single responsive codebase deployed to web and mobile with responsive navigation rail for reception desktop PCs.
+- **Doctor Chamber Live View (Catalog Mode)** — Zero-friction read-only chamber board for visiting consultants showing live token sequence, patient queue, and fee share tally.
+- **Chamber & Reception PIN Authentication** — Quick, accountless PIN authentication with `SharedPreferences` session persistence.
+- **Audit-Proof Appointments (Zero Deletions)** — Appointments cannot be deleted once created; token numbers remain strictly consecutive.
+- **Explicit "Absent / No-Show" Status** — Replaced "Cancel" with "Absent" so slots are preserved on the doctor ledger with ₹0 amount.
+- **Per-Doctor Consultation Fees & PINs** — Each doctor profile now stores their customized consultation fee and chamber PIN.
+- **Firebase Hosting Configuration** — Added single-page app hosting configuration in `firebase.json`.
+- **Chamber Preview for Reception** — Clinic owner can preview the live chamber view for any registered doctor.
+
+### Changed
+- `AppointmentStatus`: Added `absent` status with graceful backward-compatible deserialization of legacy `cancelled` records.
+- `lib/main.dart`: Integrated `AuthGate` routing between `OwnerShell`, `DoctorChamberScreen`, and `LoginScreen`.
+
+---
+
 ## [1.1.0] — 2026-10-04
 
 ### Added

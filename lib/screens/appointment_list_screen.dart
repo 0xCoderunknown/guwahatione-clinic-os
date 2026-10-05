@@ -217,8 +217,8 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
       case AppointmentStatus.completed:
         statusIcon = const Icon(Icons.check_circle, color: Colors.green);
         break;
-      case AppointmentStatus.cancelled:
-        statusIcon = const Icon(Icons.cancel, color: Colors.grey);
+      case AppointmentStatus.absent:
+        statusIcon = const Icon(Icons.person_off, color: Colors.grey);
         break;
     }
 
@@ -230,7 +230,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
-          '${widget.appointment.patientPhone} • Queue: ${widget.appointment.queueNumber}',
+          '${widget.appointment.patientPhone} • Queue: ${widget.appointment.queueNumber} • ${widget.appointment.doctorName}',
         ),
         leading: statusIcon,
         onExpansionChanged: (expanded) {
@@ -279,14 +279,14 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                     Expanded(
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
+                          foregroundColor: Colors.redAccent,
+                          side: const BorderSide(color: Colors.redAccent),
                         ),
                         onPressed: () {
-                          _updateStatus(context, AppointmentStatus.cancelled);
+                          _updateStatus(context, AppointmentStatus.absent);
                         },
-                        icon: const Icon(Icons.cancel_outlined),
-                        label: const Text('Cancel'),
+                        icon: const Icon(Icons.person_off_outlined),
+                        label: const Text('Mark Absent'),
                       ),
                     ),
                   ],
@@ -324,9 +324,10 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
       amount = (_selectedPaymentType == PaymentType.paid)
           ? AppConstants.defaultConsultationFee
           : 0;
-    } else if (status == AppointmentStatus.cancelled) {
+    } else if (status == AppointmentStatus.absent) {
       amount = 0;
     }
+
 
     try {
       await provider.updateAppointmentStatus(
