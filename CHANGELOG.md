@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0] — 2026-10-06
+
+### Added
+- **Same-Doctor Free Review Rule & 14-Day Limit** — Only returning patients who previously visited the *same doctor* qualify for a Free Review. First-time patients and patients with no prior history under the selected doctor have the Free Review option cleanly disabled with a descriptive hint.
+- **14-Day Free Review Warning Dialog** — If more than 14 days have passed since the patient's previous visit with the selected doctor, the Free Review option remains selectable (not disabled) but immediately triggers an explicit confirmation warning dialog detailing the last visit date and days elapsed.
+- **Persistent Amber Policy Warning** — Added prominent warning banner in appointment booking dialog when Free Review is manually approved beyond the 14-day limit.
+- **Firestore Indexes Configuration (`firestore.indexes.json`)** — Added index definitions for `appointments` collection to `firebase.json` and project root.
+
+### Fixed
+- **Doctor Chamber View Index Error** — Resolved Cloud Firestore composite index error (`This query needs an index`) on Doctor Chamber screen by querying per-day appointments and filtering by doctor in memory without requiring remote composite indexes.
+- **Booking Duplicate Query Index Error** — Refactored `hasAppointmentForDate` in `FirebaseService` to query on single-field phone and evaluate scheduled date in memory, preventing potential compound query failures during appointment creation.
+
+---
+
 ## [1.2.0] — 2026-10-05
 
 ### Added

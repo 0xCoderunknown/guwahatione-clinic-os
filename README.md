@@ -29,8 +29,8 @@ Visiting medical consultants often suspect clinic receptionists of cheating (*"I
 - 🔒 **Zero-Friction PIN Authentication** — Quick PIN access: Reception PIN (`0000` default) & individual 4-digit Chamber PINs per doctor
 - 🛡️ **Audit-Proof Ledger** — Zero deletions allowed; consecutive token sequence is preserved on screen and database
 - 🚫 **Explicit "Absent / No-Show" Status** — Replaced "Cancel" with "Absent" so slots are preserved on the doctor ledger with ₹0 amount
-- 📅 **Rapid Appointment Booking** — 10-digit phone search with automatic patient history and 15-day free review detection
-- 💳 **Smart Payment Types** — Paid (per doctor fee), Free Review (within 15-day follow-up), Free Family (courtesy)
+- 📅 **Rapid Appointment Booking** — 10-digit phone search with automatic patient history and 14-day same-doctor free review detection
+- 💳 **Smart Payment Types** — Paid (per doctor fee), Free Review (strictly for returning patients of same doctor within 14 days, with warning if >14 days), Free Family (courtesy)
 - 📊 **Daily Revenue Analytics & Auditing** — Real-time earnings breakdown grouped by doctor with chamber preview mode
 - 🔢 **Atomic Queue Numbers** — Race-condition-safe queue numbering per day using Firestore transactions
 - 🔴 **Real-time Firestore Streams** — Zero-refresh instant sync across counter PC and doctor chambers
@@ -93,15 +93,12 @@ In your Firebase Console, create the following collections (they are created aut
 | `doctors` | One document per doctor (stores specialty, PIN, consultation fee) |
 | `counters` | One document per date for atomic queue numbering |
 
-**Required Firestore Index** (Composite):
-```
-Collection: appointments
-Fields:
-  scheduledDate  ASC
-  patientPhone   ASC
-```
+**Firestore Indexes Configuration**:
+Index definitions are tracked in [`firestore.indexes.json`](firestore.indexes.json) and linked via `firebase.json`:
+- `appointments`: `doctorId` ASC + `scheduledDate` ASC
+- `appointments`: `patientPhone` ASC + `scheduledDate` ASC
 
-Firebase will prompt you with a direct link in the debug console to create this index the first time you run a compound query.
+> **Note**: Runtime queries use single-field date streaming and in-memory filtering, allowing the app to run immediately with zero composite index requirements out-of-the-box.
 
 ### 4. Install dependencies and run
 

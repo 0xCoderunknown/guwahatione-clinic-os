@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/appointment.dart';
+import '../models/patient_review_eligibility.dart';
 import '../providers/clinic_provider.dart';
 import '../services/firebase_service.dart';
 import '../utils/app_constants.dart';
@@ -303,12 +304,109 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
     return ChoiceChip(
       label: Text(label),
       selected: _selectedPaymentType == type,
-      onSelected: (selected) {
-        if (selected) {
-          setState(() {
-            _selectedPaymentType = type;
-          });
+      onSelected: (selected) async {
+        if (!selected) return;
+
+        if (type == PaymentType.freeReview) {
+          final provider = Provider.of<ClinicProvider>(context, listen: false);
+          final appts = await provider.getAppointmentsForPatient(
+            widget.appointment.patientPhone,
+          );
+          final eligibility = PatientReviewEligibility.calculate(
+            appointments: appts,
+            doctorId: widget.appointment.doctorId,
+            targetDate: widget.appointment.scheduledDate,
+            doctorName: widget.appointment.doctorName,
+          );
+
+          if (!eligibility.hasVisitedDoctorEarlier) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Free Review is only allowed for patients who previously visited Dr. ${widget.appointment.doctorName}.',
+                ),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+
+          if (!eligibility.isWithin14Days) {
+            if (!mounted) return;
+            final dateStr = eligibility.lastVisitDate != null
+                ? DateFormat('dd MMM yyyy').format(eligibility.lastVisitDate!)
+                : 'N/A';
+            final proceed = await showDialog<bool>(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => AlertDialog(
+                icon: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.amber,
+                  size: 48,
+                ),
+                title: const Text(
+                  '14 Days Passed Warning',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '⚠️ 14 days have passed since this patient\'s last visit with Dr. ${widget.appointment.doctorName}.',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.amber.shade300),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('• Last Visit: $dateStr'),
+                          Text(
+                            '• Days Elapsed: ${eligibility.daysSinceLastVisit} days (Policy limit: 14 days)',
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Do you want to proceed with a Free Review anyway?',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber.shade800,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Allow Free Review'),
+                  ),
+                ],
+              ),
+            );
+            if (proceed != true) return;
+          }
         }
+
+        setState(() {
+          _selectedPaymentType = type;
+        });
       },
     );
   }

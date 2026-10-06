@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../models/patient.dart';
 import '../models/appointment.dart';
 import '../models/doctor.dart';
+import '../models/patient_review_eligibility.dart';
 import '../services/firebase_service.dart';
 import '../utils/app_constants.dart';
 
@@ -91,12 +92,41 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
-  /// Returns [PaymentType.freeReview] if the patient visited within 15 days,
+  /// Fetches appointment history for a given patient.
+  Future<List<Appointment>> getAppointmentsForPatient(String phoneNumber) async {
+    return await _firebaseService.getAppointmentsForPatient(phoneNumber);
+  }
+
+  /// Evaluates free review eligibility for a patient with a specific doctor.
+  PatientReviewEligibility checkReviewEligibility({
+    required List<Appointment> patientAppointments,
+    required String? doctorId,
+    required DateTime scheduledDate,
+    String? doctorName,
+  }) {
+    return PatientReviewEligibility.calculate(
+      appointments: patientAppointments,
+      doctorId: doctorId,
+      targetDate: scheduledDate,
+      doctorName: doctorName,
+    );
+  }
+
+  /// Returns [PaymentType.freeReview] if the patient visited the same doctor within 14 days,
   /// otherwise [PaymentType.paid].
-  PaymentType calculatePaymentType(Patient? patient) {
-    if (patient == null) return PaymentType.paid;
-    final difference = DateTime.now().difference(patient.lastVisitDate).inDays;
-    if (difference < 15) return PaymentType.freeReview;
+  PaymentType calculatePaymentType({
+    required List<Appointment> patientAppointments,
+    required String? doctorId,
+    required DateTime scheduledDate,
+  }) {
+    final eligibility = PatientReviewEligibility.calculate(
+      appointments: patientAppointments,
+      doctorId: doctorId,
+      targetDate: scheduledDate,
+    );
+    if (eligibility.hasVisitedDoctorEarlier && eligibility.isWithin14Days) {
+      return PaymentType.freeReview;
+    }
     return PaymentType.paid;
   }
 
@@ -122,6 +152,23 @@ class ClinicProvider with ChangeNotifier {
       );
       if (hasDuplicate) {
         throw Exception('Patient already has an appointment on this date.');
+      }
+
+      // Enforce: Only a patient who visited earlier with the same doctor can get a free review.
+      if (paymentType == PaymentType.freeReview) {
+        final patientAppts =
+            await _firebaseService.getAppointmentsForPatient(phoneNumber);
+        final eligibility = PatientReviewEligibility.calculate(
+          appointments: patientAppts,
+          doctorId: selectedDoctor.id,
+          targetDate: scheduledDate,
+          doctorName: selectedDoctor.name,
+        );
+        if (!eligibility.hasVisitedDoctorEarlier) {
+          throw Exception(
+            'Free Review is only allowed for patients who previously visited Dr. ${selectedDoctor.name}.',
+          );
+        }
       }
 
       final patient = Patient(

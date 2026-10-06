@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/appointment.dart';
 import '../models/doctor.dart';
+import '../models/patient_review_eligibility.dart';
 import '../providers/clinic_provider.dart';
 import '../utils/app_constants.dart';
 
@@ -29,6 +30,13 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   bool _isNewPatient = false;
   bool _isLoading = false;
 
+  List<Appointment> _patientAppointments = [];
+  PatientReviewEligibility _reviewEligibility = const PatientReviewEligibility(
+    hasVisitedDoctorEarlier: false,
+    isWithin14Days: false,
+    message: '',
+  );
+
   String? _historyInfo;
   Color _historyColor = Colors.blue.shade50;
 
@@ -39,6 +47,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     final doctors = Provider.of<ClinicProvider>(context, listen: false).doctors;
     if (doctors.length == 1) {
       _selectedDoctor = doctors.first;
+      _amountController.text = "${_selectedDoctor!.consultationFee}";
     }
   }
 
@@ -49,7 +58,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     return AlertDialog(
       title: const Text('New Appointment'),
       content: SizedBox(
-        width: 400,
+        width: 420,
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
@@ -88,6 +97,9 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                         _amountController.text = "${val.consultationFee}";
                       }
                     });
+                    if (_phoneController.text.length == 10) {
+                      _updateEligibilityAndPayment();
+                    }
                   },
                   validator: (val) =>
                       val == null ? 'Please select a doctor' : null,
@@ -113,10 +125,22 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                             ? 'Invalid Phone'
                             : null,
                         onChanged: (val) {
-                          if (val.length == 10) _searchPatient(val);
-                          // Clear history if they start typing a new number
-                          if (val.length < 10 && _historyInfo != null) {
-                            setState(() => _historyInfo = null);
+                          if (val.length == 10) {
+                            _searchPatient(val);
+                          } else if (val.length < 10) {
+                            if (_historyInfo != null ||
+                                _patientAppointments.isNotEmpty) {
+                              setState(() {
+                                _historyInfo = null;
+                                _patientAppointments = [];
+                                _reviewEligibility =
+                                    const PatientReviewEligibility(
+                                  hasVisitedDoctorEarlier: false,
+                                  isWithin14Days: false,
+                                  message: '',
+                                );
+                              });
+                            }
                           }
                         },
                       ),
@@ -143,11 +167,15 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                       ),
                     ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          _isNewPatient ? Icons.person_add : Icons.history,
-                          size: 16,
-                          color: Colors.black54,
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2.0),
+                          child: Icon(
+                            _isNewPatient ? Icons.person_add : Icons.history,
+                            size: 16,
+                            color: Colors.black54,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -164,6 +192,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                   ),
                 ],
                 const SizedBox(height: 16),
+
+                // 4. PATIENT NAME & AGE
                 Row(
                   children: [
                     Expanded(
@@ -198,7 +228,10 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                   ],
                 ),
                 const SizedBox(height: 16),
+
+                // 5. PAYMENT TYPE
                 DropdownButtonFormField<PaymentType>(
+                  key: ValueKey(_selectedPayment),
                   initialValue: _selectedPayment,
                   decoration: const InputDecoration(
                     labelText: 'Payment Type',
@@ -206,28 +239,121 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                   ),
                   items: PaymentType.values.map((type) {
                     String label;
+                    bool enabled = true;
                     if (type == PaymentType.paid) {
-                      final fee = _selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee;
+                      final fee = _selectedDoctor?.consultationFee ??
+                          AppConstants.defaultConsultationFee;
                       label = 'Paid (₹$fee)';
-                    } else if (type == PaymentType.freeReview) {
-                      label = 'FREE (Review)';
-                    } else {
+                    } else if (type == PaymentType.freeFamily) {
                       label = 'FREE (Family)';
+                    } else {
+                      // PaymentType.freeReview
+                      if (!_reviewEligibility.hasVisitedDoctorEarlier) {
+                        // Not eligible: patient never visited this doctor earlier
+                        enabled = false;
+                        label = 'FREE (Review) — Returning patients only';
+                      } else if (_reviewEligibility.isWithin14Days) {
+                        label = 'FREE (Review) — Within 14 days';
+                      } else {
+                        // Visited earlier, but >14 days has passed.
+                        // NOT disabled per requirements, but clearly tagged!
+                        label = 'FREE (Review) — ⚠️ >14 days passed';
+                      }
                     }
-                    return DropdownMenuItem(value: type, child: Text(label));
+
+                    return DropdownMenuItem<PaymentType>(
+                      value: type,
+                      enabled: enabled,
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          color: enabled ? null : Colors.grey.shade500,
+                        ),
+                      ),
+                    );
                   }).toList(),
-                  onChanged: (val) {
+                  onChanged: (val) async {
+                    if (val == null) return;
+
+                    if (val == PaymentType.freeReview) {
+                      // Rule: Only a patient who visited earlier can get a free review with same doctor
+                      if (!_reviewEligibility.hasVisitedDoctorEarlier) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Free Review is only available for returning patients of this doctor.',
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      // Rule: If 14 days has passed, choosing free review should immediately warn
+                      if (!_reviewEligibility.isWithin14Days) {
+                        final proceed =
+                            await _showFourteenDaysWarningDialog();
+                        if (!proceed) {
+                          setState(() {
+                            _selectedPayment = PaymentType.paid;
+                            _amountController.text =
+                                "${_selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee}";
+                          });
+                          return;
+                        }
+                      }
+                    }
+
                     setState(() {
-                      _selectedPayment = val!;
-                      // Auto-set amount logic
+                      _selectedPayment = val;
                       if (_selectedPayment == PaymentType.paid) {
-                        _amountController.text = "${_selectedDoctor?.consultationFee ?? 500}";
+                        _amountController.text =
+                            "${_selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee}";
                       } else {
                         _amountController.text = "0";
                       }
                     });
                   },
                 ),
+
+                // Warning banner if Free Review is selected when >14 days has passed
+                if (_selectedPayment == PaymentType.freeReview &&
+                    _reviewEligibility.hasVisitedDoctorEarlier &&
+                    !_reviewEligibility.isWithin14Days) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade100,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.amber.shade400),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.amber.shade900,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Warning: 14 days have passed (${_reviewEligibility.daysSinceLastVisit} days since last visit). Free review manually approved.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.amber.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
 
                 // 6. AMOUNT
@@ -268,11 +394,14 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-    firstDate: DateTime.now(),
+      firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 30)),
     );
     if (picked != null) {
       setState(() => _selectedDate = picked);
+      if (_phoneController.text.length == 10) {
+        _updateEligibilityAndPayment();
+      }
     }
   }
 
@@ -285,31 +414,18 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       if (patient != null) {
         _nameController.text = patient.name;
         _ageController.text = patient.age.toString();
+        _isNewPatient = false;
 
-        final type = provider.calculatePaymentType(patient);
-
-        setState(() {
-          _isNewPatient = false;
-          _selectedPayment = type;
-          _amountController.text =
-              (type == PaymentType.paid)
-                  ? '${AppConstants.defaultConsultationFee}'
-                  : '0';
-
-          _historyColor = Colors.blue.shade100;
-          _historyInfo =
-              "Existing Patient\nLast Visit: ${DateFormat('dd MMM yyyy').format(patient.lastVisitDate)}";
-        });
+        // Fetch patient's appointments across all doctors
+        _patientAppointments = await provider.getAppointmentsForPatient(phone);
       } else {
-        setState(() {
-          _isNewPatient = true;
-          _selectedPayment = PaymentType.paid;
-          _amountController.text = "500";
-
-          _historyColor = Colors.green.shade100;
-          _historyInfo = "New Patient Record";
-        });
+        _isNewPatient = true;
+        _patientAppointments = [];
+        _amountController.text =
+            "${_selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee}";
       }
+
+      _updateEligibilityAndPayment();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -324,6 +440,142 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     }
   }
 
+  void _updateEligibilityAndPayment() {
+    if (_isNewPatient || _phoneController.text.length < 10) {
+      setState(() {
+        _reviewEligibility = const PatientReviewEligibility(
+          hasVisitedDoctorEarlier: false,
+          isWithin14Days: false,
+          message: 'New patient record',
+        );
+        _historyInfo = "New Patient Record";
+        _historyColor = Colors.green.shade100;
+        if (_selectedPayment == PaymentType.freeReview) {
+          _selectedPayment = PaymentType.paid;
+          _amountController.text =
+              "${_selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee}";
+        }
+      });
+      return;
+    }
+
+    final eligibility = PatientReviewEligibility.calculate(
+      appointments: _patientAppointments,
+      doctorId: _selectedDoctor?.id,
+      targetDate: _selectedDate,
+      doctorName: _selectedDoctor?.name,
+    );
+
+    setState(() {
+      _reviewEligibility = eligibility;
+
+      if (!eligibility.hasVisitedDoctorEarlier) {
+        // Patient never visited this doctor earlier
+        _historyColor = Colors.blue.shade100;
+        _historyInfo =
+            "Existing Patient • No earlier visit with ${_selectedDoctor?.name ?? 'selected doctor'}\n(Free Review requires prior visit with same doctor)";
+        if (_selectedPayment == PaymentType.freeReview) {
+          _selectedPayment = PaymentType.paid;
+          _amountController.text =
+              "${_selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee}";
+        }
+      } else if (eligibility.isWithin14Days) {
+        // Within 14 days
+        final dateStr =
+            DateFormat('dd MMM yyyy').format(eligibility.lastVisitDate!);
+        _historyColor = Colors.teal.shade100;
+        _historyInfo =
+            "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n✅ Eligible for 14-day Free Review (${eligibility.daysSinceLastVisit} days ago)";
+        _selectedPayment = PaymentType.freeReview;
+        _amountController.text = "0";
+      } else {
+        // >14 days have passed
+        final dateStr =
+            DateFormat('dd MMM yyyy').format(eligibility.lastVisitDate!);
+        _historyColor = Colors.amber.shade100;
+        _historyInfo =
+            "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n⚠️ 14 days have passed (${eligibility.daysSinceLastVisit} days ago)";
+        // If not already set, default to Paid
+        if (_selectedPayment == PaymentType.freeReview) {
+          _selectedPayment = PaymentType.paid;
+          _amountController.text =
+              "${_selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee}";
+        }
+      }
+    });
+  }
+
+  Future<bool> _showFourteenDaysWarningDialog() async {
+    final docName = _selectedDoctor?.name ?? 'the doctor';
+    final dateStr = _reviewEligibility.lastVisitDate != null
+        ? DateFormat('dd MMM yyyy').format(_reviewEligibility.lastVisitDate!)
+        : 'N/A';
+    final days = _reviewEligibility.daysSinceLastVisit ?? 15;
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(
+          Icons.warning_amber_rounded,
+          color: Colors.amber,
+          size: 48,
+        ),
+        title: const Text(
+          '14 Days Passed Warning',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '⚠️ 14 days have passed since the patient\'s last visit with Dr. $docName.',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('• Last Visit: $dateStr'),
+                  Text('• Days Elapsed: $days days (Policy limit: 14 days)'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Only visits within 14 days qualify for free review. Do you want to proceed with a Free Review anyway?',
+              style: TextStyle(fontSize: 13),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel (Keep Paid)'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber.shade800,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Allow Free Review'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
   Future<void> _saveAppointment() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -331,6 +583,19 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Please select a doctor")));
+      return;
+    }
+
+    if (_selectedPayment == PaymentType.freeReview &&
+        !_reviewEligibility.hasVisitedDoctorEarlier) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Free review is only allowed for patients who previously visited Dr. ${_selectedDoctor!.name}.",
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 

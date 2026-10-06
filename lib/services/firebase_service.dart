@@ -91,23 +91,24 @@ class FirebaseService {
     String doctorId,
     DateTime date,
   ) {
-    final start = DateTime(date.year, date.month, date.day);
-    final end = start.add(const Duration(days: 1));
+    // Reuses getAppointmentsForDate to eliminate the need for a composite
+    // Firestore index (doctorId + scheduledDate). In-memory filtering is
+    // instantaneous and error-free for daily clinic appointment volumes.
+    return getAppointmentsForDate(date).map((appointments) {
+      return appointments.where((a) => a.doctorId == doctorId).toList();
+    });
+  }
 
-    return _appointmentsRef
-        .where('doctorId', isEqualTo: doctorId)
-        .where(
-          'scheduledDate',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(start),
-        )
-        .where('scheduledDate', isLessThan: Timestamp.fromDate(end))
-        .orderBy('scheduledDate')
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            return _appointmentFromDoc(doc.data());
-          }).toList();
-        });
+  /// Retrieves all historical appointments for a given patient phone number.
+  /// Uses a single-field equality filter on patientPhone so no composite index is needed.
+  Future<List<Appointment>> getAppointmentsForPatient(String phone) async {
+    final snapshot = await _appointmentsRef
+        .where('patientPhone', isEqualTo: phone)
+        .get();
+
+    return snapshot.docs.map((doc) {
+      return _appointmentFromDoc(doc.data());
+    }).toList();
   }
 
   // ---------------------------------------------------------------------------
@@ -139,22 +140,23 @@ class FirebaseService {
   }
 
   // Check if a patient already has a non-cancelled appointment on this date.
+  // Filters by phone in Firestore (single-field query) and evaluates date range
+  // in memory to avoid requiring a composite index.
   Future<bool> hasAppointmentForDate(String phone, DateTime date) async {
     final start = DateTime(date.year, date.month, date.day);
     final end = start.add(const Duration(days: 1));
 
     final query = await _appointmentsRef
         .where('patientPhone', isEqualTo: phone)
-        .where(
-          'scheduledDate',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(start),
-        )
-        .where('scheduledDate', isLessThan: Timestamp.fromDate(end))
         .get();
 
     for (var doc in query.docs) {
-      if (doc.data()['status'] != 'cancelled') {
-        return true;
+      final appt = _appointmentFromDoc(doc.data());
+      if (appt.status != AppointmentStatus.absent) {
+        if (!appt.scheduledDate.isBefore(start) &&
+            appt.scheduledDate.isBefore(end)) {
+          return true;
+        }
       }
     }
     return false;
