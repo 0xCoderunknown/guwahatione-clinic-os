@@ -25,23 +25,27 @@ void main() {
       expect(appt.queueNumber, 1);
     });
 
-    test('Legacy cancelled status deserializes gracefully to absent', () {
-      final json = {
-        'id': 'appt-legacy',
-        'patientPhone': '9876543210',
-        'patientName': 'Legacy Patient',
-        'status': 'cancelled',
-        'paymentType': 'paid',
-        'amountCollected': 0,
-        'queueNumber': 4,
-        'scheduledDate': '2026-10-05T10:00:00.000',
-        'doctorId': 'doc-1',
-        'doctorName': 'Dr. Baruah',
-      };
+    test('Appointment serializes and deserializes with Firestore Timestamp', () {
+      final now = DateTime(2026, 10, 5, 10, 0);
+      final original = Appointment(
+        id: 'appt-timestamp',
+        patientPhone: '9876543210',
+        patientName: 'Native Patient',
+        status: AppointmentStatus.absent,
+        paymentType: PaymentType.paid,
+        amountCollected: 0,
+        queueNumber: 4,
+        scheduledDate: now,
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Baruah',
+      );
 
-      final appt = Appointment.fromJson(json);
-      expect(appt.status, AppointmentStatus.absent);
-      expect(appt.status.displayName, 'Absent');
+      final json = original.toJson();
+      final fromJson = Appointment.fromJson(json);
+
+      expect(fromJson.status, AppointmentStatus.absent);
+      expect(fromJson.status.displayName, 'Absent');
+      expect(fromJson.scheduledDate, now);
     });
 
     test('Doctor model includes PIN and consultation fee', () {

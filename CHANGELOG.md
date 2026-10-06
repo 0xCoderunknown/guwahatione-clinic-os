@@ -17,7 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Doctor Chamber View Index Error** — Resolved Cloud Firestore composite index error (`This query needs an index`) on Doctor Chamber screen by querying per-day appointments and filtering by doctor in memory without requiring remote composite indexes.
-- **Booking Duplicate Query Index Error** — Refactored `hasAppointmentForDate` in `FirebaseService` to query on single-field phone and evaluate scheduled date in memory, preventing potential compound query failures during appointment creation.
+
+### Removed
+- **Legacy Fallback Code & Compatibility Shims** — Removed legacy `cancelled` status mapping and manual string-to-Timestamp normalization shims in favor of native Firestore `Timestamp` and direct enum binding.
 
 ---
 

@@ -210,19 +210,14 @@ class ClinicProvider with ChangeNotifier {
     int amount,
   ) async {
     try {
-      PaymentType pType;
-      try {
-        pType = PaymentType.values.byName(paymentType);
-      } catch (e) {
-        pType = PaymentType.paid;
-      }
+      final pType = PaymentType.values.firstWhere(
+        (e) => e.name == paymentType,
+        orElse: () => PaymentType.paid,
+      );
 
       final statusEnum = AppointmentStatus.values.firstWhere(
         (e) => e.name == status,
-        orElse: () {
-          if (status == 'cancelled') return AppointmentStatus.absent;
-          return AppointmentStatus.pending;
-        },
+        orElse: () => AppointmentStatus.pending,
       );
 
       await _firebaseService.updateAppointmentStatus(

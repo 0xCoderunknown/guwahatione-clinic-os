@@ -38,13 +38,7 @@ class FirebaseService {
   // ---------------------------------------------------------------------------
 
   Future<void> createAppointment(Appointment appointment) async {
-    // Build JSON but store scheduledDate as a Firestore Timestamp instead of
-    // an ISO string. This enables proper server-side ordering and range
-    // queries. fromJson handles both Timestamp and legacy ISO strings.
-    final data = appointment.toJson();
-    data['scheduledDate'] = Timestamp.fromDate(appointment.scheduledDate);
-
-    await _appointmentsRef.doc(appointment.id).set(data);
+    await _appointmentsRef.doc(appointment.id).set(appointment.toJson());
 
     // Keep the patient's lastVisitDate in sync.
     await _patientsRef.doc(appointment.patientPhone).update({
@@ -189,14 +183,7 @@ class FirebaseService {
   // Helpers
   // ---------------------------------------------------------------------------
 
-  /// Converts a Firestore document map to an [Appointment], handling both
-  /// legacy ISO-string dates (old documents) and new Firestore Timestamps.
   Appointment _appointmentFromDoc(Map<String, dynamic> data) {
-    // Normalize scheduledDate: Timestamp → ISO String so fromJson stays clean.
-    final rawDate = data['scheduledDate'];
-    if (rawDate is Timestamp) {
-      data['scheduledDate'] = rawDate.toDate().toIso8601String();
-    }
     return Appointment.fromJson(data);
   }
 }

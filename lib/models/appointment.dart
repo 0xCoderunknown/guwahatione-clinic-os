@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum AppointmentStatus {
   pending,
   completed,
@@ -66,23 +68,32 @@ class Appointment {
       'paymentType': paymentType.name,
       'amountCollected': amountCollected,
       'queueNumber': queueNumber,
-      'scheduledDate': scheduledDate.toIso8601String(),
+      'scheduledDate': Timestamp.fromDate(scheduledDate),
       'doctorId': doctorId,
       'doctorName': doctorName,
     };
   }
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
+    DateTime parsedDate;
+    final rawDate = json['scheduledDate'];
+    if (rawDate is Timestamp) {
+      parsedDate = rawDate.toDate();
+    } else if (rawDate is DateTime) {
+      parsedDate = rawDate;
+    } else if (rawDate is String) {
+      parsedDate = DateTime.parse(rawDate);
+    } else {
+      parsedDate = DateTime.now();
+    }
+
     return Appointment(
       id: json['id'] as String? ?? '',
-      patientPhone: json['patientPhone'] as String? ?? 'Unknown',
-      patientName: json['patientName'] as String? ?? 'Unknown Patient',
+      patientPhone: json['patientPhone'] as String? ?? '',
+      patientName: json['patientName'] as String? ?? '',
       status: AppointmentStatus.values.firstWhere(
         (e) => e.name == json['status'],
-        orElse: () {
-          if (json['status'] == 'cancelled') return AppointmentStatus.absent;
-          return AppointmentStatus.pending;
-        },
+        orElse: () => AppointmentStatus.pending,
       ),
       paymentType: PaymentType.values.firstWhere(
         (e) => e.name == json['paymentType'],
@@ -90,12 +101,9 @@ class Appointment {
       ),
       amountCollected: (json['amountCollected'] as num?)?.toInt() ?? 0,
       queueNumber: (json['queueNumber'] as num?)?.toInt() ?? 0,
-      scheduledDate: json['scheduledDate'] != null
-          ? DateTime.parse(json['scheduledDate'] as String)
-          : DateTime.now(),
-      doctorId: json['doctorId'] as String? ?? 'unknown',
-      doctorName: json['doctorName'] as String? ?? 'General Physician',
+      scheduledDate: parsedDate,
+      doctorId: json['doctorId'] as String? ?? '',
+      doctorName: json['doctorName'] as String? ?? '',
     );
   }
 }
-
