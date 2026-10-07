@@ -3,6 +3,8 @@ import '../../models/diagnostic_investigation.dart';
 import '../../utils/formatters.dart';
 import '../common/section_card.dart';
 
+import 'encounter_form_state.dart';
+
 /// Step 3: Past Diagnostic Investigations Review
 class DiagnosticReviewSection extends StatelessWidget {
   final List<DiagnosticInvestigationReview> reviewedInvestigations;
@@ -23,6 +25,30 @@ class DiagnosticReviewSection extends StatelessWidget {
     required this.onRemoveItem,
     required this.onAddOutsideLab,
   });
+
+  /// Factory binding directly to EncounterFormState.
+  DiagnosticReviewSection.fromForm({
+    super.key,
+    required EncounterFormState form,
+    required VoidCallback onUpdate,
+    required this.onAddOutsideLab,
+  })  : reviewedInvestigations = form.reviewedInvestigations,
+        isExpanded = form.isInvestigationsExpanded,
+        onToggleExpand = (() {
+          form.isInvestigationsExpanded = !form.isInvestigationsExpanded;
+          onUpdate();
+        }),
+        onResultChanged = ((index, val) {
+          form.reviewedInvestigations[index] = form.reviewedInvestigations[index].copyWith(resultValue: val);
+        }),
+        onDateChanged = ((index, date) {
+          form.reviewedInvestigations[index] = form.reviewedInvestigations[index].copyWith(performedDate: date);
+          onUpdate();
+        }),
+        onRemoveItem = ((index) {
+          form.reviewedInvestigations.removeAt(index);
+          onUpdate();
+        });
 
   @override
   Widget build(BuildContext context) {

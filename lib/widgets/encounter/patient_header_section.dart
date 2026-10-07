@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../models/appointment.dart';
+import 'encounter_form_state.dart';
+
 /// Step 1: Patient Demographics Header & Allergies Alert Banner
 class PatientHeaderSection extends StatelessWidget {
   final String patientName;
@@ -22,6 +25,24 @@ class PatientHeaderSection extends StatelessWidget {
     required this.onRemoveAllergy,
     required this.onPriorMedsPressed,
   });
+
+  /// Factory binding directly to Appointment and EncounterFormState.
+  PatientHeaderSection.fromForm({
+    super.key,
+    required Appointment appointment,
+    required EncounterFormState form,
+    required this.onAddAllergy,
+    required this.onPriorMedsPressed,
+    required VoidCallback onUpdate,
+  })  : patientName = appointment.patientName,
+        patientAge = form.patientAge,
+        patientGender = form.patientGender,
+        patientPhone = appointment.patientPhone,
+        allergies = form.allergies,
+        onRemoveAllergy = ((allergy) {
+          form.removeAllergy(allergy);
+          onUpdate();
+        });
 
   @override
   Widget build(BuildContext context) {

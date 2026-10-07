@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../common/section_card.dart';
 
+import 'encounter_form_state.dart';
+
 /// Step 2: Vitals & Clinical Examination (Chief complaints, diagnoses, and exam notes)
 class VitalsAndExamSection extends StatelessWidget {
   final bool isExpanded;
@@ -47,6 +49,44 @@ class VitalsAndExamSection extends StatelessWidget {
     required this.onAddProvisionalDiagnosis,
     required this.onRemoveProvisionalDiagnosis,
   });
+
+  /// Factory binding directly to EncounterFormState.
+  VitalsAndExamSection.fromForm({
+    super.key,
+    required EncounterFormState form,
+    required VoidCallback onUpdate,
+  })  : isExpanded = form.isFindingsExpanded,
+        onToggleExpand = (() {
+          form.isFindingsExpanded = !form.isFindingsExpanded;
+          onUpdate();
+        }),
+        systolicBpController = form.systolicBpController,
+        diastolicBpController = form.diastolicBpController,
+        pulseController = form.pulseController,
+        tempController = form.tempController,
+        weightController = form.weightController,
+        spo2Controller = form.spo2Controller,
+        complaintInputController = form.complaintInputController,
+        diagnosisInputController = form.diagnosisInputController,
+        examController = form.examController,
+        chiefComplaints = form.chiefComplaints,
+        provisionalDiagnoses = form.provisionalDiagnoses,
+        onAddChiefComplaint = (() {
+          form.addChiefComplaint();
+          onUpdate();
+        }),
+        onRemoveChiefComplaint = ((c) {
+          form.removeChiefComplaint(c);
+          onUpdate();
+        }),
+        onAddProvisionalDiagnosis = (() {
+          form.addProvisionalDiagnosis();
+          onUpdate();
+        }),
+        onRemoveProvisionalDiagnosis = ((d) {
+          form.removeProvisionalDiagnosis(d);
+          onUpdate();
+        });
 
   @override
   Widget build(BuildContext context) {

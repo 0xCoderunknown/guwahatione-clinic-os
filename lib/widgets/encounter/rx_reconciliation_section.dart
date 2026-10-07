@@ -3,6 +3,7 @@ import '../../models/medicine.dart';
 import '../../models/prescription_item.dart';
 import '../../utils/medicine_search_scorer.dart';
 import '../common/section_card.dart';
+import 'encounter_form_state.dart';
 
 /// Step 4: Medication Reconciliation & Prescribing Section
 class RxReconciliationSection extends StatelessWidget {
@@ -84,6 +85,102 @@ class RxReconciliationSection extends StatelessWidget {
     required this.newPrescriptions,
     required this.onRemoveNewPrescription,
   });
+
+  /// Factory binding directly to EncounterFormState.
+  RxReconciliationSection.fromForm({
+    super.key,
+    required EncounterFormState form,
+    required List<Medicine> catalog,
+    required String Function() uuidGenerator,
+    required this.onPromptStopReason,
+    required VoidCallback onUpdate,
+  })  : isExpanded = form.isMedicineExpanded,
+        onToggleExpand = (() {
+          form.isMedicineExpanded = !form.isMedicineExpanded;
+          onUpdate();
+        }),
+        searchMode = form.searchMode,
+        onSearchModeChanged = ((mode) {
+          form.searchMode = mode;
+          onUpdate();
+        }),
+        medSearchController = form.medSearchController,
+        isSearchActive = form.isSearchActive,
+        searchResults = form.medSearchController.text.trim().isNotEmpty
+            ? MedicineSearchScorer.searchAndGroup(
+                catalog: catalog,
+                query: form.medSearchController.text,
+                searchMode: form.searchMode,
+              )
+            : <CompositionGroupResult>[],
+        onSearchChanged = ((val) {
+          form.isSearchActive = val.trim().isNotEmpty;
+          onUpdate();
+        }),
+        onClearSearch = (() {
+          form.medSearchController.clear();
+          form.isSearchActive = false;
+          onUpdate();
+        }),
+        reconciliationItems = form.reconciliationItems,
+        onContinueItem = ((index) {
+          form.reconciliationItems[index] = form.reconciliationItems[index].copyWith(
+            action: MedicationAction.continueAction,
+            stopReason: null,
+          );
+          onUpdate();
+        }),
+        stagedMedicine = form.stagedMedicine,
+        stagedGenericGroup = form.stagedGenericGroup,
+        stagedUnlistedName = form.stagedUnlistedName,
+        stagedComposition = form.stagedComposition,
+        stagedDosageController = form.stagedDosageController,
+        stagedDurationController = form.stagedDurationController,
+        stagedInstructionsController = form.stagedInstructionsController,
+        stagedFrequency = form.stagedFrequency,
+        onFrequencyChanged = ((val) {
+          if (val != null) {
+            form.stagedFrequency = val;
+            onUpdate();
+          }
+        }),
+        stagedTiming = form.stagedTiming,
+        onTimingChanged = ((val) {
+          if (val != null) {
+            form.stagedTiming = val;
+            onUpdate();
+          }
+        }),
+        stagedIsChronic = form.stagedIsChronic,
+        onChronicChanged = ((val) {
+          form.stagedIsChronic = val;
+          onUpdate();
+        }),
+        onCancelStaging = (() {
+          form.cancelStaging();
+          onUpdate();
+        }),
+        onConfirmAddStaged = (() {
+          form.confirmAddStagedMedicine(uuidGenerator);
+          onUpdate();
+        }),
+        onStageMedicine = ((med) {
+          form.stageMedicine(med);
+          onUpdate();
+        }),
+        onStageGeneric = ((grp) {
+          form.stageGeneric(grp, uuidGenerator);
+          onUpdate();
+        }),
+        onStageUnlisted = ((query) {
+          form.stageUnlisted(query);
+          onUpdate();
+        }),
+        newPrescriptions = form.newPrescriptions,
+        onRemoveNewPrescription = ((index) {
+          form.newPrescriptions.removeAt(index);
+          onUpdate();
+        });
 
   @override
   Widget build(BuildContext context) {

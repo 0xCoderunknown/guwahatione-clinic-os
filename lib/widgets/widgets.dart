@@ -14,3 +14,5 @@ export 'encounter/diagnostic_review_section.dart';
 export 'encounter/patient_header_section.dart';
 export 'encounter/rx_reconciliation_section.dart';
 export 'encounter/vitals_and_exam_section.dart';
+export 'encounter/encounter_dialogs.dart';
+export 'encounter/encounter_form_state.dart';

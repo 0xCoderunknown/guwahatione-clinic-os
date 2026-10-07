@@ -3,6 +3,8 @@ import '../../models/diagnostic_investigation.dart';
 import '../../utils/formatters.dart';
 import '../common/section_card.dart';
 
+import 'encounter_form_state.dart';
+
 /// Step 5: Advice, Diagnostic Orders & Follow-up Visit Scheduling
 class AdviceAndOrdersSection extends StatelessWidget {
   final TextEditingController orderedTestInputController;
@@ -25,6 +27,29 @@ class AdviceAndOrdersSection extends StatelessWidget {
     required this.onFollowUpDateChanged,
     required this.onPickCustomDate,
   });
+
+  /// Factory binding directly to EncounterFormState.
+  AdviceAndOrdersSection.fromForm({
+    super.key,
+    required EncounterFormState form,
+    required VoidCallback onUpdate,
+    required this.onPickCustomDate,
+  })  : orderedTestInputController = form.orderedTestInputController,
+        orderedTests = form.orderedTests,
+        onAddOrderedTest = (() {
+          form.addOrderedTest();
+          onUpdate();
+        }),
+        onRemoveOrderedTest = ((t) {
+          form.removeOrderedTest(t);
+          onUpdate();
+        }),
+        adviceController = form.adviceController,
+        nextFollowUpDate = form.nextFollowUpDate,
+        onFollowUpDateChanged = ((d) {
+          form.nextFollowUpDate = d;
+          onUpdate();
+        });
 
   Widget _buildIntervalChip(String label, int days) {
     final target = DateTime.now().add(Duration(days: days));
