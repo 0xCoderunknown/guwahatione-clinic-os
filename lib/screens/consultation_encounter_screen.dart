@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -12,8 +11,10 @@ import '../models/medicine.dart';
 import '../models/prescription_item.dart';
 import '../models/vitals.dart';
 import '../providers/clinic_provider.dart';
-import '../utils/medicine_search_scorer.dart';
 import '../utils/clinical_defaults_helper.dart';
+import '../utils/formatters.dart';
+import '../utils/medicine_search_scorer.dart';
+import '../widgets/widgets.dart';
 import 'prescription_print_screen.dart';
 
 class ConsultationEncounterScreen extends StatefulWidget {
@@ -282,1235 +283,170 @@ class _ConsultationEncounterScreenState
                   padding: const EdgeInsets.all(16),
                   children: [
                     if (_incomingCallingApptId != null) ...[
-                      _buildIncomingPatientAlertBanner(),
+                      ChamberCallingAlertBar(
+                        queueNumber: _incomingCallingQueueNumber,
+                        patientName: _incomingCallingPatientName,
+                        onSwitch: _switchToIncomingPatient,
+                        onDismiss: () => setState(() => _incomingCallingApptId = null),
+                      ),
                       const SizedBox(height: 14),
                     ],
 
                     // STEP 1: Patient Header & Allergies Alert Banner
-                    _buildStep1PatientHeader(),
+                    PatientHeaderSection(
+                      patientName: widget.appointment.patientName,
+                      patientAge: _patientAge,
+                      patientGender: _patientGender,
+                      patientPhone: widget.appointment.patientPhone,
+                      allergies: _allergies,
+                      onAddAllergy: _promptAddAllergy,
+                      onRemoveAllergy: (allergy) => setState(() => _allergies.remove(allergy)),
+                      onPriorMedsPressed: _openPriorMedicationHistoryDialog,
+                    ),
                     const SizedBox(height: 16),
 
                     // STEP 2: Vitals & Clinical Examination
-                    _buildStep2VitalsAndExam(),
+                    VitalsAndExamSection(
+                      isExpanded: _isFindingsExpanded,
+                      onToggleExpand: () => setState(() => _isFindingsExpanded = !_isFindingsExpanded),
+                      systolicBpController: _systolicBpController,
+                      diastolicBpController: _diastolicBpController,
+                      pulseController: _pulseController,
+                      tempController: _tempController,
+                      weightController: _weightController,
+                      spo2Controller: _spo2Controller,
+                      complaintInputController: _complaintInputController,
+                      diagnosisInputController: _diagnosisInputController,
+                      examController: _examController,
+                      chiefComplaints: _chiefComplaints,
+                      provisionalDiagnoses: _provisionalDiagnoses,
+                      onAddChiefComplaint: _addChiefComplaint,
+                      onRemoveChiefComplaint: (c) => setState(() => _chiefComplaints.remove(c)),
+                      onAddProvisionalDiagnosis: _addProvisionalDiagnosis,
+                      onRemoveProvisionalDiagnosis: (d) => setState(() => _provisionalDiagnoses.remove(d)),
+                    ),
                     const SizedBox(height: 16),
 
                     // STEP 3: Diagnostic Investigations Review
-                    _buildStep3DiagnosticReview(),
+                    DiagnosticReviewSection(
+                      reviewedInvestigations: _reviewedInvestigations,
+                      isExpanded: _isInvestigationsExpanded,
+                      onToggleExpand: () => setState(() => _isInvestigationsExpanded = !_isInvestigationsExpanded),
+                      onResultChanged: (index, val) {
+                        _reviewedInvestigations[index] = _reviewedInvestigations[index].copyWith(resultValue: val);
+                      },
+                      onDateChanged: (index, date) {
+                        setState(() {
+                          _reviewedInvestigations[index] = _reviewedInvestigations[index].copyWith(performedDate: date);
+                        });
+                      },
+                      onRemoveItem: (index) {
+                        setState(() => _reviewedInvestigations.removeAt(index));
+                      },
+                      onAddOutsideLab: _promptAddOutsideLabReview,
+                    ),
                     const SizedBox(height: 16),
 
                     // STEP 4: Medication Reconciliation & Prescribing
-                    _buildStep4MedicationReconciliation(),
+                    RxReconciliationSection(
+                      isExpanded: _isMedicineExpanded,
+                      onToggleExpand: () => setState(() => _isMedicineExpanded = !_isMedicineExpanded),
+                      searchMode: _searchMode,
+                      onSearchModeChanged: (mode) => setState(() => _searchMode = mode),
+                      medSearchController: _medSearchController,
+                      isSearchActive: _isSearchActive,
+                      searchResults: _medSearchController.text.trim().isNotEmpty
+                          ? MedicineSearchScorer.searchAndGroup(
+                              catalog: Provider.of<ClinicProvider>(context).medicines,
+                              query: _medSearchController.text,
+                              searchMode: _searchMode,
+                            )
+                          : <CompositionGroupResult>[],
+                      onSearchChanged: (val) => setState(() => _isSearchActive = val.trim().isNotEmpty),
+                      onClearSearch: () {
+                        setState(() {
+                          _medSearchController.clear();
+                          _isSearchActive = false;
+                        });
+                      },
+                      reconciliationItems: _reconciliationItems,
+                      onContinueItem: (index) {
+                        setState(() {
+                          _reconciliationItems[index] = _reconciliationItems[index].copyWith(
+                            action: MedicationAction.continueAction,
+                            stopReason: null,
+                          );
+                        });
+                      },
+                      onPromptStopReason: _promptStopReason,
+                      stagedMedicine: _stagedMedicine,
+                      stagedGenericGroup: _stagedGenericGroup,
+                      stagedUnlistedName: _stagedUnlistedName,
+                      stagedComposition: _stagedComposition,
+                      stagedDosageController: _stagedDosageController,
+                      stagedDurationController: _stagedDurationController,
+                      stagedInstructionsController: _stagedInstructionsController,
+                      stagedFrequency: _stagedFrequency,
+                      onFrequencyChanged: (val) {
+                        if (val != null) setState(() => _stagedFrequency = val);
+                      },
+                      stagedTiming: _stagedTiming,
+                      onTimingChanged: (val) {
+                        if (val != null) setState(() => _stagedTiming = val);
+                      },
+                      stagedIsChronic: _stagedIsChronic,
+                      onChronicChanged: (val) => setState(() => _stagedIsChronic = val),
+                      onCancelStaging: () {
+                        setState(() {
+                          _stagedMedicine = null;
+                          _stagedGenericGroup = null;
+                          _stagedUnlistedName = null;
+                          _stagedComposition = null;
+                        });
+                      },
+                      onConfirmAddStaged: _confirmAddStagedMedicine,
+                      onStageMedicine: _stageMedicine,
+                      onStageGeneric: _stageGeneric,
+                      onStageUnlisted: _stageUnlisted,
+                      newPrescriptions: _newPrescriptions,
+                      onRemoveNewPrescription: (index) {
+                        setState(() => _newPrescriptions.removeAt(index));
+                      },
+                    ),
                     const SizedBox(height: 16),
 
                     // STEP 5: Advice, Lab Orders & Follow-up
-                    _buildStep5AdviceAndFollowUp(),
+                    AdviceAndOrdersSection(
+                      orderedTestInputController: _orderedTestInputController,
+                      orderedTests: _orderedTests,
+                      onAddOrderedTest: _addOrderedTest,
+                      onRemoveOrderedTest: (t) => setState(() => _orderedTests.remove(t)),
+                      adviceController: _adviceController,
+                      nextFollowUpDate: _nextFollowUpDate,
+                      onFollowUpDateChanged: (d) => setState(() => _nextFollowUpDate = d),
+                      onPickCustomDate: _pickCustomFollowUpDate,
+                    ),
                     const SizedBox(height: 40),
                   ],
                 ),
               ),
 
               // Bottom Completion Bar
-              _buildBottomActionDock(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ===========================================================================
-  // STEP 1: Patient Header & Allergies Banner
-  // ===========================================================================
-
-  Widget _buildStep1PatientHeader() {
-    final hasAllergies = _allergies.isNotEmpty;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: hasAllergies ? Colors.red.shade200 : const Color(0xFFE2E8F0),
-          width: hasAllergies ? 1.5 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Demographics bar
-          Padding(
-            padding: const EdgeInsets.all(14.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.teal.shade50,
-                  foregroundColor: Colors.teal.shade700,
-                  radius: 20,
-                  child: const Icon(Icons.person, size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Wrap(
-                    spacing: 16,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text(
-                        widget.appointment.patientName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      Text(
-                        "Age: ${_patientAge > 0 ? _patientAge : widget.appointment.patientName} yrs • Sex: $_patientGender",
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-                      ),
-                      Text(
-                        "Phone: ${widget.appointment.patientPhone}",
-                        style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-                      ),
-                    ],
-                  ),
-                ),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.medication_outlined, size: 16),
-                  label: const Text('Prior Meds', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  ),
-                  onPressed: _openPriorMedicationHistoryDialog,
-                ),
-              ],
-            ),
-          ),
-
-          // Prominent Allergies Banner (Visual Alert Styling)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: hasAllergies ? Colors.red.shade50 : Colors.amber.shade50,
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(11)),
-              border: Border(
-                top: BorderSide(
-                  color: hasAllergies ? Colors.red.shade200 : Colors.amber.shade200,
-                ),
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Icon(
-                  hasAllergies ? Icons.warning_amber_rounded : Icons.info_outline,
-                  color: hasAllergies ? Colors.red.shade700 : Colors.amber.shade800,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  "ALLERGIES: ",
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                    color: hasAllergies ? Colors.red.shade800 : Colors.amber.shade900,
-                  ),
-                ),
-                Expanded(
-                  child: hasAllergies
-                      ? Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: _allergies.map((allergy) {
-                            return Chip(
-                              backgroundColor: Colors.white,
-                              labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                              visualDensity: VisualDensity.compact,
-                              side: BorderSide(color: Colors.red.shade300),
-                              label: Text(
-                                allergy,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red.shade800,
-                                ),
-                              ),
-                              deleteIcon: const Icon(Icons.close, size: 14),
-                              onDeleted: () {
-                                setState(() {
-                                  _allergies.remove(allergy);
-                                });
-                              },
-                            );
-                          }).toList(),
-                        )
-                      : Text(
-                          "No known allergies recorded (Click + to add)",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                            color: Colors.amber.shade900,
-                          ),
-                        ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline, size: 18),
-                  tooltip: 'Add Known Drug/Substance Allergy',
-                  color: hasAllergies ? Colors.red.shade700 : Colors.amber.shade900,
-                  onPressed: _promptAddAllergy,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ===========================================================================
-  // STEP 2: Vitals & Clinical Examination
-  // ===========================================================================
-
-  Widget _buildStep2VitalsAndExam() {
-    return _buildSectionCard(
-      title: 'Step 2: Vitals & Clinical Examination',
-      icon: Icons.monitor_heart_outlined,
-      iconColor: Colors.teal,
-      trailing: TextButton.icon(
-        icon: Icon(_isFindingsExpanded ? Icons.unfold_less : Icons.edit_note, size: 18),
-        label: Text(_isFindingsExpanded ? 'Close Findings' : 'Add / Edit Findings'),
-        onPressed: () {
-          setState(() => _isFindingsExpanded = !_isFindingsExpanded);
-        },
-      ),
-      child: _isFindingsExpanded
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Compact Vitals Grid / Row
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _buildCompactVitalField(
-                      label: 'BP (Systolic)',
-                      unit: 'mmHg',
-                      controller: _systolicBpController,
-                      hint: '120',
-                      width: 140,
-                    ),
-                    _buildCompactVitalField(
-                      label: 'BP (Diastolic)',
-                      unit: 'mmHg',
-                      controller: _diastolicBpController,
-                      hint: '80',
-                      width: 140,
-                    ),
-                    _buildCompactVitalField(
-                      label: 'Pulse Rate',
-                      unit: 'bpm',
-                      controller: _pulseController,
-                      hint: '72',
-                      width: 130,
-                    ),
-                    _buildCompactVitalField(
-                      label: 'SpO2',
-                      unit: '%',
-                      controller: _spo2Controller,
-                      hint: '98',
-                      width: 110,
-                    ),
-                    _buildCompactVitalField(
-                      label: 'Temp',
-                      unit: '°F',
-                      controller: _tempController,
-                      hint: '98.6',
-                      width: 120,
-                    ),
-                    _buildCompactVitalField(
-                      label: 'Weight',
-                      unit: 'kg',
-                      controller: _weightController,
-                      hint: '68.5',
-                      width: 130,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-
-                // Chief Complaints (directly above prescriptions)
-                const Text(
-                  'Chief Complaints / Symptoms',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _complaintInputController,
-                        decoration: const InputDecoration(
-                          hintText: 'e.g., Fever x 3 days, dry cough, headache...',
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          border: OutlineInputBorder(),
-                        ),
-                        onSubmitted: (_) => _addChiefComplaint(),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton.tonalIcon(
-                      onPressed: _addChiefComplaint,
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('Add'),
-                    ),
-                  ],
-                ),
-                if (_chiefComplaints.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: _chiefComplaints.map((c) {
-                      return Chip(
-                        label: Text(c, style: const TextStyle(fontSize: 12)),
-                        backgroundColor: Colors.teal.shade50,
-                        deleteIcon: const Icon(Icons.close, size: 14),
-                        onDeleted: () {
-                          setState(() => _chiefComplaints.remove(c));
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ],
-                const SizedBox(height: 16),
-
-                // Provisional Diagnosis
-                const Text(
-                  'Provisional / Working Diagnosis',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _diagnosisInputController,
-                        decoration: const InputDecoration(
-                          hintText: 'e.g., Acute Viral Bronchitis, Essential Hypertension...',
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          border: OutlineInputBorder(),
-                        ),
-                        onSubmitted: (_) => _addProvisionalDiagnosis(),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton.tonalIcon(
-                      onPressed: _addProvisionalDiagnosis,
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('Add'),
-                    ),
-                  ],
-                ),
-                if (_provisionalDiagnoses.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: _provisionalDiagnoses.map((d) {
-                      return Chip(
-                        label: Text(d, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                        backgroundColor: Colors.blue.shade50,
-                        side: BorderSide(color: Colors.blue.shade200),
-                        deleteIcon: const Icon(Icons.close, size: 14),
-                        onDeleted: () {
-                          setState(() => _provisionalDiagnoses.remove(d));
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ],
-                const SizedBox(height: 16),
-
-                // Clinical Examination Notes
-                const Text(
-                  'Physical & Systemic Examination (Optional)',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: _examController,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    hintText: 'e.g., Chest clear, no wheezing, throat congested, abdomen soft...',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.all(12),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FilledButton.tonalIcon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.teal.shade50,
-                      foregroundColor: Colors.teal.shade800,
-                    ),
-                    icon: const Icon(Icons.check_circle_outline, size: 16),
-                    label: const Text('Close Findings & Proceed to Medicines'),
-                    onPressed: () => setState(() => _isFindingsExpanded = false),
-                  ),
-                ),
-              ],
-            )
-          : _buildCollapsedFindingsSummary(),
-    );
-  }
-
-  Widget _buildCollapsedFindingsSummary() {
-    final chips = <Widget>[];
-    if (_systolicBpController.text.isNotEmpty || _diastolicBpController.text.isNotEmpty) {
-      chips.add(_buildSummaryPill('BP', '${_systolicBpController.text}/${_diastolicBpController.text} mmHg', Icons.speed));
-    }
-    if (_pulseController.text.isNotEmpty) {
-      chips.add(_buildSummaryPill('Pulse', '${_pulseController.text} bpm', Icons.favorite_border));
-    }
-    if (_spo2Controller.text.isNotEmpty) {
-      chips.add(_buildSummaryPill('SpO2', '${_spo2Controller.text}%', Icons.air));
-    }
-    if (_tempController.text.isNotEmpty) {
-      chips.add(_buildSummaryPill('Temp', '${_tempController.text}°F', Icons.thermostat));
-    }
-    if (_weightController.text.isNotEmpty) {
-      chips.add(_buildSummaryPill('Weight', '${_weightController.text} kg', Icons.scale));
-    }
-    if (_chiefComplaints.isNotEmpty) {
-      chips.add(_buildSummaryPill('Complaints', _chiefComplaints.join(', '), Icons.chat_bubble_outline));
-    }
-    if (_provisionalDiagnoses.isNotEmpty) {
-      chips.add(_buildSummaryPill('Diagnosis', _provisionalDiagnoses.join(', '), Icons.medical_services_outlined, isAccent: true));
-    }
-
-    if (chips.isEmpty) {
-      return InkWell(
-        onTap: () => setState(() => _isFindingsExpanded = true),
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.add_circle_outline, size: 18, color: Colors.teal.shade700),
-              const SizedBox(width: 8),
-              Text(
-                'No clinical findings or vitals recorded yet. Tap "Add / Edit Findings" to add.',
-                style: TextStyle(fontSize: 12, color: Colors.teal.shade700, fontWeight: FontWeight.w500),
+              ConsultationBottomDock(
+                isSaving: _isSaving,
+                onCancel: () => Navigator.pop(context),
+                onCompleteAndSign: _completeAndSignConsultation,
               ),
             ],
           ),
         ),
-      );
-    }
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 6,
-      children: chips,
-    );
-  }
-
-  Widget _buildSummaryPill(String label, String value, IconData icon, {bool isAccent = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: isAccent ? Colors.blue.shade50 : const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: isAccent ? Colors.blue.shade200 : const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: isAccent ? Colors.blue.shade700 : Colors.grey.shade700),
-          const SizedBox(width: 6),
-          Text(
-            '$label: ',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isAccent ? Colors.blue.shade900 : Colors.grey.shade800),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isAccent ? Colors.blue.shade900 : const Color(0xFF0F172A)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCompactVitalField({
-    required String label,
-    required String unit,
-    required TextEditingController controller,
-    required String hint,
-    required double width,
-  }) {
-    return SizedBox(
-      width: width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF64748B)),
-          ),
-          const SizedBox(height: 3),
-          TextField(
-            controller: controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              hintText: hint,
-              suffixText: unit,
-              suffixStyle: const TextStyle(fontSize: 10, color: Colors.grey),
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
-        ],
       ),
     );
   }
 
   // ===========================================================================
-  // STEP 3: Diagnostic Investigations Review
+  // Medication Staging & Prescribing Handlers
   // ===========================================================================
-
-  Widget _buildStep3DiagnosticReview() {
-    final count = _reviewedInvestigations.length;
-
-    return _buildSectionCard(
-      title: 'Step 3: Past Diagnostic Investigations Review',
-      icon: Icons.biotech_outlined,
-      iconColor: Colors.purple,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: count > 0 ? Colors.purple.shade50 : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              '$count items',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: count > 0 ? Colors.purple.shade700 : Colors.grey.shade600,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: Icon(
-              _isInvestigationsExpanded ? Icons.expand_less : Icons.expand_more,
-              color: Colors.grey.shade700,
-            ),
-            tooltip: _isInvestigationsExpanded ? 'Collapse' : 'Expand',
-            onPressed: () {
-              setState(() {
-                _isInvestigationsExpanded = !_isInvestigationsExpanded;
-              });
-            },
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!_isInvestigationsExpanded)
-            Text(
-              count > 0
-                  ? '$count investigations tracked. Click expand to enter results.'
-                  : 'No pending lab tests from previous visits. (Click + to add outside reports)',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
-            )
-          else ...[
-            if (_reviewedInvestigations.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  'No past ordered tests recorded for this patient.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                ),
-              )
-            else
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _reviewedInvestigations.length,
-                separatorBuilder: (ctx, i) => const SizedBox(height: 8),
-                itemBuilder: (ctx, index) {
-                  final inv = _reviewedInvestigations[index];
-                  return Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            inv.testName,
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 3,
-                          child: TextFormField(
-                            initialValue: inv.resultValue,
-                            decoration: const InputDecoration(
-                              hintText: 'Result value / findings',
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                              border: OutlineInputBorder(),
-                            ),
-                            onChanged: (val) {
-                              _reviewedInvestigations[index] = inv.copyWith(resultValue: val);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        InkWell(
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: inv.performedDate ?? DateTime.now(),
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime.now(),
-                            );
-                            if (picked != null) {
-                              setState(() {
-                                _reviewedInvestigations[index] =
-                                    inv.copyWith(performedDate: picked);
-                              });
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: Colors.grey.shade300),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.event_outlined, size: 14, color: Colors.teal),
-                                const SizedBox(width: 4),
-                                Text(
-                                  inv.performedDate != null
-                                      ? DateFormat('dd/MM/yy').format(inv.performedDate!)
-                                      : 'Date Done',
-                                  style: const TextStyle(fontSize: 11),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 18, color: Colors.grey),
-                          onPressed: () {
-                            setState(() {
-                              _reviewedInvestigations.removeAt(index);
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text('Add Outside Lab Report'),
-              onPressed: _promptAddOutsideLabReview,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ===========================================================================
-  // STEP 4: Medication Reconciliation & Prescribing
-  // ===========================================================================
-
-  Widget _buildStep4MedicationReconciliation() {
-    final catalog = Provider.of<ClinicProvider>(context).medicines;
-    final results = _medSearchController.text.trim().isNotEmpty
-        ? MedicineSearchScorer.searchAndGroup(
-            catalog: catalog,
-            query: _medSearchController.text,
-            searchMode: _searchMode,
-          )
-        : <CompositionGroupResult>[];
-
-    return _buildSectionCard(
-      title: 'Step 4: Medication Prescribing & Reconciliation',
-      icon: Icons.medication_rounded,
-      iconColor: Colors.blue,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Search mode toggle pill
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFCBD5E1)),
-            ),
-            padding: const EdgeInsets.all(2),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildSearchModePill('brandFirst', '🏷️ Brand'),
-                _buildSearchModePill('compositionFirst', '🧪 Salt'),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          TextButton.icon(
-            icon: Icon(_isMedicineExpanded ? Icons.unfold_less : Icons.unfold_more, size: 18),
-            label: Text(_isMedicineExpanded ? 'Close Medicine' : 'Open Medicine'),
-            onPressed: () {
-              setState(() => _isMedicineExpanded = !_isMedicineExpanded);
-            },
-          ),
-        ],
-      ),
-      child: _isMedicineExpanded
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Section A: Past Active Meds (Reconciliation Baseline)
-                if (_reconciliationItems.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.shade100),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.published_with_changes_rounded, size: 18, color: Colors.blue),
-                            const SizedBox(width: 8),
-                            const Text(
-                              "Medication Reconciliation (From Prior Visits)",
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E3A8A)),
-                            ),
-                            const Spacer(),
-                            Text(
-                              "${_reconciliationItems.length} active previously",
-                              style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _reconciliationItems.length,
-                          separatorBuilder: (ctx, i) => const SizedBox(height: 6),
-                          itemBuilder: (ctx, index) {
-                            return _buildReconciliationItemRow(_reconciliationItems[index], index);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-
-                // Section B: INLINE Rapid Medicine Prescribing
-                const Text(
-                  'Add Medicine (Search by Brand or Composition)',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: _medSearchController,
-                  decoration: InputDecoration(
-                    hintText: _searchMode == 'brandFirst'
-                        ? 'Type brand name (e.g., Telma, Dolo, Augmentin, Pan)...'
-                        : 'Type composition / salt (e.g., Telmisartan, Paracetamol)...',
-                    prefixIcon: const Icon(Icons.search, size: 20),
-                    suffixIcon: _medSearchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear, size: 18),
-                            onPressed: () {
-                              setState(() {
-                                _medSearchController.clear();
-                                _isSearchActive = false;
-                              });
-                            },
-                          )
-                        : null,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    border: const OutlineInputBorder(),
-                  ),
-                  onChanged: (val) {
-                    setState(() {
-                      _isSearchActive = val.trim().isNotEmpty;
-                    });
-                  },
-                ),
-                const SizedBox(height: 8),
-
-                // Live Autocomplete Suggestions
-                if (_isSearchActive && _medSearchController.text.trim().isNotEmpty) ...[
-                  _buildInlineSearchResults(results),
-                  const SizedBox(height: 12),
-                ],
-
-                // Staged Medicine Form with Prefilled Defaults
-                if (_stagedMedicine != null || _stagedGenericGroup != null || _stagedUnlistedName != null) ...[
-                  _buildStagedMedicineForm(),
-                  const SizedBox(height: 14),
-                ],
-
-                // List of newly prescribed medications
-                const Text(
-                  'Prescribed Medications (This Encounter)',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                ),
-                const SizedBox(height: 6),
-                if (_newPrescriptions.isEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'No new medicines added yet. Type in search bar above to prescribe.',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
-                      ),
-                    ),
-                  )
-                else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _newPrescriptions.length,
-                    separatorBuilder: (ctx, i) => const SizedBox(height: 6),
-                    itemBuilder: (ctx, index) {
-                      return _buildNewPrescriptionRow(_newPrescriptions[index], index);
-                    },
-                  ),
-
-                const SizedBox(height: 14),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FilledButton.tonalIcon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.teal.shade50,
-                      foregroundColor: Colors.teal.shade800,
-                    ),
-                    icon: const Icon(Icons.check_circle_outline, size: 16),
-                    label: const Text('Close Medicine & Proceed to Tests'),
-                    onPressed: () => setState(() => _isMedicineExpanded = false),
-                  ),
-                ),
-              ],
-            )
-          : _buildCollapsedMedicineSummary(),
-    );
-  }
-
-  Widget _buildSearchModePill(String mode, String label) {
-    final isSelected = _searchMode == mode;
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _searchMode = mode;
-        });
-      },
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? Colors.teal.shade800 : Colors.grey.shade700,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInlineSearchResults(List<CompositionGroupResult> results) {
-    final query = _medSearchController.text.trim();
-
-    return Container(
-      constraints: const BoxConstraints(maxHeight: 250),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.teal.shade200, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: ListView(
-        shrinkWrap: true,
-        padding: const EdgeInsets.all(8),
-        children: [
-          if (results.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'No matching medicine found for "$query".',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                    ),
-                  ),
-                  FilledButton.tonal(
-                    style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
-                    onPressed: () => _stageUnlisted(query),
-                    child: Text('Prescribe Outside: "$query"'),
-                  ),
-                ],
-              ),
-            )
-          else ...[
-            ...results.take(6).map((group) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            "${group.compositionLabel} [${group.form}]",
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () => _stageGeneric(group),
-                          borderRadius: BorderRadius.circular(4),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.purple.shade50,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.purple.shade200),
-                            ),
-                            child: Text(
-                              '+ Prescribe Generic',
-                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.purple.shade800),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: group.associatedBrands.map((brand) {
-                        return ActionChip(
-                          avatar: const Icon(Icons.local_pharmacy_outlined, size: 14, color: Colors.teal),
-                          label: Text(
-                            "${brand.productName}${brand.manufacturer != null ? ' (${brand.manufacturer})' : ''}",
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
-                          backgroundColor: Colors.white,
-                          side: BorderSide(color: Colors.teal.shade200),
-                          onPressed: () => _stageMedicine(brand),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              );
-            }),
-            // Fallback unlisted button at bottom of results
-            const Divider(height: 12),
-            InkWell(
-              onTap: () => _stageUnlisted(query),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                child: Row(
-                  children: [
-                    Icon(Icons.add_circle_outline, size: 16, color: Colors.blue.shade700),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Prescribe unlisted outside brand: "$query"',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue.shade700),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStagedMedicineForm() {
-    String displayName = '';
-    String compName = _stagedComposition ?? '';
-    if (_stagedMedicine != null) {
-      displayName = _stagedMedicine!.productName;
-      if (compName.isEmpty) compName = _stagedMedicine!.fullCompositionLabel;
-    } else if (_stagedGenericGroup != null) {
-      displayName = _stagedGenericGroup!.compositionLabel;
-      if (compName.isEmpty) compName = 'Generic formulation';
-    } else if (_stagedUnlistedName != null) {
-      displayName = _stagedUnlistedName!;
-      if (compName.isEmpty) compName = 'Outside / Unlisted';
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.teal.shade300, width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.check_circle, size: 18, color: Colors.teal),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Staging: $displayName ($compName)',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF065F46)),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, size: 18),
-                tooltip: 'Cancel Staging',
-                onPressed: () {
-                  setState(() {
-                    _stagedMedicine = null;
-                    _stagedGenericGroup = null;
-                    _stagedUnlistedName = null;
-                    _stagedComposition = null;
-                  });
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: TextField(
-                  controller: _stagedDosageController,
-                  decoration: const InputDecoration(
-                    labelText: 'Dosage',
-                    hintText: '1 Tablet / 5 ml',
-                    isDense: true,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 3,
-                child: DropdownButtonFormField<String>(
-                  initialValue: _stagedFrequency,
-                  decoration: const InputDecoration(
-                    labelText: 'Frequency',
-                    isDense: true,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    '1-0-0 (OD)',
-                    '1-0-1 (BD)',
-                    '0-0-1 (HS)',
-                    '1-1-1 (TDS)',
-                    'SOS (As Needed)',
-                    'Once Weekly',
-                  ].map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontSize: 12)))).toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _stagedFrequency = val);
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 3,
-                child: DropdownButtonFormField<String>(
-                  initialValue: _stagedTiming,
-                  decoration: const InputDecoration(
-                    labelText: 'Timing',
-                    isDense: true,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    'After Food',
-                    'Before Food',
-                    'After Food (Morning)',
-                    'At Bedtime',
-                    'With Food',
-                  ].map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 12)))).toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _stagedTiming = val);
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: TextField(
-                  controller: _stagedDurationController,
-                  enabled: !_stagedIsChronic,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: _stagedIsChronic ? 'Duration' : 'Days',
-                    hintText: _stagedIsChronic ? 'Continuous' : '30',
-                    isDense: true,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              FilterChip(
-                label: const Text('Continuous (Chronic)', style: TextStyle(fontSize: 11)),
-                selected: _stagedIsChronic,
-                onSelected: (val) {
-                  setState(() {
-                    _stagedIsChronic = val;
-                  });
-                },
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 4,
-                child: TextField(
-                  controller: _stagedInstructionsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Instructions / Notes (Optional)',
-                    hintText: 'e.g., Take with warm water...',
-                    isDense: true,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _stagedMedicine = null;
-                      _stagedGenericGroup = null;
-                      _stagedUnlistedName = null;
-                    });
-                  },
-                  child: const Text('Cancel'),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.teal.shade700,
-                    foregroundColor: Colors.white,
-                  ),
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Add to Prescription', style: TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: _confirmAddStagedMedicine,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _stageMedicine(Medicine med) {
     final defaults = ClinicalDefaultsHelper.getDefaultsForMedicine(med);
@@ -1625,84 +561,6 @@ class _ConsultationEncounterScreenState
     });
   }
 
-  Widget _buildCollapsedMedicineSummary() {
-    final continuedCount = _reconciliationItems
-        .where((i) => i.action == MedicationAction.continueAction)
-        .length;
-    final stoppedCount = _reconciliationItems
-        .where((i) => i.action == MedicationAction.stop)
-        .length;
-    final newCount = _newPrescriptions.length;
-
-    return InkWell(
-      onTap: () => setState(() => _isMedicineExpanded = true),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.medication_rounded, size: 18, color: Colors.blue.shade700),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Rx Schedule: $newCount new prescribed • $continuedCount continued • $stoppedCount stopped',
-                style: TextStyle(fontSize: 12, color: Colors.blue.shade900, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Text(
-              'Tap to expand',
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIncomingPatientAlertBanner() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFEF3C7),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFF59E0B)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.notifications_active_rounded, color: Color(0xFFB45309), size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              "Token #${_incomingCallingQueueNumber ?? ''} (${_incomingCallingPatientName ?? 'Next Patient'}) was called to chamber by Reception.",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF92400E)),
-            ),
-          ),
-          FilledButton.tonal(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFB45309),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              visualDensity: VisualDensity.compact,
-            ),
-            onPressed: _switchToIncomingPatient,
-            child: const Text('Switch Now', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          ),
-          const SizedBox(width: 6),
-          IconButton(
-            icon: const Icon(Icons.close, size: 16, color: Color(0xFF92400E)),
-            tooltip: 'Dismiss',
-            onPressed: () => setState(() => _incomingCallingApptId = null),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<void> _switchToIncomingPatient() async {
     final apptId = _incomingCallingApptId;
@@ -1729,375 +587,6 @@ class _ConsultationEncounterScreenState
     }
   }
 
-  Widget _buildReconciliationItemRow(PrescriptionItem item, int index) {
-    final isContinued = item.action == MedicationAction.continueAction;
-    final isStopped = item.action == MedicationAction.stop;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isContinued
-              ? Colors.teal.shade300
-              : isStopped
-                  ? Colors.red.shade300
-                  : const Color(0xFFCBD5E1),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.effectiveName,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    decoration: isStopped ? TextDecoration.lineThrough : null,
-                    color: isStopped ? Colors.grey : const Color(0xFF0F172A),
-                  ),
-                ),
-                Text(
-                  "${item.composition} • ${item.dosage} • ${item.frequency} • ${item.timing}${item.durationDays != null ? ' (${item.durationDays}d)' : ' (Chronic)'}",
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                ),
-                if (isStopped && item.stopReason != null && item.stopReason!.isNotEmpty)
-                  Text(
-                    "Stopped Reason: ${item.stopReason}",
-                    style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Colors.red),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-
-          // 1-Tap CONTINUE Button
-          ChoiceChip(
-            label: const Text('CONTINUE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            selected: isContinued,
-            selectedColor: Colors.teal.shade100,
-            onSelected: (val) {
-              if (val) {
-                setState(() {
-                  _reconciliationItems[index] = item.copyWith(
-                    action: MedicationAction.continueAction,
-                    stopReason: null,
-                  );
-                });
-              }
-            },
-          ),
-          const SizedBox(width: 6),
-
-          // 1-Tap STOP Button
-          ChoiceChip(
-            label: const Text('STOP', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            selected: isStopped,
-            selectedColor: Colors.red.shade100,
-            onSelected: (val) {
-              if (val) {
-                _promptStopReason(item, index);
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNewPrescriptionRow(PrescriptionItem item, int index) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: Colors.green.shade200),
-            ),
-            child: Text(
-              'START',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green.shade800),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.effectiveName,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  "${item.composition} • ${item.dosage} • ${item.frequency} • ${item.timing} • ${item.durationDays != null ? '${item.durationDays} days' : 'Chronic'}",
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                ),
-                if (item.instructions != null && item.instructions!.isNotEmpty)
-                  Text(
-                    "Note: ${item.instructions}",
-                    style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Colors.grey.shade700),
-                  ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, size: 18, color: Colors.grey),
-            onPressed: () {
-              setState(() {
-                _newPrescriptions.removeAt(index);
-              });
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ===========================================================================
-  // STEP 5: Advice & Follow-up
-  // ===========================================================================
-
-  Widget _buildStep5AdviceAndFollowUp() {
-    return _buildSectionCard(
-      title: 'Step 5: Advice & Follow-up Orders',
-      icon: Icons.checklist_rtl_rounded,
-      iconColor: Colors.indigo,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Order New Diagnostic Tests
-          const Text(
-            'Order New Investigations / Lab Tests',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _orderedTestInputController,
-                  decoration: const InputDecoration(
-                    hintText: 'e.g., Fasting Blood Sugar, Serum Creatinine, ECG...',
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(),
-                  ),
-                  onSubmitted: (_) => _addOrderedTest(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.tonalIcon(
-                onPressed: _addOrderedTest,
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('Order'),
-              ),
-            ],
-          ),
-          if (_orderedTests.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: _orderedTests.map((t) {
-                return Chip(
-                  label: Text(t.testName, style: const TextStyle(fontSize: 12)),
-                  backgroundColor: Colors.indigo.shade50,
-                  deleteIcon: const Icon(Icons.close, size: 14),
-                  onDeleted: () {
-                    setState(() => _orderedTests.remove(t));
-                  },
-                );
-              }).toList(),
-            ),
-          ],
-          const SizedBox(height: 16),
-
-          // Lifestyle & Dietary Advice
-          const Text(
-            'Advice & Instructions',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _adviceController,
-            maxLines: 2,
-            decoration: const InputDecoration(
-              hintText: 'e.g., Low salt diet, hydrate well, avoid cold drinks, consult SOS if fever persists...',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.all(12),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Next Follow-up Date with Quick Interval Chips
-          const Text(
-            'Next Follow-up Visit',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: [
-              _buildIntervalChip('3 Days', 3),
-              _buildIntervalChip('5 Days', 5),
-              _buildIntervalChip('7 Days', 7),
-              _buildIntervalChip('14 Days', 14),
-              _buildIntervalChip('1 Month', 30),
-              _buildIntervalChip('3 Months', 90),
-              ActionChip(
-                avatar: const Icon(Icons.calendar_today, size: 14),
-                label: Text(
-                  _nextFollowUpDate != null
-                      ? DateFormat('dd MMM yyyy').format(_nextFollowUpDate!)
-                      : 'Pick Date',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-                backgroundColor: _nextFollowUpDate != null ? Colors.teal.shade50 : null,
-                onPressed: _pickCustomFollowUpDate,
-              ),
-              if (_nextFollowUpDate != null)
-                IconButton(
-                  icon: const Icon(Icons.clear, size: 16),
-                  tooltip: 'Clear Follow-up Date',
-                  onPressed: () => setState(() => _nextFollowUpDate = null),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIntervalChip(String label, int days) {
-    final target = DateTime.now().add(Duration(days: days));
-    final isSelected = _nextFollowUpDate != null &&
-        _nextFollowUpDate!.year == target.year &&
-        _nextFollowUpDate!.month == target.month &&
-        _nextFollowUpDate!.day == target.day;
-
-    return ChoiceChip(
-      label: Text(label, style: const TextStyle(fontSize: 11)),
-      selected: isSelected,
-      onSelected: (val) {
-        setState(() {
-          _nextFollowUpDate = val ? target : null;
-        });
-      },
-    );
-  }
-
-  // ===========================================================================
-  // Bottom Dock & Actions
-  // ===========================================================================
-
-  Widget _buildBottomActionDock() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: const Border(top: BorderSide(color: Color(0xFFE2E8F0))),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          OutlinedButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel / Back'),
-          ),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.teal.shade700,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            icon: _isSaving
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Icon(Icons.check_circle_outline_rounded, size: 18),
-            label: Text(
-              _isSaving ? 'Signing & Saving...' : 'Complete & Sign Consultation',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            onPressed: _isSaving ? null : _completeAndSignConsultation,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionCard({
-    required String title,
-    required IconData icon,
-    required Color iconColor,
-    required Widget child,
-    Widget? trailing,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.015),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, color: iconColor, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                ],
-              ),
-              ?trailing,
-            ],
-          ),
-          const Divider(height: 24, thickness: 0.8),
-          child,
-        ],
-      ),
-    );
-  }
 
   // ===========================================================================
   // Helpers & Dialog Handlers
@@ -2416,7 +905,7 @@ class _ConsultationEncounterScreenState
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    DateFormat('dd MMM yyyy, hh:mm a').format(record.createdAt),
+                                    AppFormatters.dateTime(record.createdAt),
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                   ),
                                   Text(
