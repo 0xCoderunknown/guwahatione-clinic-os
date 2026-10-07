@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.0] — 2026-10-07
+
+### Added
+- **Longitudinal Prescription Architecture & Append-Only Consultations** — Complete implementation of the clinical record architecture treating consultations as immutable historical encounters.
+- **5-Step Clinical Sequence Encounter UI (`ConsultationEncounterScreen`)** — Strict clinical workflow: Patient Header + Allergies Alert ➔ Vitals & Clinical Examination ➔ Diagnostic Lab Review ➔ Medication Reconciliation & Prescribing ➔ Advice & Lab Orders.
+- **Medication Reconciliation State Machine** — Explicit lifecycle states (`START`, `CONTINUE`, `STOP`) on prescription items. 1-click continuation for ongoing chronic regimens (`durationDays = null`) and explicit discontinuation documenting clinical `stopReason`.
+- **Zero-Friction Outside / Unlisted Medicine Fallback (`unlistedName`)** — Doctors are never blocked when prescribing outside or brand medications missing from the clinic catalogue.
+- **Composition-First Medicine Search & Scoring Engine (`MedicineSearchScorer`)** — Prioritizes chemical molecule matches at the top with associated clinic brands grouped underneath, offering 1-tap generic and brand prescribing chips.
+- **Master Medicine Catalogue Management (`MedicineCatalogueScreen`)** — Dedicated administration interface in reception shell for clinic owners to curate products, active compositions, strengths, and forms with strict role guards preventing chamber prescriber pollution.
+- **Clean Prescription Print Output (`PrescriptionPrintScreen`)** — High-contrast monochrome print layout supporting A4 and A5 paper, with pre-printed letterhead mode (reserved 130px margin), active Rx schedule filtering (START/CONTINUE only), and distinct audit warning box for discontinued drugs.
+
+---
+
 ## [1.3.0] — 2026-10-06
 
 ### Added

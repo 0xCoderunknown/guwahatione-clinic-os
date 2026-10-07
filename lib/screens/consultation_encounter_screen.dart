@@ -12,6 +12,7 @@ import '../models/prescription_item.dart';
 import '../models/vitals.dart';
 import '../providers/clinic_provider.dart';
 import '../utils/medicine_search_scorer.dart';
+import 'prescription_print_screen.dart';
 
 class ConsultationEncounterScreen extends StatefulWidget {
   final Appointment appointment;
@@ -196,6 +197,11 @@ class _ConsultationEncounterScreenState
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.print_outlined),
+            tooltip: 'Preview & Print Prescription',
+            onPressed: _previewCurrentPrescription,
+          ),
           IconButton(
             icon: const Icon(Icons.history_rounded),
             tooltip: 'View Past Visits',
@@ -2124,7 +2130,20 @@ class _ConsultationEncounterScreenState
         ),
       );
 
-      Navigator.pop(context, true);
+      // Launch Prescription Print Screen
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (ctx) => PrescriptionPrintScreen(
+            consultation: consultation,
+            appointment: widget.appointment,
+            patientAllergies: _allergies,
+            doctorSpecialty: widget.doctor.specialty,
+          ),
+        ),
+      );
+
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2136,5 +2155,52 @@ class _ConsultationEncounterScreenState
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  void _previewCurrentPrescription() {
+    final vitals = Vitals(
+      systolicBp: int.tryParse(_systolicBpController.text.trim()),
+      diastolicBp: int.tryParse(_diastolicBpController.text.trim()),
+      pulseRate: int.tryParse(_pulseController.text.trim()),
+      temperature: double.tryParse(_tempController.text.trim()),
+      weightKg: double.tryParse(_weightController.text.trim()),
+      spO2: int.tryParse(_spo2Controller.text.trim()),
+    );
+
+    final draftConsultation = Consultation(
+      id: 'draft-${_uuid.v4()}',
+      appointmentId: widget.appointment.id,
+      patientPhone: widget.appointment.patientPhone,
+      patientName: widget.appointment.patientName,
+      patientAge: _patientAge > 0 ? _patientAge : 0,
+      patientGender: _patientGender,
+      doctorId: widget.doctor.id,
+      doctorName: widget.doctor.name,
+      createdAt: DateTime.now(),
+      vitals: vitals.hasAny ? vitals : null,
+      chiefComplaints: _chiefComplaints,
+      clinicalExamination: _examController.text.trim().isNotEmpty ? _examController.text.trim() : null,
+      provisionalDiagnosis: _provisionalDiagnoses,
+      reviewedInvestigations: _reviewedInvestigations,
+      prescriptionItems: [
+        ..._reconciliationItems,
+        ..._newPrescriptions,
+      ],
+      orderedTests: _orderedTests,
+      adviceNotes: _adviceController.text.trim().isNotEmpty ? _adviceController.text.trim() : null,
+      nextFollowUpDate: _nextFollowUpDate,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => PrescriptionPrintScreen(
+          consultation: draftConsultation,
+          appointment: widget.appointment,
+          patientAllergies: _allergies,
+          doctorSpecialty: widget.doctor.specialty,
+        ),
+      ),
+    );
   }
 }
