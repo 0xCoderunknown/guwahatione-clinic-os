@@ -6,6 +6,12 @@ export 'common/payment_badge.dart';
 export 'common/section_card.dart';
 export 'common/token_badge.dart';
 
+// Chamber Widgets
+export 'chamber/chamber_app_bar.dart';
+export 'chamber/chamber_metrics_grid.dart';
+export 'chamber/chamber_queue_header.dart';
+export 'chamber/chamber_token_card.dart';
+
 // Clinical Encounter Widgets
 export 'encounter/advice_and_orders_section.dart';
 export 'encounter/chamber_calling_alert_bar.dart';
@@ -16,3 +22,8 @@ export 'encounter/rx_reconciliation_section.dart';
 export 'encounter/vitals_and_exam_section.dart';
 export 'encounter/encounter_dialogs.dart';
 export 'encounter/encounter_form_state.dart';
+
+// Prescribing Sub-Widgets
+export 'encounter/rx/reconciliation_item_row.dart';
+export 'encounter/rx/rx_search_results_view.dart';
+export 'encounter/rx/staged_medicine_form.dart';

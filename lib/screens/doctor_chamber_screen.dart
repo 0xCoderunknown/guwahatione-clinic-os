@@ -1,17 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+
 import '../models/appointment.dart';
 import '../models/doctor.dart';
-import '../providers/auth_provider.dart';
 import '../services/firebase_service.dart';
-import '../utils/formatters.dart';
 import '../widgets/widgets.dart';
 import 'consultation_encounter_screen.dart';
 
+/// Doctor Chamber Screen: queue listener and layout coordinator shell.
 class DoctorChamberScreen extends StatefulWidget {
   final Doctor doctor;
-  final bool isPreviewMode; // True if previewed by clinic owner
+  final bool isPreviewMode;
 
   const DoctorChamberScreen({
     super.key,
@@ -76,24 +75,10 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   Future<void> _autoOpenConsultationForId(String appointmentId) async {
     _isAutoNavigating = true;
     try {
-      // Find from current stream list
-      Appointment? targetAppt;
-      for (final a in _latestAppointments) {
-        if (a.id == appointmentId) {
-          targetAppt = a;
-          break;
-        }
-      }
-
-      // If not in memory yet, wait briefly for stream snapshot
+      Appointment? targetAppt = _latestAppointments.where((a) => a.id == appointmentId).firstOrNull;
       if (targetAppt == null) {
         await Future.delayed(const Duration(milliseconds: 400));
-        for (final a in _latestAppointments) {
-          if (a.id == appointmentId) {
-            targetAppt = a;
-            break;
-          }
-        }
+        targetAppt = _latestAppointments.where((a) => a.id == appointmentId).firstOrNull;
       }
 
       if (targetAppt != null && mounted) {
@@ -116,15 +101,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
           ),
         );
 
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (ctx) => ConsultationEncounterScreen(
-              appointment: targetAppt!,
-              doctor: widget.doctor,
-            ),
-          ),
-        );
+        await _openConsultation(targetAppt);
       }
     } finally {
       if (mounted) {
@@ -133,90 +110,27 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
     }
   }
 
+  Future<void> _openConsultation(Appointment appt) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => ConsultationEncounterScreen(
+          appointment: appt,
+          doctor: widget.doctor,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 768;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        titleSpacing: 16,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.teal.shade50,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(Icons.local_hospital_rounded, color: Colors.teal.shade700, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          widget.doctor.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: widget.isPreviewMode ? Colors.purple.shade50 : Colors.teal.shade50,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: widget.isPreviewMode ? Colors.purple.shade200 : Colors.teal.shade200,
-                          ),
-                        ),
-                        child: Text(
-                          widget.isPreviewMode ? 'OWNER PREVIEW' : 'CHAMBER CATALOG',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                            color: widget.isPreviewMode ? Colors.purple.shade700 : Colors.teal.shade700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    '${widget.doctor.specialty} • Fee: ₹${widget.doctor.consultationFee}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          if (widget.isPreviewMode)
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.black87),
-              tooltip: 'Close Preview',
-              onPressed: () => Navigator.pop(context),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-              tooltip: 'Logout of Chamber',
-              onPressed: () => _confirmLogout(context),
-            ),
-        ],
+      appBar: ChamberAppBar(
+        doctor: widget.doctor,
+        isPreviewMode: widget.isPreviewMode,
       ),
       body: StreamBuilder<List<Appointment>>(
         stream: _firebaseService.getAppointmentsForDoctorAndDate(
@@ -225,9 +139,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
         ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            );
+            return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
           }
           if (snapshot.hasError) {
             return Center(
@@ -239,127 +151,42 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
           }
 
           final appointments = snapshot.data ?? [];
-          // Sort strictly by queue number (ascending)
           appointments.sort((a, b) => a.queueNumber.compareTo(b.queueNumber));
           _latestAppointments = appointments;
 
-          // Metrics calculation
-          final totalBooked = appointments.length;
-          final attendedCount = appointments
-              .where((a) => a.status == AppointmentStatus.completed)
-              .length;
-          final paidAppointments = appointments
-              .where((a) => a.status == AppointmentStatus.completed && a.paymentType == PaymentType.paid)
-              .toList();
-          final freeAppointments = appointments
-              .where((a) =>
-                  a.status == AppointmentStatus.completed &&
-                  (a.paymentType == PaymentType.freeReview || a.paymentType == PaymentType.freeFamily))
-              .toList();
-          final absentCount = appointments
-              .where((a) => a.status == AppointmentStatus.absent)
-              .length;
-          final waitingCount = appointments
-              .where((a) => a.status == AppointmentStatus.pending)
-              .length;
-
-          final totalDoctorFees = paidAppointments.fold(0, (sum, a) => sum + a.amountCollected);
-
           return RefreshIndicator(
-            onRefresh: () async {
-              setState(() {});
-            },
+            onRefresh: () async => setState(() {}),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.symmetric(
-                horizontal: isDesktop ? 32 : 16,
-                vertical: 20,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 32 : 16, vertical: 20),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1100),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Date Selector Header
-                      _buildDateBar(),
+                      ClinicDateNavBar(
+                        selectedDate: _selectedDate,
+                        onDateChanged: (newDate) {
+                          setState(() => _selectedDate = newDate);
+                          _listenToChamberSession();
+                        },
+                        onTodayPressed: () {
+                          final now = DateTime.now();
+                          setState(() => _selectedDate = DateTime(now.year, now.month, now.day));
+                          _listenToChamberSession();
+                        },
+                      ),
                       const SizedBox(height: 16),
-
-                      // Live KPI Metric Tiles
-                      _buildMetricsGrid(
-                        totalBooked: totalBooked,
-                        attendedCount: attendedCount,
-                        paidCount: paidAppointments.length,
-                        freeCount: freeAppointments.length,
-                        absentCount: absentCount,
-                        waitingCount: waitingCount,
-                        totalFees: totalDoctorFees,
+                      ChamberMetricsGrid.fromAppointments(
+                        appointments: appointments,
                         isDesktop: isDesktop,
                       ),
                       const SizedBox(height: 24),
-
-                      // Live Queue Header
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.people_alt_rounded, size: 20, color: Color(0xFF334155)),
-                              const SizedBox(width: 8),
-                              const Text(
-                                "Today's Patient Queue",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.shade50,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  "$totalBooked issued",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.blue.shade700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Colors.green,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                "Live Sync",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                      ChamberQueueHeader(totalBooked: appointments.length),
                       const SizedBox(height: 12),
-
-                      // Audit-Proof Token List
                       if (appointments.isEmpty)
-                        _buildEmptyState()
+                        const ChamberEmptyQueue()
                       else
                         ListView.separated(
                           shrinkWrap: true,
@@ -367,7 +194,12 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
                           itemCount: appointments.length,
                           separatorBuilder: (ctx, i) => const SizedBox(height: 8),
                           itemBuilder: (ctx, index) {
-                            return _buildTokenCard(appointments[index]);
+                            final appt = appointments[index];
+                            return ChamberTokenCard(
+                              appointment: appt,
+                              isCallingNow: appt.id == _activeCallingApptId,
+                              onConsult: () => _openConsultation(appt),
+                            );
                           },
                         ),
                     ],
@@ -377,406 +209,6 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildDateBar() {
-    return ClinicDateNavBar(
-      selectedDate: _selectedDate,
-      onDateChanged: (newDate) {
-        setState(() {
-          _selectedDate = newDate;
-        });
-        _listenToChamberSession();
-      },
-      onTodayPressed: () {
-        final now = DateTime.now();
-        setState(() {
-          _selectedDate = DateTime(now.year, now.month, now.day);
-        });
-        _listenToChamberSession();
-      },
-    );
-  }
-
-  Widget _buildMetricsGrid({
-    required int totalBooked,
-    required int attendedCount,
-    required int paidCount,
-    required int freeCount,
-    required int absentCount,
-    required int waitingCount,
-    required int totalFees,
-    required bool isDesktop,
-  }) {
-    final cards = [
-      _MetricTile(
-        title: "Total Tokens",
-        value: "$totalBooked",
-        subtitle: "$waitingCount still in queue",
-        icon: Icons.confirmation_number_outlined,
-        color: Colors.blue,
-      ),
-      _MetricTile(
-        title: "Consulted",
-        value: "$attendedCount",
-        subtitle: "$paidCount paid • $freeCount free",
-        icon: Icons.done_all_rounded,
-        color: Colors.teal,
-      ),
-      _MetricTile(
-        title: "Absent / No-Show",
-        value: "$absentCount",
-        subtitle: "Slots preserved",
-        icon: Icons.person_off_outlined,
-        color: const Color(0xFF64748B),
-      ),
-      _MetricTile(
-        title: "Doctor Share",
-        value: "₹$totalFees",
-        subtitle: "From $paidCount paid visits",
-        icon: Icons.currency_rupee_rounded,
-        color: const Color(0xFF059669),
-      ),
-    ];
-
-
-    if (isDesktop) {
-      return Row(
-        children: cards
-            .map((card) => Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    child: card,
-                  ),
-                ))
-            .toList(),
-      );
-    } else {
-      return GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 1.45,
-        children: cards,
-      );
-    }
-  }
-
-  Widget _buildTokenCard(Appointment appt) {
-    Color badgeBg;
-    Color badgeFg;
-    String statusTitle;
-    String paymentSubtitle;
-
-    final isCallingNow = appt.id == _activeCallingApptId;
-
-    if (isCallingNow) {
-      badgeBg = const Color(0xFFDCFCE7);
-      badgeFg = const Color(0xFF15803D);
-      statusTitle = "CALLING / IN CHAMBER";
-      paymentSubtitle = "Active Token • In Chamber";
-    } else if (appt.status == AppointmentStatus.absent) {
-      badgeBg = const Color(0xFFF1F5F9);
-      badgeFg = const Color(0xFF64748B);
-      statusTitle = "ABSENT";
-      paymentSubtitle = "Slot Preserved • ₹0";
-    } else if (appt.status == AppointmentStatus.completed) {
-      if (appt.paymentType == PaymentType.paid) {
-        badgeBg = const Color(0xFFDCFCE7);
-        badgeFg = const Color(0xFF15803D);
-        statusTitle = "COMPLETED";
-        paymentSubtitle = "Paid: ${AppFormatters.currency(appt.amountCollected)}";
-      } else if (appt.paymentType == PaymentType.freeReview) {
-        badgeBg = const Color(0xFFFEF3C7);
-        badgeFg = const Color(0xFFB45309);
-        statusTitle = "FREE REVIEW";
-        paymentSubtitle = "Follow-up / Report Check • ₹0";
-      } else {
-        badgeBg = const Color(0xFFEDE9FE);
-        badgeFg = const Color(0xFF6D28D9);
-        statusTitle = "FAMILY / COURTESY";
-        paymentSubtitle = "Clinic Courtesy • ₹0";
-      }
-    } else {
-      // Pending / In Queue
-      badgeBg = const Color(0xFFE0F2FE);
-      badgeFg = const Color(0xFF0369A1);
-      statusTitle = "WAITING";
-      paymentSubtitle = "In Waiting Room";
-    }
-
-    // Mask phone number for doctor view (e.g. +91 98*** 12345)
-    final maskedPhone = _maskPhone(appt.patientPhone);
-
-    return InkWell(
-      onTap: appt.status != AppointmentStatus.absent ? () => _openConsultation(appt) : null,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: isCallingNow ? const Color(0xFFF0FDF4) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isCallingNow
-                ? Colors.teal.shade600
-                : (appt.status == AppointmentStatus.pending
-                    ? Colors.blue.shade200
-                    : const Color(0xFFE2E8F0)),
-            width: isCallingNow ? 2.5 : (appt.status == AppointmentStatus.pending ? 1.5 : 1),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isCallingNow
-                  ? Colors.teal.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.015),
-              blurRadius: isCallingNow ? 8 : 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Queue Number Avatar
-            TokenBadge(
-              queueNumber: appt.queueNumber,
-              size: 44,
-              isCalling: isCallingNow,
-              isCompleted: appt.status == AppointmentStatus.completed,
-              isAbsent: appt.status == AppointmentStatus.absent,
-            ),
-            const SizedBox(width: 14),
-
-            // Patient Name & Masked Phone
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    appt.patientName,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: appt.status == AppointmentStatus.absent
-                          ? Colors.grey.shade500
-                          : const Color(0xFF0F172A),
-                      decoration: appt.status == AppointmentStatus.absent
-                          ? TextDecoration.lineThrough
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    maskedPhone,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                  ),
-                ],
-              ),
-            ),
-
-            // Status & Fee Badge
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: badgeBg,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    statusTitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: badgeFg,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  paymentSubtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: appt.amountCollected > 0 ? const Color(0xFF15803D) : Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-
-            // 1-Click Consultation Encounter action
-            if (appt.status != AppointmentStatus.absent) ...[
-              const SizedBox(width: 14),
-              if (appt.status == AppointmentStatus.pending)
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.teal.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  icon: const Icon(Icons.edit_note_rounded, size: 16),
-                  label: const Text('Consult', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  onPressed: () => _openConsultation(appt),
-                )
-              else
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  icon: const Icon(Icons.description_outlined, size: 14),
-                  label: const Text('Record', style: TextStyle(fontSize: 11)),
-                  onPressed: () => _openConsultation(appt),
-                ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _openConsultation(Appointment appt) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (ctx) => ConsultationEncounterScreen(
-          appointment: appt,
-          doctor: widget.doctor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.all(40),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.event_available_rounded, size: 54, color: Colors.teal.shade200),
-          const SizedBox(height: 16),
-          const Text(
-            "No appointments scheduled for this date",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            "When Sam books appointments at the reception desk, they appear here live.",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _maskPhone(String phone) {
-    if (phone.length <= 4) return phone;
-    final last4 = phone.substring(phone.length - 4);
-    final prefix = phone.substring(0, (phone.length - 4).clamp(0, 3));
-    return '$prefix*****$last4';
-  }
-
-  void _confirmLogout(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Exit Chamber?'),
-        content: const Text('Do you want to log out of this doctor chamber session?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
-            onPressed: () {
-              Navigator.pop(ctx);
-              Provider.of<AuthProvider>(context, listen: false).logout();
-            },
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetricTile extends StatelessWidget {
-  final String title;
-  final String value;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-
-  const _MetricTile({
-    required this.title,
-    required this.value,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              Icon(icon, size: 20, color: color),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
       ),
     );
   }
