@@ -156,6 +156,17 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
                         ),
                       ),
                       const SizedBox(width: 16),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.teal.shade800,
+                          side: BorderSide(color: Colors.teal.shade300),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                        ),
+                        icon: const Icon(Icons.cleaning_services_outlined, size: 18),
+                        label: const Text('Clean Duplicates', style: TextStyle(fontWeight: FontWeight.w600)),
+                        onPressed: () => _handleDeduplicateCatalogue(context, auth.currentRole),
+                      ),
+                      const SizedBox(width: 8),
                       FilledButton.icon(
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.teal.shade700,
@@ -364,15 +375,20 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Add commercial products and composition mappings to curate your clinic catalog.',
+            'Essential OPD medicines exist by default. Try clearing search filters or add a new custom commercial medicine.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
           ),
           const SizedBox(height: 16),
           FilledButton.tonalIcon(
-            onPressed: () => _seedSampleCatalogue(context, currentRole),
-            icon: const Icon(Icons.auto_awesome, size: 16),
-            label: const Text('Seed Essential OPD Medications'),
+            onPressed: () {
+              setState(() {
+                _searchController.clear();
+                _selectedFormFilter = 'All Forms';
+              });
+            },
+            icon: const Icon(Icons.clear_all_rounded, size: 16),
+            label: const Text('Clear Filter'),
           ),
         ],
       ),
@@ -532,31 +548,33 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
     );
   }
 
-  void _seedSampleCatalogue(BuildContext context, UserRole? currentRole) async {
+  void _handleDeduplicateCatalogue(BuildContext context, UserRole? currentRole) async {
     final clinic = Provider.of<ClinicProvider>(context, listen: false);
-
-    final samples = [
-      {'name': 'Dolo 650', 'comp': 'Paracetamol', 'strength': '650 mg', 'form': 'Tablet', 'mfg': 'Micro Labs'},
-      {'name': 'Calpol 650', 'comp': 'Paracetamol', 'strength': '650 mg', 'form': 'Tablet', 'mfg': 'GSK'},
-      {'name': 'Crocin 500', 'comp': 'Paracetamol', 'strength': '500 mg', 'form': 'Tablet', 'mfg': 'GSK'},
-      {'name': 'Augmentin 625 Duo', 'comp': 'Amoxicillin + Clavulanic Acid', 'strength': '625 mg', 'form': 'Tablet', 'mfg': 'GSK'},
-      {'name': 'Moxikind-CV 625', 'comp': 'Amoxicillin + Clavulanic Acid', 'strength': '625 mg', 'form': 'Tablet', 'mfg': 'Mankind'},
-      {'name': 'Azee 500', 'comp': 'Azithromycin', 'strength': '500 mg', 'form': 'Tablet', 'mfg': 'Cipla'},
-      {'name': 'Azithral 500', 'comp': 'Azithromycin', 'strength': '500 mg', 'form': 'Tablet', 'mfg': 'Alembic'},
-      {'name': 'Glycomet 500', 'comp': 'Metformin', 'strength': '500 mg', 'form': 'Tablet', 'mfg': 'USV'},
-      {'name': 'Pan 40', 'comp': 'Pantoprazole', 'strength': '40 mg', 'form': 'Tablet', 'mfg': 'Alkem'},
-      {'name': 'Telma 40', 'comp': 'Telmisartan', 'strength': '40 mg', 'form': 'Tablet', 'mfg': 'Glenmark'},
-    ];
-
-    for (final s in samples) {
-      await clinic.addMedicine(
-        productName: s['name']!,
-        composition: s['comp']!,
-        strength: s['strength']!,
-        form: s['form']!,
-        manufacturer: s['mfg']!,
-        requestingRole: currentRole,
-      );
+    try {
+      final purgedCount = await clinic.deduplicateMedicines(requestingRole: currentRole);
+      if (context.mounted) {
+        if (purgedCount > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Successfully removed $purgedCount duplicate medicine entries!'),
+              backgroundColor: Colors.teal.shade800,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Catalogue is clean! No duplicate medicines found.'),
+              backgroundColor: Colors.teal,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deduplicating catalogue: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 }

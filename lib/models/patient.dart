@@ -2,7 +2,7 @@ class Patient {
   final String id; // Phone number is the key ID
   final String name;
   final int age;
-  final String gender; // 'Male', 'Female', 'Other', 'Unspecified'
+  final String gender; // 'Male', 'Female', 'Other'
   final List<String> allergies; // Prominent clinical alerts
   final DateTime lastVisitDate;
   final String phoneNumber;
@@ -11,7 +11,7 @@ class Patient {
     required this.id,
     required this.name,
     required this.age,
-    this.gender = 'Unspecified',
+    required this.gender,
     this.allergies = const [],
     required this.lastVisitDate,
     required this.phoneNumber,
@@ -31,20 +31,16 @@ class Patient {
 
   factory Patient.fromJson(Map<String, dynamic> json) {
     return Patient(
-      id: json['id'] as String? ?? '',
-      name: json['name'] as String? ?? 'Unknown Patient',
-      // Firestore can return numeric fields as num (int or double), so we
-      // cast to num first and then convert to int to avoid type errors.
-      age: (json['age'] as num?)?.toInt() ?? 0,
-      gender: json['gender'] as String? ?? 'Unspecified',
+      id: json['id'] as String,
+      name: json['name'] as String,
+      age: (json['age'] as num).toInt(),
+      gender: json['gender'] as String,
       allergies: (json['allergies'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
-      lastVisitDate: json['lastVisitDate'] != null
-          ? DateTime.parse(json['lastVisitDate'] as String)
-          : DateTime.now(),
-      phoneNumber: json['phoneNumber'] as String? ?? '',
+      lastVisitDate: DateTime.parse(json['lastVisitDate'] as String),
+      phoneNumber: json['phoneNumber'] as String,
     );
   }
 

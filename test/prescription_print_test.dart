@@ -74,6 +74,7 @@ void main() {
         patientPhone: '9876543210',
         patientName: 'Jane Minimal',
         patientAge: 28,
+        patientGender: 'Female',
         doctorId: 'doc-1',
         doctorName: 'Dr. Baruah',
         createdAt: DateTime(2026, 10, 7),

@@ -51,16 +51,19 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 - **Medication Reconciliation State Machine** — Explicit lifecycle states (`START`, `CONTINUE`, `STOP`) on prescription items. 1-tap continuation for ongoing chronic regimens (`durationDays = null`) and explicit discontinuation documenting clinical `stopReason`.
 - **Composition-First Medicine Engine (`MedicineSearchScorer`)** — Prioritizes chemical molecule matches at the top with associated clinic trade brands grouped underneath.
 - **Zero-Friction Outside Medicine Fallback (`unlistedName`)** — Doctors are never blocked when prescribing outside or brand medications missing from the clinic catalogue.
+- **Essential OPD Medicines Active by Default (`defaultEssentialMedicines`)** — Preloaded canonical OPD medications (Dolo 650, Calpol 650, Augmentin 625 Duo, Moxikind-CV, Azee 500, Pan 40, Telma 40, etc.) with deterministic document IDs (`med_*`), guaranteeing zero-duplicate idempotency.
 - **Admin vs. Prescriber Catalogue Separation (`MedicineCatalogueScreen`)** — Dedicated administration interface in reception shell for clinic owners to curate products and active compositions, with strict role guards preventing chamber prescriber pollution.
+- **Automated & On-Demand Catalogue Deduplication** — Engine identifies and batch-purges duplicate commercial drugs with identical names, compositions, and strengths from Firestore.
 - **Clean Prescription Print Output (`PrescriptionPrintScreen`)** — High-contrast monochrome print layout supporting **A4** and **A5** paper, pre-printed letterhead mode (reserved 130px top margin), active Rx schedule filtering (`START`/`CONTINUE` only), and distinct audit warning box for discontinued drugs.
 
 ### 🏢 Clinic Operations & Ledger Integrity
+- **Responsive Clinic Command Center (`DashboardScreen`)** — Executive dashboard with compact horizontal KPI cards, live queue preview, quick reception action chips, and dynamic scaling across mobile (iPhones), 14" laptops, and 23" FHD monitors.
 - **🌐 Web-First Responsive Architecture** — Single responsive codebase deployed to Chrome/Edge (Counter PC), Android, and iOS.
 - **🩺 Doctor Chamber Live Board** — Read-only chamber dashboard for consultants showing live token order, patient status, and fee share with 1-tap access to patient clinical records and consultation encounters.
 - **🔒 Zero-Friction PIN Authentication** — Quick PIN access: Reception PIN (`0000` default) & individual 4-digit Chamber PINs per doctor.
 - **🛡️ Audit-Proof Ledger** — Zero deletions allowed; consecutive token sequence is preserved on screen and database.
 - **🚫 Explicit "Absent / No-Show" Status** — Replaced "Cancel" with "Absent" so slots are preserved on the doctor ledger with ₹0 amount.
-- **📅 Rapid Appointment Booking** — 10-digit phone search with automatic patient history and 14-day same-doctor free review detection.
+- **📅 Rapid Appointment Booking** — 10-digit phone search with automatic patient history, gender/sex capture, and 14-day same-doctor free review detection.
 - **💳 Smart Payment Types** — Paid (per doctor fee), Free Review (strictly for returning patients of same doctor within 14 days, with warning if >14 days), Free Family (courtesy).
 - **📊 Daily Revenue Analytics & Auditing** — Real-time earnings breakdown grouped by doctor with chamber preview mode.
 - **🔢 Atomic Queue Numbers** — Race-condition-safe queue numbering per day using Firestore transactions.
@@ -93,7 +96,7 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/coder-unknown/guwahatione-clinic-os.git
+git clone https://github.com/0xCoderunknown/guwahatione-clinic-os.git
 cd guwahatione-clinic-os
 ```
 
@@ -218,6 +221,7 @@ lib/
 │   └── statistics_screen.dart               # Financial audit & doctor payout summary
 └── utils/
     ├── app_constants.dart                   # Default fee, blocked clinic dates
+    ├── default_medicines.dart               # Canonical essential OPD medications with deterministic IDs
     ├── medicine_search_scorer.dart          # Composition-first search & brand grouping engine
     ├── platform_print.dart                  # Unified cross-platform print interface
     ├── platform_print_web.dart              # Web print implementation using dart:js_interop
@@ -236,7 +240,7 @@ flutter test
 
 The test suite covers:
 - **`catalogue_scoring_test.dart`** — Composition-first ranking hierarchy, brand grouping, unlisted outside drug fallback, and admin vs. doctor role security guards.
-- **`consultation_test.dart`** — Patient backward compatibility, vitals formatting, prescription item lifecycle (`START`/`CONTINUE`/`STOP`), and 2-visit longitudinal medication reconciliation.
+- **`consultation_test.dart`** — Patient clinical attributes, vitals formatting, prescription item lifecycle (`START`/`CONTINUE`/`STOP`), and 2-visit longitudinal medication reconciliation.
 - **`prescription_print_test.dart`** — Active Rx vs. discontinued regimen segregation, null-safe formatting, letterhead toggle, and widget rendering.
 - **`widget_test.dart`** — Appointment ledger, PIN auth, and 14-day same-doctor free review business logic.
 

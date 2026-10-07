@@ -5,6 +5,7 @@ import '../models/doctor.dart';
 import '../models/consultation.dart';
 import '../models/medicine.dart';
 import '../models/prescription_item.dart';
+import '../utils/default_medicines.dart';
 
 class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -267,6 +268,60 @@ class FirebaseService {
     return _medicinesRef.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) => Medicine.fromJson(doc.data())).toList();
     });
+  }
+
+  /// Ensures standard, essential OPD medicines exist in Firestore by default.
+  /// Uses deterministic document IDs so execution is strictly idempotent.
+  Future<void> ensureDefaultMedicinesExist() async {
+    final snapshot = await _medicinesRef.limit(1).get();
+    if (snapshot.docs.isEmpty) {
+      final batch = _firestore.batch();
+      for (final med in defaultEssentialMedicines) {
+        batch.set(_medicinesRef.doc(med.id), med.toJson());
+      }
+      await batch.commit();
+    }
+  }
+
+  /// Scans the medicines collection, identifies duplicate entries (same product name,
+  /// composition, and strength), preserves one canonical record, and batch deletes the rest.
+  /// Returns the number of purged duplicate documents.
+  Future<int> deduplicateMedicines() async {
+    final snapshot = await _medicinesRef.get();
+    if (snapshot.docs.isEmpty) return 0;
+
+    final seenKeys = <String, String>{}; // key -> preserved docId
+    final toDeleteDocIds = <String>[];
+
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final productName = (data['productName'] as String? ?? '').trim().toLowerCase();
+      final composition = (data['composition'] as String? ?? '').trim().toLowerCase();
+      final strength = (data['strength'] as String? ?? '').trim().toLowerCase();
+
+      final key = '$productName|$composition|$strength';
+
+      if (seenKeys.containsKey(key)) {
+        // If this document is a duplicate, delete it
+        toDeleteDocIds.add(doc.id);
+      } else {
+        seenKeys[key] = doc.id;
+      }
+    }
+
+    if (toDeleteDocIds.isNotEmpty) {
+      // Chunk deletions in batches of 450 (Firestore limit is 500)
+      for (var i = 0; i < toDeleteDocIds.length; i += 450) {
+        final batch = _firestore.batch();
+        final chunk = toDeleteDocIds.skip(i).take(450);
+        for (final id in chunk) {
+          batch.delete(_medicinesRef.doc(id));
+        }
+        await batch.commit();
+      }
+    }
+
+    return toDeleteDocIds.length;
   }
 
   /// Searches the medicine catalogue across both composition and trade name.

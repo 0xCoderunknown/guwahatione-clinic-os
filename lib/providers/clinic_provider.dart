@@ -150,6 +150,7 @@ class ClinicProvider with ChangeNotifier {
     required String phoneNumber,
     required String name,
     required int age,
+    String gender = 'Male',
     required PaymentType paymentType,
     required int amountCollected,
     required DateTime scheduledDate,
@@ -191,6 +192,7 @@ class ClinicProvider with ChangeNotifier {
         id: phoneNumber,
         name: name,
         age: age,
+        gender: gender,
         lastVisitDate: DateTime.now(),
         phoneNumber: phoneNumber,
       );
@@ -313,6 +315,34 @@ class ClinicProvider with ChangeNotifier {
     _setLoading(true);
     try {
       await _firebaseService.deleteMedicine(medicineId);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<int> deduplicateMedicines({UserRole? requestingRole}) async {
+    if (requestingRole != null && !requestingRole.isOwner) {
+      throw Exception(
+        'Permission Denied: Only clinic administrators (owner) can modify the master medicine catalogue.',
+      );
+    }
+    _setLoading(true);
+    try {
+      return await _firebaseService.deduplicateMedicines();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> ensureDefaultMedicinesExist({UserRole? requestingRole}) async {
+    if (requestingRole != null && !requestingRole.isOwner) {
+      throw Exception(
+        'Permission Denied: Only clinic administrators (owner) can modify the master medicine catalogue.',
+      );
+    }
+    _setLoading(true);
+    try {
+      await _firebaseService.ensureDefaultMedicinesExist();
     } finally {
       _setLoading(false);
     }

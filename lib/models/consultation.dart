@@ -40,7 +40,7 @@ class Consultation {
     required this.patientPhone,
     required this.patientName,
     required this.patientAge,
-    this.patientGender = 'Unspecified',
+    required this.patientGender,
     required this.doctorId,
     required this.doctorName,
     required this.createdAt,

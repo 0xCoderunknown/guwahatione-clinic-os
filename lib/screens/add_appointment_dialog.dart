@@ -25,6 +25,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
   DateTime _selectedDate = DateTime.now();
   PaymentType _selectedPayment = PaymentType.paid;
+  String _selectedGender = 'Male';
 
   Doctor? _selectedDoctor;
   bool _isNewPatient = false;
@@ -193,11 +194,11 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                 ],
                 const SizedBox(height: 16),
 
-                // 4. PATIENT NAME & AGE
+                // 4. PATIENT NAME, AGE & GENDER
                 Row(
                   children: [
                     Expanded(
-                      flex: 2,
+                      flex: 3,
                       child: TextFormField(
                         controller: _nameController,
                         decoration: const InputDecoration(
@@ -210,7 +211,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      flex: 1,
+                      flex: 2,
                       child: TextFormField(
                         controller: _ageController,
                         decoration: const InputDecoration(
@@ -223,6 +224,27 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                         ],
                         validator: (val) =>
                             (val == null || val.isEmpty) ? 'Required' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedGender,
+                        decoration: const InputDecoration(
+                          labelText: 'Sex',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'Male', child: Text('Male')),
+                          DropdownMenuItem(value: 'Female', child: Text('Female')),
+                          DropdownMenuItem(value: 'Other', child: Text('Other')),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _selectedGender = val);
+                          }
+                        },
                       ),
                     ),
                   ],
@@ -414,6 +436,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       if (patient != null) {
         _nameController.text = patient.name;
         _ageController.text = patient.age.toString();
+        _selectedGender = patient.gender;
         _isNewPatient = false;
 
         // Fetch patient's appointments across all doctors
@@ -604,6 +627,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         phoneNumber: _phoneController.text,
         name: _nameController.text,
         age: int.parse(_ageController.text),
+        gender: _selectedGender,
         paymentType: _selectedPayment,
         amountCollected: int.parse(_amountController.text),
         scheduledDate: _selectedDate,

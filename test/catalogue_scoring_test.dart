@@ -3,6 +3,7 @@ import 'package:appointment_app/models/medicine.dart';
 import 'package:appointment_app/models/user_role.dart';
 import 'package:appointment_app/models/prescription_item.dart';
 import 'package:appointment_app/utils/medicine_search_scorer.dart';
+import 'package:appointment_app/utils/default_medicines.dart';
 
 void main() {
   group('Composition-First Medicine Search Scorer Tests', () {
@@ -197,6 +198,50 @@ void main() {
       }
 
       expect(allowed, isTrue);
+    });
+
+    test('defaultEssentialMedicines contains unique deterministic IDs and non-empty metadata', () {
+      final ids = <String>{};
+      final names = <String>{};
+
+      for (final med in defaultEssentialMedicines) {
+        expect(ids.contains(med.id), isFalse, reason: 'Duplicate ID: ${med.id}');
+        expect(names.contains(med.productName), isFalse, reason: 'Duplicate Name: ${med.productName}');
+        ids.add(med.id);
+        names.add(med.productName);
+
+        expect(med.id.startsWith('med_'), isTrue);
+        expect(med.composition.isNotEmpty, isTrue);
+        expect(med.strength.isNotEmpty, isTrue);
+        expect(med.form.isNotEmpty, isTrue);
+      }
+      expect(defaultEssentialMedicines.length, greaterThanOrEqualTo(10));
+    });
+
+    test('Catalogue deduplication logic correctly isolates duplicate entries', () {
+      final sampleWithDuplicates = [
+        {'id': 'doc-1', 'productName': 'Dolo 650', 'composition': 'Paracetamol', 'strength': '650 mg'},
+        {'id': 'doc-2', 'productName': 'Dolo 650', 'composition': 'Paracetamol', 'strength': '650 mg'}, // duplicate
+        {'id': 'doc-3', 'productName': 'dolo 650', 'composition': 'paracetamol', 'strength': '650 mg'}, // case-insensitive duplicate
+        {'id': 'doc-4', 'productName': 'Pan 40', 'composition': 'Pantoprazole', 'strength': '40 mg'},
+        {'id': 'doc-5', 'productName': 'Pan 40', 'composition': 'Pantoprazole', 'strength': '40 mg'}, // duplicate
+      ];
+
+      final seen = <String, String>{};
+      final duplicateDocIds = <String>[];
+
+      for (final item in sampleWithDuplicates) {
+        final key = '${item['productName']!.trim().toLowerCase()}|${item['composition']!.trim().toLowerCase()}|${item['strength']!.trim().toLowerCase()}';
+        if (seen.containsKey(key)) {
+          duplicateDocIds.add(item['id']!);
+        } else {
+          seen[key] = item['id']!;
+        }
+      }
+
+      expect(duplicateDocIds, containsAll(['doc-2', 'doc-3', 'doc-5']));
+      expect(duplicateDocIds.length, 3);
+      expect(seen.length, 2); // 1 Dolo 650 and 1 Pan 40 preserved
     });
   });
 }

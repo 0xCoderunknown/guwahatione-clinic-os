@@ -8,23 +8,8 @@ import 'package:appointment_app/models/diagnostic_investigation.dart';
 import 'package:appointment_app/models/consultation.dart';
 
 void main() {
-  group('Patient Model Backward Compatibility Tests', () {
-    test('Parses legacy JSON missing gender and allergies gracefully', () {
-      final legacyJson = {
-        'id': '9876543210',
-        'name': 'Legacy Patient',
-        'age': 45,
-        'lastVisitDate': '2026-10-01T10:00:00.000',
-        'phoneNumber': '9876543210',
-      };
-
-      final patient = Patient.fromJson(legacyJson);
-      expect(patient.gender, 'Unspecified');
-      expect(patient.allergies, isEmpty);
-      expect(patient.name, 'Legacy Patient');
-    });
-
-    test('Serializes and deserializes patient with gender and allergies', () {
+  group('Patient Model Clinical Tests', () {
+    test('Serializes and deserializes patient with all clinical attributes', () {
       final patient = Patient(
         id: '9876543210',
         name: 'Jane Doe',
@@ -40,8 +25,12 @@ void main() {
       expect(json['allergies'], ['Penicillin', 'Sulfa']);
 
       final fromJson = Patient.fromJson(json);
+      expect(fromJson.id, '9876543210');
+      expect(fromJson.name, 'Jane Doe');
+      expect(fromJson.age, 34);
       expect(fromJson.gender, 'Female');
       expect(fromJson.allergies, ['Penicillin', 'Sulfa']);
+      expect(fromJson.phoneNumber, '9876543210');
     });
   });
 
