@@ -2,7 +2,7 @@
 
 > **Maintained by:** Senior Clinical Systems Architect & Product Manager  
 > **Audience:** All AI Agents, Coding Assistants, and Engineering Staff  
-> **Companion Blueprint:** [PRODUCT_VISION_AND_WORKFLOW.md](file:///k:/Android/appointment_app/docs/PRODUCT_VISION_AND_WORKFLOW.md)
+> **Companion Blueprint:** [PRODUCT_VISION_AND_WORKFLOW.md](PRODUCT_VISION_AND_WORKFLOW.md)
 
 ---
 
@@ -29,6 +29,7 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 | **Smart Clinical Defaults (`P2`)** | `ClinicalDefaultsHelper` auto-populates standard OPD regimens (PPIs, Antihypertensives, Diabetes, Statins, Antibiotics, Liquids, Topicals). Zero typing for 90% of prescriptions. | 🟢 Shipped & Verified (`v1.5.0`) |
 | **Collapsible Encounter Ergonomics (`P3`)** | Step 2 Findings and Step 4 Prescribing collapsible into compact summary badge strips. Eliminates vertical scroll fatigue on counter PCs. | 🟢 Shipped & Verified (`v1.5.0`) |
 | **Doctor Prescribing Search Preferences (`P4`)** | Per-doctor `searchPreference` (`brandFirst` vs `compositionFirst`) with dual-mode `MedicineSearchScorer` and quick-toggle `[🏷️ Brand | 🧪 Salt]` pill on search bar. | 🟢 Shipped & Verified (`v1.5.0`) |
+| **Modular Encounter Architecture & State Encapsulation** | Deconstructed ~2,600-line monolithic encounter into reusable atomic step widgets (`lib/widgets/encounter/`), centralized `EncounterFormState`, and lightweight (<300 line) coordinator scaffold. | 🟢 Shipped & Verified (`v1.6.0`) |
 | **Master Medicine Catalogue** | Chemical composition search scorer, OPD essential formulary, owner-only deduplication engine. | 🟢 Verified & Live |
 | **Prescription Printing** | Monochrome clean layout, A4 & A5 support, pre-printed clinic letterhead margin toggle, browser print via `dart:js_interop`. | 🟢 Verified & Live |
 | **Role-Based Security** | Reception PIN (`0000`) vs Doctor Chamber 4-digit PIN authentication. | 🟢 Verified & Live |

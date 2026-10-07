@@ -220,17 +220,37 @@ lib/
 │   ├── appointment_list_screen.dart         # Live queue, absent marking, payment updates & "Call In"
 │   ├── add_appointment_dialog.dart          # Rapid booking with patient history search
 │   ├── doctor_chamber_screen.dart           # Real-time zero-touch chamber sync board & active token badge
-│   ├── consultation_encounter_screen.dart   # 5-step clinical encounter, collapsible sections & inline prescribing
+│   ├── consultation_encounter_screen.dart   # Lightweight (<300 lines) 5-step encounter coordinator scaffold
 │   ├── prescription_print_screen.dart       # High-contrast A4/A5 print preview with letterhead toggle
 │   ├── medicine_catalogue_screen.dart       # Admin medicine catalogue management & seeding
 │   ├── doctor_list_screen.dart              # Doctor roster, PIN display & chamber preview
 │   ├── add_doctor_screen.dart               # Register doctor with fee & chamber PIN
 │   ├── doctor_daily_details_screen.dart     # Daily patient drill-down
 │   └── statistics_screen.dart               # Financial audit & doctor payout summary
+├── widgets/
+│   ├── widgets.dart                         # Barrel export for common and encounter widgets
+│   ├── common/                              # Reusable atomic UI primitives
+│   │   ├── allergy_alert_banner.dart        # Reusable allergy banner with interactive add/remove
+│   │   ├── appointment_status_chip.dart     # Standardized appointment status chips
+│   │   ├── clinic_date_nav_bar.dart         # Standardized date navigation header
+│   │   ├── payment_badge.dart               # Visual payment type badges
+│   │   ├── section_card.dart                # Collapsible animated section cards with badges & actions
+│   │   └── token_badge.dart                 # Uniform token sequence badges
+│   └── encounter/                           # Step-by-step clinical encounter widgets
+│       ├── advice_and_orders_section.dart   # Step 5: Advice, lab test orders, and quick follow-up chips
+│       ├── chamber_calling_alert_bar.dart   # Live reception chamber calling alert banner
+│       ├── consultation_bottom_dock.dart    # Sticky bottom action dock with consultation sign action
+│       ├── diagnostic_review_section.dart   # Step 3: Diagnostic investigation review tracker
+│       ├── encounter_dialogs.dart           # Modal dialogs & bottom sheets (allergies, labs, stop reasons, history)
+│       ├── encounter_form_state.dart        # Encapsulated encounter controllers, state, and builders
+│       ├── patient_header_section.dart      # Step 1: Patient header & demographics summary
+│       ├── rx_reconciliation_section.dart   # Step 4: Rx reconciliation, search, and staged prescribing
+│       └── vitals_and_exam_section.dart     # Step 2: Vitals grid, collapsible findings pills, and exam notes
 └── utils/
     ├── app_constants.dart                   # Default fee, blocked clinic dates
     ├── clinical_defaults_helper.dart        # OPD pharmacological clinical intelligence & dosage defaults
     ├── default_medicines.dart               # Canonical essential OPD medications with deterministic IDs
+    ├── formatters.dart                      # Centralized date, time, and currency formatters (AppFormatters)
     ├── medicine_search_scorer.dart          # Dual-mode (brandFirst & compositionFirst) search & brand grouping engine
     ├── platform_print.dart                  # Unified cross-platform print interface
     ├── platform_print_web.dart              # Web print implementation using dart:js_interop
