@@ -6,6 +6,12 @@ export 'common/payment_badge.dart';
 export 'common/section_card.dart';
 export 'common/token_badge.dart';
 
+// Dashboard Widgets
+export 'dashboard/dashboard_doctor_roster_card.dart';
+export 'dashboard/dashboard_header_bar.dart';
+export 'dashboard/dashboard_kpi_strip.dart';
+export 'dashboard/dashboard_queue_card.dart';
+
 // Chamber Widgets
 export 'chamber/chamber_app_bar.dart';
 export 'chamber/chamber_metrics_grid.dart';
@@ -27,3 +33,9 @@ export 'encounter/encounter_form_state.dart';
 export 'encounter/rx/reconciliation_item_row.dart';
 export 'encounter/rx/rx_search_results_view.dart';
 export 'encounter/rx/staged_medicine_form.dart';
+
+// Prescription Print Widgets
+export 'print/print_clinical_snapshot.dart';
+export 'print/print_header_and_demographics.dart';
+export 'print/print_medications_table.dart';
+export 'print/print_orders_and_footer.dart';
