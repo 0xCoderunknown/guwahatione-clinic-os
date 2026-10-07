@@ -43,8 +43,9 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
 | Layer | Standard | Rule |
 |---|---|---|
 | **Framework** | Flutter 3.x (Web, Android, iOS) | Single responsive codebase. Target web counter PC first. |
+| **Domain Engines** | Pure Dart (`lib/core/engines/`) | **Zero Flutter UI dependencies.** Screens & widgets are purely display templates (HTML + CSS); all revenue math, eligibility rules, queue partitioning, and pharmacological defaults must reside in dedicated engines. |
 | **State Management** | **Provider** (`ChangeNotifierProvider`) | **Strictly Provider only.** Do NOT introduce Riverpod, Bloc, MobX, GetX, or ad-hoc global state. |
-| **Backend & DB** | Cloud Firestore | Follow [SCHEMA_AND_MODELS.md](file:///d:/Android/guwahatione-clinic-os/docs/SCHEMA_AND_MODELS.md). Never invent arbitrary field names. |
+| **Backend & DB** | Cloud Firestore | Follow [SCHEMA_AND_MODELS.md](docs/SCHEMA_AND_MODELS.md). Never invent arbitrary field names. |
 | **Idempotency** | Deterministic IDs (`med_*`, `counters/*`) | Default OPD medicines must use canonical IDs. Queue counters use daily atomic keys. |
 | **Auth & Security** | Role-based PINs | Reception PIN (`0000`), Doctor PIN (4 digits). Never bypass role guards. |
 | **Printing** | `platform_print.dart` | High-contrast monochrome A4/A5 letterhead printing via web `dart:js_interop` & desktop stubs. |
@@ -79,12 +80,13 @@ You are being managed by a strict Product Manager. Follow this exact workflow:
 
 ```
 lib/
+├── core/         -> Pure domain engines (revenue_engine, appointment_engine, medicine_engine)
 ├── models/       -> Pure data models & serialization (Appointment, Consultation, Patient, Doctor, Medicine, Vitals)
 ├── providers/    -> App state (AuthProvider for PIN sessions, ClinicProvider for live streams)
 ├── services/     -> Firebase Firestore client service layer (FirebaseService)
 ├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
 ├── widgets/      -> Reusable UI sub-packages (common, booking, queue, chamber, dashboard, encounter, print)
-└── utils/        -> Helpers (Default medicines, search scorer, constants, platform print, formatters)
+└── utils/        -> Helpers (Default medicines, constants, platform print, formatters)
 docs/
 ├── SCHEMA_AND_MODELS.md  -> Master data dictionary for Firestore collections & models
 ├── PRODUCT_VISION_AND_WORKFLOW.md -> Clinical encounter blueprint & real-world OPD intent
@@ -99,4 +101,5 @@ docs/
 - ❌ **Changing state management library.** (Always use `Provider`).
 - ❌ **Adding unapproved Firestore fields without updating `docs/SCHEMA_AND_MODELS.md`.**
 - ❌ **Hardcoding doctor fees or bypassing 14-day free review logic.**
+- ❌ **Putting financial math, review eligibility calculations, or pharmacological defaults directly inside UI widget `build()` methods.**
 - ❌ **Breaking responsive layout** on standard reception counter monitors (1366x768 / 1920x1080) or doctor mobile screens.

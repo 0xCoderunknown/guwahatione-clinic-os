@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.8.0] — 2026-10-07
+
+### Added
+- **Core Domain Engine Architecture (`lib/core/engines/`):**
+  - **`RevenueEngine` (`lib/core/engines/revenue_engine.dart`):** Pure Dart financial engine calculating realized revenue (completed visits strictly), chamber KPIs, doctor fee shares, and owner analytics summaries.
+  - **`AppointmentEngine` (`lib/core/engines/appointment_engine.dart`):** Single source of truth for 14-day same-doctor free review eligibility, consultation fee resolution, and queue status partitioning (`pending`, `completed`, `absent`).
+  - **`MedicineEngine` (`lib/core/engines/medicine_engine.dart`):** Unified multi-mode search scoring, clinical default OPD regimens (form dosages, fasting PPIs, bedtime statins, course durations), and prescription reconciliation segregation.
+  - **`engines.dart`:** Central barrel export for domain engines.
+- **Unified UI Component Consolidation (`lib/widgets/common/`):**
+  - **`MetricKpiCard` (`lib/widgets/common/metric_kpi_card.dart`):** Unified metric card supporting both vertical (`MetricCardLayout.vertical`) and horizontal (`MetricCardLayout.horizontal`) responsive layouts.
+  - Re-exported `MetricKpiCard` in `lib/widgets/widgets.dart`.
+
+### Changed
+- **Decoupled Math from UI Presentation:**
+  - `ClinicProvider`: Rewired `dailyRevenue`, `checkReviewEligibility`, and `calculatePaymentType` to use `RevenueEngine` and `AppointmentEngine`.
+  - `ChamberMetricsGrid`: Replaced 6 manual `.where()` and `.fold()` passes with a single call to `RevenueEngine.calculateChamberKpis`; delegated `ChamberMetricTile` to `MetricKpiCard`.
+  - `DoctorDailyDetailsScreen`: Stripped inline `.fold()` in `build()` method; rewired to `RevenueEngine.calculateRealizedRevenue`.
+  - `StatisticsScreen`: Stripped inline stats calculations in `_buildDoctorCard`; rewired to `RevenueEngine.calculateDoctorAnalytics`. Replaced custom date header with `ClinicDateNavBar`.
+  - `DashboardKpiStrip`: Replaced inline `.where()` in `build()` with `RevenueEngine.calculateDailyMetrics`; delegated `DashboardMetricCard` to `MetricKpiCard`.
+  - `AddAppointmentDialog`: Replaced inline fee ternary calculations with `AppointmentEngine.resolveConsultationFee` and eligibility checks with `AppointmentEngine.evaluateReviewEligibility`.
+  - `AppointmentAccordion`: Dynamically resolves consultation fees using doctor configuration via `AppointmentEngine.resolveConsultationFee`.
+  - `AppointmentListScreen`: Replaced custom date row with unified `ClinicDateNavBar`.
+
+---
+
 ## [1.7.0] — 2026-10-07
 
 ### Added
@@ -26,19 +51,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Doctor Chamber Suite (`lib/widgets/chamber/`):**
     - `ChamberAppBar`: Header with live clock, refresh indicator, and logout action.
     - `ChamberMetricsGrid`: Chamber KPI cards (Today's Total, Completed, In Queue, Revenue).
-    - `ChamberQueueTable`: Comprehensive queue table with token status badges, live calling banner, and consultation encounter triggers.
+    - `ChamberQueueHeader`: Section header with waiting counts and token order explanation.
+    - `ChamberTokenCard`: Comprehensive token card with status badges, live calling indicator, and consultation encounter triggers.
   - **Executive Dashboard Suite (`lib/widgets/dashboard/`):**
     - `DashboardHeaderBar`: Top greeting, live date, and quick action chips.
     - `DashboardKpiStrip`: Responsive KPI metrics strip with auto-adjusting breakpoints.
     - `DashboardQueueCard`: "Today's Live Queue" panel with token cards, status badges, and quick "Call In" buttons.
     - `DashboardDoctorRosterCard`: Active doctors roster with live chamber calling status and load indicator.
   - **Monochrome Prescription Print Engine (`lib/widgets/print/`):**
-    - `RxLetterheadHeader`: Header with clinic brand details and 130px pre-printed letterhead mode spacing.
-    - `RxPatientSummaryCard`: Clean A4/A5 patient demographic strip.
-    - `RxFindingsAndLabsSection`: Compact examination findings and diagnostic investigation review report.
-    - `RxActiveMedicationsTable`: High-contrast prescription schedule table for `START` and `CONTINUE` medications.
-    - `RxDiscontinuedMedicationsBox`: Distinct medical-legal audit box for discontinued (`STOP`) medications.
-    - `RxOrdersAndFooter`: Diagnostic lab orders, lifestyle advice, next follow-up date, and doctor signature box.
+    - `PrintHeaderAndDemographics`: Clinic header and patient demographics banner with 130px pre-printed letterhead mode spacing.
+    - `PrintClinicalSnapshot`: High-contrast clinical vitals, chief complaints, and provisional diagnosis snapshot.
+    - `PrintMedicationsTable`: Active Rx schedule table for `START`/`CONTINUE` medications and distinct discontinued (`STOP`) medications audit box.
+    - `PrintOrdersAndFooter`: Diagnostic lab orders, lifestyle advice, next review date, and doctor signature block.
 
 ### Changed
 - **Slim Coordinator Scaffold Transformations:**
@@ -53,7 +77,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.6.0] — 2026-10-07### Added
+## [1.6.0] — 2026-10-07
+
+### Added
 - **Encounter Architecture Modularization & Refactoring:**
   - **Shared Clinical Primitives (`lib/widgets/common/`):** Created standalone atomic reusable widgets to eliminate UI boilerplate across screens:
     - `AppointmentStatusChip`: Consistent status pills (Completed, In Chamber, Absent, Pending).

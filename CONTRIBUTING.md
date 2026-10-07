@@ -49,11 +49,13 @@ When making code changes:
 ### Architecture Rules
 
 ```
-models/       ← pure Dart, no external dependencies
+core/         ← pure Dart domain engines (math, eligibility, algorithms), zero Flutter UI
+models/       ← pure data schemas & serialization
 services/     ← all Firestore logic lives here
-providers/    ← state management (ChangeNotifier), delegates to services
-screens/      ← UI only, reads from providers and services
-utils/        ← constants and stateless helpers
+providers/    ← state management (ChangeNotifier), coordinates streams & delegates to engines
+screens/      ← coordinator scaffolds (HTML-style layouts)
+widgets/      ← modularized presentation components (HTML/CSS-style templates)
+utils/        ← constants and platform adapters
 ```
 
 ### Planned Features (next tasks)

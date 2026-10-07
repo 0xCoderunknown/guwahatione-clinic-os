@@ -48,12 +48,12 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 
 ### 📋 Longitudinal Clinical Records & Chamber Prescribing
 - **Chamber Auto-Sync** — Real-time synchronization between reception and doctor chamber. When reception calls a patient, the doctor's chamber screen automatically displays the active encounter, with an incoming alert banner if another encounter is currently open.
-- **💊 Clinical Dosage & Duration Presets (`ClinicalDefaultsHelper`)** — Automatically fills standard outpatient dosage, frequency, timing, and duration presets for common medication categories (PPIs, antihypertensives, antidiabetics, statins, antibiotics, liquids, topicals) upon selection.
+- **💊 Clinical Dosage & Duration Presets (`MedicineEngine`)** — Automatically fills standard outpatient dosage, frequency, timing, and duration presets for common medication categories (PPIs, antihypertensives, antidiabetics, statins, antibiotics, liquids, topicals) upon selection.
 - **📑 Collapsible Encounter Sections** — Collapsible Step 2 (Vitals & Clinical Examination) and Step 4 (Medication Prescribing & Reconciliation) with summary chips to minimize page scrolling.
-- **🏷️ Doctor Prescribing Search Preferences** — Configurable `searchPreference` (`brandFirst` vs `compositionFirst`) with dual-mode ranking in `MedicineSearchScorer` and an inline `[🏷️ Brand | 🧪 Salt]` toggle.
+- **🏷️ Doctor Prescribing Search Preferences** — Configurable `searchPreference` (`brandFirst` vs `compositionFirst`) with dual-mode ranking in `MedicineEngine` and an inline `[🏷️ Brand | 🧪 Salt]` toggle.
 - **Strict 5-Step Clinical Encounter (`ConsultationEncounterScreen`)** — Guides physicians through allergies, vitals, past labs, medication reconciliation, and advice.
 - **Medication Reconciliation State Machine** — Explicit lifecycle states (`START`, `CONTINUE`, `STOP`) on prescription items. 1-tap continuation for ongoing chronic regimens (`durationDays = null`) and explicit discontinuation documenting clinical `stopReason`.
-- **Composition-First Medicine Engine (`MedicineSearchScorer`)** — Prioritizes chemical molecule matches at the top with associated clinic trade brands grouped underneath.
+- **Composition-First Medicine Engine (`MedicineEngine`)** — Prioritizes chemical molecule matches at the top with associated clinic trade brands grouped underneath.
 - **Unlisted Medicine Support (`unlistedName`)** — Doctors can prescribe outside or unlisted medications not currently in the clinic catalogue.
 - **Essential OPD Medicines Preloaded (`defaultEssentialMedicines`)** — Standard OPD medications (Dolo 650, Calpol 650, Augmentin 625 Duo, Moxikind-CV, Azee 500, Pan 40, Telma 40, etc.) with deterministic document IDs (`med_*`) to prevent duplicates on initial seed.
 - **Admin vs. Prescriber Catalogue Separation (`MedicineCatalogueScreen`)** — Dedicated administration interface in reception shell for clinic owners to curate products and active compositions, with role guards preventing chamber prescriber edits.
@@ -69,7 +69,7 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 - **🚫 Explicit "Absent / No-Show" Status** — Replaced "Cancel" with "Absent" so slots are preserved on the doctor ledger with ₹0 amount.
 - **📅 Rapid Appointment Booking** — 10-digit phone search with automatic patient history, gender/sex capture, and 14-day same-doctor free review detection.
 - **💳 Smart Payment Types** — Paid (per doctor fee), Free Review (strictly for returning patients of same doctor within 14 days, with warning if >14 days), Free Family (courtesy).
-- **📊 Daily Revenue Analytics & Auditing** — Real-time earnings breakdown grouped by doctor with chamber preview mode.
+- **📊 Daily Revenue Analytics & Auditing** — Real-time earnings breakdown calculated by `RevenueEngine` grouped by doctor with chamber preview mode.
 - **🔢 Atomic Queue Numbers** — Race-condition-safe queue numbering per day using Firestore transactions.
 - **🔴 Real-time Firestore Streams** — Live updates across counter PC and doctor chambers via Firestore listeners.
 
@@ -81,6 +81,7 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 |---|---|
 | Platforms | Web (Desktop Counter / Tablet / Mobile), Android, iOS |
 | UI Framework | Flutter 3.x (Material 3 Responsive) |
+| Domain Engines | Pure Dart (`RevenueEngine`, `AppointmentEngine`, `MedicineEngine`) |
 | State Management | Provider |
 | Backend / DB | Cloud Firestore (Firebase) |
 | Hosting | Firebase Hosting (SPA Web App) |
@@ -100,8 +101,8 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/0xCoderunknown/guwahatione-clinic-os.git
-cd guwahatione-clinic-os
+git clone https://github.com/0xCoderunknown/guwahatione-clinic-app.git
+cd guwahatione-clinic-app
 ```
 
 ### 2. Configure Firebase
@@ -130,7 +131,7 @@ In your Firebase Console, the following collections are utilized:
 | `appointments` | One document per appointment (immutable, zero deletions) |
 | `patients` | One document per patient (keyed by phone number, stores allergies) |
 | `doctors` | One document per doctor (specialty, PIN, consultation fee) |
-| `counters` | One document per date for atomic queue numbering |
+| `counters` | Atomic sequence counters for daily queue numbering (`queue_{doctorId}_{date}`) and real-time chamber calling sync (`chamber_{doctorId}_{date}`) |
 | `consultations` | Append-only longitudinal consultation encounters per patient |
 | `medicines` | Master clinical catalogue of chemical compositions, brands, and strengths |
 
@@ -198,6 +199,12 @@ docs/
 lib/
 ├── main.dart                                # Entry point, AuthGate, theme & MultiProvider setup
 ├── firebase_options.dart                    # 🔒 Secret — not in git (see .gitignore)
+├── core/
+│   └── engines/
+│       ├── engines.dart                     # Central barrel export for all domain engines
+│       ├── revenue_engine.dart              # Pure realized revenue math, chamber KPIs & doctor rollups
+│       ├── appointment_engine.dart          # 14-day free review eligibility, fee resolution & queue states
+│       └── medicine_engine.dart             # Chemical search scoring, default OPD regimens & Rx segregation
 ├── models/
 │   ├── appointment.dart                     # Appointment schema, PaymentType & AppointmentStatus
 │   ├── consultation.dart                    # Immutable encounter schema with active/stopped getters
@@ -205,6 +212,7 @@ lib/
 │   ├── doctor.dart                          # Doctor schema with Chamber PIN, fee, and searchPreference
 │   ├── medicine.dart                        # Master catalogue decoupling composition from trade brand + clinical defaults
 │   ├── patient.dart                         # Patient schema with phone-keying & allergies
+│   ├── patient_review_eligibility.dart      # Encapsulates 14-day free review evaluation result
 │   ├── prescription_item.dart               # PrescriptionItem state machine (START/CONTINUE/STOP)
 │   ├── user_role.dart                       # UserRole & UserSession models
 │   └── vitals.dart                          # Vitals schema (BP, pulse, SpO2, temp, weight)
@@ -233,6 +241,7 @@ lib/
 │   │   ├── allergy_alert_banner.dart        # Reusable allergy banner with interactive add/remove
 │   │   ├── appointment_status_chip.dart     # Standardized appointment status chips
 │   │   ├── clinic_date_nav_bar.dart         # Standardized date navigation header
+│   │   ├── metric_kpi_card.dart             # Unified vertical & horizontal KPI metrics tile
 │   │   ├── payment_badge.dart               # Visual payment type badges
 │   │   ├── section_card.dart                # Collapsible animated section cards with badges & actions
 │   │   └── token_badge.dart                 # Uniform token sequence badges
@@ -245,7 +254,8 @@ lib/
 │   ├── chamber/                             # Doctor chamber catalog screen components
 │   │   ├── chamber_app_bar.dart             # Header with live time, sync indicator, and PIN logout
 │   │   ├── chamber_metrics_grid.dart        # Real-time KPI summary cards (Total, In Queue, Revenue)
-│   │   └── chamber_queue_table.dart         # Consultant queue table with 1-tap encounter launcher
+│   │   ├── chamber_queue_header.dart        # Section header for consultant queue
+│   │   └── chamber_token_card.dart          # Token tile with status badge & consultation launcher
 │   ├── dashboard/                           # Command center reception dashboard components
 │   │   ├── dashboard_header_bar.dart        # Reception header bar with quick action chips
 │   │   ├── dashboard_kpi_strip.dart         # Responsive daily KPI cards with automatic breakpoints
@@ -266,19 +276,22 @@ lib/
 │   │       ├── staged_medicine_form.dart    # Prefilled OPD defaults, dosage chips & chronic toggle
 │   │       ├── rx_search_results_view.dart  # Chemical salt + trade brand search pills & pickers
 │   │       └── reconciliation_item_row.dart # Active regimen row with 1-tap CONTINUE/STOP actions
-│   └── print/                               # High-contrast monochrome A4/A5 prescription print components
-│       ├── rx_letterhead_header.dart        # Clinic header with 130px pre-printed letterhead mode spacing
-│       ├── rx_patient_summary_card.dart     # Patient demographic summary card
-│       ├── rx_findings_and_labs_section.dart# Clinical findings and diagnostic investigation reviews
-│       ├── rx_active_medications_table.dart # Prescribed medication table (START & CONTINUE)
-│       ├── rx_discontinued_medications_box.dart # Discontinued (STOP) medications medical-legal audit box
-│       └── rx_orders_and_footer.dart        # Orders, lifestyle advice, follow-up date & signature box
+│   ├── print/                               # High-contrast monochrome A4/A5 prescription print components
+│   │   ├── print_clinical_snapshot.dart     # Clinical snapshot (Vitals, Complaints, Diagnosis)
+│   │   ├── print_header_and_demographics.dart # Header with clinic details & patient demographics
+│   │   ├── print_medications_table.dart     # Active Rx table and discontinued medications audit box
+│   │   └── print_orders_and_footer.dart     # Diagnostic orders, lifestyle advice & doctor signature
+│   └── catalogue/                           # Master medicine catalogue management
+│       ├── add_medicine_dialog.dart         # Modal dialog to add new formulary entries
+│       ├── catalogue_header_and_stats.dart  # Formulary metrics bar (total, brands, molecules)
+│       ├── catalogue_medicine_card.dart     # Individual medicine brand card with actions
+│       └── catalogue_search_toolbar.dart    # Real-time search and filter toolbar
 └── utils/
     ├── app_constants.dart                   # Default fee, blocked clinic dates
-    ├── clinical_defaults_helper.dart        # OPD dosage, timing, and duration presets
+    ├── clinical_defaults_helper.dart        # Transparent adapter forwarding to MedicineEngine
     ├── default_medicines.dart               # Canonical essential OPD medications with deterministic IDs
     ├── formatters.dart                      # Centralized date, time, and currency formatters (AppFormatters)
-    ├── medicine_search_scorer.dart          # Dual-mode (brandFirst & compositionFirst) search & brand grouping engine
+    ├── medicine_search_scorer.dart          # Transparent adapter forwarding to MedicineEngine
     ├── platform_print.dart                  # Unified cross-platform print interface
     ├── platform_print_web.dart              # Web print implementation using dart:js_interop
     └── platform_print_stub.dart             # Native desktop/mobile fallback print stub
