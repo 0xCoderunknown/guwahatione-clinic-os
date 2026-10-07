@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../models/appointment.dart';
 import '../services/firebase_service.dart';
-import '../utils/formatters.dart';
 import '../widgets/widgets.dart';
 
 /// Reception screen for managing, filtering, and calling appointments in queue.
@@ -25,22 +24,6 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
         _selectedDate.day == now.day;
   }
 
-  void _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-    );
-
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-        _showAll = !_isToday;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,59 +31,52 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12.0,
+              vertical: 8.0,
+            ),
             color: Colors.grey.shade100,
             child: Row(
               children: [
-                // Date Selector
+                // Reusable Date Nav Bar
                 Expanded(
-                  flex: 3,
-                  child: InkWell(
-                    onTap: _pickDate,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_today, color: Colors.blue),
-                        const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _isToday
-                                  ? "Today (${AppFormatters.date(_selectedDate)})"
-                                  : AppFormatters.dateWithDay(_selectedDate),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                  child: ClinicDateNavBar(
+                    selectedDate: _selectedDate,
+                    onDateChanged: (picked) {
+                      setState(() {
+                        _selectedDate = picked;
+                        _showAll = !_isToday;
+                      });
+                    },
+                    onTodayPressed: () {
+                      final now = DateTime.now();
+                      setState(() {
+                        _selectedDate = DateTime(now.year, now.month, now.day);
+                        _showAll = false;
+                      });
+                    },
                   ),
                 ),
+                const SizedBox(width: 12),
                 // Show All Toggle
-                Expanded(
-                  flex: 2,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      const Text(
-                        "Show Completed",
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      Switch(
-                        value: _showAll,
-                        onChanged: _isToday
-                            ? (val) {
-                                setState(() {
-                                  _showAll = val;
-                                });
-                              }
-                            : null, // Locked if not today
-                      ),
-                    ],
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "Show Completed",
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    Switch(
+                      value: _showAll,
+                      onChanged: _isToday
+                          ? (val) {
+                              setState(() {
+                                _showAll = val;
+                              });
+                            }
+                          : null, // Locked if not today
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -123,8 +99,8 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                 final visibleAppointments = _showAll
                     ? allAppointments
                     : allAppointments
-                        .where((a) => a.status == AppointmentStatus.pending)
-                        .toList();
+                          .where((a) => a.status == AppointmentStatus.pending)
+                          .toList();
 
                 if (visibleAppointments.isEmpty) {
                   return Center(
@@ -138,9 +114,7 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          _showAll
-                              ? 'No appointments found.'
-                              : 'No pending appointments.\nToggle "Show Completed" to see history.',
+                          _showAll ? 'No appointments found.' : 'No pending appointments.\nToggle "Show Completed" to see history.',
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: Colors.grey),
                         ),

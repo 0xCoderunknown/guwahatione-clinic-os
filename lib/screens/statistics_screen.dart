@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+
 import '../core/engines/engines.dart';
 import '../models/appointment.dart';
 import '../services/firebase_service.dart'; // Direct service access for clean stream
+import '../widgets/widgets.dart';
 import 'doctor_daily_details_screen.dart';
 
 class StatisticsScreen extends StatefulWidget {
@@ -31,24 +32,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
       body: Column(
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Colors.teal.withValues(alpha: 0.1),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.date_range, color: Colors.teal),
-                const SizedBox(width: 8),
-                Text(
-                  DateFormat('EEEE, dd MMM yyyy').format(_selectedDate),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.teal,
-                  ),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 10.0,
+            ),
+            child: ClinicDateNavBar(
+              selectedDate: _selectedDate,
+              onDateChanged: (picked) {
+                setState(() => _selectedDate = picked);
+              },
             ),
           ),
 
@@ -178,7 +171,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ),
       ),
     );
-
   }
 
   Widget _statItem(String label, String value, Color color) {

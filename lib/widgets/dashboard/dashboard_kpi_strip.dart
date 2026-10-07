@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/engines/engines.dart';
+import '../common/metric_kpi_card.dart';
 import '../../providers/clinic_provider.dart';
 import '../../screens/appointment_list_screen.dart';
 import '../../screens/doctor_list_screen.dart';
@@ -102,7 +103,7 @@ class DashboardKpiStrip extends StatelessWidget {
   }
 }
 
-/// Standalone visual card for dashboard KPI item.
+/// Standalone visual card for dashboard KPI item delegating to [MetricKpiCard].
 class DashboardMetricCard extends StatelessWidget {
   final DashboardKpiData data;
 
@@ -113,71 +114,15 @@ class DashboardMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return MetricKpiCard(
+      title: data.title,
+      value: data.value,
+      subtitle: data.subtitle,
+      icon: data.icon,
+      color: data.color,
+      bgColor: data.bgColor,
       onTap: data.onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: data.bgColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(data.icon, size: 22, color: data.color),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    data.value,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: data.color,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    data.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  Text(
-                    data.subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      layout: MetricCardLayout.horizontal,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
+import '../common/metric_kpi_card.dart';
 
 /// Live KPI metrics grid for Doctor Chamber (Total, Consulted, Absent, Doctor Share).
 class ChamberMetricsGrid extends StatelessWidget {
@@ -103,7 +104,7 @@ class ChamberMetricsGrid extends StatelessWidget {
   }
 }
 
-/// Standalone KPI metric tile displaying count, subtitle, and themed icon.
+/// Standalone KPI metric tile delegating to the unified [MetricKpiCard].
 class ChamberMetricTile extends StatelessWidget {
   final String title;
   final String value;
@@ -122,55 +123,13 @@ class ChamberMetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              Icon(icon, size: 20, color: color),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
+    return MetricKpiCard(
+      title: title,
+      value: value,
+      subtitle: subtitle,
+      icon: icon,
+      color: color,
+      layout: MetricCardLayout.vertical,
     );
   }
 }
