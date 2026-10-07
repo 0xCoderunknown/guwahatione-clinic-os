@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/patient.dart';
 import '../models/appointment.dart';
 import '../models/doctor.dart';
+import '../models/consultation.dart';
+import '../models/medicine.dart';
+import '../models/prescription_item.dart';
 
 class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -15,6 +18,12 @@ class FirebaseService {
 
   CollectionReference<Map<String, dynamic>> get _countersRef =>
       _firestore.collection('counters');
+
+  CollectionReference<Map<String, dynamic>> get _consultationsRef =>
+      _firestore.collection('consultations');
+
+  CollectionReference<Map<String, dynamic>> get _medicinesRef =>
+      _firestore.collection('medicines');
 
   // ---------------------------------------------------------------------------
   // Patients
@@ -177,6 +186,101 @@ class FirebaseService {
 
   Future<void> deleteDoctor(String doctorId) async {
     await _firestore.collection('doctors').doc(doctorId).delete();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Longitudinal Consultations (Append-Only)
+  // ---------------------------------------------------------------------------
+
+  /// Records an immutable clinical consultation encounter.
+  /// Follows the strict append-only policy: each consultation is a new document.
+  /// Also updates appointment status to 'completed' and syncs patient last visit date.
+  Future<void> saveConsultation(Consultation consultation) async {
+    final batch = _firestore.batch();
+
+    // 1. Append consultation document (immutable)
+    final consultDoc = _consultationsRef.doc(consultation.id);
+    batch.set(consultDoc, consultation.toJson());
+
+    // 2. Mark appointment as completed
+    if (consultation.appointmentId.isNotEmpty) {
+      final apptDoc = _appointmentsRef.doc(consultation.appointmentId);
+      batch.update(apptDoc, {'status': AppointmentStatus.completed.name});
+    }
+
+    // 3. Keep patient record synced
+    final patientDoc = _patientsRef.doc(consultation.patientPhone);
+    batch.set(patientDoc, {
+      'lastVisitDate': consultation.createdAt.toIso8601String(),
+      'name': consultation.patientName,
+      'age': consultation.patientAge,
+      'gender': consultation.patientGender,
+      'phoneNumber': consultation.patientPhone,
+    }, SetOptions(merge: true));
+
+    await batch.commit();
+  }
+
+  /// Retrieves the longitudinal consultation timeline for a patient, ordered by date desc.
+  /// Queries by patientPhone and sorts in memory to avoid requiring a remote composite index.
+  Future<List<Consultation>> getConsultationsForPatient(String phone) async {
+    final snapshot = await _consultationsRef
+        .where('patientPhone', isEqualTo: phone)
+        .get();
+
+    final consultations = snapshot.docs
+        .map((doc) => Consultation.fromJson(doc.data()))
+        .toList();
+
+    consultations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return consultations;
+  }
+
+  /// Retrieves the latest consultation for a patient, or null if none exists.
+  Future<Consultation?> getLatestConsultationForPatient(String phone) async {
+    final list = await getConsultationsForPatient(phone);
+    if (list.isEmpty) return null;
+    return list.first;
+  }
+
+  /// Fetches the active medications from the patient's most recent consultation
+  /// to populate the medication reconciliation interface for follow-up visits.
+  Future<List<PrescriptionItem>> getLatestActiveMedications(String phone) async {
+    final latest = await getLatestConsultationForPatient(phone);
+    if (latest == null) return [];
+    return latest.activePrescriptions;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Master Medicine Catalogue
+  // ---------------------------------------------------------------------------
+
+  Future<void> addMedicine(Medicine medicine) async {
+    await _medicinesRef.doc(medicine.id).set(medicine.toJson());
+  }
+
+  Stream<List<Medicine>> getMedicines() {
+    return _medicinesRef.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => Medicine.fromJson(doc.data())).toList();
+    });
+  }
+
+  /// Searches the medicine catalogue across both composition and trade name.
+  Future<List<Medicine>> searchMedicines(String query) async {
+    final cleanQuery = query.trim().toLowerCase();
+    if (cleanQuery.isEmpty) return [];
+
+    final snapshot = await _medicinesRef.get();
+    return snapshot.docs
+        .map((doc) => Medicine.fromJson(doc.data()))
+        .where((med) {
+          final tradeNameMatch =
+              med.productName.toLowerCase().contains(cleanQuery);
+          final compositionMatch =
+              med.composition.toLowerCase().contains(cleanQuery);
+          return tradeNameMatch || compositionMatch;
+        })
+        .toList();
   }
 
   // ---------------------------------------------------------------------------

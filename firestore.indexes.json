@@ -15,6 +15,14 @@
         { "fieldPath": "patientPhone", "order": "ASCENDING" },
         { "fieldPath": "scheduledDate", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "consultations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "patientPhone", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

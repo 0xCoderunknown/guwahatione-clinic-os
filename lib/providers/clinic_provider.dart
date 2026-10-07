@@ -5,6 +5,9 @@ import 'package:uuid/uuid.dart';
 import '../models/patient.dart';
 import '../models/appointment.dart';
 import '../models/doctor.dart';
+import '../models/consultation.dart';
+import '../models/medicine.dart';
+import '../models/prescription_item.dart';
 import '../models/patient_review_eligibility.dart';
 import '../services/firebase_service.dart';
 import '../utils/app_constants.dart';
@@ -15,13 +18,16 @@ class ClinicProvider with ChangeNotifier {
 
   StreamSubscription? _appointmentSub;
   StreamSubscription? _doctorSub;
+  StreamSubscription? _medicineSub;
 
   List<Doctor> _doctors = [];
   List<Appointment> _todayAppointments = [];
+  List<Medicine> _medicines = [];
   bool _isLoading = false;
 
   List<Doctor> get doctors => _doctors;
   List<Appointment> get todayAppointments => _todayAppointments;
+  List<Medicine> get medicines => _medicines;
   bool get isLoading => _isLoading;
 
   int get pendingCount =>
@@ -33,6 +39,7 @@ class ClinicProvider with ChangeNotifier {
 
   ClinicProvider() {
     _subscribeToDoctors();
+    _subscribeToMedicines();
   }
 
   void startListeningToAppointments([DateTime? specificDate]) {
@@ -50,6 +57,14 @@ class ClinicProvider with ChangeNotifier {
     _doctorSub?.cancel();
     _doctorSub = _firebaseService.getDoctors().listen((doctors) {
       _doctors = doctors;
+      notifyListeners();
+    });
+  }
+
+  void _subscribeToMedicines() {
+    _medicineSub?.cancel();
+    _medicineSub = _firebaseService.getMedicines().listen((meds) {
+      _medicines = meds;
       notifyListeners();
     });
   }
@@ -232,6 +247,60 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Longitudinal Consultations
+  // ---------------------------------------------------------------------------
+
+  Future<void> saveConsultation(Consultation consultation) async {
+    _setLoading(true);
+    try {
+      await _firebaseService.saveConsultation(consultation);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<List<Consultation>> getPatientConsultations(String phone) async {
+    return await _firebaseService.getConsultationsForPatient(phone);
+  }
+
+  Future<List<PrescriptionItem>> getActiveMedicationsForPatient(String phone) async {
+    return await _firebaseService.getLatestActiveMedications(phone);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Master Medicine Catalogue
+  // ---------------------------------------------------------------------------
+
+  Future<void> addMedicine({
+    required String productName,
+    required String composition,
+    required String strength,
+    required String form,
+    String? manufacturer,
+    String? category,
+  }) async {
+    _setLoading(true);
+    try {
+      final med = Medicine(
+        id: _uuid.v4(),
+        productName: productName,
+        composition: composition,
+        strength: strength,
+        form: form,
+        manufacturer: manufacturer,
+        category: category,
+      );
+      await _firebaseService.addMedicine(med);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<List<Medicine>> searchMedicines(String query) async {
+    return await _firebaseService.searchMedicines(query);
+  }
+
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
@@ -241,6 +310,7 @@ class ClinicProvider with ChangeNotifier {
   void dispose() {
     _appointmentSub?.cancel();
     _doctorSub?.cancel();
+    _medicineSub?.cancel();
     super.dispose();
   }
 }
