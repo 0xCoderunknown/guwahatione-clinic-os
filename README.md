@@ -47,6 +47,10 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 ## ✨ Features
 
 ### 📋 Longitudinal Clinical Records & Chamber Prescribing
+- **⚡ Zero-Touch Chamber Auto-Sync** — Real-time synchronization between reception and doctor chamber. When reception clicks `"Call In"` or `"Call In / Start Consultation"`, the doctor's screen automatically transitions into that patient's active encounter without the doctor touching the mouse or keyboard. Includes collision prevention alert banner.
+- **💊 Smart Clinical Dosage & Duration Defaults (`ClinicalDefaultsHelper`)** — Outpatient pharmacological intelligence engine auto-populating standard clinical OPD regimens (PPIs, Antihypertensives, Diabetes, Statins, Antibiotics, Liquids, Topicals) upon selecting a medicine, eliminating 90%+ of typing.
+- **📑 Collapsible Sectional Encounter Ergonomics** — Collapsible Step 2 (Vitals & Clinical Examination) and Step 4 (Medication Prescribing & Reconciliation) with compact summary chips, eliminating vertical scroll fatigue.
+- **🏷️ Doctor Prescribing Search Preferences** — Configurable `searchPreference` (`brandFirst` vs `compositionFirst`) with intelligent dual-mode scoring in `MedicineSearchScorer` and inline `[🏷️ Brand | 🧪 Salt]` segmented quick toggle.
 - **Strict 5-Step Clinical Encounter (`ConsultationEncounterScreen`)** — Guides physicians through allergies, vitals, past labs, medication reconciliation, and advice.
 - **Medication Reconciliation State Machine** — Explicit lifecycle states (`START`, `CONTINUE`, `STOP`) on prescription items. 1-tap continuation for ongoing chronic regimens (`durationDays = null`) and explicit discontinuation documenting clinical `stopReason`.
 - **Composition-First Medicine Engine (`MedicineSearchScorer`)** — Prioritizes chemical molecule matches at the top with associated clinic trade brands grouped underneath.
@@ -57,9 +61,9 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 - **Clean Prescription Print Output (`PrescriptionPrintScreen`)** — High-contrast monochrome print layout supporting **A4** and **A5** paper, pre-printed letterhead mode (reserved 130px top margin), active Rx schedule filtering (`START`/`CONTINUE` only), and distinct audit warning box for discontinued drugs.
 
 ### 🏢 Clinic Operations & Ledger Integrity
-- **Responsive Clinic Command Center (`DashboardScreen`)** — Executive dashboard with compact horizontal KPI cards, live queue preview, quick reception action chips, and dynamic scaling across mobile (iPhones), 14" laptops, and 23" FHD monitors.
+- **Responsive Clinic Command Center (`DashboardScreen`)** — Executive dashboard with compact horizontal KPI cards, live queue preview, quick reception action chips (including 1-tap "Call In"), and dynamic scaling across mobile, 14" laptops, and 23" FHD monitors.
 - **🌐 Web-First Responsive Architecture** — Single responsive codebase deployed to Chrome/Edge (Counter PC), Android, and iOS.
-- **🩺 Doctor Chamber Live Board** — Read-only chamber dashboard for consultants showing live token order, patient status, and fee share with 1-tap access to patient clinical records and consultation encounters.
+- **🩺 Doctor Chamber Live Board** — Read-only chamber dashboard for consultants showing live token order, active calling token status, and fee share with 1-tap access to patient clinical records and consultation encounters.
 - **🔒 Zero-Friction PIN Authentication** — Quick PIN access: Reception PIN (`0000` default) & individual 4-digit Chamber PINs per doctor.
 - **🛡️ Audit-Proof Ledger** — Zero deletions allowed; consecutive token sequence is preserved on screen and database.
 - **🚫 Explicit "Absent / No-Show" Status** — Replaced "Cancel" with "Absent" so slots are preserved on the doctor ledger with ₹0 amount.
@@ -187,6 +191,10 @@ class AppConstants {
 ## 📁 Project Structure
 
 ```text
+docs/
+├── PRODUCT_VISION_AND_WORKFLOW.md           # Master clinical encounter blueprint & real-world OPD intent
+├── PRODUCT_ROADMAP.md                       # 4-state lifecycle roadmap with anti-goals & backlog
+└── SCHEMA_AND_MODELS.md                     # Master data dictionary for Firestore collections & models
 lib/
 ├── main.dart                                # Entry point, AuthGate, theme & MultiProvider setup
 ├── firebase_options.dart                    # 🔒 Secret — not in git (see .gitignore)
@@ -194,25 +202,25 @@ lib/
 │   ├── appointment.dart                     # Appointment schema, PaymentType & AppointmentStatus
 │   ├── consultation.dart                    # Immutable encounter schema with active/stopped getters
 │   ├── diagnostic_investigation.dart        # Lab review (performedDate) & OrderedTest schemas
-│   ├── doctor.dart                          # Doctor schema with Chamber PIN & consultationFee
-│   ├── medicine.dart                        # Master catalogue decoupling composition from trade brand
+│   ├── doctor.dart                          # Doctor schema with Chamber PIN, fee, and searchPreference
+│   ├── medicine.dart                        # Master catalogue decoupling composition from trade brand + clinical defaults
 │   ├── patient.dart                         # Patient schema with phone-keying & allergies
 │   ├── prescription_item.dart               # PrescriptionItem state machine (START/CONTINUE/STOP)
 │   ├── user_role.dart                       # UserRole & UserSession models
 │   └── vitals.dart                          # Vitals schema (BP, pulse, SpO2, temp, weight)
 ├── providers/
 │   ├── auth_provider.dart                   # PIN authentication & SharedPreferences session
-│   └── clinic_provider.dart                 # Real-time streams, consultations, catalogue & appointment state
+│   └── clinic_provider.dart                 # Real-time streams, chamber sync, consultations & appointments
 ├── services/
-│   └── firebase_service.dart                # Atomic transactions, batch consultation writes & Firestore streams
+│   └── firebase_service.dart                # Atomic transactions, daily chamber sync, batch consultation writes
 ├── screens/
 │   ├── login_screen.dart                    # Role selector (Doctor Chamber vs Reception Desk)
 │   ├── owner_shell.dart                     # Responsive shell (Desktop rail vs mobile bar)
-│   ├── dashboard_screen.dart                # Reception KPI overview cards
-│   ├── appointment_list_screen.dart         # Live queue, absent marking & payment updates
+│   ├── dashboard_screen.dart                # Reception KPI overview cards & 1-tap "Call In"
+│   ├── appointment_list_screen.dart         # Live queue, absent marking, payment updates & "Call In"
 │   ├── add_appointment_dialog.dart          # Rapid booking with patient history search
-│   ├── doctor_chamber_screen.dart           # Read-only live catalog board for doctors + encounter access
-│   ├── consultation_encounter_screen.dart   # 5-step clinical consultation & reconciliation workspace
+│   ├── doctor_chamber_screen.dart           # Real-time zero-touch chamber sync board & active token badge
+│   ├── consultation_encounter_screen.dart   # 5-step clinical encounter, collapsible sections & inline prescribing
 │   ├── prescription_print_screen.dart       # High-contrast A4/A5 print preview with letterhead toggle
 │   ├── medicine_catalogue_screen.dart       # Admin medicine catalogue management & seeding
 │   ├── doctor_list_screen.dart              # Doctor roster, PIN display & chamber preview
@@ -221,8 +229,9 @@ lib/
 │   └── statistics_screen.dart               # Financial audit & doctor payout summary
 └── utils/
     ├── app_constants.dart                   # Default fee, blocked clinic dates
+    ├── clinical_defaults_helper.dart        # OPD pharmacological clinical intelligence & dosage defaults
     ├── default_medicines.dart               # Canonical essential OPD medications with deterministic IDs
-    ├── medicine_search_scorer.dart          # Composition-first search & brand grouping engine
+    ├── medicine_search_scorer.dart          # Dual-mode (brandFirst & compositionFirst) search & brand grouping engine
     ├── platform_print.dart                  # Unified cross-platform print interface
     ├── platform_print_web.dart              # Web print implementation using dart:js_interop
     └── platform_print_stub.dart             # Native desktop/mobile fallback print stub
@@ -238,8 +247,8 @@ Run all unit, model, and widget tests:
 flutter test
 ```
 
-The test suite covers:
-- **`catalogue_scoring_test.dart`** — Composition-first ranking hierarchy, brand grouping, unlisted outside drug fallback, and admin vs. doctor role security guards.
+The test suite contains **35 automated tests** covering:
+- **`catalogue_scoring_test.dart`** — Dual-mode ranking (composition-first & brand-first), brand grouping, clinical defaults helper fallbacks, unlisted outside drug fallback, and admin vs. doctor role security guards.
 - **`consultation_test.dart`** — Patient clinical attributes, vitals formatting, prescription item lifecycle (`START`/`CONTINUE`/`STOP`), and 2-visit longitudinal medication reconciliation.
 - **`prescription_print_test.dart`** — Active Rx vs. discontinued regimen segregation, null-safe formatting, letterhead toggle, and widget rendering.
 - **`widget_test.dart`** — Appointment ledger, PIN auth, and 14-day same-doctor free review business logic.

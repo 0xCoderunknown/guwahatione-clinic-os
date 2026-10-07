@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.0] — 2026-10-07
+
+### Added
+- **Zero-Touch Chamber Auto-Sync (`P1`)** — Real-time Firestore sync channel at `counters/chamber_{doctorId}_{yyyy-MM-dd}` linking the counter PC and doctor chamber screen. When reception clicks `"Call In"` or `"Call In / Start Consultation"` on a pending token (via reception dashboard or appointment list accordion), the doctor's chamber screen automatically transitions into that patient's active encounter without the doctor touching the mouse or keyboard.
+- **Consultation Conflict Safety & Live Incoming Alert Banner** — If the doctor is actively attending Patient A and reception calls Patient B, the active form is safely retained while a high-visibility alert banner appears at the top (*"🔔 Reception called next patient: Token #X — [Name]. Switch or keep current?"*).
+- **Automated Chamber Session Cleanup** — Upon signing and completing the consultation via `"Complete & Sign Prescription"`, the chamber session document is atomically reset to `'idle'` so the queue board returns to idle state.
+- **Smart Clinical Dosage & Duration Defaults Engine (`ClinicalDefaultsHelper`) (`P2`)** — Outpatient pharmacological intelligence engine that auto-populates standard clinical OPD regimens upon selecting a medicine:
+  - *Proton Pump Inhibitors / Antacids (Pan 40, Rabeprazole, etc.):* `1 Tablet`, `1-0-0 (OD)`, `Before Food (Empty Stomach)`, `14 Days`.
+  - *Antihypertensives (Telma 40, Amlodipine, Metoprolol, etc.):* `1 Tablet`, `1-0-0 (OD)`, `After Food (Morning)`, `30 Days` routine OPD refill cycle.
+  - *Antidiabetics (Metformin, Glimepiride, etc.):* `1 Tablet`, `1-0-1 (BD)`, `After Food`, `30 Days`.
+  - *Statins / Lipid-Lowering (Atorvastatin, Rosuvastatin):* `1 Tablet`, `0-0-1 (HS / Night)`, `After Dinner`, `30 Days`.
+  - *Antibiotics (Azithromycin, Augmentin, etc.):* `1 Tablet`, `1-0-1 (BD)` or `1-0-0 (OD)`, `After Food`, `5 Days`.
+  - *Form-Specific Calibrated Units:* Syrups (`5 ml`), Drops (`2 Drops`), Ointments/Creams (`Apply thin layer`), Inhalers (`1 Puff`).
+- **Catalogue-Level Default Overrides on `Medicine`** — Added `defaultDosage`, `defaultFrequency`, `defaultTiming`, and `defaultDurationDays` to `Medicine` model with full Firestore and JSON serialization.
+- **Collapsible Sectional Encounter Ergonomics (`P3`)** — Re-architected `ConsultationEncounterScreen` to reduce vertical clutter:
+  - *Step 2 (Vitals & Clinical Examination):* Collapsible toggle (`"Add / Edit Findings"` $\leftrightarrow$ `"Close Findings"`). When closed, renders a clean horizontal strip of summary pills (`BP 120/80`, `Pulse 72`, `Chief Complaints`, `Diagnosis`).
+  - *Step 4 (Prescribing & Reconciliation):* Replaced modal popup dialogs with inline live search, 1-tap staged selection banner with prefilled defaults, and collapsible summary badge (`X continued`, `Y stopped`, `Z newly prescribed`).
+- **Doctor Search Preference (Brand vs Chemical Salt) (`P4`)** — Configurable `searchPreference` on `Doctor` (`'brandFirst'` or `'compositionFirst'`, default: `'brandFirst'`). Dual-mode search scoring in `MedicineSearchScorer` with on-the-fly `[🏷️ Brand | 🧪 Salt]` segmented pill on the search bar in the encounter screen.
+- **Unit Test Suite Expansion** — Added unit tests verifying brand-first ranking, clinical defaults helper, and chronic duration overrides, bringing total verified tests to 35/35 passing.
+
+---
+
 ## [1.4.0] — 2026-10-07
 
 ### Added
