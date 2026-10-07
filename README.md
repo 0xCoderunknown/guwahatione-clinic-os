@@ -6,13 +6,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Firebase](https://img.shields.io/badge/Backend-Firebase-orange?logo=firebase)](https://firebase.google.com)
 
-A modern, production-grade clinical operating system built for standalone polyclinics, pharmacy-attached consultation rooms, and multi-doctor outpatient practices. Originally engineered for [GuwahatiOne](https://guwahatiOne.com).
+A web-first clinic and chamber management system built for standalone polyclinics, pharmacy-attached consultation rooms, and multi-doctor outpatient practices. Engineered for [GuwahatiOne](https://guwahatiOne.com).
 
 ---
 
 ## 💡 The Core Philosophy
 
-ClinicOS is built on two unshakeable clinical and operational tenets:
+ClinicOS is built around two core clinical and operational principles:
 
 1. **Longitudinal Clinical Records Over Transient Paper Artifacts:**  
    ClinicOS handles the patient's continuous clinical history—it does **not** try to run a pharmacy ERP, retail inventory, or billing ledger. The printed prescription is merely a transient paper artifact; the continuous, append-only longitudinal clinical record across visits is the true product.
@@ -47,31 +47,31 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 ## ✨ Features
 
 ### 📋 Longitudinal Clinical Records & Chamber Prescribing
-- **⚡ Zero-Touch Chamber Auto-Sync** — Real-time synchronization between reception and doctor chamber. When reception clicks `"Call In"` or `"Call In / Start Consultation"`, the doctor's screen automatically transitions into that patient's active encounter without the doctor touching the mouse or keyboard. Includes collision prevention alert banner.
-- **💊 Smart Clinical Dosage & Duration Defaults (`ClinicalDefaultsHelper`)** — Outpatient pharmacological intelligence engine auto-populating standard clinical OPD regimens (PPIs, Antihypertensives, Diabetes, Statins, Antibiotics, Liquids, Topicals) upon selecting a medicine, eliminating 90%+ of typing.
-- **📑 Collapsible Sectional Encounter Ergonomics** — Collapsible Step 2 (Vitals & Clinical Examination) and Step 4 (Medication Prescribing & Reconciliation) with compact summary chips, eliminating vertical scroll fatigue.
-- **🏷️ Doctor Prescribing Search Preferences** — Configurable `searchPreference` (`brandFirst` vs `compositionFirst`) with intelligent dual-mode scoring in `MedicineSearchScorer` and inline `[🏷️ Brand | 🧪 Salt]` segmented quick toggle.
+- **Chamber Auto-Sync** — Real-time synchronization between reception and doctor chamber. When reception calls a patient, the doctor's chamber screen automatically displays the active encounter, with an incoming alert banner if another encounter is currently open.
+- **💊 Clinical Dosage & Duration Presets (`ClinicalDefaultsHelper`)** — Automatically fills standard outpatient dosage, frequency, timing, and duration presets for common medication categories (PPIs, antihypertensives, antidiabetics, statins, antibiotics, liquids, topicals) upon selection.
+- **📑 Collapsible Encounter Sections** — Collapsible Step 2 (Vitals & Clinical Examination) and Step 4 (Medication Prescribing & Reconciliation) with summary chips to minimize page scrolling.
+- **🏷️ Doctor Prescribing Search Preferences** — Configurable `searchPreference` (`brandFirst` vs `compositionFirst`) with dual-mode ranking in `MedicineSearchScorer` and an inline `[🏷️ Brand | 🧪 Salt]` toggle.
 - **Strict 5-Step Clinical Encounter (`ConsultationEncounterScreen`)** — Guides physicians through allergies, vitals, past labs, medication reconciliation, and advice.
 - **Medication Reconciliation State Machine** — Explicit lifecycle states (`START`, `CONTINUE`, `STOP`) on prescription items. 1-tap continuation for ongoing chronic regimens (`durationDays = null`) and explicit discontinuation documenting clinical `stopReason`.
 - **Composition-First Medicine Engine (`MedicineSearchScorer`)** — Prioritizes chemical molecule matches at the top with associated clinic trade brands grouped underneath.
-- **Zero-Friction Outside Medicine Fallback (`unlistedName`)** — Doctors are never blocked when prescribing outside or brand medications missing from the clinic catalogue.
-- **Essential OPD Medicines Active by Default (`defaultEssentialMedicines`)** — Preloaded canonical OPD medications (Dolo 650, Calpol 650, Augmentin 625 Duo, Moxikind-CV, Azee 500, Pan 40, Telma 40, etc.) with deterministic document IDs (`med_*`), guaranteeing zero-duplicate idempotency.
-- **Admin vs. Prescriber Catalogue Separation (`MedicineCatalogueScreen`)** — Dedicated administration interface in reception shell for clinic owners to curate products and active compositions, with strict role guards preventing chamber prescriber pollution.
-- **Automated & On-Demand Catalogue Deduplication** — Engine identifies and batch-purges duplicate commercial drugs with identical names, compositions, and strengths from Firestore.
+- **Unlisted Medicine Support (`unlistedName`)** — Doctors can prescribe outside or unlisted medications not currently in the clinic catalogue.
+- **Essential OPD Medicines Preloaded (`defaultEssentialMedicines`)** — Standard OPD medications (Dolo 650, Calpol 650, Augmentin 625 Duo, Moxikind-CV, Azee 500, Pan 40, Telma 40, etc.) with deterministic document IDs (`med_*`) to prevent duplicates on initial seed.
+- **Admin vs. Prescriber Catalogue Separation (`MedicineCatalogueScreen`)** — Dedicated administration interface in reception shell for clinic owners to curate products and active compositions, with role guards preventing chamber prescriber edits.
+- **Catalogue Deduplication** — Identifies and removes duplicate drug entries with identical names, compositions, and strengths from Firestore.
 - **Clean Prescription Print Output (`PrescriptionPrintScreen`)** — High-contrast monochrome print layout supporting **A4** and **A5** paper, pre-printed letterhead mode (reserved 130px top margin), active Rx schedule filtering (`START`/`CONTINUE` only), and distinct audit warning box for discontinued drugs.
 
 ### 🏢 Clinic Operations & Ledger Integrity
-- **Responsive Clinic Command Center (`DashboardScreen`)** — Executive dashboard with compact horizontal KPI cards, live queue preview, quick reception action chips (including 1-tap "Call In"), and dynamic scaling across mobile, 14" laptops, and 23" FHD monitors.
+- **Reception Dashboard (`DashboardScreen`)** — Responsive dashboard with daily KPI cards, live queue preview, quick reception actions, and layout adaptation across mobile, laptop, and desktop displays.
 - **🌐 Web-First Responsive Architecture** — Single responsive codebase deployed to Chrome/Edge (Counter PC), Android, and iOS.
 - **🩺 Doctor Chamber Live Board** — Read-only chamber dashboard for consultants showing live token order, active calling token status, and fee share with 1-tap access to patient clinical records and consultation encounters.
-- **🔒 Zero-Friction PIN Authentication** — Quick PIN access: Reception PIN (`0000` default) & individual 4-digit Chamber PINs per doctor.
+- **🔒 Role-Based PIN Authentication** — Reception PIN (`0000` default) and 4-digit Chamber PIN per doctor.
 - **🛡️ Audit-Proof Ledger** — Zero deletions allowed; consecutive token sequence is preserved on screen and database.
 - **🚫 Explicit "Absent / No-Show" Status** — Replaced "Cancel" with "Absent" so slots are preserved on the doctor ledger with ₹0 amount.
 - **📅 Rapid Appointment Booking** — 10-digit phone search with automatic patient history, gender/sex capture, and 14-day same-doctor free review detection.
 - **💳 Smart Payment Types** — Paid (per doctor fee), Free Review (strictly for returning patients of same doctor within 14 days, with warning if >14 days), Free Family (courtesy).
 - **📊 Daily Revenue Analytics & Auditing** — Real-time earnings breakdown grouped by doctor with chamber preview mode.
 - **🔢 Atomic Queue Numbers** — Race-condition-safe queue numbering per day using Firestore transactions.
-- **🔴 Real-time Firestore Streams** — Zero-refresh instant sync across counter PC and doctor chambers.
+- **🔴 Real-time Firestore Streams** — Live updates across counter PC and doctor chambers via Firestore listeners.
 
 ---
 
@@ -275,7 +275,7 @@ lib/
 │       └── rx_orders_and_footer.dart        # Orders, lifestyle advice, follow-up date & signature box
 └── utils/
     ├── app_constants.dart                   # Default fee, blocked clinic dates
-    ├── clinical_defaults_helper.dart        # OPD pharmacological clinical intelligence & dosage defaults
+    ├── clinical_defaults_helper.dart        # OPD dosage, timing, and duration presets
     ├── default_medicines.dart               # Canonical essential OPD medications with deterministic IDs
     ├── formatters.dart                      # Centralized date, time, and currency formatters (AppFormatters)
     ├── medicine_search_scorer.dart          # Dual-mode (brandFirst & compositionFirst) search & brand grouping engine

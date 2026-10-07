@@ -79,13 +79,13 @@
 
 ### A. Daily Queue Counter
 - **Document ID:** `queue_{doctorId}_{yyyy-MM-dd}`
-- **Purpose:** Transactional atomic counter to guarantee zero race conditions on token numbers.
+- **Purpose:** Transactional atomic counter to prevent race conditions on daily token numbers.
 
 | Field | Type | Description |
 |---|---|---|
 | `currentNumber` | `int` | Current highest issued queue number for the day. |
 
-### B. Zero-Touch Chamber Calling Session
+### B. Chamber Calling Session
 - **Document ID:** `chamber_{doctorId}_{yyyy-MM-dd}`
 - **Purpose:** Real-time sync document listened to by Doctor Chamber Screen for automatic encounter loading when reception calls a token.
 

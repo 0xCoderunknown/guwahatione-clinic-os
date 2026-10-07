@@ -53,10 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.6.0] — 2026-10-07
-
-### Added
-- **AI-Agent Maintainable Architecture & Modularization:**
+## [1.6.0] — 2026-10-07### Added
+- **Encounter Architecture Modularization & Refactoring:**
   - **Shared Clinical Primitives (`lib/widgets/common/`):** Created standalone atomic reusable widgets to eliminate UI boilerplate across screens:
     - `AppointmentStatusChip`: Consistent status pills (Completed, In Chamber, Absent, Pending).
     - `PaymentBadge`: Compact visual payment badges (Paid, Free Review, Free Family).
@@ -90,10 +88,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.5.0] — 2026-10-07
 
 ### Added
-- **Zero-Touch Chamber Auto-Sync (`P1`)** — Real-time Firestore sync channel at `counters/chamber_{doctorId}_{yyyy-MM-dd}` linking the counter PC and doctor chamber screen. When reception clicks `"Call In"` or `"Call In / Start Consultation"` on a pending token (via reception dashboard or appointment list accordion), the doctor's chamber screen automatically transitions into that patient's active encounter without the doctor touching the mouse or keyboard.
+- **Chamber Auto-Sync (`P1`)** — Real-time Firestore sync channel at `counters/chamber_{doctorId}_{yyyy-MM-dd}` linking the counter PC and doctor chamber screen. When reception clicks `"Call In"` or `"Call In / Start Consultation"` on a pending token, the doctor's chamber screen automatically transitions into that patient's active encounter view.
 - **Consultation Conflict Safety & Live Incoming Alert Banner** — If the doctor is actively attending Patient A and reception calls Patient B, the active form is safely retained while a high-visibility alert banner appears at the top (*"🔔 Reception called next patient: Token #X — [Name]. Switch or keep current?"*).
 - **Automated Chamber Session Cleanup** — Upon signing and completing the consultation via `"Complete & Sign Prescription"`, the chamber session document is atomically reset to `'idle'` so the queue board returns to idle state.
-- **Smart Clinical Dosage & Duration Defaults Engine (`ClinicalDefaultsHelper`) (`P2`)** — Outpatient pharmacological intelligence engine that auto-populates standard clinical OPD regimens upon selecting a medicine:
+- **Clinical Dosage & Duration Defaults (`ClinicalDefaultsHelper`) (`P2`)** — Helper utility that auto-populates standard clinical OPD regimens upon selecting a medicine:
   - *Proton Pump Inhibitors / Antacids (Pan 40, Rabeprazole, etc.):* `1 Tablet`, `1-0-0 (OD)`, `Before Food (Empty Stomach)`, `14 Days`.
   - *Antihypertensives (Telma 40, Amlodipine, Metoprolol, etc.):* `1 Tablet`, `1-0-0 (OD)`, `After Food (Morning)`, `30 Days` routine OPD refill cycle.
   - *Antidiabetics (Metformin, Glimepiride, etc.):* `1 Tablet`, `1-0-1 (BD)`, `After Food`, `30 Days`.
@@ -101,7 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - *Antibiotics (Azithromycin, Augmentin, etc.):* `1 Tablet`, `1-0-1 (BD)` or `1-0-0 (OD)`, `After Food`, `5 Days`.
   - *Form-Specific Calibrated Units:* Syrups (`5 ml`), Drops (`2 Drops`), Ointments/Creams (`Apply thin layer`), Inhalers (`1 Puff`).
 - **Catalogue-Level Default Overrides on `Medicine`** — Added `defaultDosage`, `defaultFrequency`, `defaultTiming`, and `defaultDurationDays` to `Medicine` model with full Firestore and JSON serialization.
-- **Collapsible Sectional Encounter Ergonomics (`P3`)** — Re-architected `ConsultationEncounterScreen` to reduce vertical clutter:
+- **Collapsible Encounter Sections (`P3`)** — Re-architected `ConsultationEncounterScreen` to reduce vertical clutter:
   - *Step 2 (Vitals & Clinical Examination):* Collapsible toggle (`"Add / Edit Findings"` $\leftrightarrow$ `"Close Findings"`). When closed, renders a clean horizontal strip of summary pills (`BP 120/80`, `Pulse 72`, `Chief Complaints`, `Diagnosis`).
   - *Step 4 (Prescribing & Reconciliation):* Replaced modal popup dialogs with inline live search, 1-tap staged selection banner with prefilled defaults, and collapsible summary badge (`X continued`, `Y stopped`, `Z newly prescribed`).
 - **Doctor Search Preference (Brand vs Chemical Salt) (`P4`)** — Configurable `searchPreference` on `Doctor` (`'brandFirst'` or `'compositionFirst'`, default: `'brandFirst'`). Dual-mode search scoring in `MedicineSearchScorer` with on-the-fly `[🏷️ Brand | 🧪 Salt]` segmented pill on the search bar in the encounter screen.
@@ -114,18 +112,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Longitudinal Prescription Architecture & Append-Only Consultations** — Complete implementation of the clinical record architecture treating consultations as immutable historical encounters.
 - **5-Step Clinical Sequence Encounter UI (`ConsultationEncounterScreen`)** — Strict clinical workflow: Patient Header + Allergies Alert ➔ Vitals & Clinical Examination ➔ Diagnostic Lab Review ➔ Medication Reconciliation & Prescribing ➔ Advice & Lab Orders.
-- **Medication Reconciliation State Machine** — Explicit lifecycle states (`START`, `CONTINUE`, `STOP`) on prescription items. 1-click continuation for ongoing chronic regimens (`durationDays = null`) and explicit discontinuation documenting clinical `stopReason`.
-- **Zero-Friction Outside / Unlisted Medicine Fallback (`unlistedName`)** — Doctors are never blocked when prescribing outside or brand medications missing from the clinic catalogue.
+- **Medication Reconciliation State Machine** — Explicit lifecycle states (`START`, `CONTINUE`, `STOP`) on prescription items. 1-tap continuation for ongoing chronic regimens (`durationDays = null`) and explicit discontinuation documenting clinical `stopReason`.
+- **Unlisted Medicine Fallback (`unlistedName`)** — Doctors can prescribe outside or brand medications missing from the clinic catalogue.
 - **Composition-First Medicine Search & Scoring Engine (`MedicineSearchScorer`)** — Prioritizes chemical molecule matches at the top with associated clinic brands grouped underneath, offering 1-tap generic and brand prescribing chips.
-- **Default Essential OPD Medicines (`lib/utils/default_medicines.dart`)** — Standard OPD medications (Dolo 650, Calpol 650, Augmentin 625 Duo, Moxikind-CV, Azee 500, Azithral 500, Pan 40, Telma 40, etc.) exist by default with deterministic document IDs (`med_*`), guaranteeing zero-duplicate idempotency.
-- **Master Medicine Catalogue Management (`MedicineCatalogueScreen`)** — Dedicated administration interface in reception shell for clinic owners to curate products, active compositions, strengths, and forms with strict role guards preventing chamber prescriber pollution.
+- **Default Essential OPD Medicines (`lib/utils/default_medicines.dart`)** — Standard OPD medications (Dolo 650, Calpol 650, Augmentin 625 Duo, Moxikind-CV, Azee 500, Azithral 500, Pan 40, Telma 40, etc.) exist by default with deterministic document IDs (`med_*`) to prevent duplicates on initial seed.
+- **Master Medicine Catalogue Management (`MedicineCatalogueScreen`)** — Dedicated administration interface in reception shell for clinic owners to curate products, active compositions, strengths, and forms with role guards preventing chamber prescriber edits.
 - **Automated & On-Demand Catalogue Deduplication Engine** — Scans master medicines, identifies duplicate products with identical name, composition, and strength, and batch-purges duplicates from Firestore.
 - **Clean Prescription Print Output (`PrescriptionPrintScreen`)** — High-contrast monochrome print layout supporting A4 and A5 paper, with pre-printed letterhead mode (reserved 130px margin), active Rx schedule filtering (START/CONTINUE only), and distinct audit warning box for discontinued drugs.
-- **Responsive Clinic Command Center Dashboard (`DashboardScreen`)** — Redesigned legacy 4-block mobile view into a modern, responsive command center with compact horizontal KPI cards, live queue preview, quick reception actions, and dynamic adaptation across mobile (iPhones), 14" laptops, and 23" FHD desktop monitors.
+- **Reception Dashboard Screen (`DashboardScreen`)** — Redesigned reception overview with compact horizontal KPI cards, live queue preview, quick reception actions, and dynamic adaptation across mobile, laptop, and desktop monitors.
 - **First-Class Patient Gender / Sex Intake** — Upgraded `gender` to a required clinical field across `Patient`, `Consultation`, and `AddAppointmentDialog`.
 
 ### Removed
-- **Nuked Legacy Compatibility Shims & Fallbacks** — Removed stream-intercepting background hacks (`_hasCheckedDefaultsAndDuplicates`), legacy fallback defaults (`this.gender = 'Unspecified'`), defensive string parsing fallbacks, and legacy compatibility test suites in favor of strongly-typed models.
+- **Removed Legacy Compatibility Shims & Fallbacks** — Removed stream-intercepting shims (`_hasCheckedDefaultsAndDuplicates`), legacy fallback defaults (`this.gender = 'Unspecified'`), defensive string parsing fallbacks, and legacy compatibility test suites in favor of strongly-typed models.
 
 ---
 

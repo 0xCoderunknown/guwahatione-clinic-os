@@ -15,8 +15,8 @@ In India, the vast majority of outpatient (OPD) prescriptions are handwritten on
 - **The Software Trap for Small Clinics:** When independent physicians or small single-doctor clinics look for digital solutions, they face bloated enterprise "hospital packages" that cost thousands of rupees and force them into inventory lot tracking, wholesale purchase orders, retail billing, and insurance claims.
 
 ### The Clinic OS Mandate: "1 Simple Thing"
-GuwahatiOne Clinic OS is built to do **one focused job flawlessly**:
-> **A doctor's rapid clinical bookkeeping system, digital longitudinal patient record, and clean monochrome printed prescription generator. Zero inventory tracking. Zero retail invoicing. Zero operational fluff.**
+GuwahatiOne Clinic OS is built to focus on one primary role:
+> **A doctor's clinical consultation record, longitudinal patient encounter history, and clean monochrome printed prescription generator. No inventory tracking. No retail invoicing.**
 
 ---
 
@@ -25,7 +25,7 @@ GuwahatiOne Clinic OS is built to do **one focused job flawlessly**:
 | Role | Environment | Key Responsibilities |
 |---|---|---|
 | **Receptionist / Assistant** | Counter PC / Tablet | Patient demographic intake (Name, Age, Gender, Phone), atomic queue token allocation, calling tokens, fee ledger. |
-| **Consulting Physician** | Chamber Laptop / Monitor | Focused patient consultation, rapid vitals/findings recording, smart medication prescription, test orders, review of past records. |
+| **Consulting Physician** | Chamber Laptop / Monitor | Focused patient consultation, rapid vitals/findings recording, medication prescribing, test orders, review of past records. |
 | **Patient** | Chamber & Waiting Room | Receives an atomic token, receives an approximate consultation window, walks away with a clear, legible A4/A5 printed prescription. |
 
 ---
@@ -52,17 +52,17 @@ GuwahatiOne Clinic OS is built to do **one focused job flawlessly**:
 - **Vitals & Clinical Data:** BP (Systolic/Diastolic), Random Blood Sugar (RBS), Pulse, Weight, Temperature, Chief Complaints, and Provisional Diagnosis.
 - When finished, the doctor clicks **"Close Findings"**. The section minimizes into a concise summary badge, keeping the screen clean and uncluttered.
 
-### Section B: Smart Medication Prescribing ("Add Medicine")
+### Section B: Medication Prescribing ("Add Medicine")
 - The doctor clicks **"Add Medicine"**, revealing a focused, empty search bar.
-- **Intelligent Autocomplete:**
+- **Autocomplete & Search:**
   - Typing `Tel` immediately lists matches: *Telma 40*, *Telmisartan 40mg*, *Telmisartan 40mg + Amlodipine 5mg*, *Telmisartan 40mg + Metoprolol 25mg*.
   - Even if the full brand name is typed, selecting it locks in the verified catalogue entry.
-- **Pre-filled Clinical Defaults (The Keystroke Saver):**
-  - In outpatient medicine, **90%+ of dosages and durations follow standard clinical guidelines**.
+- **Pre-filled Clinical Defaults:**
+  - Common outpatient medications follow standard regimens.
   - As soon as *Telma 40* is selected, the system automatically reveals and pre-fills:
     - **Dosage / Frequency:** `1 tablet - Morning (After food) [1-0-0]`
     - **Duration:** `30 Days` (or chronic `To be continued`)
-  - **Zero Unnecessary Typing:** The doctor does not need to retype dosage and duration. They only touch these fields if they wish to deviate or override the default regimen.
+  - **Regimen Adjustment:** Prescription defaults populate automatically; doctors adjust fields only when deviating from standard regimens.
 - When prescribing is complete, the doctor clicks **"Close Medicine"**.
 
 ### Section C: Diagnostic Investigations ("Tests Section")
@@ -138,7 +138,7 @@ To fulfill the PM vision where *"the doctor didn't have to touch even the mouse"
 ### 3. Medication Reconciliation: Why START / CONTINUE / STOP is Essential
 Handwritten prescriptions fail because when a patient brings 4 old slips, no one knows which drugs are current and which were stopped.
 - By treating medications as longitudinal states (**`START`** for new therapies, **`CONTINUE`** for ongoing chronic regimens, **`STOP`** for discontinued drugs), Clinic OS creates a true clinical timeline.
-- A printed follow-up prescription clearly communicates to the patient and family: *"Continue Telma 40, Stop Amlodipine"*, drastically reducing medication reconciliation errors at home.
+- A printed follow-up prescription clearly communicates to the patient and family: *"Continue Telma 40, Stop Amlodipine"*, reducing medication reconciliation errors at home.
 
 ### 4. Zero Deletions as a Safeguard
 Preserving cancelled/absent tokens (`AppointmentStatus.absent` with `₹0`) and treating consultations as append-only records ensures:
@@ -150,7 +150,7 @@ Preserving cancelled/absent tokens (`AppointmentStatus.absent` with `₹0`) and 
 
 ## 📋 7. Product Boundaries & Anti-Scope Checklist
 
-To keep the system fast, reliable, and laser-focused:
+To keep the system focused on outpatient clinical workflows:
 - ❌ **No Pharmacy Inventory Management:** No tracking batches, expirations, stock shelves, or wholesale distributors.
 - ❌ **No Retail Point of Sale (POS):** No billing for OTC band-aids, cotton rolls, or retail syringes.
 - ❌ **No Insurance / TPA Billing Engine:** No complex claim adjudication or hospital package codes.
