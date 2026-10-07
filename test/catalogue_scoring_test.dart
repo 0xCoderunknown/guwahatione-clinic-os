@@ -4,6 +4,7 @@ import 'package:appointment_app/models/user_role.dart';
 import 'package:appointment_app/models/prescription_item.dart';
 import 'package:appointment_app/utils/medicine_search_scorer.dart';
 import 'package:appointment_app/utils/default_medicines.dart';
+import 'package:appointment_app/utils/clinical_defaults_helper.dart';
 
 void main() {
   group('Composition-First Medicine Search Scorer Tests', () {
@@ -162,6 +163,61 @@ void main() {
 
       // Verify master catalogue remains pristine and unmutated
       expect(catalog.any((m) => m.productName.contains('Aziver')), isFalse);
+    });
+
+    test('Brand-First search mode ranks trade brand prefix highest and sorts matching brand first', () {
+      final results = MedicineSearchScorer.searchAndGroup(
+        catalog: catalog,
+        query: 'Dolo',
+        searchMode: 'brandFirst',
+      );
+
+      expect(results, isNotEmpty);
+      expect(results.first.score, 100);
+      expect(results.first.associatedBrands.first.productName, 'Dolo 650');
+    });
+
+    test('ClinicalDefaultsHelper populates appropriate dosage, frequency, and timing defaults', () {
+      const ppi = Medicine(
+        id: 'med_pan_40',
+        productName: 'Pan 40',
+        composition: 'Pantoprazole',
+        strength: '40 mg',
+        form: 'Tablet',
+        category: 'Proton Pump Inhibitor',
+      );
+      final ppiDefaults = ClinicalDefaultsHelper.getDefaultsForMedicine(ppi);
+      expect(ppiDefaults.timing, 'Before Food (Empty Stomach)');
+      expect(ppiDefaults.frequency, '1-0-0 (OD)');
+      expect(ppiDefaults.durationDays, 14);
+
+      const antihtn = Medicine(
+        id: 'med_telma_40',
+        productName: 'Telma 40',
+        composition: 'Telmisartan',
+        strength: '40 mg',
+        form: 'Tablet',
+        category: 'Antihypertensive',
+      );
+      final antihtnDefaults = ClinicalDefaultsHelper.getDefaultsForMedicine(antihtn);
+      expect(antihtnDefaults.frequency, '1-0-0 (OD)');
+      expect(antihtnDefaults.timing, 'After Food (Morning)');
+      expect(antihtnDefaults.durationDays, 30); // 30-day routine OPD refill cycle
+
+      // Explicit catalogue override with indefinite chronic duration (null)
+      const chronicMed = Medicine(
+        id: 'med_chronic_1',
+        productName: 'Chronic Pill',
+        composition: 'Molecule X',
+        strength: '10 mg',
+        form: 'Tablet',
+        defaultDosage: '1 Tablet',
+        defaultFrequency: '1-0-0 (OD)',
+        defaultTiming: 'After Breakfast',
+        defaultDurationDays: null,
+      );
+      final chronicDefaults = ClinicalDefaultsHelper.getDefaultsForMedicine(chronicMed);
+      expect(chronicDefaults.durationDays, isNull);
     });
   });
 

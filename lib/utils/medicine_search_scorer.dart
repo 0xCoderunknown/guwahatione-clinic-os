@@ -21,11 +21,12 @@ class CompositionGroupResult {
 }
 
 class MedicineSearchScorer {
-  /// Scores and groups catalogue medicines prioritizing chemical composition first,
-  /// followed by commercial trade brands.
+  /// Scores and groups catalogue medicines prioritizing chemical composition or
+  /// commercial trade brands based on [searchMode] ('brandFirst' or 'compositionFirst').
   static List<CompositionGroupResult> searchAndGroup({
     required List<Medicine> catalog,
     required String query,
+    String searchMode = 'compositionFirst',
   }) {
     final cleanQuery = query.trim().toLowerCase();
     if (cleanQuery.isEmpty) {
@@ -47,21 +48,35 @@ class MedicineSearchScorer {
       int score = 0;
       bool isCompMatch = false;
 
-      // Composition matches have highest priority (80 - 100)
-      if (fullCompLower.startsWith(cleanQuery) || compLower.startsWith(cleanQuery)) {
-        score = 100;
-        isCompMatch = true;
-      } else if (fullCompLower.contains(cleanQuery) ||
-          compLower.contains(cleanQuery) ||
-          strengthLower.contains(cleanQuery)) {
-        score = 80;
-        isCompMatch = true;
-      } else if (brandLower.startsWith(cleanQuery)) {
-        // Trade brand prefix match (60)
-        score = 60;
-      } else if (brandLower.contains(cleanQuery)) {
-        // Trade brand substring match (40)
-        score = 40;
+      if (searchMode == 'brandFirst') {
+        if (brandLower.startsWith(cleanQuery)) {
+          score = 100;
+        } else if (brandLower.contains(cleanQuery)) {
+          score = 80;
+        } else if (fullCompLower.startsWith(cleanQuery) || compLower.startsWith(cleanQuery)) {
+          score = 60;
+          isCompMatch = true;
+        } else if (fullCompLower.contains(cleanQuery) ||
+            compLower.contains(cleanQuery) ||
+            strengthLower.contains(cleanQuery)) {
+          score = 40;
+          isCompMatch = true;
+        }
+      } else {
+        // compositionFirst
+        if (fullCompLower.startsWith(cleanQuery) || compLower.startsWith(cleanQuery)) {
+          score = 100;
+          isCompMatch = true;
+        } else if (fullCompLower.contains(cleanQuery) ||
+            compLower.contains(cleanQuery) ||
+            strengthLower.contains(cleanQuery)) {
+          score = 80;
+          isCompMatch = true;
+        } else if (brandLower.startsWith(cleanQuery)) {
+          score = 60;
+        } else if (brandLower.contains(cleanQuery)) {
+          score = 40;
+        }
       }
 
       if (score > 0) {
@@ -81,6 +96,15 @@ class MedicineSearchScorer {
     final List<CompositionGroupResult> results = [];
     for (final entry in groupedByComp.entries) {
       final meds = entry.value;
+      // Sort brands so directly matched brands appear first
+      meds.sort((a, b) {
+        final aMatch = a.productName.toLowerCase().contains(cleanQuery);
+        final bMatch = b.productName.toLowerCase().contains(cleanQuery);
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return a.productName.compareTo(b.productName);
+      });
+
       final first = meds.first;
       final key = entry.key;
 
@@ -97,13 +121,19 @@ class MedicineSearchScorer {
       );
     }
 
-    // Sort: highest score first; if tied, composition matches first, then alphabetically
+    // Sort: highest score first; if tied, mode preference first, then alphabetically
     results.sort((a, b) {
       if (b.score != a.score) {
         return b.score.compareTo(a.score);
       }
-      if (b.isCompositionMatch != a.isCompositionMatch) {
-        return b.isCompositionMatch ? 1 : -1;
+      if (searchMode == 'compositionFirst') {
+        if (b.isCompositionMatch != a.isCompositionMatch) {
+          return b.isCompositionMatch ? 1 : -1;
+        }
+      } else {
+        if (b.isCompositionMatch != a.isCompositionMatch) {
+          return b.isCompositionMatch ? -1 : 1;
+        }
       }
       return a.compositionLabel.compareTo(b.compositionLabel);
     });

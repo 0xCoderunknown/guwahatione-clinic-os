@@ -86,8 +86,8 @@ lib/
 └── utils/        -> Helpers (Default medicines, search scorer, constants, platform print)
 docs/
 ├── SCHEMA_AND_MODELS.md  -> Master data dictionary for Firestore collections & models
-├── PRODUCT_ROADMAP.md    -> Current feature state, backlog, and scope boundaries
-└── PM_OPERATING_PLAYBOOK.md -> Strict PM prompt templates & operational guide
+├── PRODUCT_VISION_AND_WORKFLOW.md -> Clinical encounter blueprint & real-world OPD intent
+└── PRODUCT_ROADMAP.md    -> Current feature state, backlog, and scope boundaries
 ```
 
 ---

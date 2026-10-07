@@ -261,6 +261,38 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                   ],
                 ),
                 const SizedBox(height: 16),
+                if (widget.appointment.status == AppointmentStatus.pending) ...[
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.teal.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    icon: const Icon(Icons.record_voice_over_rounded, size: 18),
+                    label: const Text('Call In / Start Consultation',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    onPressed: () async {
+                      final clinic = Provider.of<ClinicProvider>(context, listen: false);
+                      await clinic.callTokenIntoChamber(
+                        doctorId: widget.appointment.doctorId,
+                        date: widget.appointment.scheduledDate,
+                        appointment: widget.appointment,
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Called Token #${widget.appointment.queueNumber} (${widget.appointment.patientName}) to Dr. ${widget.appointment.doctorName} chamber',
+                            ),
+                            backgroundColor: Colors.teal.shade800,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 Row(
                   children: [
                     Expanded(

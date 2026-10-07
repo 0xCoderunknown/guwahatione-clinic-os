@@ -167,6 +167,52 @@ class FirebaseService {
   }
 
   // ---------------------------------------------------------------------------
+  // Chamber Real-Time Session (Zero-Touch Sync)
+  // ---------------------------------------------------------------------------
+
+  Future<void> callTokenIntoChamber({
+    required String doctorId,
+    required DateTime date,
+    required Appointment appointment,
+  }) async {
+    final dateKey =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final chamberDocId = 'chamber_${doctorId}_$dateKey';
+    await _countersRef.doc(chamberDocId).set({
+      'doctorId': doctorId,
+      'date': dateKey,
+      'activeAppointmentId': appointment.id,
+      'activeQueueNumber': appointment.queueNumber,
+      'patientName': appointment.patientName,
+      'patientPhone': appointment.patientPhone,
+      'calledAt': FieldValue.serverTimestamp(),
+      'status': 'calling',
+    }, SetOptions(merge: true));
+  }
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>> streamChamberSession(
+    String doctorId,
+    DateTime date,
+  ) {
+    final dateKey =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final chamberDocId = 'chamber_${doctorId}_$dateKey';
+    return _countersRef.doc(chamberDocId).snapshots();
+  }
+
+  Future<void> clearChamberSession(String doctorId, DateTime date) async {
+    final dateKey =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final chamberDocId = 'chamber_${doctorId}_$dateKey';
+    await _countersRef.doc(chamberDocId).set({
+      'activeAppointmentId': null,
+      'activeQueueNumber': null,
+      'status': 'idle',
+      'clearedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  // ---------------------------------------------------------------------------
   // Doctors
   // ---------------------------------------------------------------------------
 
@@ -175,6 +221,16 @@ class FirebaseService {
         .collection('doctors')
         .doc(doctor.id)
         .set(doctor.toJson());
+  }
+
+  Future<void> updateDoctorSearchPreference(
+    String doctorId,
+    String searchPreference,
+  ) async {
+    await _firestore
+        .collection('doctors')
+        .doc(doctorId)
+        .update({'searchPreference': searchPreference});
   }
 
   Stream<List<Doctor>> getDoctors() {

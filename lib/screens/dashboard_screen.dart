@@ -528,7 +528,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     "Doctor: ${appt.doctorName} • Fee: ₹${appt.amountCollected} (${appt.paymentType.displayName})",
                     style: const TextStyle(fontSize: 11),
                   ),
-                  trailing: _buildStatusPill(appt.status),
+                  trailing: appt.status == AppointmentStatus.pending
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.teal.shade700,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              icon: const Icon(Icons.record_voice_over_rounded, size: 14),
+                              label: const Text('Call In', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                              onPressed: () async {
+                                await provider.callTokenIntoChamber(
+                                  doctorId: appt.doctorId,
+                                  date: appt.scheduledDate,
+                                  appointment: appt,
+                                );
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Called Token #${appt.queueNumber} (${appt.patientName}) to Dr. ${appt.doctorName} chamber'),
+                                      backgroundColor: Colors.teal.shade800,
+                                      duration: const Duration(seconds: 3),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            _buildStatusPill(appt.status),
+                          ],
+                        )
+                      : _buildStatusPill(appt.status),
                 );
               },
             ),

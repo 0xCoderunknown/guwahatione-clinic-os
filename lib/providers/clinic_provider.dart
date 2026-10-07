@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/patient.dart';
@@ -36,7 +37,7 @@ class ClinicProvider with ChangeNotifier {
 
   int get dailyRevenue => _todayAppointments
       .where((a) => a.status == AppointmentStatus.completed)
-      .fold(0, (sum, item) => sum + item.amountCollected);
+      .fold(0, (total, item) => total + item.amountCollected);
 
   ClinicProvider() {
     _subscribeToDoctors();
@@ -246,6 +247,57 @@ class ClinicProvider with ChangeNotifier {
       );
     } catch (e) {
       debugPrint('Error updating status: $e');
+      rethrow;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Chamber Zero-Touch Real-Time Session
+  // ---------------------------------------------------------------------------
+
+  Future<void> callTokenIntoChamber({
+    required String doctorId,
+    required DateTime date,
+    required Appointment appointment,
+  }) async {
+    try {
+      await _firebaseService.callTokenIntoChamber(
+        doctorId: doctorId,
+        date: date,
+        appointment: appointment,
+      );
+    } catch (e) {
+      debugPrint('Error calling token into chamber: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> clearChamberSession(String doctorId, DateTime date) async {
+    try {
+      await _firebaseService.clearChamberSession(doctorId, date);
+    } catch (e) {
+      debugPrint('Error clearing chamber session: $e');
+    }
+  }
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>> streamChamberSession(
+    String doctorId,
+    DateTime date,
+  ) {
+    return _firebaseService.streamChamberSession(doctorId, date);
+  }
+
+  Future<void> updateDoctorSearchPreference(
+    String doctorId,
+    String searchPreference,
+  ) async {
+    try {
+      await _firebaseService.updateDoctorSearchPreference(
+        doctorId,
+        searchPreference,
+      );
+    } catch (e) {
+      debugPrint('Error updating doctor search preference: $e');
       rethrow;
     }
   }

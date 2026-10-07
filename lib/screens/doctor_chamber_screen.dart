@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +25,112 @@ class DoctorChamberScreen extends StatefulWidget {
 class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   DateTime _selectedDate = DateTime.now();
   final FirebaseService _firebaseService = FirebaseService();
+  StreamSubscription? _chamberSessionSub;
+  String? _activeCallingApptId;
+  String? _lastHandledCallingAppointmentId;
+  bool _isAutoNavigating = false;
+  List<Appointment> _latestAppointments = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _listenToChamberSession();
+  }
+
+  @override
+  void dispose() {
+    _chamberSessionSub?.cancel();
+    super.dispose();
+  }
+
+  void _listenToChamberSession() {
+    _chamberSessionSub?.cancel();
+    _chamberSessionSub = _firebaseService
+        .streamChamberSession(widget.doctor.id, _selectedDate)
+        .listen((snapshot) {
+      if (!snapshot.exists || !mounted) return;
+      final data = snapshot.data();
+      if (data == null) return;
+
+      final status = data['status'] as String?;
+      final activeApptId = data['activeAppointmentId'] as String?;
+
+      setState(() {
+        _activeCallingApptId = (status == 'calling' || status == 'in_consultation')
+            ? activeApptId
+            : null;
+      });
+
+      if (status == 'calling' &&
+          activeApptId != null &&
+          activeApptId.isNotEmpty &&
+          activeApptId != _lastHandledCallingAppointmentId &&
+          !_isAutoNavigating) {
+        _lastHandledCallingAppointmentId = activeApptId;
+        _autoOpenConsultationForId(activeApptId);
+      }
+    });
+  }
+
+  Future<void> _autoOpenConsultationForId(String appointmentId) async {
+    _isAutoNavigating = true;
+    try {
+      // Find from current stream list
+      Appointment? targetAppt;
+      for (final a in _latestAppointments) {
+        if (a.id == appointmentId) {
+          targetAppt = a;
+          break;
+        }
+      }
+
+      // If not in memory yet, wait briefly for stream snapshot
+      if (targetAppt == null) {
+        await Future.delayed(const Duration(milliseconds: 400));
+        for (final a in _latestAppointments) {
+          if (a.id == appointmentId) {
+            targetAppt = a;
+            break;
+          }
+        }
+      }
+
+      if (targetAppt != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.record_voice_over_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Token #${targetAppt.queueNumber} (${targetAppt.patientName}) called into chamber! Auto-loading...',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.teal.shade800,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (ctx) => ConsultationEncounterScreen(
+              appointment: targetAppt!,
+              doctor: widget.doctor,
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        _isAutoNavigating = false;
+      }
+    }
+  }
 
   bool get _isToday {
     final now = DateTime.now();
@@ -43,6 +150,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
       setState(() {
         _selectedDate = picked;
       });
+      _listenToChamberSession();
     }
   }
 
@@ -50,6 +158,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
     setState(() {
       _selectedDate = _selectedDate.add(Duration(days: dayDelta));
     });
+    _listenToChamberSession();
   }
 
   @override
@@ -160,6 +269,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
           final appointments = snapshot.data ?? [];
           // Sort strictly by queue number (ascending)
           appointments.sort((a, b) => a.queueNumber.compareTo(b.queueNumber));
+          _latestAppointments = appointments;
 
           // Metrics calculation
           final totalBooked = appointments.length;
@@ -427,7 +537,14 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
     String statusTitle;
     String paymentSubtitle;
 
-    if (appt.status == AppointmentStatus.absent) {
+    final isCallingNow = appt.id == _activeCallingApptId;
+
+    if (isCallingNow) {
+      badgeBg = const Color(0xFFDCFCE7);
+      badgeFg = const Color(0xFF15803D);
+      statusTitle = "CALLING / IN CHAMBER";
+      paymentSubtitle = "Active Token • In Chamber";
+    } else if (appt.status == AppointmentStatus.absent) {
       badgeBg = const Color(0xFFF1F5F9);
       badgeFg = const Color(0xFF64748B);
       statusTitle = "ABSENT";
@@ -466,18 +583,22 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isCallingNow ? const Color(0xFFF0FDF4) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: appt.status == AppointmentStatus.pending
-                ? Colors.blue.shade200
-                : const Color(0xFFE2E8F0),
-            width: appt.status == AppointmentStatus.pending ? 1.5 : 1,
+            color: isCallingNow
+                ? Colors.teal.shade600
+                : (appt.status == AppointmentStatus.pending
+                    ? Colors.blue.shade200
+                    : const Color(0xFFE2E8F0)),
+            width: isCallingNow ? 2.5 : (appt.status == AppointmentStatus.pending ? 1.5 : 1),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.015),
-              blurRadius: 4,
+              color: isCallingNow
+                  ? Colors.teal.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.015),
+              blurRadius: isCallingNow ? 8 : 4,
               offset: const Offset(0, 1),
             ),
           ],

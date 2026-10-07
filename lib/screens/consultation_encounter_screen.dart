@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,7 @@ import '../models/prescription_item.dart';
 import '../models/vitals.dart';
 import '../providers/clinic_provider.dart';
 import '../utils/medicine_search_scorer.dart';
+import '../utils/clinical_defaults_helper.dart';
 import 'prescription_print_screen.dart';
 
 class ConsultationEncounterScreen extends StatefulWidget {
@@ -34,6 +36,31 @@ class _ConsultationEncounterScreenState
   final Uuid _uuid = const Uuid();
   bool _isLoading = true;
   bool _isSaving = false;
+
+  // Section Ergonomics
+  bool _isFindingsExpanded = true;
+  bool _isMedicineExpanded = true;
+
+  // Real-time chamber incoming alert
+  StreamSubscription? _chamberSessionSub;
+  String? _incomingCallingApptId;
+  String? _incomingCallingPatientName;
+  int? _incomingCallingQueueNumber;
+
+  // Inline Medicine Prescribing & Staging
+  late String _searchMode;
+  final TextEditingController _medSearchController = TextEditingController();
+  bool _isSearchActive = false;
+  Medicine? _stagedMedicine;
+  CompositionGroupResult? _stagedGenericGroup;
+  String? _stagedUnlistedName;
+  String? _stagedComposition;
+  final TextEditingController _stagedDosageController = TextEditingController(text: '1 Tablet');
+  final TextEditingController _stagedDurationController = TextEditingController(text: '30');
+  final TextEditingController _stagedInstructionsController = TextEditingController();
+  String _stagedFrequency = '1-0-0 (OD)';
+  String _stagedTiming = 'After Food';
+  bool _stagedIsChronic = false;
 
   // Patient state
   List<String> _allergies = [];
@@ -71,11 +98,46 @@ class _ConsultationEncounterScreenState
   @override
   void initState() {
     super.initState();
+    _searchMode = widget.doctor.searchPreference;
+    _listenToChamberSessionAlert();
     _loadInitialData();
+  }
+
+  void _listenToChamberSessionAlert() {
+    final clinic = Provider.of<ClinicProvider>(context, listen: false);
+    _chamberSessionSub = clinic
+        .streamChamberSession(widget.doctor.id, widget.appointment.scheduledDate)
+        .listen((snapshot) {
+      if (!snapshot.exists || !mounted) return;
+      final data = snapshot.data();
+      if (data == null) return;
+      final activeApptId = data['activeAppointmentId'] as String?;
+      final status = data['status'] as String?;
+
+      if (status == 'calling' &&
+          activeApptId != null &&
+          activeApptId.isNotEmpty &&
+          activeApptId != widget.appointment.id) {
+        setState(() {
+          _incomingCallingApptId = activeApptId;
+          _incomingCallingPatientName = data['patientName'] as String? ?? 'Next Patient';
+          _incomingCallingQueueNumber = (data['activeQueueNumber'] as num?)?.toInt();
+        });
+      } else if (status == 'idle' || activeApptId == null) {
+        setState(() {
+          _incomingCallingApptId = null;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    _chamberSessionSub?.cancel();
+    _medSearchController.dispose();
+    _stagedDosageController.dispose();
+    _stagedDurationController.dispose();
+    _stagedInstructionsController.dispose();
     _systolicBpController.dispose();
     _diastolicBpController.dispose();
     _pulseController.dispose();
@@ -219,6 +281,11 @@ class _ConsultationEncounterScreenState
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    if (_incomingCallingApptId != null) ...[
+                      _buildIncomingPatientAlertBanner(),
+                      const SizedBox(height: 14),
+                    ],
+
                     // STEP 1: Patient Header & Allergies Alert Banner
                     _buildStep1PatientHeader(),
                     const SizedBox(height: 16),
@@ -418,168 +485,275 @@ class _ConsultationEncounterScreenState
       title: 'Step 2: Vitals & Clinical Examination',
       icon: Icons.monitor_heart_outlined,
       iconColor: Colors.teal,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      trailing: TextButton.icon(
+        icon: Icon(_isFindingsExpanded ? Icons.unfold_less : Icons.edit_note, size: 18),
+        label: Text(_isFindingsExpanded ? 'Close Findings' : 'Add / Edit Findings'),
+        onPressed: () {
+          setState(() => _isFindingsExpanded = !_isFindingsExpanded);
+        },
+      ),
+      child: _isFindingsExpanded
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Compact Vitals Grid / Row
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _buildCompactVitalField(
+                      label: 'BP (Systolic)',
+                      unit: 'mmHg',
+                      controller: _systolicBpController,
+                      hint: '120',
+                      width: 140,
+                    ),
+                    _buildCompactVitalField(
+                      label: 'BP (Diastolic)',
+                      unit: 'mmHg',
+                      controller: _diastolicBpController,
+                      hint: '80',
+                      width: 140,
+                    ),
+                    _buildCompactVitalField(
+                      label: 'Pulse Rate',
+                      unit: 'bpm',
+                      controller: _pulseController,
+                      hint: '72',
+                      width: 130,
+                    ),
+                    _buildCompactVitalField(
+                      label: 'SpO2',
+                      unit: '%',
+                      controller: _spo2Controller,
+                      hint: '98',
+                      width: 110,
+                    ),
+                    _buildCompactVitalField(
+                      label: 'Temp',
+                      unit: '°F',
+                      controller: _tempController,
+                      hint: '98.6',
+                      width: 120,
+                    ),
+                    _buildCompactVitalField(
+                      label: 'Weight',
+                      unit: 'kg',
+                      controller: _weightController,
+                      hint: '68.5',
+                      width: 130,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+
+                // Chief Complaints (directly above prescriptions)
+                const Text(
+                  'Chief Complaints / Symptoms',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _complaintInputController,
+                        decoration: const InputDecoration(
+                          hintText: 'e.g., Fever x 3 days, dry cough, headache...',
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          border: OutlineInputBorder(),
+                        ),
+                        onSubmitted: (_) => _addChiefComplaint(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton.tonalIcon(
+                      onPressed: _addChiefComplaint,
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Add'),
+                    ),
+                  ],
+                ),
+                if (_chiefComplaints.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: _chiefComplaints.map((c) {
+                      return Chip(
+                        label: Text(c, style: const TextStyle(fontSize: 12)),
+                        backgroundColor: Colors.teal.shade50,
+                        deleteIcon: const Icon(Icons.close, size: 14),
+                        onDeleted: () {
+                          setState(() => _chiefComplaints.remove(c));
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+                const SizedBox(height: 16),
+
+                // Provisional Diagnosis
+                const Text(
+                  'Provisional / Working Diagnosis',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _diagnosisInputController,
+                        decoration: const InputDecoration(
+                          hintText: 'e.g., Acute Viral Bronchitis, Essential Hypertension...',
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          border: OutlineInputBorder(),
+                        ),
+                        onSubmitted: (_) => _addProvisionalDiagnosis(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton.tonalIcon(
+                      onPressed: _addProvisionalDiagnosis,
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Add'),
+                    ),
+                  ],
+                ),
+                if (_provisionalDiagnoses.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: _provisionalDiagnoses.map((d) {
+                      return Chip(
+                        label: Text(d, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                        backgroundColor: Colors.blue.shade50,
+                        side: BorderSide(color: Colors.blue.shade200),
+                        deleteIcon: const Icon(Icons.close, size: 14),
+                        onDeleted: () {
+                          setState(() => _provisionalDiagnoses.remove(d));
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+                const SizedBox(height: 16),
+
+                // Clinical Examination Notes
+                const Text(
+                  'Physical & Systemic Examination (Optional)',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: _examController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g., Chest clear, no wheezing, throat congested, abdomen soft...',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.teal.shade50,
+                      foregroundColor: Colors.teal.shade800,
+                    ),
+                    icon: const Icon(Icons.check_circle_outline, size: 16),
+                    label: const Text('Close Findings & Proceed to Medicines'),
+                    onPressed: () => setState(() => _isFindingsExpanded = false),
+                  ),
+                ),
+              ],
+            )
+          : _buildCollapsedFindingsSummary(),
+    );
+  }
+
+  Widget _buildCollapsedFindingsSummary() {
+    final chips = <Widget>[];
+    if (_systolicBpController.text.isNotEmpty || _diastolicBpController.text.isNotEmpty) {
+      chips.add(_buildSummaryPill('BP', '${_systolicBpController.text}/${_diastolicBpController.text} mmHg', Icons.speed));
+    }
+    if (_pulseController.text.isNotEmpty) {
+      chips.add(_buildSummaryPill('Pulse', '${_pulseController.text} bpm', Icons.favorite_border));
+    }
+    if (_spo2Controller.text.isNotEmpty) {
+      chips.add(_buildSummaryPill('SpO2', '${_spo2Controller.text}%', Icons.air));
+    }
+    if (_tempController.text.isNotEmpty) {
+      chips.add(_buildSummaryPill('Temp', '${_tempController.text}°F', Icons.thermostat));
+    }
+    if (_weightController.text.isNotEmpty) {
+      chips.add(_buildSummaryPill('Weight', '${_weightController.text} kg', Icons.scale));
+    }
+    if (_chiefComplaints.isNotEmpty) {
+      chips.add(_buildSummaryPill('Complaints', _chiefComplaints.join(', '), Icons.chat_bubble_outline));
+    }
+    if (_provisionalDiagnoses.isNotEmpty) {
+      chips.add(_buildSummaryPill('Diagnosis', _provisionalDiagnoses.join(', '), Icons.medical_services_outlined, isAccent: true));
+    }
+
+    if (chips.isEmpty) {
+      return InkWell(
+        onTap: () => setState(() => _isFindingsExpanded = true),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.add_circle_outline, size: 18, color: Colors.teal.shade700),
+              const SizedBox(width: 8),
+              Text(
+                'No clinical findings or vitals recorded yet. Tap "Add / Edit Findings" to add.',
+                style: TextStyle(fontSize: 12, color: Colors.teal.shade700, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      children: chips,
+    );
+  }
+
+  Widget _buildSummaryPill(String label, String value, IconData icon, {bool isAccent = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: isAccent ? Colors.blue.shade50 : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: isAccent ? Colors.blue.shade200 : const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Compact Vitals Grid / Row
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _buildCompactVitalField(
-                label: 'BP (Systolic)',
-                unit: 'mmHg',
-                controller: _systolicBpController,
-                hint: '120',
-                width: 140,
-              ),
-              _buildCompactVitalField(
-                label: 'BP (Diastolic)',
-                unit: 'mmHg',
-                controller: _diastolicBpController,
-                hint: '80',
-                width: 140,
-              ),
-              _buildCompactVitalField(
-                label: 'Pulse Rate',
-                unit: 'bpm',
-                controller: _pulseController,
-                hint: '72',
-                width: 130,
-              ),
-              _buildCompactVitalField(
-                label: 'SpO2',
-                unit: '%',
-                controller: _spo2Controller,
-                hint: '98',
-                width: 110,
-              ),
-              _buildCompactVitalField(
-                label: 'Temp',
-                unit: '°F',
-                controller: _tempController,
-                hint: '98.6',
-                width: 120,
-              ),
-              _buildCompactVitalField(
-                label: 'Weight',
-                unit: 'kg',
-                controller: _weightController,
-                hint: '68.5',
-                width: 130,
-              ),
-            ],
+          Icon(icon, size: 14, color: isAccent ? Colors.blue.shade700 : Colors.grey.shade700),
+          const SizedBox(width: 6),
+          Text(
+            '$label: ',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isAccent ? Colors.blue.shade900 : Colors.grey.shade800),
           ),
-          const SizedBox(height: 18),
-
-          // Chief Complaints (directly above prescriptions)
-          const Text(
-            'Chief Complaints / Symptoms',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _complaintInputController,
-                  decoration: const InputDecoration(
-                    hintText: 'e.g., Fever x 3 days, dry cough, headache...',
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(),
-                  ),
-                  onSubmitted: (_) => _addChiefComplaint(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.tonalIcon(
-                onPressed: _addChiefComplaint,
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add'),
-              ),
-            ],
-          ),
-          if (_chiefComplaints.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: _chiefComplaints.map((c) {
-                return Chip(
-                  label: Text(c, style: const TextStyle(fontSize: 12)),
-                  backgroundColor: Colors.teal.shade50,
-                  deleteIcon: const Icon(Icons.close, size: 14),
-                  onDeleted: () {
-                    setState(() => _chiefComplaints.remove(c));
-                  },
-                );
-              }).toList(),
-            ),
-          ],
-          const SizedBox(height: 16),
-
-          // Provisional Diagnosis
-          const Text(
-            'Provisional / Working Diagnosis',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _diagnosisInputController,
-                  decoration: const InputDecoration(
-                    hintText: 'e.g., Acute Viral Bronchitis, Essential Hypertension...',
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(),
-                  ),
-                  onSubmitted: (_) => _addProvisionalDiagnosis(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.tonalIcon(
-                onPressed: _addProvisionalDiagnosis,
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add'),
-              ),
-            ],
-          ),
-          if (_provisionalDiagnoses.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: _provisionalDiagnoses.map((d) {
-                return Chip(
-                  label: Text(d, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                  backgroundColor: Colors.blue.shade50,
-                  side: BorderSide(color: Colors.blue.shade200),
-                  deleteIcon: const Icon(Icons.close, size: 14),
-                  onDeleted: () {
-                    setState(() => _provisionalDiagnoses.remove(d));
-                  },
-                );
-              }).toList(),
-            ),
-          ],
-          const SizedBox(height: 16),
-
-          // Clinical Examination Notes
-          const Text(
-            'Physical & Systemic Examination (Optional)',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _examController,
-            maxLines: 2,
-            decoration: const InputDecoration(
-              hintText: 'e.g., Chest clear, no wheezing, throat congested, abdomen soft...',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.all(12),
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isAccent ? Colors.blue.shade900 : const Color(0xFF0F172A)),
             ),
           ),
         ],
@@ -793,106 +967,766 @@ class _ConsultationEncounterScreenState
   // ===========================================================================
 
   Widget _buildStep4MedicationReconciliation() {
+    final catalog = Provider.of<ClinicProvider>(context).medicines;
+    final results = _medSearchController.text.trim().isNotEmpty
+        ? MedicineSearchScorer.searchAndGroup(
+            catalog: catalog,
+            query: _medSearchController.text,
+            searchMode: _searchMode,
+          )
+        : <CompositionGroupResult>[];
+
     return _buildSectionCard(
-      title: 'Step 4: Medication Reconciliation & Prescribing',
-      icon: Icons.medication_liquid_outlined,
+      title: 'Step 4: Medication Prescribing & Reconciliation',
+      icon: Icons.medication_rounded,
       iconColor: Colors.blue,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Section A: Past Active Meds (Reconciliation)
-          if (_reconciliationItems.isNotEmpty) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade100),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.published_with_changes_rounded, size: 18, color: Colors.blue),
-                      const SizedBox(width: 8),
-                      const Text(
-                        "Medication Reconciliation (From Prior Visits)",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E3A8A)),
-                      ),
-                      const Spacer(),
-                      Text(
-                        "${_reconciliationItems.length} active previously",
-                        style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
-                      ),
-                    ],
+          // Search mode toggle pill
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFCBD5E1)),
+            ),
+            padding: const EdgeInsets.all(2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildSearchModePill('brandFirst', '🏷️ Brand'),
+                _buildSearchModePill('compositionFirst', '🧪 Salt'),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            icon: Icon(_isMedicineExpanded ? Icons.unfold_less : Icons.unfold_more, size: 18),
+            label: Text(_isMedicineExpanded ? 'Close Medicine' : 'Open Medicine'),
+            onPressed: () {
+              setState(() => _isMedicineExpanded = !_isMedicineExpanded);
+            },
+          ),
+        ],
+      ),
+      child: _isMedicineExpanded
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Section A: Past Active Meds (Reconciliation Baseline)
+                if (_reconciliationItems.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade100),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.published_with_changes_rounded, size: 18, color: Colors.blue),
+                            const SizedBox(width: 8),
+                            const Text(
+                              "Medication Reconciliation (From Prior Visits)",
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E3A8A)),
+                            ),
+                            const Spacer(),
+                            Text(
+                              "${_reconciliationItems.length} active previously",
+                              style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _reconciliationItems.length,
+                          separatorBuilder: (ctx, i) => const SizedBox(height: 6),
+                          itemBuilder: (ctx, index) {
+                            return _buildReconciliationItemRow(_reconciliationItems[index], index);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
+                ],
+
+                // Section B: INLINE Rapid Medicine Prescribing
+                const Text(
+                  'Add Medicine (Search by Brand or Composition)',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: _medSearchController,
+                  decoration: InputDecoration(
+                    hintText: _searchMode == 'brandFirst'
+                        ? 'Type brand name (e.g., Telma, Dolo, Augmentin, Pan)...'
+                        : 'Type composition / salt (e.g., Telmisartan, Paracetamol)...',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    suffixIcon: _medSearchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () {
+                              setState(() {
+                                _medSearchController.clear();
+                                _isSearchActive = false;
+                              });
+                            },
+                          )
+                        : null,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (val) {
+                    setState(() {
+                      _isSearchActive = val.trim().isNotEmpty;
+                    });
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // Live Autocomplete Suggestions
+                if (_isSearchActive && _medSearchController.text.trim().isNotEmpty) ...[
+                  _buildInlineSearchResults(results),
+                  const SizedBox(height: 12),
+                ],
+
+                // Staged Medicine Form with Prefilled Defaults
+                if (_stagedMedicine != null || _stagedGenericGroup != null || _stagedUnlistedName != null) ...[
+                  _buildStagedMedicineForm(),
+                  const SizedBox(height: 14),
+                ],
+
+                // List of newly prescribed medications
+                const Text(
+                  'Prescribed Medications (This Encounter)',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                ),
+                const SizedBox(height: 6),
+                if (_newPrescriptions.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'No new medicines added yet. Type in search bar above to prescribe.',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  )
+                else
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _reconciliationItems.length,
+                    itemCount: _newPrescriptions.length,
                     separatorBuilder: (ctx, i) => const SizedBox(height: 6),
                     itemBuilder: (ctx, index) {
-                      return _buildReconciliationItemRow(_reconciliationItems[index], index);
+                      return _buildNewPrescriptionRow(_newPrescriptions[index], index);
                     },
+                  ),
+
+                const SizedBox(height: 14),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.teal.shade50,
+                      foregroundColor: Colors.teal.shade800,
+                    ),
+                    icon: const Icon(Icons.check_circle_outline, size: 16),
+                    label: const Text('Close Medicine & Proceed to Tests'),
+                    onPressed: () => setState(() => _isMedicineExpanded = false),
+                  ),
+                ),
+              ],
+            )
+          : _buildCollapsedMedicineSummary(),
+    );
+  }
+
+  Widget _buildSearchModePill(String mode, String label) {
+    final isSelected = _searchMode == mode;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _searchMode = mode;
+        });
+      },
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected ? Colors.teal.shade800 : Colors.grey.shade700,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInlineSearchResults(List<CompositionGroupResult> results) {
+    final query = _medSearchController.text.trim();
+
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 250),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.teal.shade200, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.all(8),
+        children: [
+          if (results.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'No matching medicine found for "$query".',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    ),
+                  ),
+                  FilledButton.tonal(
+                    style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
+                    onPressed: () => _stageUnlisted(query),
+                    child: Text('Prescribe Outside: "$query"'),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // Section B: Prescribe New Medications (START)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Newly Initiated Medications (START)',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-              ),
-              FilledButton.icon(
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add Medication'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            )
+          else ...[
+            ...results.take(6).map((group) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-                onPressed: _openAddMedicationDialog,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "${group.compositionLabel} [${group.form}]",
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF0F172A)),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => _stageGeneric(group),
+                          borderRadius: BorderRadius.circular(4),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.purple.shade200),
+                            ),
+                            child: Text(
+                              '+ Prescribe Generic',
+                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.purple.shade800),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: group.associatedBrands.map((brand) {
+                        return ActionChip(
+                          avatar: const Icon(Icons.local_pharmacy_outlined, size: 14, color: Colors.teal),
+                          label: Text(
+                            "${brand.productName}${brand.manufacturer != null ? ' (${brand.manufacturer})' : ''}",
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                          backgroundColor: Colors.white,
+                          side: BorderSide(color: Colors.teal.shade200),
+                          onPressed: () => _stageMedicine(brand),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            // Fallback unlisted button at bottom of results
+            const Divider(height: 12),
+            InkWell(
+              onTap: () => _stageUnlisted(query),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                child: Row(
+                  children: [
+                    Icon(Icons.add_circle_outline, size: 16, color: Colors.blue.shade700),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Prescribe unlisted outside brand: "$query"',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue.shade700),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStagedMedicineForm() {
+    String displayName = '';
+    String compName = _stagedComposition ?? '';
+    if (_stagedMedicine != null) {
+      displayName = _stagedMedicine!.productName;
+      if (compName.isEmpty) compName = _stagedMedicine!.fullCompositionLabel;
+    } else if (_stagedGenericGroup != null) {
+      displayName = _stagedGenericGroup!.compositionLabel;
+      if (compName.isEmpty) compName = 'Generic formulation';
+    } else if (_stagedUnlistedName != null) {
+      displayName = _stagedUnlistedName!;
+      if (compName.isEmpty) compName = 'Outside / Unlisted';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.teal.shade300, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.check_circle, size: 18, color: Colors.teal),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Staging: $displayName ($compName)',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF065F46)),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                tooltip: 'Cancel Staging',
+                onPressed: () {
+                  setState(() {
+                    _stagedMedicine = null;
+                    _stagedGenericGroup = null;
+                    _stagedUnlistedName = null;
+                    _stagedComposition = null;
+                  });
+                },
               ),
             ],
           ),
           const SizedBox(height: 10),
-
-          if (_newPrescriptions.isEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Center(
-                child: Text(
-                  'No new medications added yet. Tap "Add Medication" to prescribe.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  controller: _stagedDosageController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dosage',
+                    hintText: '1 Tablet / 5 ml',
+                    isDense: true,
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(),
+                  ),
                 ),
               ),
-            )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _newPrescriptions.length,
-              separatorBuilder: (ctx, i) => const SizedBox(height: 6),
-              itemBuilder: (ctx, index) {
-                return _buildNewPrescriptionRow(_newPrescriptions[index], index);
-              },
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 3,
+                child: DropdownButtonFormField<String>(
+                  initialValue: _stagedFrequency,
+                  decoration: const InputDecoration(
+                    labelText: 'Frequency',
+                    isDense: true,
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    '1-0-0 (OD)',
+                    '1-0-1 (BD)',
+                    '0-0-1 (HS)',
+                    '1-1-1 (TDS)',
+                    'SOS (As Needed)',
+                    'Once Weekly',
+                  ].map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontSize: 12)))).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _stagedFrequency = val);
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 3,
+                child: DropdownButtonFormField<String>(
+                  initialValue: _stagedTiming,
+                  decoration: const InputDecoration(
+                    labelText: 'Timing',
+                    isDense: true,
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    'After Food',
+                    'Before Food',
+                    'After Food (Morning)',
+                    'At Bedtime',
+                    'With Food',
+                  ].map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 12)))).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _stagedTiming = val);
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  controller: _stagedDurationController,
+                  enabled: !_stagedIsChronic,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: _stagedIsChronic ? 'Duration' : 'Days',
+                    hintText: _stagedIsChronic ? 'Continuous' : '30',
+                    isDense: true,
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              FilterChip(
+                label: const Text('Continuous (Chronic)', style: TextStyle(fontSize: 11)),
+                selected: _stagedIsChronic,
+                onSelected: (val) {
+                  setState(() {
+                    _stagedIsChronic = val;
+                  });
+                },
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 4,
+                child: TextField(
+                  controller: _stagedInstructionsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Instructions / Notes (Optional)',
+                    hintText: 'e.g., Take with warm water...',
+                    isDense: true,
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _stagedMedicine = null;
+                      _stagedGenericGroup = null;
+                      _stagedUnlistedName = null;
+                    });
+                  },
+                  child: const Text('Cancel'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.teal.shade700,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Add to Prescription', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onPressed: _confirmAddStagedMedicine,
+                ),
+              ],
             ),
+          ),
         ],
       ),
     );
+  }
+
+  void _stageMedicine(Medicine med) {
+    final defaults = ClinicalDefaultsHelper.getDefaultsForMedicine(med);
+    setState(() {
+      _stagedMedicine = med;
+      _stagedGenericGroup = null;
+      _stagedUnlistedName = null;
+      _stagedComposition = med.fullCompositionLabel;
+      _stagedDosageController.text = defaults.dosage;
+      _stagedFrequency = defaults.frequency;
+      _stagedTiming = defaults.timing;
+      _stagedIsChronic = defaults.durationDays == null;
+      _stagedDurationController.text = defaults.durationDays != null ? '${defaults.durationDays}' : '30';
+      _stagedInstructionsController.text = defaults.instructions ?? '';
+      _isSearchActive = false;
+    });
+  }
+
+  void _stageGeneric(CompositionGroupResult group) {
+    final dummy = Medicine(
+      id: 'gen_${_uuid.v4()}',
+      productName: group.compositionLabel,
+      composition: group.composition,
+      strength: group.strength,
+      form: group.form,
+    );
+    final defaults = ClinicalDefaultsHelper.getDefaultsForMedicine(dummy);
+    setState(() {
+      _stagedMedicine = null;
+      _stagedGenericGroup = group;
+      _stagedUnlistedName = null;
+      _stagedComposition = group.compositionLabel;
+      _stagedDosageController.text = defaults.dosage;
+      _stagedFrequency = defaults.frequency;
+      _stagedTiming = defaults.timing;
+      _stagedIsChronic = defaults.durationDays == null;
+      _stagedDurationController.text = defaults.durationDays != null ? '${defaults.durationDays}' : '30';
+      _stagedInstructionsController.text = defaults.instructions ?? '';
+      _isSearchActive = false;
+    });
+  }
+
+  void _stageUnlisted(String query) {
+    final clean = query.trim();
+    if (clean.isEmpty) return;
+    setState(() {
+      _stagedMedicine = null;
+      _stagedGenericGroup = null;
+      _stagedUnlistedName = clean;
+      _stagedComposition = clean;
+      _stagedDosageController.text = '1 Tablet';
+      _stagedFrequency = '1-0-1 (BD)';
+      _stagedTiming = 'After Food';
+      _stagedIsChronic = false;
+      _stagedDurationController.text = '5';
+      _stagedInstructionsController.text = '';
+      _isSearchActive = false;
+    });
+  }
+
+  void _confirmAddStagedMedicine() {
+    String name;
+    String comp = _stagedComposition ?? '';
+    String? medId;
+    String? unlisted;
+
+    if (_stagedMedicine != null) {
+      name = _stagedMedicine!.productName;
+      if (comp.isEmpty) comp = _stagedMedicine!.fullCompositionLabel;
+      medId = _stagedMedicine!.id;
+    } else if (_stagedGenericGroup != null) {
+      name = _stagedGenericGroup!.compositionLabel;
+      if (comp.isEmpty) comp = _stagedGenericGroup!.compositionLabel;
+    } else if (_stagedUnlistedName != null) {
+      name = _stagedUnlistedName!;
+      if (comp.isEmpty) comp = _stagedUnlistedName!;
+      unlisted = _stagedUnlistedName!;
+    } else {
+      return;
+    }
+
+    final int? duration = _stagedIsChronic
+        ? null
+        : int.tryParse(_stagedDurationController.text.trim());
+
+    final item = PrescriptionItem(
+      id: _uuid.v4(),
+      action: MedicationAction.start,
+      medicineId: medId,
+      medicineName: name,
+      composition: comp,
+      dosage: _stagedDosageController.text.trim().isNotEmpty
+          ? _stagedDosageController.text.trim()
+          : '1 Tablet',
+      frequency: _stagedFrequency,
+      timing: _stagedTiming,
+      durationDays: duration,
+      unlistedName: unlisted,
+      instructions: _stagedInstructionsController.text.trim().isNotEmpty
+          ? _stagedInstructionsController.text.trim()
+          : null,
+    );
+
+    setState(() {
+      _newPrescriptions.add(item);
+      _stagedMedicine = null;
+      _stagedGenericGroup = null;
+      _stagedUnlistedName = null;
+      _stagedComposition = null;
+      _medSearchController.clear();
+      _isSearchActive = false;
+    });
+  }
+
+  Widget _buildCollapsedMedicineSummary() {
+    final continuedCount = _reconciliationItems
+        .where((i) => i.action == MedicationAction.continueAction)
+        .length;
+    final stoppedCount = _reconciliationItems
+        .where((i) => i.action == MedicationAction.stop)
+        .length;
+    final newCount = _newPrescriptions.length;
+
+    return InkWell(
+      onTap: () => setState(() => _isMedicineExpanded = true),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.medication_rounded, size: 18, color: Colors.blue.shade700),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Rx Schedule: $newCount new prescribed • $continuedCount continued • $stoppedCount stopped',
+                style: TextStyle(fontSize: 12, color: Colors.blue.shade900, fontWeight: FontWeight.bold),
+              ),
+            ),
+            Text(
+              'Tap to expand',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIncomingPatientAlertBanner() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF3C7),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFF59E0B)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.notifications_active_rounded, color: Color(0xFFB45309), size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Token #${_incomingCallingQueueNumber ?? ''} (${_incomingCallingPatientName ?? 'Next Patient'}) was called to chamber by Reception.",
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF92400E)),
+            ),
+          ),
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFB45309),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              visualDensity: VisualDensity.compact,
+            ),
+            onPressed: _switchToIncomingPatient,
+            child: const Text('Switch Now', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 6),
+          IconButton(
+            icon: const Icon(Icons.close, size: 16, color: Color(0xFF92400E)),
+            tooltip: 'Dismiss',
+            onPressed: () => setState(() => _incomingCallingApptId = null),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _switchToIncomingPatient() async {
+    final apptId = _incomingCallingApptId;
+    if (apptId == null) return;
+    final clinic = Provider.of<ClinicProvider>(context, listen: false);
+    final appts = clinic.todayAppointments;
+    Appointment? target;
+    for (final a in appts) {
+      if (a.id == apptId) {
+        target = a;
+        break;
+      }
+    }
+    if (target != null && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (ctx) => ConsultationEncounterScreen(
+            appointment: target!,
+            doctor: widget.doctor,
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildReconciliationItemRow(PrescriptionItem item, int index) {
@@ -1443,460 +2277,7 @@ class _ConsultationEncounterScreenState
     );
   }
 
-  void _openAddMedicationDialog() {
-    final searchCtrl = TextEditingController();
-    final dosageCtrl = TextEditingController(text: '1 Tablet');
-    final instrCtrl = TextEditingController();
-    String timing = 'After Food';
-    String frequency = '1-0-1';
-    int? durationDays = 5;
-    bool isChronic = false;
 
-    // Selection state
-    Medicine? selectedMedicine;
-    String? selectedGenericName;
-    String? selectedBrandName;
-    String? selectedComposition;
-    bool isUnlistedOutside = false;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (dialogCtx, setDialogState) {
-          final medicines = Provider.of<ClinicProvider>(context).medicines;
-          final query = searchCtrl.text.trim();
-
-          final scoredGroups = MedicineSearchScorer.searchAndGroup(
-            catalog: medicines,
-            query: query,
-          );
-
-          final hasSelection = selectedMedicine != null ||
-              selectedGenericName != null ||
-              isUnlistedOutside;
-
-          return AlertDialog(
-            title: const Text('Prescribe Medication (START)'),
-            content: SizedBox(
-              width: 520,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Search Bar
-                    TextField(
-                      controller: searchCtrl,
-                      decoration: InputDecoration(
-                        labelText: 'Search Chemical Composition or Brand Name',
-                        hintText: 'e.g., Azithromycin, Paracetamol, Dolo, Augmentin...',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: searchCtrl.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  setDialogState(() {
-                                    searchCtrl.clear();
-                                    selectedMedicine = null;
-                                    selectedGenericName = null;
-                                    selectedBrandName = null;
-                                    selectedComposition = null;
-                                    isUnlistedOutside = false;
-                                  });
-                                },
-                              )
-                            : null,
-                        border: const OutlineInputBorder(),
-                      ),
-                      onChanged: (_) => setDialogState(() {}),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Active Selection Summary Card
-                    if (hasSelection) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isUnlistedOutside
-                              ? Colors.amber.shade50
-                              : Colors.teal.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: isUnlistedOutside
-                                ? Colors.amber.shade300
-                                : Colors.teal.shade300,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              isUnlistedOutside
-                                  ? Icons.medication_outlined
-                                  : Icons.check_circle_rounded,
-                              color: isUnlistedOutside
-                                  ? Colors.amber.shade800
-                                  : Colors.teal.shade700,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    isUnlistedOutside
-                                        ? "Outside / Unlisted Drug: $selectedBrandName"
-                                        : (selectedBrandName != null
-                                            ? "$selectedBrandName (Brand)"
-                                            : "Generic: $selectedGenericName"),
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      color: isUnlistedOutside
-                                          ? Colors.amber.shade900
-                                          : Colors.teal.shade900,
-                                    ),
-                                  ),
-                                  Text(
-                                    "Composition: ${selectedComposition ?? selectedBrandName}",
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                setDialogState(() {
-                                  selectedMedicine = null;
-                                  selectedGenericName = null;
-                                  selectedBrandName = null;
-                                  selectedComposition = null;
-                                  isUnlistedOutside = false;
-                                });
-                              },
-                              child: const Text('Change'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ] else ...[
-                      // Zero-Friction Outside / Unlisted Medicine Fallback Chip
-                      if (query.isNotEmpty) ...[
-                        InkWell(
-                          onTap: () {
-                            setDialogState(() {
-                              isUnlistedOutside = true;
-                              selectedBrandName = query;
-                              selectedComposition = query;
-                              selectedMedicine = null;
-                              selectedGenericName = null;
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.amber.shade300),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.add_shopping_cart, size: 16, color: Colors.amber),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Prescribe "$query" as Outside / Unlisted Medicine',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.amber.shade900,
-                                    ),
-                                  ),
-                                ),
-                                const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.amber),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-
-                      // Composition-First Scored Suggestion List
-                      if (scoredGroups.isNotEmpty)
-                        Container(
-                          constraints: const BoxConstraints(maxHeight: 220),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            border: Border.all(color: Colors.grey.shade300),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: ListView.separated(
-                            shrinkWrap: true,
-                            itemCount: scoredGroups.length,
-                            separatorBuilder: (c, i) => const Divider(height: 1),
-                            itemBuilder: (c, i) {
-                              final group = scoredGroups[i];
-                              return Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Chemical Composition Header
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: group.isCompositionMatch
-                                                ? Colors.teal.shade50
-                                                : Colors.blue.shade50,
-                                            borderRadius: BorderRadius.circular(4),
-                                            border: Border.all(
-                                              color: group.isCompositionMatch
-                                                  ? Colors.teal.shade300
-                                                  : Colors.blue.shade200,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            group.isCompositionMatch ? 'MOLECULE MATCH' : 'BRAND MATCH',
-                                            style: TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.bold,
-                                              color: group.isCompositionMatch
-                                                  ? Colors.teal.shade800
-                                                  : Colors.blue.shade800,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            "${group.compositionLabel} [${group.form}]",
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13,
-                                              color: Color(0xFF0F172A),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-
-                                    // Associated Clinic Brands + Generic Option Chips
-                                    Wrap(
-                                      spacing: 6,
-                                      runSpacing: 4,
-                                      children: [
-                                        // 1-tap Generic prescription
-                                        ActionChip(
-                                          avatar: const Icon(Icons.science_outlined, size: 14, color: Colors.teal),
-                                          label: Text("Generic: ${group.composition}", style: const TextStyle(fontSize: 11)),
-                                          backgroundColor: Colors.white,
-                                          onPressed: () {
-                                            setDialogState(() {
-                                              selectedGenericName = "${group.composition} ${group.strength}";
-                                              selectedComposition = group.compositionLabel;
-                                              selectedBrandName = null;
-                                              selectedMedicine = null;
-                                              dosageCtrl.text = "1 ${group.form}";
-                                            });
-                                          },
-                                        ),
-
-                                        // Associated commercial products in clinic catalog
-                                        ...group.associatedBrands.map((brand) {
-                                          return ActionChip(
-                                            avatar: const Icon(Icons.local_pharmacy_outlined, size: 14, color: Colors.indigo),
-                                            label: Text(
-                                              "${brand.productName}${brand.manufacturer != null ? ' (${brand.manufacturer})' : ''}",
-                                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                                            ),
-                                            backgroundColor: Colors.indigo.shade50,
-                                            onPressed: () {
-                                              setDialogState(() {
-                                                selectedMedicine = brand;
-                                                selectedBrandName = brand.productName;
-                                                selectedComposition = brand.fullCompositionLabel;
-                                                selectedGenericName = null;
-                                                dosageCtrl.text = "1 ${brand.form}";
-                                              });
-                                            },
-                                          );
-                                        }),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    // Dosage & Frequency Controls
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: dosageCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'Dosage',
-                              hintText: '1 Tablet / 5 ml',
-                              isDense: true,
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: frequency,
-                            decoration: const InputDecoration(
-                              labelText: 'Frequency',
-                              isDense: true,
-                              border: OutlineInputBorder(),
-                            ),
-                            items: ['1-0-1 (BD)', '1-0-0 (OD)', '0-0-1 (HS)', '1-1-1 (TDS)', 'SOS (As Needed)']
-                                .map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontSize: 12))))
-                                .toList(),
-                            onChanged: (val) {
-                              if (val != null) setDialogState(() => frequency = val);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Timing & Duration Controls
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: timing,
-                            decoration: const InputDecoration(
-                              labelText: 'Timing',
-                              isDense: true,
-                              border: OutlineInputBorder(),
-                            ),
-                            items: ['After Food', 'Before Food', 'At Bedtime', 'With Food']
-                                .map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 12))))
-                                .toList(),
-                            onChanged: (val) {
-                              if (val != null) setDialogState(() => timing = val);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            enabled: !isChronic,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: isChronic ? 'Duration' : 'Days',
-                              hintText: isChronic ? 'Indefinite' : 'e.g., 5',
-                              isDense: true,
-                              border: const OutlineInputBorder(),
-                            ),
-                            onChanged: (val) {
-                              durationDays = int.tryParse(val);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Chronic Indefinite checkbox (sets durationDays = null)
-                    CheckboxListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text(
-                        'Chronic / Indefinite Maintenance Therapy (NULL duration)',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      value: isChronic,
-                      onChanged: (val) {
-                        setDialogState(() {
-                          isChronic = val ?? false;
-                          if (isChronic) {
-                            durationDays = null;
-                          } else {
-                            durationDays = 5;
-                          }
-                        });
-                      },
-                    ),
-
-                    // Special Instructions
-                    TextField(
-                      controller: instrCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Instructions / Notes',
-                        hintText: 'e.g., With warm water, avoid dairy...',
-                        isDense: true,
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-              FilledButton(
-                onPressed: () {
-                  final activeName = selectedBrandName ??
-                      selectedGenericName ??
-                      searchCtrl.text.trim();
-
-                  if (activeName.isEmpty) return;
-
-                  final compText = selectedComposition ??
-                      (selectedMedicine != null
-                          ? selectedMedicine!.fullCompositionLabel
-                          : activeName);
-
-                  final newItem = PrescriptionItem(
-                    id: _uuid.v4(),
-                    action: MedicationAction.start,
-                    medicineId: selectedMedicine?.id,
-                    medicineName: selectedMedicine != null
-                        ? selectedMedicine!.productName
-                        : (selectedBrandName ?? activeName),
-                    composition: compText,
-                    dosage: dosageCtrl.text.trim(),
-                    frequency: frequency,
-                    timing: timing,
-                    durationDays: isChronic ? null : (durationDays ?? 5),
-                    unlistedName: (selectedMedicine == null && (isUnlistedOutside || selectedBrandName != null))
-                        ? activeName
-                        : null,
-                    instructions: instrCtrl.text.trim().isNotEmpty
-                        ? instrCtrl.text.trim()
-                        : null,
-                  );
-
-                  setState(() {
-                    _newPrescriptions.add(newItem);
-                  });
-                  Navigator.pop(ctx);
-                },
-                child: const Text('Add to Prescription'),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
 
   void _openPriorMedicationHistoryDialog() {
     final medCtrl = TextEditingController();
@@ -2120,6 +2501,9 @@ class _ConsultationEncounterScreenState
 
       // Atomically save consultation, update appointment status to completed, and sync patient
       await clinic.saveConsultation(consultation);
+
+      // Clear chamber calling session so doctor chamber returns to idle
+      await clinic.clearChamberSession(widget.doctor.id, widget.appointment.scheduledDate);
 
       if (!mounted) return;
 

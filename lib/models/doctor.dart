@@ -7,6 +7,7 @@ class Doctor {
   final List<DateTime> blockedDates; // Days they are on leave
   final String pin; // 4-digit PIN for chamber access
   final int consultationFee; // Default consultation fee in INR
+  final String searchPreference; // 'brandFirst' | 'compositionFirst'
 
   Doctor({
     required this.id,
@@ -17,6 +18,7 @@ class Doctor {
     required this.blockedDates,
     this.pin = '1234',
     this.consultationFee = 500,
+    this.searchPreference = 'brandFirst',
   });
 
   Map<String, dynamic> toJson() {
@@ -29,6 +31,7 @@ class Doctor {
       'blockedDates': blockedDates.map((d) => d.toIso8601String()).toList(),
       'pin': pin,
       'consultationFee': consultationFee,
+      'searchPreference': searchPreference,
     };
   }
 
@@ -45,6 +48,7 @@ class Doctor {
           [],
       pin: json['pin'] as String? ?? '1234',
       consultationFee: (json['consultationFee'] as num?)?.toInt() ?? 500,
+      searchPreference: json['searchPreference'] as String? ?? 'brandFirst',
     );
   }
 }

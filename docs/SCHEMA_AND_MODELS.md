@@ -50,6 +50,7 @@
 | `blockedDates` | `List<String>` (ISO 8601) | No | Dates doctor is on leave. |
 | `pin` | `String` | Yes | 4-digit numeric PIN for chamber access (default: `'1234'`). |
 | `consultationFee` | `int` | Yes | Consultation fee in INR (e.g. `500`). |
+| `searchPreference` | `String` | No | Drug search mode: `'brandFirst'` or `'compositionFirst'` (default: `'brandFirst'`). |
 
 ---
 
@@ -74,15 +75,28 @@
 
 ---
 
-## 🔢 4. `counters` Collection (Atomic Queue Counter)
+## 🔢 4. `counters` Collection (Atomic Queue & Chamber State)
 
+### A. Daily Queue Counter
 - **Document ID:** `queue_{doctorId}_{yyyy-MM-dd}`
 - **Purpose:** Transactional atomic counter to guarantee zero race conditions on token numbers.
 
-### Fields
 | Field | Type | Description |
 |---|---|---|
 | `currentNumber` | `int` | Current highest issued queue number for the day. |
+
+### B. Zero-Touch Chamber Calling Session
+- **Document ID:** `chamber_{doctorId}_{yyyy-MM-dd}`
+- **Purpose:** Real-time sync document listened to by Doctor Chamber Screen for automatic encounter loading when reception calls a token.
+
+| Field | Type | Description |
+|---|---|---|
+| `activeAppointmentId` | `String?` | Appointment ID currently called into the chamber. |
+| `activeQueueNumber` | `int?` | Token number currently called into the chamber. |
+| `patientName` | `String?` | Name of the patient called. |
+| `patientPhone` | `String?` | Phone of the patient called. |
+| `calledAt` | `Timestamp?` | Timestamp when reception clicked Call In. |
+| `status` | `String` | `'calling'` (in session) or `'idle'` (cleared upon consultation sign or manual reset). |
 
 ---
 
@@ -180,3 +194,7 @@
 | `form` | `String` | Dosage form (`"Tablet"`, `"Syrup"`, `"Capsule"`, `"Ointment"`, etc.). |
 | `manufacturer` | `String?` | Pharmaceutical manufacturer (e.g. `"Micro Labs"`). |
 | `category` | `String?` | Therapeutic class (e.g. `"Analgesic / Antipyretic"`). |
+| `defaultDosage` | `String?` | Clinical default dosage (e.g. `"1 Tablet"`, `"5 ml"`). |
+| `defaultFrequency` | `String?` | Clinical default regimen (e.g. `"1-0-0 (OD)"`, `"1-0-1 (BD)"`). |
+| `defaultTiming` | `String?` | Clinical default timing (e.g. `"Before Food"`, `"After Food"`). |
+| `defaultDurationDays` | `int?` | Clinical default duration in days (e.g. `30`, `5`), or `null` for chronic. |
