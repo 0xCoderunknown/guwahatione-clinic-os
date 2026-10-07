@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../models/appointment.dart';
 import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
+import '../utils/formatters.dart';
+import '../widgets/widgets.dart';
 import 'add_appointment_dialog.dart';
 import 'appointment_list_screen.dart';
 import 'doctor_list_screen.dart';
@@ -134,7 +135,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildHeaderBar(BuildContext context, ClinicProvider provider) {
-    final todayStr = DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now());
+    final todayStr = AppFormatters.dateWithDay(DateTime.now());
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -499,17 +500,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 final appt = list[i];
                 return ListTile(
                   dense: true,
-                  leading: CircleAvatar(
-                    radius: 16,
-                    backgroundColor: Colors.teal.shade50,
-                    child: Text(
-                      '#${appt.queueNumber}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal.shade800,
-                      ),
-                    ),
+                  leading: TokenBadge(
+                    queueNumber: appt.queueNumber,
+                    size: 34,
+                    isCompleted: appt.status == AppointmentStatus.completed,
+                    isAbsent: appt.status == AppointmentStatus.absent,
                   ),
                   title: Row(
                     children: [
@@ -525,7 +520,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   subtitle: Text(
-                    "Doctor: ${appt.doctorName} • Fee: ₹${appt.amountCollected} (${appt.paymentType.displayName})",
+                    "Doctor: ${appt.doctorName} • Fee: ${AppFormatters.currency(appt.amountCollected)} (${appt.paymentType.displayName})",
                     style: const TextStyle(fontSize: 11),
                   ),
                   trailing: appt.status == AppointmentStatus.pending
@@ -559,10 +554,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               },
                             ),
                             const SizedBox(width: 8),
-                            _buildStatusPill(appt.status),
+                            AppointmentStatusChip(status: appt.status, isCompact: true),
                           ],
                         )
-                      : _buildStatusPill(appt.status),
+                      : AppointmentStatusChip(status: appt.status, isCompact: true),
                 );
               },
             ),
@@ -671,42 +666,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               },
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatusPill(AppointmentStatus status) {
-    Color bg;
-    Color fg;
-    String label;
-
-    switch (status) {
-      case AppointmentStatus.pending:
-        bg = Colors.amber.shade50;
-        fg = Colors.amber.shade900;
-        label = 'Waiting';
-        break;
-      case AppointmentStatus.completed:
-        bg = Colors.green.shade50;
-        fg = Colors.green.shade900;
-        label = 'Completed';
-        break;
-      case AppointmentStatus.absent:
-        bg = Colors.red.shade50;
-        fg = Colors.red.shade900;
-        label = 'Absent (₹0)';
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: fg),
       ),
     );
   }

@@ -6,6 +6,8 @@ import '../models/patient_review_eligibility.dart';
 import '../providers/clinic_provider.dart';
 import '../services/firebase_service.dart';
 import '../utils/app_constants.dart';
+import '../utils/formatters.dart';
+import '../widgets/widgets.dart';
 
 class AppointmentListScreen extends StatefulWidget {
   const AppointmentListScreen({super.key});
@@ -71,20 +73,11 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                           children: [
                             Text(
                               _isToday
-                                  ? "Today"
-                                  : DateFormat(
-                                      'EEE, MMM d',
-                                    ).format(_selectedDate),
+                                  ? "Today (${AppFormatters.date(_selectedDate)})"
+                                  : AppFormatters.dateWithDay(_selectedDate),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            Text(
-                              DateFormat('yyyy-MM-dd').format(_selectedDate),
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
+                                fontSize: 15,
                               ),
                             ),
                           ],
@@ -210,30 +203,47 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
 
   @override
   Widget build(BuildContext context) {
-    Icon statusIcon;
-    switch (widget.appointment.status) {
-      case AppointmentStatus.pending:
-        statusIcon = const Icon(Icons.hourglass_empty, color: Colors.orange);
-        break;
-      case AppointmentStatus.completed:
-        statusIcon = const Icon(Icons.check_circle, color: Colors.green);
-        break;
-      case AppointmentStatus.absent:
-        statusIcon = const Icon(Icons.person_off, color: Colors.grey);
-        break;
-    }
-
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
       child: ExpansionTile(
-        title: Text(
-          widget.appointment.patientName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        leading: TokenBadge(
+          queueNumber: widget.appointment.queueNumber,
+          isCompleted: widget.appointment.status == AppointmentStatus.completed,
+          isAbsent: widget.appointment.status == AppointmentStatus.absent,
+          size: 38,
         ),
-        subtitle: Text(
-          '${widget.appointment.patientPhone} • Queue: ${widget.appointment.queueNumber} • ${widget.appointment.doctorName}',
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                widget.appointment.patientName,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+            ),
+            AppointmentStatusChip(
+              status: widget.appointment.status,
+              isCompact: true,
+            ),
+          ],
         ),
-        leading: statusIcon,
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${widget.appointment.patientPhone} • Dr. ${widget.appointment.doctorName}',
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+              PaymentBadge(
+                paymentType: widget.appointment.paymentType,
+                amount: widget.appointment.amountCollected,
+                isCompact: true,
+              ),
+            ],
+          ),
+        ),
         onExpansionChanged: (expanded) {
           setState(() {
             if (expanded) {

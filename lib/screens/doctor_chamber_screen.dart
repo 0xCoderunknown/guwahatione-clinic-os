@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/appointment.dart';
 import '../models/doctor.dart';
 import '../providers/auth_provider.dart';
 import '../services/firebase_service.dart';
+import '../utils/formatters.dart';
+import '../widgets/widgets.dart';
 import 'consultation_encounter_screen.dart';
 
 class DoctorChamberScreen extends StatefulWidget {
@@ -130,35 +131,6 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
         _isAutoNavigating = false;
       }
     }
-  }
-
-  bool get _isToday {
-    final now = DateTime.now();
-    return _selectedDate.year == now.year &&
-        _selectedDate.month == now.month &&
-        _selectedDate.day == now.day;
-  }
-
-  void _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-    );
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
-      _listenToChamberSession();
-    }
-  }
-
-  void _changeDate(int dayDelta) {
-    setState(() {
-      _selectedDate = _selectedDate.add(Duration(days: dayDelta));
-    });
-    _listenToChamberSession();
   }
 
   @override
@@ -410,58 +382,21 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   }
 
   Widget _buildDateBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left_rounded),
-            onPressed: () => _changeDate(-1),
-            tooltip: 'Previous Day',
-          ),
-          InkWell(
-            onTap: _pickDate,
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_month_rounded, size: 18, color: Colors.teal),
-                  const SizedBox(width: 8),
-                  Text(
-                    _isToday
-                        ? 'Today (${DateFormat('dd MMM yyyy').format(_selectedDate)})'
-                        : DateFormat('EEEE, dd MMM yyyy').format(_selectedDate),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.chevron_right_rounded),
-            onPressed: () => _changeDate(1),
-            tooltip: 'Next Day',
-          ),
-        ],
-      ),
+    return ClinicDateNavBar(
+      selectedDate: _selectedDate,
+      onDateChanged: (newDate) {
+        setState(() {
+          _selectedDate = newDate;
+        });
+        _listenToChamberSession();
+      },
+      onTodayPressed: () {
+        final now = DateTime.now();
+        setState(() {
+          _selectedDate = DateTime(now.year, now.month, now.day);
+        });
+        _listenToChamberSession();
+      },
     );
   }
 
@@ -554,7 +489,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
         badgeBg = const Color(0xFFDCFCE7);
         badgeFg = const Color(0xFF15803D);
         statusTitle = "COMPLETED";
-        paymentSubtitle = "Paid: ₹${appt.amountCollected}";
+        paymentSubtitle = "Paid: ${AppFormatters.currency(appt.amountCollected)}";
       } else if (appt.paymentType == PaymentType.freeReview) {
         badgeBg = const Color(0xFFFEF3C7);
         badgeFg = const Color(0xFFB45309);
@@ -606,31 +541,12 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
         child: Row(
           children: [
             // Queue Number Avatar
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: appt.status == AppointmentStatus.absent
-                    ? Colors.grey.shade100
-                    : Colors.teal.shade50,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: appt.status == AppointmentStatus.absent
-                      ? Colors.grey.shade300
-                      : Colors.teal.shade200,
-                ),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                "#${appt.queueNumber.toString().padLeft(2, '0')}",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: appt.status == AppointmentStatus.absent
-                      ? Colors.grey.shade600
-                      : Colors.teal.shade800,
-                ),
-              ),
+            TokenBadge(
+              queueNumber: appt.queueNumber,
+              size: 44,
+              isCalling: isCallingNow,
+              isCompleted: appt.status == AppointmentStatus.completed,
+              isAbsent: appt.status == AppointmentStatus.absent,
             ),
             const SizedBox(width: 14),
 
