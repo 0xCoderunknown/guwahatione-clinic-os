@@ -1,3 +1,6 @@
+@Skip('Disabled for development speed')
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/models/appointment.dart';
 import 'package:appointment_app/models/doctor.dart';

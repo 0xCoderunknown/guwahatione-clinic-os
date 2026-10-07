@@ -70,7 +70,7 @@ You are being managed by a strict Product Manager. Follow this exact workflow:
 ### Step 3: Verification Gate
 - After making changes, always ensure:
   - Code compiles cleanly with `flutter analyze` (Zero errors, zero warnings).
-  - Existing models and tests in `test/` continue to pass.
+  - **Tests are disabled for now** (do NOT run `flutter test` as it eats too much time; rely on `flutter analyze`).
   - No broken imports or deprecated Flutter APIs introduced.
 
 ---

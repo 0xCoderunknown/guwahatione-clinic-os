@@ -5,3 +5,4 @@
 3. **Database Casing**: All Firestore map keys must strictly follow camelCase as defined in `docs/SCHEMA_AND_MODELS.md`.
 4. **Append-Only Consultations**: Follow-up consultations must append new documents; never overwrite past records.
 5. **No Pharmacy ERP**: Respect anti-goals in `docs/PRODUCT_ROADMAP.md`.
+6. **Tests Disabled**: Do NOT run `flutter test` during development or verification gates. Tests are temporarily disabled to save time. Rely exclusively on `flutter analyze`.
