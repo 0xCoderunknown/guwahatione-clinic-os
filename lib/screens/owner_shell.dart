@@ -6,6 +6,7 @@ import 'add_appointment_dialog.dart';
 import 'appointment_list_screen.dart';
 import 'dashboard_screen.dart';
 import 'doctor_list_screen.dart';
+import 'medicine_catalogue_screen.dart';
 import 'statistics_screen.dart';
 
 class OwnerShell extends StatefulWidget {
@@ -23,6 +24,7 @@ class _OwnerShellState extends State<OwnerShell> {
     AppointmentListScreen(),
     DoctorListScreen(),
     StatisticsScreen(),
+    MedicineCatalogueScreen(),
   ];
 
   @override
@@ -111,6 +113,11 @@ class _OwnerShellState extends State<OwnerShell> {
                   icon: Icon(Icons.bar_chart_outlined),
                   selectedIcon: Icon(Icons.bar_chart, color: Colors.teal),
                   label: Text('Revenue & Audit'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.medication_outlined),
+                  selectedIcon: Icon(Icons.medication, color: Colors.teal),
+                  label: Text('Medicine Catalog'),
                 ),
               ],
             ),
@@ -210,6 +217,11 @@ class _OwnerShellState extends State<OwnerShell> {
             selectedIcon: Icon(Icons.bar_chart),
             label: 'Revenue',
           ),
+          NavigationDestination(
+            icon: Icon(Icons.medication_outlined),
+            selectedIcon: Icon(Icons.medication),
+            label: 'Catalogue',
+          ),
         ],
       ),
     );
@@ -225,6 +237,8 @@ class _OwnerShellState extends State<OwnerShell> {
         return 'Doctors & Chamber PINs';
       case 3:
         return 'Financial Ledger & Audit';
+      case 4:
+        return 'Master Medicine Catalogue';
       default:
         return 'GuwahatiOne Clinic';
     }

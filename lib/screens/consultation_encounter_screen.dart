@@ -11,6 +11,7 @@ import '../models/medicine.dart';
 import '../models/prescription_item.dart';
 import '../models/vitals.dart';
 import '../providers/clinic_provider.dart';
+import '../utils/medicine_search_scorer.dart';
 
 class ConsultationEncounterScreen extends StatefulWidget {
   final Appointment appointment;
@@ -1444,37 +1445,45 @@ class _ConsultationEncounterScreenState
     String frequency = '1-0-1';
     int? durationDays = 5;
     bool isChronic = false;
+
+    // Selection state
     Medicine? selectedMedicine;
+    String? selectedGenericName;
+    String? selectedBrandName;
+    String? selectedComposition;
+    bool isUnlistedOutside = false;
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) {
           final medicines = Provider.of<ClinicProvider>(context).medicines;
+          final query = searchCtrl.text.trim();
 
-          final filtered = searchCtrl.text.trim().isEmpty
-              ? medicines
-              : medicines.where((m) {
-                  final q = searchCtrl.text.trim().toLowerCase();
-                  return m.productName.toLowerCase().contains(q) ||
-                      m.composition.toLowerCase().contains(q);
-                }).toList();
+          final scoredGroups = MedicineSearchScorer.searchAndGroup(
+            catalog: medicines,
+            query: query,
+          );
+
+          final hasSelection = selectedMedicine != null ||
+              selectedGenericName != null ||
+              isUnlistedOutside;
 
           return AlertDialog(
             title: const Text('Prescribe Medication (START)'),
             content: SizedBox(
-              width: 480,
+              width: 520,
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Search Catalogue or Unlisted fallback
+                    // Search Bar
                     TextField(
                       controller: searchCtrl,
                       decoration: InputDecoration(
-                        labelText: 'Search Medicine (Brand or Chemical Composition)',
-                        hintText: 'e.g., Paracetamol, Dolo, Pantoprazole...',
+                        labelText: 'Search Chemical Composition or Brand Name',
+                        hintText: 'e.g., Azithromycin, Paracetamol, Dolo, Augmentin...',
                         prefixIcon: const Icon(Icons.search),
                         suffixIcon: searchCtrl.text.isNotEmpty
                             ? IconButton(
@@ -1483,6 +1492,10 @@ class _ConsultationEncounterScreenState
                                   setDialogState(() {
                                     searchCtrl.clear();
                                     selectedMedicine = null;
+                                    selectedGenericName = null;
+                                    selectedBrandName = null;
+                                    selectedComposition = null;
+                                    isUnlistedOutside = false;
                                   });
                                 },
                               )
@@ -1493,38 +1506,235 @@ class _ConsultationEncounterScreenState
                     ),
                     const SizedBox(height: 8),
 
-                    // Filtered Catalogue Dropdown / List
-                    if (filtered.isNotEmpty && selectedMedicine == null)
+                    // Active Selection Summary Card
+                    if (hasSelection) ...[
                       Container(
-                        constraints: const BoxConstraints(maxHeight: 140),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(6),
+                          color: isUnlistedOutside
+                              ? Colors.amber.shade50
+                              : Colors.teal.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isUnlistedOutside
+                                ? Colors.amber.shade300
+                                : Colors.teal.shade300,
+                          ),
                         ),
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: filtered.length,
-                          separatorBuilder: (c, i) => const Divider(height: 1),
-                          itemBuilder: (c, i) {
-                            final m = filtered[i];
-                            return ListTile(
-                              dense: true,
-                              title: Text(m.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text("${m.composition} ${m.strength} • ${m.form}"),
-                              onTap: () {
+                        child: Row(
+                          children: [
+                            Icon(
+                              isUnlistedOutside
+                                  ? Icons.medication_outlined
+                                  : Icons.check_circle_rounded,
+                              color: isUnlistedOutside
+                                  ? Colors.amber.shade800
+                                  : Colors.teal.shade700,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isUnlistedOutside
+                                        ? "Outside / Unlisted Drug: $selectedBrandName"
+                                        : (selectedBrandName != null
+                                            ? "$selectedBrandName (Brand)"
+                                            : "Generic: $selectedGenericName"),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: isUnlistedOutside
+                                          ? Colors.amber.shade900
+                                          : Colors.teal.shade900,
+                                    ),
+                                  ),
+                                  Text(
+                                    "Composition: ${selectedComposition ?? selectedBrandName}",
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
                                 setDialogState(() {
-                                  selectedMedicine = m;
-                                  searchCtrl.text = m.productName;
+                                  selectedMedicine = null;
+                                  selectedGenericName = null;
+                                  selectedBrandName = null;
+                                  selectedComposition = null;
+                                  isUnlistedOutside = false;
                                 });
                               },
-                            );
-                          },
+                              child: const Text('Change'),
+                            ),
+                          ],
                         ),
                       ),
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 12),
+                    ] else ...[
+                      // Zero-Friction Outside / Unlisted Medicine Fallback Chip
+                      if (query.isNotEmpty) ...[
+                        InkWell(
+                          onTap: () {
+                            setDialogState(() {
+                              isUnlistedOutside = true;
+                              selectedBrandName = query;
+                              selectedComposition = query;
+                              selectedMedicine = null;
+                              selectedGenericName = null;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.shade300),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.add_shopping_cart, size: 16, color: Colors.amber),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Prescribe "$query" as Outside / Unlisted Medicine',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.amber.shade900,
+                                    ),
+                                  ),
+                                ),
+                                const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.amber),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
 
-                    // Dosage & Frequency
+                      // Composition-First Scored Suggestion List
+                      if (scoredGroups.isNotEmpty)
+                        Container(
+                          constraints: const BoxConstraints(maxHeight: 220),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: scoredGroups.length,
+                            separatorBuilder: (c, i) => const Divider(height: 1),
+                            itemBuilder: (c, i) {
+                              final group = scoredGroups[i];
+                              return Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Chemical Composition Header
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: group.isCompositionMatch
+                                                ? Colors.teal.shade50
+                                                : Colors.blue.shade50,
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(
+                                              color: group.isCompositionMatch
+                                                  ? Colors.teal.shade300
+                                                  : Colors.blue.shade200,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            group.isCompositionMatch ? 'MOLECULE MATCH' : 'BRAND MATCH',
+                                            style: TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.bold,
+                                              color: group.isCompositionMatch
+                                                  ? Colors.teal.shade800
+                                                  : Colors.blue.shade800,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            "${group.compositionLabel} [${group.form}]",
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+
+                                    // Associated Clinic Brands + Generic Option Chips
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      children: [
+                                        // 1-tap Generic prescription
+                                        ActionChip(
+                                          avatar: const Icon(Icons.science_outlined, size: 14, color: Colors.teal),
+                                          label: Text("Generic: ${group.composition}", style: const TextStyle(fontSize: 11)),
+                                          backgroundColor: Colors.white,
+                                          onPressed: () {
+                                            setDialogState(() {
+                                              selectedGenericName = "${group.composition} ${group.strength}";
+                                              selectedComposition = group.compositionLabel;
+                                              selectedBrandName = null;
+                                              selectedMedicine = null;
+                                              dosageCtrl.text = "1 ${group.form}";
+                                            });
+                                          },
+                                        ),
+
+                                        // Associated commercial products in clinic catalog
+                                        ...group.associatedBrands.map((brand) {
+                                          return ActionChip(
+                                            avatar: const Icon(Icons.local_pharmacy_outlined, size: 14, color: Colors.indigo),
+                                            label: Text(
+                                              "${brand.productName}${brand.manufacturer != null ? ' (${brand.manufacturer})' : ''}",
+                                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                            ),
+                                            backgroundColor: Colors.indigo.shade50,
+                                            onPressed: () {
+                                              setDialogState(() {
+                                                selectedMedicine = brand;
+                                                selectedBrandName = brand.productName;
+                                                selectedComposition = brand.fullCompositionLabel;
+                                                selectedGenericName = null;
+                                                dosageCtrl.text = "1 ${brand.form}";
+                                              });
+                                            },
+                                          );
+                                        }),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // Dosage & Frequency Controls
                     Row(
                       children: [
                         Expanded(
@@ -1559,7 +1769,7 @@ class _ConsultationEncounterScreenState
                     ),
                     const SizedBox(height: 12),
 
-                    // Timing & Duration
+                    // Timing & Duration Controls
                     Row(
                       children: [
                         Expanded(
@@ -1598,11 +1808,14 @@ class _ConsultationEncounterScreenState
                     ),
                     const SizedBox(height: 8),
 
-                    // Chronic checkbox (sets durationDays to NULL)
+                    // Chronic Indefinite checkbox (sets durationDays = null)
                     CheckboxListTile(
                       dense: true,
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Chronic / Indefinite Maintenance Therapy (NULL duration)', style: TextStyle(fontSize: 12)),
+                      title: const Text(
+                        'Chronic / Indefinite Maintenance Therapy (NULL duration)',
+                        style: TextStyle(fontSize: 12),
+                      ),
                       value: isChronic,
                       onChanged: (val) {
                         setDialogState(() {
@@ -1621,7 +1834,7 @@ class _ConsultationEncounterScreenState
                       controller: instrCtrl,
                       decoration: const InputDecoration(
                         labelText: 'Instructions / Notes',
-                        hintText: 'e.g., With warm water, avoid milk...',
+                        hintText: 'e.g., With warm water, avoid dairy...',
                         isDense: true,
                         border: OutlineInputBorder(),
                       ),
@@ -1634,23 +1847,35 @@ class _ConsultationEncounterScreenState
               TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
               FilledButton(
                 onPressed: () {
-                  final enteredName = searchCtrl.text.trim();
-                  if (enteredName.isEmpty) return;
+                  final activeName = selectedBrandName ??
+                      selectedGenericName ??
+                      searchCtrl.text.trim();
+
+                  if (activeName.isEmpty) return;
+
+                  final compText = selectedComposition ??
+                      (selectedMedicine != null
+                          ? selectedMedicine!.fullCompositionLabel
+                          : activeName);
 
                   final newItem = PrescriptionItem(
                     id: _uuid.v4(),
                     action: MedicationAction.start,
                     medicineId: selectedMedicine?.id,
-                    medicineName: selectedMedicine?.productName ?? enteredName,
-                    composition: selectedMedicine != null
-                        ? "${selectedMedicine!.composition} ${selectedMedicine!.strength}"
-                        : enteredName,
+                    medicineName: selectedMedicine != null
+                        ? selectedMedicine!.productName
+                        : (selectedBrandName ?? activeName),
+                    composition: compText,
                     dosage: dosageCtrl.text.trim(),
                     frequency: frequency,
                     timing: timing,
                     durationDays: isChronic ? null : (durationDays ?? 5),
-                    unlistedName: selectedMedicine == null ? enteredName : null,
-                    instructions: instrCtrl.text.trim().isNotEmpty ? instrCtrl.text.trim() : null,
+                    unlistedName: (selectedMedicine == null && (isUnlistedOutside || selectedBrandName != null))
+                        ? activeName
+                        : null,
+                    instructions: instrCtrl.text.trim().isNotEmpty
+                        ? instrCtrl.text.trim()
+                        : null,
                   );
 
                   setState(() {

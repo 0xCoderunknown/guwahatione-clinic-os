@@ -259,6 +259,10 @@ class FirebaseService {
     await _medicinesRef.doc(medicine.id).set(medicine.toJson());
   }
 
+  Future<void> deleteMedicine(String medicineId) async {
+    await _medicinesRef.doc(medicineId).delete();
+  }
+
   Stream<List<Medicine>> getMedicines() {
     return _medicinesRef.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) => Medicine.fromJson(doc.data())).toList();

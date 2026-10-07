@@ -8,6 +8,7 @@ import '../models/doctor.dart';
 import '../models/consultation.dart';
 import '../models/medicine.dart';
 import '../models/prescription_item.dart';
+import '../models/user_role.dart';
 import '../models/patient_review_eligibility.dart';
 import '../services/firebase_service.dart';
 import '../utils/app_constants.dart';
@@ -279,7 +280,13 @@ class ClinicProvider with ChangeNotifier {
     required String form,
     String? manufacturer,
     String? category,
+    UserRole? requestingRole,
   }) async {
+    if (requestingRole != null && !requestingRole.isOwner) {
+      throw Exception(
+        'Permission Denied: Only clinic administrators (owner) can modify the master medicine catalogue.',
+      );
+    }
     _setLoading(true);
     try {
       final med = Medicine(
@@ -292,6 +299,20 @@ class ClinicProvider with ChangeNotifier {
         category: category,
       );
       await _firebaseService.addMedicine(med);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> deleteMedicine(String medicineId, {UserRole? requestingRole}) async {
+    if (requestingRole != null && !requestingRole.isOwner) {
+      throw Exception(
+        'Permission Denied: Only clinic administrators (owner) can modify the master medicine catalogue.',
+      );
+    }
+    _setLoading(true);
+    try {
+      await _firebaseService.deleteMedicine(medicineId);
     } finally {
       _setLoading(false);
     }
