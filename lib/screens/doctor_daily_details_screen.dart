@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../core/engines/engines.dart';
 import '../models/appointment.dart';
 
 class DoctorDailyDetailsScreen extends StatelessWidget {
@@ -16,11 +17,8 @@ class DoctorDailyDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Calculate Totals for Bottom Bar
-    final totalFees = appointments
-        .where((a) => a.status == AppointmentStatus.completed)
-        .fold(0, (sum, a) => sum + a.amountCollected);
-
+    // Calculate Totals for Bottom Bar using pure engine
+    final totalFees = RevenueEngine.calculateRealizedRevenue(appointments);
     final totalPatients = appointments.length;
 
     return Scaffold(

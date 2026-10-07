@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
-import '../../models/patient_review_eligibility.dart';
 import '../../providers/clinic_provider.dart';
-import '../../utils/app_constants.dart';
 import '../booking/booking_eligibility_banner.dart';
 import '../common/appointment_status_chip.dart';
 import '../common/payment_badge.dart';
@@ -191,8 +190,8 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
           final appts = await provider.getAppointmentsForPatient(
             widget.appointment.patientPhone,
           );
-          final eligibility = PatientReviewEligibility.calculate(
-            appointments: appts,
+          final eligibility = AppointmentEngine.evaluateReviewEligibility(
+            patientHistory: appts,
             doctorId: widget.appointment.doctorId,
             targetDate: widget.appointment.scheduledDate,
             doctorName: widget.appointment.doctorName,
@@ -238,12 +237,16 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
     AppointmentStatus status,
   ) async {
     final provider = Provider.of<ClinicProvider>(context, listen: false);
+    final doctor = provider.doctors
+        .where((d) => d.id == widget.appointment.doctorId)
+        .firstOrNull;
 
     int amount = 0;
     if (status == AppointmentStatus.completed) {
-      amount = (_selectedPaymentType == PaymentType.paid)
-          ? AppConstants.defaultConsultationFee
-          : 0;
+      amount = AppointmentEngine.resolveConsultationFee(
+        doctor: doctor,
+        paymentType: _selectedPaymentType,
+      );
     } else if (status == AppointmentStatus.absent) {
       amount = 0;
     }

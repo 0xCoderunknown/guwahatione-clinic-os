@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../core/engines/engines.dart';
 import '../models/appointment.dart';
 import '../models/doctor.dart';
 import '../models/patient_review_eligibility.dart';
 import '../providers/clinic_provider.dart';
-import '../utils/app_constants.dart';
 import '../widgets/widgets.dart';
 
 /// Modal dialog for receptionist to register patient walk-ins and book appointments.
@@ -187,7 +187,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         _isNewPatient = true;
         _patientAppointments = [];
         _amountController.text =
-            "${_selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee}";
+            "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paid)}";
       }
 
       _updateEligibilityAndPayment();
@@ -215,14 +215,14 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         if (_selectedPayment == PaymentType.freeReview) {
           _selectedPayment = PaymentType.paid;
           _amountController.text =
-              "${_selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee}";
+              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paid)}";
         }
       });
       return;
     }
 
-    final eligibility = PatientReviewEligibility.calculate(
-      appointments: _patientAppointments,
+    final eligibility = AppointmentEngine.evaluateReviewEligibility(
+      patientHistory: _patientAppointments,
       doctorId: _selectedDoctor?.id,
       targetDate: _selectedDate,
       doctorName: _selectedDoctor?.name,
@@ -238,7 +238,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         if (_selectedPayment == PaymentType.freeReview) {
           _selectedPayment = PaymentType.paid;
           _amountController.text =
-              "${_selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee}";
+              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paid)}";
         }
       } else if (eligibility.isWithin14Days) {
         final dateStr = DateFormat('dd MMM yyyy').format(eligibility.lastVisitDate!);
@@ -255,7 +255,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         if (_selectedPayment == PaymentType.freeReview) {
           _selectedPayment = PaymentType.paid;
           _amountController.text =
-              "${_selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee}";
+              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paid)}";
         }
       }
     });
@@ -291,7 +291,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
           setState(() {
             _selectedPayment = PaymentType.paid;
             _amountController.text =
-                "${_selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee}";
+                "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paid)}";
           });
           return;
         }
@@ -300,12 +300,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
     setState(() {
       _selectedPayment = val;
-      if (_selectedPayment == PaymentType.paid) {
-        _amountController.text =
-            "${_selectedDoctor?.consultationFee ?? AppConstants.defaultConsultationFee}";
-      } else {
-        _amountController.text = "0";
-      }
+      _amountController.text =
+          "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
     });
   }
 

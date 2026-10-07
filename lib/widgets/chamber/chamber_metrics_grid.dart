@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
 
 /// Live KPI metrics grid for Doctor Chamber (Total, Consulted, Absent, Doctor Share).
@@ -30,29 +30,17 @@ class ChamberMetricsGrid extends StatelessWidget {
     required List<Appointment> appointments,
     required bool isDesktop,
   }) {
-    final totalBooked = appointments.length;
-    final attendedCount = appointments.where((a) => a.status == AppointmentStatus.completed).length;
-    final paidAppointments = appointments
-        .where((a) => a.status == AppointmentStatus.completed && a.paymentType == PaymentType.paid)
-        .toList();
-    final freeAppointments = appointments
-        .where((a) =>
-            a.status == AppointmentStatus.completed &&
-            (a.paymentType == PaymentType.freeReview || a.paymentType == PaymentType.freeFamily))
-        .toList();
-    final absentCount = appointments.where((a) => a.status == AppointmentStatus.absent).length;
-    final waitingCount = appointments.where((a) => a.status == AppointmentStatus.pending).length;
-    final totalDoctorFees = paidAppointments.fold(0, (sum, a) => sum + a.amountCollected);
+    final kpis = RevenueEngine.calculateChamberKpis(appointments);
 
     return ChamberMetricsGrid(
       key: key,
-      totalBooked: totalBooked,
-      attendedCount: attendedCount,
-      paidCount: paidAppointments.length,
-      freeCount: freeAppointments.length,
-      absentCount: absentCount,
-      waitingCount: waitingCount,
-      totalFees: totalDoctorFees,
+      totalBooked: kpis.totalBooked,
+      attendedCount: kpis.attendedCount,
+      paidCount: kpis.paidCount,
+      freeCount: kpis.freeCount,
+      absentCount: kpis.absentCount,
+      waitingCount: kpis.waitingCount,
+      totalFees: kpis.totalDoctorFees,
       isDesktop: isDesktop,
     );
   }

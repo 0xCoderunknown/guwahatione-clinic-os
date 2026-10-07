@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../core/engines/engines.dart';
 import '../models/appointment.dart';
 import '../services/firebase_service.dart'; // Direct service access for clean stream
 import 'doctor_daily_details_screen.dart';
@@ -93,27 +94,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget _buildDoctorCard(BuildContext context, List<Appointment> doctorAppts) {
     if (doctorAppts.isEmpty) return const SizedBox.shrink();
 
-    // CALCULATE STATS
-    final doctorName = doctorAppts.first.doctorName;
-    final totalPatients = doctorAppts.length;
+    // Use pure domain engine for doctor statistics
+    final analyticsList = RevenueEngine.calculateDoctorAnalytics(doctorAppts);
+    if (analyticsList.isEmpty) return const SizedBox.shrink();
+    final stats = analyticsList.first;
 
-    final completed = doctorAppts
-        .where((a) => a.status == AppointmentStatus.completed)
-        .length;
-    final pending = doctorAppts
-        .where((a) => a.status == AppointmentStatus.pending)
-        .length;
-    final absent = doctorAppts
-        .where((a) => a.status == AppointmentStatus.absent)
-        .length;
-    final free = doctorAppts
-        .where((a) => a.paymentType != PaymentType.paid)
-        .length;
-
-    // Revenue: Sum of 'amountCollected' for COMPLETED only
-    final revenue = doctorAppts
-        .where((a) => a.status == AppointmentStatus.completed)
-        .fold(0, (sum, a) => sum + a.amountCollected);
+    final doctorName = stats.doctorName;
+    final totalPatients = stats.totalPatients;
+    final completed = stats.completed;
+    final pending = stats.pending;
+    final absent = stats.absent;
+    final free = stats.free;
+    final revenue = stats.realizedRevenue;
 
     return Card(
       elevation: 4,

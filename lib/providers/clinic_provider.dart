@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import '../core/engines/engines.dart';
 import '../models/patient.dart';
 import '../models/appointment.dart';
 import '../models/doctor.dart';
@@ -12,7 +13,6 @@ import '../models/prescription_item.dart';
 import '../models/user_role.dart';
 import '../models/patient_review_eligibility.dart';
 import '../services/firebase_service.dart';
-import '../utils/app_constants.dart';
 
 class ClinicProvider with ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();
@@ -35,9 +35,8 @@ class ClinicProvider with ChangeNotifier {
   int get pendingCount =>
       _todayAppointments.where((a) => a.status == AppointmentStatus.pending).length;
 
-  int get dailyRevenue => _todayAppointments
-      .where((a) => a.status == AppointmentStatus.completed)
-      .fold(0, (total, item) => total + item.amountCollected);
+  int get dailyRevenue =>
+      RevenueEngine.calculateRealizedRevenue(_todayAppointments);
 
   ClinicProvider() {
     _subscribeToDoctors();
@@ -121,8 +120,8 @@ class ClinicProvider with ChangeNotifier {
     required DateTime scheduledDate,
     String? doctorName,
   }) {
-    return PatientReviewEligibility.calculate(
-      appointments: patientAppointments,
+    return AppointmentEngine.evaluateReviewEligibility(
+      patientHistory: patientAppointments,
       doctorId: doctorId,
       targetDate: scheduledDate,
       doctorName: doctorName,
@@ -136,15 +135,11 @@ class ClinicProvider with ChangeNotifier {
     required String? doctorId,
     required DateTime scheduledDate,
   }) {
-    final eligibility = PatientReviewEligibility.calculate(
-      appointments: patientAppointments,
+    return AppointmentEngine.suggestPaymentType(
+      patientHistory: patientAppointments,
       doctorId: doctorId,
       targetDate: scheduledDate,
     );
-    if (eligibility.hasVisitedDoctorEarlier && eligibility.isWithin14Days) {
-      return PaymentType.freeReview;
-    }
-    return PaymentType.paid;
   }
 
   Future<void> bookAppointment({
@@ -160,7 +155,7 @@ class ClinicProvider with ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
-      if (AppConstants.isDateBlocked(scheduledDate)) {
+      if (AppointmentEngine.isDateBlocked(scheduledDate)) {
         throw Exception('Selected date is a clinic holiday.');
       }
 
@@ -176,8 +171,8 @@ class ClinicProvider with ChangeNotifier {
       if (paymentType == PaymentType.freeReview) {
         final patientAppts =
             await _firebaseService.getAppointmentsForPatient(phoneNumber);
-        final eligibility = PatientReviewEligibility.calculate(
-          appointments: patientAppts,
+        final eligibility = AppointmentEngine.evaluateReviewEligibility(
+          patientHistory: patientAppts,
           doctorId: selectedDoctor.id,
           targetDate: scheduledDate,
           doctorName: selectedDoctor.name,

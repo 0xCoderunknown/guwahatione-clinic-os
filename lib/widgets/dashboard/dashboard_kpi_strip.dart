@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../models/appointment.dart';
+import '../../core/engines/engines.dart';
 import '../../providers/clinic_provider.dart';
 import '../../screens/appointment_list_screen.dart';
 import '../../screens/doctor_list_screen.dart';
@@ -19,15 +19,13 @@ class DashboardKpiStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final completedCount = provider.todayAppointments
-        .where((a) => a.status == AppointmentStatus.completed)
-        .length;
+    final metrics = RevenueEngine.calculateDailyMetrics(provider.todayAppointments);
 
     final cards = [
       DashboardKpiData(
         title: 'Today Appointments',
-        value: '${provider.todayAppointments.length}',
-        subtitle: '$completedCount completed',
+        value: '${metrics.totalAppointments}',
+        subtitle: '${metrics.completedCount} completed',
         icon: Icons.calendar_today_rounded,
         color: const Color(0xFF2563EB), // Blue
         bgColor: const Color(0xFFEFF6FF),
@@ -38,7 +36,7 @@ class DashboardKpiStrip extends StatelessWidget {
       ),
       DashboardKpiData(
         title: 'Realized Revenue',
-        value: '₹${provider.dailyRevenue}',
+        value: '₹${metrics.realizedRevenue}',
         subtitle: 'From completed visits',
         icon: Icons.account_balance_wallet_rounded,
         color: const Color(0xFF059669), // Green
@@ -50,7 +48,7 @@ class DashboardKpiStrip extends StatelessWidget {
       ),
       DashboardKpiData(
         title: 'Waiting Patients',
-        value: '${provider.pendingCount}',
+        value: '${metrics.pendingCount}',
         subtitle: 'Awaiting doctor consultation',
         icon: Icons.hourglass_top_rounded,
         color: const Color(0xFFD97706), // Amber
