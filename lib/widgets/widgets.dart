@@ -17,6 +17,9 @@ export 'booking/booking_eligibility_banner.dart';
 export 'booking/booking_patient_fields.dart';
 export 'booking/booking_payment_section.dart';
 
+// Queue Management Widgets
+export 'queue/appointment_accordion.dart';
+
 // Chamber Widgets
 export 'chamber/chamber_app_bar.dart';
 export 'chamber/chamber_metrics_grid.dart';
@@ -31,6 +34,7 @@ export 'encounter/diagnostic_review_section.dart';
 export 'encounter/patient_header_section.dart';
 export 'encounter/rx_reconciliation_section.dart';
 export 'encounter/vitals_and_exam_section.dart';
+export 'encounter/vitals_input_grid.dart';
 export 'encounter/encounter_dialogs.dart';
 export 'encounter/encounter_form_state.dart';
 
