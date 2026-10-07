@@ -12,6 +12,11 @@ export 'dashboard/dashboard_header_bar.dart';
 export 'dashboard/dashboard_kpi_strip.dart';
 export 'dashboard/dashboard_queue_card.dart';
 
+// Booking Widgets
+export 'booking/booking_eligibility_banner.dart';
+export 'booking/booking_patient_fields.dart';
+export 'booking/booking_payment_section.dart';
+
 // Chamber Widgets
 export 'chamber/chamber_app_bar.dart';
 export 'chamber/chamber_metrics_grid.dart';
@@ -39,3 +44,9 @@ export 'print/print_clinical_snapshot.dart';
 export 'print/print_header_and_demographics.dart';
 export 'print/print_medications_table.dart';
 export 'print/print_orders_and_footer.dart';
+
+// Medicine Catalogue Widgets
+export 'catalogue/add_medicine_dialog.dart';
+export 'catalogue/catalogue_header_and_stats.dart';
+export 'catalogue/catalogue_medicine_card.dart';
+export 'catalogue/catalogue_search_toolbar.dart';
