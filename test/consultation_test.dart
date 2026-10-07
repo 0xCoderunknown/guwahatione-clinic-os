@@ -293,5 +293,106 @@ void main() {
       expect(fromJson.activePrescriptions.length, 2);
       expect(fromJson.nextFollowUpDate, followUp);
     });
+
+    test('Simulates 2-visit longitudinal medication reconciliation (Visit 1 -> Visit 2)', () {
+      // VISIT 1: Initial Encounter
+      final visit1Meds = [
+        const PrescriptionItem(
+          id: 'v1-rx1',
+          action: MedicationAction.start,
+          medicineName: 'Metformin 500mg',
+          composition: 'Metformin 500mg',
+          durationDays: null, // chronic
+        ),
+        const PrescriptionItem(
+          id: 'v1-rx2',
+          action: MedicationAction.start,
+          medicineName: 'Amlodipine 5mg',
+          composition: 'Amlodipine 5mg',
+          durationDays: null, // chronic
+        ),
+      ];
+
+      final visit1 = Consultation(
+        id: 'visit-1',
+        appointmentId: 'appt-1',
+        patientPhone: '9876543210',
+        patientName: 'Test Patient',
+        patientAge: 48,
+        patientGender: 'Female',
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Baruah',
+        createdAt: DateTime(2026, 9, 1),
+        provisionalDiagnosis: ['Type 2 Diabetes', 'Hypertension'],
+        prescriptionItems: visit1Meds,
+      );
+
+      expect(visit1.activePrescriptions.length, 2);
+
+      // VISIT 2: 1 Month Later Follow-up Encounter
+      // System pulls active meds from Visit 1:
+      final priorActive = visit1.activePrescriptions;
+      expect(priorActive.length, 2);
+
+      // Doctor reconciles:
+      // 1. Metformin -> CONTINUE
+      final reconciledMetformin = priorActive[0].copyWith(
+        id: 'v2-rx1',
+        action: MedicationAction.continueAction,
+      );
+
+      // 2. Amlodipine -> STOP (due to pedal edema)
+      final reconciledAmlodipine = priorActive[1].copyWith(
+        id: 'v2-rx2',
+        action: MedicationAction.stop,
+        stopReason: 'Pedal edema observed',
+      );
+
+      // 3. New replacement drug -> START
+      const newTelma = PrescriptionItem(
+        id: 'v2-rx3',
+        action: MedicationAction.start,
+        medicineName: 'Telmisartan 40mg',
+        composition: 'Telmisartan 40mg',
+        durationDays: 30,
+      );
+
+      final visit2 = Consultation(
+        id: 'visit-2',
+        appointmentId: 'appt-2',
+        patientPhone: '9876543210',
+        patientName: 'Test Patient',
+        patientAge: 48,
+        patientGender: 'Female',
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Baruah',
+        createdAt: DateTime(2026, 10, 1),
+        provisionalDiagnosis: ['Type 2 Diabetes', 'Hypertension (Switched ARB)'],
+        prescriptionItems: [
+          reconciledMetformin,
+          reconciledAmlodipine,
+          newTelma,
+        ],
+      );
+
+      // Verify that Visit 1 remains untouched & immutable
+      expect(visit1.prescriptionItems.length, 2);
+      expect(visit1.prescriptionItems[1].action, MedicationAction.start);
+
+      // Verify that Visit 2 has 2 active meds and 1 stopped med
+      expect(visit2.activePrescriptions.length, 2);
+      expect(
+        visit2.activePrescriptions.map((m) => m.medicineName),
+        containsAll(['Metformin 500mg', 'Telmisartan 40mg']),
+      );
+      expect(
+        visit2.activePrescriptions.map((m) => m.medicineName),
+        isNot(contains('Amlodipine 5mg')),
+      );
+
+      expect(visit2.stoppedPrescriptions.length, 1);
+      expect(visit2.stoppedPrescriptions.first.medicineName, 'Amlodipine 5mg');
+      expect(visit2.stoppedPrescriptions.first.stopReason, 'Pedal edema observed');
+    });
   });
 }

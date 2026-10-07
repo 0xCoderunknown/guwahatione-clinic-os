@@ -5,6 +5,7 @@ import '../models/appointment.dart';
 import '../models/doctor.dart';
 import '../providers/auth_provider.dart';
 import '../services/firebase_service.dart';
+import 'consultation_encounter_screen.dart';
 
 class DoctorChamberScreen extends StatefulWidget {
   final Doctor doctor;
@@ -459,115 +460,158 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
     // Mask phone number for doctor view (e.g. +91 98*** 12345)
     final maskedPhone = _maskPhone(appt.patientPhone);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: appt.status == AppointmentStatus.pending
-              ? Colors.blue.shade200
-              : const Color(0xFFE2E8F0),
-          width: appt.status == AppointmentStatus.pending ? 1.5 : 1,
+    return InkWell(
+      onTap: appt.status != AppointmentStatus.absent ? () => _openConsultation(appt) : null,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: appt.status == AppointmentStatus.pending
+                ? Colors.blue.shade200
+                : const Color(0xFFE2E8F0),
+            width: appt.status == AppointmentStatus.pending ? 1.5 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.015),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.015),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Queue Number Avatar
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: appt.status == AppointmentStatus.absent
-                  ? Colors.grey.shade100
-                  : Colors.teal.shade50,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
+        child: Row(
+          children: [
+            // Queue Number Avatar
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
                 color: appt.status == AppointmentStatus.absent
-                    ? Colors.grey.shade300
-                    : Colors.teal.shade200,
+                    ? Colors.grey.shade100
+                    : Colors.teal.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: appt.status == AppointmentStatus.absent
+                      ? Colors.grey.shade300
+                      : Colors.teal.shade200,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                "#${appt.queueNumber.toString().padLeft(2, '0')}",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: appt.status == AppointmentStatus.absent
+                      ? Colors.grey.shade600
+                      : Colors.teal.shade800,
+                ),
               ),
             ),
-            alignment: Alignment.center,
-            child: Text(
-              "#${appt.queueNumber.toString().padLeft(2, '0')}",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: appt.status == AppointmentStatus.absent
-                    ? Colors.grey.shade600
-                    : Colors.teal.shade800,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
+            const SizedBox(width: 14),
 
-          // Patient Name & Masked Phone
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Patient Name & Masked Phone
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    appt.patientName,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: appt.status == AppointmentStatus.absent
+                          ? Colors.grey.shade500
+                          : const Color(0xFF0F172A),
+                      decoration: appt.status == AppointmentStatus.absent
+                          ? TextDecoration.lineThrough
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    maskedPhone,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                  ),
+                ],
+              ),
+            ),
+
+            // Status & Fee Badge
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  appt.patientName,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: appt.status == AppointmentStatus.absent
-                        ? Colors.grey.shade500
-                        : const Color(0xFF0F172A),
-                    decoration: appt.status == AppointmentStatus.absent
-                        ? TextDecoration.lineThrough
-                        : null,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: badgeBg,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    statusTitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: badgeFg,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
-                  maskedPhone,
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                  paymentSubtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: appt.amountCollected > 0 ? const Color(0xFF15803D) : Colors.grey.shade600,
+                  ),
                 ),
               ],
             ),
-          ),
 
-          // Status & Fee Badge
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: badgeBg,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  statusTitle,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: badgeFg,
-                    letterSpacing: 0.3,
+            // 1-Click Consultation Encounter action
+            if (appt.status != AppointmentStatus.absent) ...[
+              const SizedBox(width: 14),
+              if (appt.status == AppointmentStatus.pending)
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.teal.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    visualDensity: VisualDensity.compact,
                   ),
+                  icon: const Icon(Icons.edit_note_rounded, size: 16),
+                  label: const Text('Consult', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  onPressed: () => _openConsultation(appt),
+                )
+              else
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: const Icon(Icons.description_outlined, size: 14),
+                  label: const Text('Record', style: TextStyle(fontSize: 11)),
+                  onPressed: () => _openConsultation(appt),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                paymentSubtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: appt.amountCollected > 0 ? const Color(0xFF15803D) : Colors.grey.shade600,
-                ),
-              ),
             ],
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openConsultation(Appointment appt) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => ConsultationEncounterScreen(
+          appointment: appt,
+          doctor: widget.doctor,
+        ),
       ),
     );
   }
