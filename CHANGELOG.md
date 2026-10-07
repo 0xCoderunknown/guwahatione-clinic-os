@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.7.0] — 2026-10-07
+
+### Added
+- **Complete Frontend Modularization Across Core Operational Flows:**
+  - **Reception Booking Sub-System (`lib/widgets/booking/`):**
+    - `BookingPatientFields`: Rapid patient phone lookup, name, age, and gender input controls.
+    - `BookingPaymentSection`: Radio selection between Paid, Free Review, and Free Family with automatic fee computation.
+    - `BookingEligibilityBanner`: Same-doctor 14-day policy warning banner with reusable static warning dialog helper (`showFourteenDaysWarningDialog`).
+  - **Reception Queue Management (`lib/widgets/queue/`):**
+    - `AppointmentAccordion`: Modularized token accordion row with payment details, time of booking, quick absent/attended toggling, and "Call In / Start Consultation" action.
+  - **Prescribing Sub-System & Search (`lib/widgets/encounter/rx/`):**
+    - `StagedMedicineForm`: Focused form container with prefilled OPD defaults, dosage chips, frequency/timing dropdowns, and chronic toggle.
+    - `RxSearchResultsView`: Grouped chemical salts and trade brand search result pills with generic/brand pickers.
+    - `ReconciliationItemRow`: Active medication row with 1-tap `CONTINUE` and `STOP` chips (and stop reason prompt).
+  - **Encounter Vitals Input (`lib/widgets/encounter/`):**
+    - `VitalsInputGrid`: Compact numerical vitals grid (`BP Systolic`, `BP Diastolic`, `Pulse`, `SpO2`, `Temp`, `Weight`).
+  - **Doctor Chamber Suite (`lib/widgets/chamber/`):**
+    - `ChamberAppBar`: Header with live clock, refresh indicator, and logout action.
+    - `ChamberMetricsGrid`: Chamber KPI cards (Today's Total, Completed, In Queue, Revenue).
+    - `ChamberQueueTable`: Comprehensive queue table with token status badges, live calling banner, and consultation encounter triggers.
+  - **Executive Dashboard Suite (`lib/widgets/dashboard/`):**
+    - `DashboardHeaderBar`: Top greeting, live date, and quick action chips.
+    - `DashboardKpiStrip`: Responsive KPI metrics strip with auto-adjusting breakpoints.
+    - `DashboardQueueCard`: "Today's Live Queue" panel with token cards, status badges, and quick "Call In" buttons.
+    - `DashboardDoctorRosterCard`: Active doctors roster with live chamber calling status and load indicator.
+  - **Monochrome Prescription Print Engine (`lib/widgets/print/`):**
+    - `RxLetterheadHeader`: Header with clinic brand details and 130px pre-printed letterhead mode spacing.
+    - `RxPatientSummaryCard`: Clean A4/A5 patient demographic strip.
+    - `RxFindingsAndLabsSection`: Compact examination findings and diagnostic investigation review report.
+    - `RxActiveMedicationsTable`: High-contrast prescription schedule table for `START` and `CONTINUE` medications.
+    - `RxDiscontinuedMedicationsBox`: Distinct medical-legal audit box for discontinued (`STOP`) medications.
+    - `RxOrdersAndFooter`: Diagnostic lab orders, lifestyle advice, next follow-up date, and doctor signature box.
+
+### Changed
+- **Slim Coordinator Scaffold Transformations:**
+  - `AppointmentListScreen`: Reduced from 491 lines down to 170 lines.
+  - `VitalsAndExamSection`: Reduced from 402 lines down to 265 lines by binding directly to `EncounterFormState`.
+  - `DashboardScreen`: Reduced from 693 lines down to 184 lines.
+  - `PrescriptionPrintScreen`: Reduced from 634 lines down to 216 lines.
+  - `AddAppointmentDialog`: Reduced from 459 lines down to 182 lines.
+  - `DoctorChamberScreen`: Reduced from 567 lines down to 175 lines.
+  - `RxReconciliationSection`: Reduced from 850 lines down to 226 lines.
+- **Widgets Barrel (`lib/widgets/widgets.dart`):** Updated with clear sectional exports across common, booking, queue, chamber, encounter, dashboard, and print components.
+
+---
+
 ## [1.6.0] — 2026-10-07
 
 ### Added

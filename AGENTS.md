@@ -83,7 +83,7 @@ lib/
 ├── providers/    -> App state (AuthProvider for PIN sessions, ClinicProvider for live streams)
 ├── services/     -> Firebase Firestore client service layer (FirebaseService)
 ├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
-├── widgets/      -> Reusable UI widgets (common atomic primitives & encounter step sections)
+├── widgets/      -> Reusable UI sub-packages (common, booking, queue, chamber, dashboard, encounter, print)
 └── utils/        -> Helpers (Default medicines, search scorer, constants, platform print, formatters)
 docs/
 ├── SCHEMA_AND_MODELS.md  -> Master data dictionary for Firestore collections & models
