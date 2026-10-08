@@ -10,6 +10,21 @@ A web-first clinic and chamber management system built for standalone polyclinic
 
 ---
 
+## ⚡ ClinicOS in 60 Seconds: The Story of Token #12
+
+> ### 📅 Visit 1 — The First Encounter
+> **8:00 PM · Token #12**  
+> You call the clinic and receive Token #12. You walk in. The doctor’s screen already has your name, age, and vitals. He prescribes 3 medicines and orders 4 tests. You leave with a crisp, printed prescription.
+> 
+> ### 🔄 Visit 2 — 1 Week Later (Day 7)
+> **Free Review · Zero Paperwork**  
+> Reception notes your visit is within 14 days—your review is free. You walk into the chamber. The doctor greets you by name. He doesn't ask for your crumpled old prescription; it's already on his screen. He reviews your lab reports, marks one drug as **STOPPED**, adjusts another, and prints your updated treatment plan.
+> 
+> ---
+> **No lost papers. No memory tests. No clunky hospital ERPs. Just continuous outpatient care.**
+
+---
+
 ## 💡 The Core Philosophy
 
 ClinicOS is built around two core clinical and operational principles:
