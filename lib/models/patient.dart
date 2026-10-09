@@ -4,7 +4,7 @@ class Patient {
   final int age;
   final String gender; // 'Male', 'Female', 'Other'
   final List<String> allergies; // Prominent clinical alerts
-  final DateTime lastVisitDate;
+  final DateTime? lastVisitDate;
   final String phoneNumber;
 
   Patient({
@@ -13,20 +13,23 @@ class Patient {
     required this.age,
     required this.gender,
     this.allergies = const [],
-    required this.lastVisitDate,
+    this.lastVisitDate,
     required this.phoneNumber,
   });
 
   Map<String, dynamic> toJson() {
-    return {
+    final data = <String, dynamic>{
       'id': id,
       'name': name,
       'age': age,
       'gender': gender,
       'allergies': allergies,
-      'lastVisitDate': lastVisitDate.toIso8601String(),
       'phoneNumber': phoneNumber,
     };
+    if (lastVisitDate != null) {
+      data['lastVisitDate'] = lastVisitDate!.toIso8601String();
+    }
+    return data;
   }
 
   factory Patient.fromJson(Map<String, dynamic> json) {
@@ -35,11 +38,14 @@ class Patient {
       name: json['name'] as String,
       age: (json['age'] as num).toInt(),
       gender: json['gender'] as String,
-      allergies: (json['allergies'] as List<dynamic>?)
+      allergies:
+          (json['allergies'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
-      lastVisitDate: DateTime.parse(json['lastVisitDate'] as String),
+      lastVisitDate: json['lastVisitDate'] is String
+          ? DateTime.parse(json['lastVisitDate'] as String)
+          : null,
       phoneNumber: json['phoneNumber'] as String,
     );
   }

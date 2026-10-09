@@ -65,7 +65,7 @@ You are being managed by a strict Product Manager. Follow this exact workflow:
 
 ### Step 2: Respect Existing Conventions
 - **Naming Casing:** Firestore field names use `camelCase` (e.g., `patientPhone`, `scheduledDate`, `amountCollected`).
-- **Date Storage:** Dates in Firestore must be `Timestamp` objects (with fallback parse for ISO-8601 strings in Dart models).
+- **Date Storage:** Follow the storage type documented for each field in `docs/SCHEMA_AND_MODELS.md`; for example, `lastVisitDate` is an optional ISO-8601 string while appointment and consultation event dates are `Timestamp` values.
 - **Enums:** Store enum values using `enum.name` strings (e.g., `'pending'`, `'completed'`, `'absent'`), never integer indices.
 
 ### Step 3: Verification Gate

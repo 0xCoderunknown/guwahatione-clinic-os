@@ -196,30 +196,17 @@ class ClinicProvider with ChangeNotifier {
         name: name,
         age: age,
         gender: gender,
-        lastVisitDate: DateTime.now(),
         phoneNumber: phoneNumber,
       );
-      await _firebaseService.addPatient(patient);
-
-      final queueNum = await _firebaseService.getNextQueueNumber(
-        selectedDoctor.id,
-        scheduledDate,
-      );
-
-      final appointment = Appointment(
-        id: _uuid.v4(),
-        patientPhone: phoneNumber,
-        patientName: name,
-        status: AppointmentStatus.pending,
+      await _firebaseService.bookAppointment(
+        appointmentId: _uuid.v4(),
+        patient: patient,
         paymentType: paymentType,
         amountCollected: amountCollected,
-        queueNumber: queueNum,
         scheduledDate: scheduledDate,
         doctorId: selectedDoctor.id,
         doctorName: selectedDoctor.name,
       );
-
-      await _firebaseService.createAppointment(appointment);
     } catch (e) {
       rethrow;
     } finally {

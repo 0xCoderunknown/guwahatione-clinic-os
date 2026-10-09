@@ -31,11 +31,6 @@ class FirebaseService {
   // Patients
   // ---------------------------------------------------------------------------
 
-  Future<void> addPatient(Patient patient) async {
-    // Phone number is the document key — upserts cleanly.
-    await _patientsRef.doc(patient.phoneNumber).set(patient.toJson());
-  }
-
   Future<Patient?> getPatient(String phoneNumber) async {
     final doc = await _patientsRef.doc(phoneNumber).get();
     if (doc.exists) {
@@ -48,13 +43,52 @@ class FirebaseService {
   // Appointments
   // ---------------------------------------------------------------------------
 
-  Future<void> createAppointment(Appointment appointment) async {
-    await _appointmentsRef.doc(appointment.id).set(appointment.toJson());
+  Future<int> bookAppointment({
+    required String appointmentId,
+    required Patient patient,
+    required PaymentType paymentType,
+    required int amountCollected,
+    required DateTime scheduledDate,
+    required String doctorId,
+    required String doctorName,
+  }) async {
+    final dateKey =
+        '${scheduledDate.year}-${scheduledDate.month.toString().padLeft(2, '0')}-${scheduledDate.day.toString().padLeft(2, '0')}';
+    final counterRef = _countersRef.doc('queue_${doctorId}_$dateKey');
+    final appointmentRef = _appointmentsRef.doc(appointmentId);
+    final patientRef = _patientsRef.doc(patient.phoneNumber);
+    var queueNumber = 1;
 
-    // Keep the patient's lastVisitDate in sync.
-    await _patientsRef.doc(appointment.patientPhone).update({
-      'lastVisitDate': appointment.scheduledDate.toIso8601String(),
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(counterRef);
+      queueNumber =
+          ((snapshot.data()?['currentNumber'] as num?)?.toInt() ?? 0) + 1;
+
+      final appointment = Appointment(
+        id: appointmentId,
+        patientPhone: patient.phoneNumber,
+        patientName: patient.name,
+        status: AppointmentStatus.pending,
+        paymentType: paymentType,
+        amountCollected: amountCollected,
+        queueNumber: queueNumber,
+        scheduledDate: scheduledDate,
+        doctorId: doctorId,
+        doctorName: doctorName,
+      );
+
+      transaction.set(counterRef, {'currentNumber': queueNumber});
+      transaction.set(appointmentRef, appointment.toJson());
+      transaction.set(patientRef, {
+        'id': patient.id,
+        'name': patient.name,
+        'age': patient.age,
+        'gender': patient.gender,
+        'phoneNumber': patient.phoneNumber,
+      }, SetOptions(merge: true));
     });
+
+    return queueNumber;
   }
 
   Future<void> updateAppointmentStatus(
@@ -122,27 +156,6 @@ class FirebaseService {
   // Uses an atomic transaction for each doctor's daily queue sequence.
   // Counter documents live at: counters/queue_{doctorId}_{yyyy-MM-dd}
   // ---------------------------------------------------------------------------
-
-  Future<int> getNextQueueNumber(String doctorId, DateTime date) async {
-    final dateKey =
-        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    final counterRef = _countersRef.doc('queue_${doctorId}_$dateKey');
-
-    int queueNumber = 1;
-
-    await _firestore.runTransaction((transaction) async {
-      final snapshot = await transaction.get(counterRef);
-      if (snapshot.exists) {
-        queueNumber =
-            ((snapshot.data()!['currentNumber'] as num?)?.toInt() ?? 0) + 1;
-      } else {
-        queueNumber = 1;
-      }
-      transaction.set(counterRef, {'currentNumber': queueNumber});
-    });
-
-    return queueNumber;
-  }
 
   // Check if a patient already has a non-cancelled appointment on this date.
   // Filters by phone in Firestore (single-field query) and evaluates date range

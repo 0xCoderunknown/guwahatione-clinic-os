@@ -31,7 +31,7 @@
 | `age` | `int` | Yes | Patient age in years. |
 | `gender` | `String` | Yes | `'Male'`, `'Female'`, or `'Other'`. |
 | `allergies` | `List<String>` | No | Critical clinical allergy alerts (e.g. `["Penicillin", "Sulfa"]`). Default: `[]`. |
-| `lastVisitDate` | `String` (ISO 8601) | Yes | ISO timestamp of the most recent clinic visit. |
+| `lastVisitDate` | `String` (ISO 8601) | No | Most recent completed consultation time; absent until the patient has a consultation. |
 
 ---
 

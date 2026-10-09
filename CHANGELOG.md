@@ -9,9 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.1] — 2026-10-09
+
 ### Fixed
 - Queue counters now follow the documented per-doctor, per-day key and `currentNumber` field.
 - Saved doctor sessions wait for the initial doctor list before validation.
+- Patient `lastVisitDate` now reflects completed consultations rather than scheduled bookings, and booking preserves existing patient fields.
+- Queue allocation, appointment creation, and patient demographic upsert now commit atomically.
 - Updated AI maintenance guidance and added CI dependency-resolution and analyzer checks.
 
 ## [1.8.0] — 2026-10-07
