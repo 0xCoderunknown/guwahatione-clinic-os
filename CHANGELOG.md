@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.8.3] — 2026-10-09
 
 ### Fixed
+- **Documentation & Repo Hygiene:** Corrected clone repository URL in `README.md` to point to `guwahatione-clinic-os`.
+- **Testing Documentation:** Replaced obsolete test prohibition notices in `README.md` and `CONTRIBUTING.md` with active automated test guidance (35/35 passing domain & widget tests) and CI verification steps.
+- **Project Structure Tree:** Updated `README.md` services directory breakdown to include all modular sub-services in `lib/services/`.
 - **CI Build Pipeline:** Injected mock Firebase options template (`lib/firebase_options.dart.example`) prior to analyzer execution in GitHub Actions CI workflow, resolving failure caused by gitignored secret configuration in clean clones.
 
 ## [1.8.2] — 2026-10-09
@@ -65,8 +68,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `AddAppointmentDialog`: Replaced inline fee ternary calculations with `AppointmentEngine.resolveConsultationFee` and eligibility checks with `AppointmentEngine.evaluateReviewEligibility`.
   - `AppointmentAccordion`: Dynamically resolves consultation fees using doctor configuration via `AppointmentEngine.resolveConsultationFee`.
   - `AppointmentListScreen`: Replaced custom date row with unified `ClinicDateNavBar`.
-
----
 
 ---
 

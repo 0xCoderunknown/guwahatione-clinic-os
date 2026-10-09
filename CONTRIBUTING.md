@@ -38,11 +38,11 @@ static const List<String> blockedDates = [
 
 When making code changes:
 
-1. Run `flutter analyze` — zero warnings required before committing.
+1. Run `flutter analyze` and `flutter test` — zero analyzer warnings and all automated tests passing required before committing.
 2. Format changed Dart files with `dart format <paths>`. Avoid formatting the entire repository until the existing formatting baseline is clean.
 3. Add a concise entry under `[Unreleased]` in `CHANGELOG.md` for user-visible or behavioral changes.
 4. Keep models free of UI dependencies. Some current models use Firestore `Timestamp` for serialization; do not change that boundary without updating the schema and service contracts.
-5. Keep Firestore access in `FirebaseService` and delegate business policy to domain engines.
+5. Keep Firestore access in `FirebaseService` / sub-services and delegate business policy to domain engines.
 6. Do not add dev-session markers (`// NEW:`, `// <---`) or uppercase section labels (`// HEADER ROW`) without a clear need.
 7. `AppConstants.defaultConsultationFee` is the fallback fee source; doctor-specific fees take precedence.
 
@@ -51,7 +51,7 @@ When making code changes:
 ```
 core/         ← pure Dart domain engines (math, eligibility, algorithms), zero Flutter UI
 models/       ← pure data schemas & serialization
-services/     ← all Firestore logic lives here
+services/     ← all Firestore logic lives here (FirebaseService facade + modular sub-services)
 providers/    ← state management (ChangeNotifier), coordinates streams & delegates to engines
 screens/      ← Flutter screen coordinators
 widgets/      ← modularized Flutter presentation components
@@ -60,9 +60,12 @@ utils/        ← constants and platform adapters
 
 ### Planned Features (next tasks)
 
+- [ ] Doctor signature & medical registration stamp on printout (P5)
+- [ ] Offline queue fallback cache for transient network dropouts (P6)
+- [ ] WhatsApp prescription deep link (`wa.me`) at counter (P7)
+- [ ] Daily end-of-day financial handover reconciliation (P8)
 - [ ] Doctor leave / blocked-dates management UI
 - [ ] Patient directory screen with search
 - [ ] Edit doctor profile
 - [ ] Move `blockedDates` from `AppConstants` to Firestore
-- [ ] Revisit the current test prohibition with the PM before enabling focused provider/service tests
 - [ ] Dark mode

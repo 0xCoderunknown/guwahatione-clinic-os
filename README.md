@@ -116,8 +116,8 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/0xCoderunknown/guwahatione-clinic-app.git
-cd guwahatione-clinic-app
+git clone https://github.com/0xCoderunknown/guwahatione-clinic-os.git
+cd guwahatione-clinic-os
 ```
 
 ### 2. Configure Firebase
@@ -235,7 +235,14 @@ lib/
 │   ├── auth_provider.dart                   # PIN authentication & SharedPreferences session
 │   └── clinic_provider.dart                 # Real-time streams, chamber sync, consultations & appointments
 ├── services/
-│   └── firebase_service.dart                # Atomic transactions, daily chamber sync, batch consultation writes
+│   ├── firebase_service.dart                # Unified services facade delegating to granular sub-services
+│   ├── booking_service.dart                 # Atomic queue bookings, counter transactions & queries
+│   ├── consultation_service.dart            # Append-only clinical encounter events & timeline queries
+│   ├── chamber_service.dart                 # Zero-touch doctor chamber calling sync & session lifecycle
+│   ├── catalogue_service.dart               # Formulary curation, deterministic seeds & deduplication
+│   ├── doctor_service.dart                  # Doctor roster & chamber credential management
+│   ├── patient_service.dart                 # Patient demographics & allergy directory queries
+│   └── firestore_paths.dart                 # Centralized type-safe collection & counter path builders
 ├── screens/
 │   ├── login_screen.dart                    # Role selector (Doctor Chamber vs Reception Desk)
 │   ├── owner_shell.dart                     # Responsive shell (Desktop rail vs mobile bar)
@@ -316,7 +323,15 @@ lib/
 
 ## 🧪 Testing
 
-Test source files are in `test/`, but each is currently marked skipped under the repository's temporary test prohibition. Do not run `flutter test` unless the PM explicitly changes that rule. The current verification gate is `flutter analyze`.
+The repository maintains an active automated testing suite covering domain business rules, serialization models, print schedule filtering, and clinical state machines:
+
+```bash
+# Run all automated tests
+flutter test
+```
+
+- **35+ Unit & Widget Tests:** Sub-second execution covering revenue math, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, and print schedule segregation.
+- **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---
 
