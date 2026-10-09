@@ -1,5 +1,3 @@
-@Skip('Disabled for development speed')
-library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

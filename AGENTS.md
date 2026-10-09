@@ -71,7 +71,7 @@ You are being managed by a strict Product Manager. Follow this exact workflow:
 ### Step 3: Verification Gate
 - After making changes, always ensure:
   - Code compiles cleanly with `flutter analyze` (Zero errors, zero warnings).
-  - **Tests are disabled for now** (do NOT run `flutter test` as it eats too much time; rely on `flutter analyze`).
+  - All automated unit tests pass with `flutter test` (sub-second execution across pure domain engines and models).
   - No broken imports or deprecated Flutter APIs introduced.
 
 ---
@@ -79,11 +79,14 @@ You are being managed by a strict Product Manager. Follow this exact workflow:
 ## 📂 4. Project Directory Map
 
 ```
+.agents/
+├── rules/        -> AI workspace rules (clinic_os_rules.md)
+└── recipes/      -> Change checklists (add_clinical_field.md, modify_booking_rule.md)
 lib/
 ├── core/         -> Pure domain engines (revenue_engine, appointment_engine, medicine_engine)
 ├── models/       -> Pure data models & serialization (Appointment, Consultation, Patient, Doctor, Medicine, Vitals)
 ├── providers/    -> App state (AuthProvider for PIN sessions, ClinicProvider for live streams)
-├── services/     -> Firebase Firestore client service layer (FirebaseService)
+├── services/     -> Modular Firestore service layer (FirestorePaths, booking, consultation, chamber, catalogue, doctor, patient)
 ├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
 ├── widgets/      -> Reusable UI sub-packages (common, booking, queue, chamber, dashboard, encounter, print)
 └── utils/        -> Helpers (Default medicines, constants, platform print, formatters)
