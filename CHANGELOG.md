@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **CI Build Pipeline:** Injected mock Firebase options template (`lib/firebase_options.dart.example`) prior to analyzer execution in GitHub Actions CI workflow, resolving failure caused by gitignored secret configuration in clean clones.
+
 ## [1.8.2] — 2026-10-09
 
 ### Added

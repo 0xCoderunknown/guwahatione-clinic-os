@@ -16,9 +16,12 @@ jobs:
         with:
           channel: stable
           cache: true
+      - name: Setup template Firebase config for CI
+        run: cp lib/firebase_options.dart.example lib/firebase_options.dart
       - name: Resolve dependencies
         run: flutter pub get
       - name: Analyze
         run: flutter analyze
       - name: Test
-        run: flutter test
+        run: flutter test
+
