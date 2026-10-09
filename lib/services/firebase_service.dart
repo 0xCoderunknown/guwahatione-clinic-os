@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../models/patient.dart';
 import '../models/appointment.dart';
 import '../models/doctor.dart';
@@ -118,26 +119,26 @@ class FirebaseService {
   // ---------------------------------------------------------------------------
   // Queue Numbers
   //
-  // Uses an atomic Firestore transaction on a per-day counter document to
-  // prevent duplicate queue numbers when two bookings happen simultaneously.
-  // Counter documents live at: counters/{YYYY-MM-DD}
+  // Uses an atomic transaction for each doctor's daily queue sequence.
+  // Counter documents live at: counters/queue_{doctorId}_{yyyy-MM-dd}
   // ---------------------------------------------------------------------------
 
-  Future<int> getNextQueueNumber(DateTime date) async {
+  Future<int> getNextQueueNumber(String doctorId, DateTime date) async {
     final dateKey =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    final counterRef = _countersRef.doc(dateKey);
+    final counterRef = _countersRef.doc('queue_${doctorId}_$dateKey');
 
     int queueNumber = 1;
 
     await _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(counterRef);
       if (snapshot.exists) {
-        queueNumber = ((snapshot.data()!['count'] as num?)?.toInt() ?? 0) + 1;
+        queueNumber =
+            ((snapshot.data()!['currentNumber'] as num?)?.toInt() ?? 0) + 1;
       } else {
         queueNumber = 1;
       }
-      transaction.set(counterRef, {'count': queueNumber, 'date': dateKey});
+      transaction.set(counterRef, {'currentNumber': queueNumber});
     });
 
     return queueNumber;
@@ -217,20 +218,16 @@ class FirebaseService {
   // ---------------------------------------------------------------------------
 
   Future<void> addDoctor(Doctor doctor) async {
-    await _firestore
-        .collection('doctors')
-        .doc(doctor.id)
-        .set(doctor.toJson());
+    await _firestore.collection('doctors').doc(doctor.id).set(doctor.toJson());
   }
 
   Future<void> updateDoctorSearchPreference(
     String doctorId,
     String searchPreference,
   ) async {
-    await _firestore
-        .collection('doctors')
-        .doc(doctorId)
-        .update({'searchPreference': searchPreference});
+    await _firestore.collection('doctors').doc(doctorId).update({
+      'searchPreference': searchPreference,
+    });
   }
 
   Stream<List<Doctor>> getDoctors() {
@@ -302,7 +299,9 @@ class FirebaseService {
 
   /// Fetches the active medications from the patient's most recent consultation
   /// to populate the medication reconciliation interface for follow-up visits.
-  Future<List<PrescriptionItem>> getLatestActiveMedications(String phone) async {
+  Future<List<PrescriptionItem>> getLatestActiveMedications(
+    String phone,
+  ) async {
     final latest = await getLatestConsultationForPatient(phone);
     if (latest == null) return [];
     return latest.activePrescriptions;
@@ -351,8 +350,12 @@ class FirebaseService {
 
     for (final doc in snapshot.docs) {
       final data = doc.data();
-      final productName = (data['productName'] as String? ?? '').trim().toLowerCase();
-      final composition = (data['composition'] as String? ?? '').trim().toLowerCase();
+      final productName = (data['productName'] as String? ?? '')
+          .trim()
+          .toLowerCase();
+      final composition = (data['composition'] as String? ?? '')
+          .trim()
+          .toLowerCase();
       final strength = (data['strength'] as String? ?? '').trim().toLowerCase();
 
       final key = '$productName|$composition|$strength';
@@ -386,16 +389,15 @@ class FirebaseService {
     if (cleanQuery.isEmpty) return [];
 
     final snapshot = await _medicinesRef.get();
-    return snapshot.docs
-        .map((doc) => Medicine.fromJson(doc.data()))
-        .where((med) {
-          final tradeNameMatch =
-              med.productName.toLowerCase().contains(cleanQuery);
-          final compositionMatch =
-              med.composition.toLowerCase().contains(cleanQuery);
-          return tradeNameMatch || compositionMatch;
-        })
-        .toList();
+    return snapshot.docs.map((doc) => Medicine.fromJson(doc.data())).where((
+      med,
+    ) {
+      final tradeNameMatch = med.productName.toLowerCase().contains(cleanQuery);
+      final compositionMatch = med.composition.toLowerCase().contains(
+        cleanQuery,
+      );
+      return tradeNameMatch || compositionMatch;
+    }).toList();
   }
 
   // ---------------------------------------------------------------------------

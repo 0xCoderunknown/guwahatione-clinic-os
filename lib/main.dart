@@ -1,7 +1,9 @@
 import 'firebase_options.dart';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+
 import 'providers/auth_provider.dart';
 import 'providers/clinic_provider.dart';
 import 'screens/doctor_chamber_screen.dart';
@@ -62,8 +64,8 @@ class _AuthGateState extends State<AuthGate> {
     final clinic = Provider.of<ClinicProvider>(context);
     final auth = Provider.of<AuthProvider>(context);
 
-    // Once doctors are loaded, attempt to restore session if not already done
-    if (!_hasAttemptedInit && !auth.isInitialized) {
+    // Wait for the first doctor snapshot before validating a saved doctor session.
+    if (!_hasAttemptedInit && !auth.isInitialized && clinic.hasLoadedDoctors) {
       _hasAttemptedInit = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         clinic.startListeningToAppointments();
@@ -73,9 +75,7 @@ class _AuthGateState extends State<AuthGate> {
 
     if (!auth.isInitialized) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(strokeWidth: 2.5),
-        ),
+        body: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
       );
     }
 

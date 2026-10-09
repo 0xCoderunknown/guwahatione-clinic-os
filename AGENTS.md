@@ -42,8 +42,8 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
 
 | Layer | Standard | Rule |
 |---|---|---|
-| **Framework** | Flutter 3.x (Web, Android, iOS) | Single responsive codebase. Target web counter PC first. |
-| **Domain Engines** | Pure Dart (`lib/core/engines/`) | **Zero Flutter UI dependencies.** Screens & widgets are purely display templates (HTML + CSS); all revenue math, eligibility rules, queue partitioning, and pharmacological defaults must reside in dedicated engines. |
+| **Framework** | Flutter 3.x (Web, Android) | Responsive codebase. Target web counter PC first. No iOS platform project is currently checked in. |
+| **Domain Engines** | Pure Dart (`lib/core/engines/`) | **Zero Flutter UI dependencies.** Screens and widgets are Flutter presentation components; revenue math, eligibility rules, queue partitioning, and pharmacological defaults belong in dedicated engines. |
 | **State Management** | **Provider** (`ChangeNotifierProvider`) | **Strictly Provider only.** Do NOT introduce Riverpod, Bloc, MobX, GetX, or ad-hoc global state. |
 | **Backend & DB** | Cloud Firestore | Follow [SCHEMA_AND_MODELS.md](docs/SCHEMA_AND_MODELS.md). Never invent arbitrary field names. |
 | **Idempotency** | Deterministic IDs (`med_*`, `counters/*`) | Default OPD medicines must use canonical IDs. Queue counters use daily atomic keys. |

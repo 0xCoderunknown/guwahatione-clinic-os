@@ -77,7 +77,7 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 
 ### 🏢 Clinic Operations & Ledger Integrity
 - **Reception Dashboard (`DashboardScreen`)** — Responsive dashboard with daily KPI cards, live queue preview, quick reception actions, and layout adaptation across mobile, laptop, and desktop displays.
-- **🌐 Web-First Responsive Architecture** — Single responsive codebase deployed to Chrome/Edge (Counter PC), Android, and iOS.
+- **🌐 Web-First Responsive Architecture** — Responsive Flutter app for Chrome/Edge counter PCs and Android. An iOS platform project is not currently checked in.
 - **🩺 Doctor Chamber Live Board** — Read-only chamber dashboard for consultants showing live token order, active calling token status, and fee share with 1-tap access to patient clinical records and consultation encounters.
 - **🔒 Role-Based PIN Authentication** — Reception PIN (`0000` default) and 4-digit Chamber PIN per doctor.
 - **🛡️ Audit-Proof Ledger** — Zero deletions allowed; consecutive token sequence is preserved on screen and database.
@@ -85,7 +85,7 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 - **📅 Rapid Appointment Booking** — 10-digit phone search with automatic patient history, gender/sex capture, and 14-day same-doctor free review detection.
 - **💳 Smart Payment Types** — Paid (per doctor fee), Free Review (strictly for returning patients of same doctor within 14 days, with warning if >14 days), Free Family (courtesy).
 - **📊 Daily Revenue Analytics & Auditing** — Real-time earnings breakdown calculated by `RevenueEngine` grouped by doctor with chamber preview mode.
-- **🔢 Atomic Queue Numbers** — Race-condition-safe queue numbering per day using Firestore transactions.
+- **🔢 Atomic Queue Numbers** — Race-condition-safe queue numbering per doctor and day using Firestore transactions.
 - **🔴 Real-time Firestore Streams** — Live updates across counter PC and doctor chambers via Firestore listeners.
 
 ---
@@ -94,7 +94,7 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 
 | Layer | Technology |
 |---|---|
-| Platforms | Web (Desktop Counter / Tablet / Mobile), Android, iOS |
+| Platforms | Web (Desktop Counter / Tablet / Mobile), Android |
 | UI Framework | Flutter 3.x (Material 3 Responsive) |
 | Domain Engines | Pure Dart (`RevenueEngine`, `AppointmentEngine`, `MedicineEngine`) |
 | State Management | Provider |
@@ -316,17 +316,7 @@ lib/
 
 ## 🧪 Testing
 
-Run all unit, model, and widget tests:
-
-```bash
-flutter test
-```
-
-The test suite contains **35 automated tests** covering:
-- **`catalogue_scoring_test.dart`** — Dual-mode ranking (composition-first & brand-first), brand grouping, clinical defaults helper fallbacks, unlisted outside drug fallback, and admin vs. doctor role security guards.
-- **`consultation_test.dart`** — Patient clinical attributes, vitals formatting, prescription item lifecycle (`START`/`CONTINUE`/`STOP`), and 2-visit longitudinal medication reconciliation.
-- **`prescription_print_test.dart`** — Active Rx vs. discontinued regimen segregation, null-safe formatting, letterhead toggle, and widget rendering.
-- **`widget_test.dart`** — Appointment ledger, PIN auth, and 14-day same-doctor free review business logic.
+Test source files are in `test/`, but each is currently marked skipped under the repository's temporary test prohibition. Do not run `flutter test` unless the PM explicitly changes that rule. The current verification gate is `flutter analyze`.
 
 ---
 

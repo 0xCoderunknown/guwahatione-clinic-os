@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+
 import '../core/engines/engines.dart';
 import '../models/patient.dart';
 import '../models/appointment.dart';
@@ -25,15 +26,18 @@ class ClinicProvider with ChangeNotifier {
   List<Doctor> _doctors = [];
   List<Appointment> _todayAppointments = [];
   List<Medicine> _medicines = [];
+  bool _hasLoadedDoctors = false;
   bool _isLoading = false;
 
   List<Doctor> get doctors => _doctors;
+  bool get hasLoadedDoctors => _hasLoadedDoctors;
   List<Appointment> get todayAppointments => _todayAppointments;
   List<Medicine> get medicines => _medicines;
   bool get isLoading => _isLoading;
 
-  int get pendingCount =>
-      _todayAppointments.where((a) => a.status == AppointmentStatus.pending).length;
+  int get pendingCount => _todayAppointments
+      .where((a) => a.status == AppointmentStatus.pending)
+      .length;
 
   int get dailyRevenue =>
       RevenueEngine.calculateRealizedRevenue(_todayAppointments);
@@ -58,6 +62,7 @@ class ClinicProvider with ChangeNotifier {
     _doctorSub?.cancel();
     _doctorSub = _firebaseService.getDoctors().listen((doctors) {
       _doctors = doctors;
+      _hasLoadedDoctors = true;
       notifyListeners();
     });
   }
@@ -98,7 +103,6 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
-
   Future<Patient?> searchPatient(String phoneNumber) async {
     _setLoading(true);
     try {
@@ -109,7 +113,9 @@ class ClinicProvider with ChangeNotifier {
   }
 
   /// Fetches appointment history for a given patient.
-  Future<List<Appointment>> getAppointmentsForPatient(String phoneNumber) async {
+  Future<List<Appointment>> getAppointmentsForPatient(
+    String phoneNumber,
+  ) async {
     return await _firebaseService.getAppointmentsForPatient(phoneNumber);
   }
 
@@ -169,8 +175,9 @@ class ClinicProvider with ChangeNotifier {
 
       // Enforce: Only a patient who visited earlier with the same doctor can get a free review.
       if (paymentType == PaymentType.freeReview) {
-        final patientAppts =
-            await _firebaseService.getAppointmentsForPatient(phoneNumber);
+        final patientAppts = await _firebaseService.getAppointmentsForPatient(
+          phoneNumber,
+        );
         final eligibility = AppointmentEngine.evaluateReviewEligibility(
           patientHistory: patientAppts,
           doctorId: selectedDoctor.id,
@@ -194,7 +201,10 @@ class ClinicProvider with ChangeNotifier {
       );
       await _firebaseService.addPatient(patient);
 
-      final queueNum = await _firebaseService.getNextQueueNumber(scheduledDate);
+      final queueNum = await _firebaseService.getNextQueueNumber(
+        selectedDoctor.id,
+        scheduledDate,
+      );
 
       final appointment = Appointment(
         id: _uuid.v4(),
@@ -314,7 +324,9 @@ class ClinicProvider with ChangeNotifier {
     return await _firebaseService.getConsultationsForPatient(phone);
   }
 
-  Future<List<PrescriptionItem>> getActiveMedicationsForPatient(String phone) async {
+  Future<List<PrescriptionItem>> getActiveMedicationsForPatient(
+    String phone,
+  ) async {
     return await _firebaseService.getLatestActiveMedications(phone);
   }
 
@@ -353,7 +365,10 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
-  Future<void> deleteMedicine(String medicineId, {UserRole? requestingRole}) async {
+  Future<void> deleteMedicine(
+    String medicineId, {
+    UserRole? requestingRole,
+  }) async {
     if (requestingRole != null && !requestingRole.isOwner) {
       throw Exception(
         'Permission Denied: Only clinic administrators (owner) can modify the master medicine catalogue.',

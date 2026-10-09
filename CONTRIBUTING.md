@@ -39,12 +39,12 @@ static const List<String> blockedDates = [
 When making code changes:
 
 1. Run `flutter analyze` — zero warnings required before committing.
-2. Run `dart format .` — all files must be formatted.
-3. Update `CHANGELOG.md` under `[Unreleased]` with a concise entry.
-4. Keep model classes (`lib/models/`) free of Firebase/Flutter SDK imports.
-5. All Firestore read/write goes through `FirebaseService` only.
-6. Do not add `// TODO`, dev-session markers (`// NEW:`, `// <---`), or uppercase section labels (`// HEADER ROW`) — the code is self-documenting.
-7. `AppConstants.defaultConsultationFee` is the single source of truth for the fee — never hardcode `500`.
+2. Format changed Dart files with `dart format <paths>`. Avoid formatting the entire repository until the existing formatting baseline is clean.
+3. Add a concise entry under `[Unreleased]` in `CHANGELOG.md` for user-visible or behavioral changes.
+4. Keep models free of UI dependencies. Some current models use Firestore `Timestamp` for serialization; do not change that boundary without updating the schema and service contracts.
+5. Keep Firestore access in `FirebaseService` and delegate business policy to domain engines.
+6. Do not add dev-session markers (`// NEW:`, `// <---`) or uppercase section labels (`// HEADER ROW`) without a clear need.
+7. `AppConstants.defaultConsultationFee` is the fallback fee source; doctor-specific fees take precedence.
 
 ### Architecture Rules
 
@@ -53,8 +53,8 @@ core/         ← pure Dart domain engines (math, eligibility, algorithms), zero
 models/       ← pure data schemas & serialization
 services/     ← all Firestore logic lives here
 providers/    ← state management (ChangeNotifier), coordinates streams & delegates to engines
-screens/      ← coordinator scaffolds (HTML-style layouts)
-widgets/      ← modularized presentation components (HTML/CSS-style templates)
+screens/      ← Flutter screen coordinators
+widgets/      ← modularized Flutter presentation components
 utils/        ← constants and platform adapters
 ```
 
@@ -64,5 +64,5 @@ utils/        ← constants and platform adapters
 - [ ] Patient directory screen with search
 - [ ] Edit doctor profile
 - [ ] Move `blockedDates` from `AppConstants` to Firestore
-- [ ] Unit tests for `ClinicProvider` and `FirebaseService`
+- [ ] Revisit the current test prohibition with the PM before enabling focused provider/service tests
 - [ ] Dark mode
