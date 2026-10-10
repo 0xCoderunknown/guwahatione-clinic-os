@@ -138,6 +138,39 @@ class FirebaseService {
   ) =>
       _chamberService.streamChamberSession(doctorId, date);
 
+  Future<void> notifyConsultationEnded({
+    required String doctorId,
+    required DateTime date,
+    required int queueNumber,
+    required String patientName,
+  }) =>
+      _chamberService.notifyConsultationEnded(
+        doctorId: doctorId,
+        date: date,
+        queueNumber: queueNumber,
+        patientName: patientName,
+      );
+
+  Future<void> notifyReadyForNext({
+    required String doctorId,
+    required DateTime date,
+  }) =>
+      _chamberService.notifyReadyForNext(
+        doctorId: doctorId,
+        date: date,
+      );
+
+  Future<void> notifyConsultationStarted({
+    required String doctorId,
+    required DateTime date,
+    required Appointment appointment,
+  }) =>
+      _chamberService.notifyConsultationStarted(
+        doctorId: doctorId,
+        date: date,
+        appointment: appointment,
+      );
+
   Future<void> clearChamberSession(String doctorId, DateTime date) =>
       _chamberService.clearChamberSession(doctorId, date);
 

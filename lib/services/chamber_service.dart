@@ -40,6 +40,58 @@ class ChamberService {
     return _countersRef.doc(chamberDocId).snapshots();
   }
 
+  /// Broadcasts consultation ended event from doctor to reception desk.
+  Future<void> notifyConsultationEnded({
+    required String doctorId,
+    required DateTime date,
+    required int queueNumber,
+    required String patientName,
+  }) async {
+    final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);
+    await _countersRef.doc(chamberDocId).set({
+      'doctorId': doctorId,
+      'date': FirestorePaths.dateKey(date),
+      'activeAppointmentId': null,
+      'activeQueueNumber': null,
+      'lastCompletedQueueNumber': queueNumber,
+      'lastCompletedPatientName': patientName,
+      'endedAt': FieldValue.serverTimestamp(),
+      'status': 'consultation_ended',
+    }, SetOptions(merge: true));
+  }
+
+  /// Broadcasts doctor's readiness for next patient to reception desk.
+  Future<void> notifyReadyForNext({
+    required String doctorId,
+    required DateTime date,
+  }) async {
+    final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);
+    await _countersRef.doc(chamberDocId).set({
+      'doctorId': doctorId,
+      'date': FirestorePaths.dateKey(date),
+      'readyAt': FieldValue.serverTimestamp(),
+      'status': 'ready_for_next',
+    }, SetOptions(merge: true));
+  }
+
+  /// Broadcasts that doctor has opened/started consultation encounter with the admitted patient.
+  Future<void> notifyConsultationStarted({
+    required String doctorId,
+    required DateTime date,
+    required Appointment appointment,
+  }) async {
+    final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);
+    await _countersRef.doc(chamberDocId).set({
+      'doctorId': doctorId,
+      'date': FirestorePaths.dateKey(date),
+      'activeAppointmentId': appointment.id,
+      'activeQueueNumber': appointment.queueNumber,
+      'patientName': appointment.patientName,
+      'patientPhone': appointment.patientPhone,
+      'status': 'in_consultation',
+    }, SetOptions(merge: true));
+  }
+
   /// Clears active chamber session, returning queue display to idle.
   Future<void> clearChamberSession(String doctorId, DateTime date) async {
     final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);

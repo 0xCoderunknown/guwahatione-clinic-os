@@ -95,8 +95,12 @@
 | `activeQueueNumber` | `int?` | Token number currently called into the chamber. |
 | `patientName` | `String?` | Name of the patient called. |
 | `patientPhone` | `String?` | Phone of the patient called. |
+| `lastCompletedQueueNumber` | `int?` | Token number of consultation that just concluded. |
+| `lastCompletedPatientName` | `String?` | Name of patient whose consultation just concluded. |
 | `calledAt` | `Timestamp?` | Timestamp when reception clicked Call In. |
-| `status` | `String` | `'calling'` (in session) or `'idle'` (cleared upon consultation sign or manual reset). |
+| `readyAt` | `Timestamp?` | Timestamp when doctor clicked "NEXT PATIENT". |
+| `endedAt` | `Timestamp?` | Timestamp when doctor clicked "CONSULTATION END". |
+| `status` | `String` | `'idle'`, `'consultation_ended'`, `'ready_for_next'`, `'calling'`, or `'in_consultation'`. |
 
 ---
 

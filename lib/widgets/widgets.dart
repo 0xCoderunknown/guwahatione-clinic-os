@@ -23,6 +23,7 @@ export 'queue/appointment_accordion.dart';
 
 // Chamber Widgets
 export 'chamber/chamber_app_bar.dart';
+export 'chamber/chamber_control_banner.dart';
 export 'chamber/chamber_metrics_grid.dart';
 export 'chamber/chamber_queue_header.dart';
 export 'chamber/chamber_token_card.dart';

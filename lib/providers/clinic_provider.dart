@@ -264,6 +264,55 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
+  Future<void> notifyConsultationEnded({
+    required String doctorId,
+    required DateTime date,
+    required int queueNumber,
+    required String patientName,
+  }) async {
+    try {
+      await _firebaseService.notifyConsultationEnded(
+        doctorId: doctorId,
+        date: date,
+        queueNumber: queueNumber,
+        patientName: patientName,
+      );
+    } catch (e) {
+      debugPrint('Error notifying consultation ended: $e');
+    }
+  }
+
+  Future<void> notifyReadyForNext({
+    required String doctorId,
+    required DateTime date,
+  }) async {
+    try {
+      await _firebaseService.notifyReadyForNext(
+        doctorId: doctorId,
+        date: date,
+      );
+    } catch (e) {
+      debugPrint('Error notifying ready for next: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> notifyConsultationStarted({
+    required String doctorId,
+    required DateTime date,
+    required Appointment appointment,
+  }) async {
+    try {
+      await _firebaseService.notifyConsultationStarted(
+        doctorId: doctorId,
+        date: date,
+        appointment: appointment,
+      );
+    } catch (e) {
+      debugPrint('Error notifying consultation started: $e');
+    }
+  }
+
   Future<void> clearChamberSession(String doctorId, DateTime date) async {
     try {
       await _firebaseService.clearChamberSession(doctorId, date);

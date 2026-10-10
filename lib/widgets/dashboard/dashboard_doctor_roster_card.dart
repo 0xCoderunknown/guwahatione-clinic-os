@@ -76,39 +76,132 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                     .where((a) => a.doctorId == doc.id)
                     .length;
 
-                return ListTile(
-                  dense: true,
-                  leading: CircleAvatar(
-                    radius: 16,
-                    backgroundColor: Colors.indigo.shade50,
-                    child: Text(
-                      doc.name.isNotEmpty ? doc.name[0].toUpperCase() : 'D',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.indigo.shade800,
+                return StreamBuilder(
+                  stream: provider.streamChamberSession(doc.id, DateTime.now()),
+                  builder: (context, chamberSnap) {
+                    final chamberData = chamberSnap.data?.data();
+                    final chamberStatus = (chamberData?['status'] as String?) ?? 'idle';
+                    final lastCompletedQNum = (chamberData?['lastCompletedQueueNumber'] as num?)?.toInt();
+                    final activeQNum = (chamberData?['activeQueueNumber'] as num?)?.toInt();
+                    final activePName = chamberData?['patientName'] as String?;
+
+                    Color statusBadgeBg;
+                    Color statusBadgeFg;
+                    String statusLabel;
+                    String statusSubtitle;
+
+                    if (chamberStatus == 'ready_for_next') {
+                      statusBadgeBg = const Color(0xFFDCFCE7);
+                      statusBadgeFg = const Color(0xFF15803D);
+                      statusLabel = 'READY FOR NEXT';
+                      statusSubtitle = '🟢 Doctor is READY! Call next patient.';
+                    } else if (chamberStatus == 'consultation_ended') {
+                      statusBadgeBg = const Color(0xFFFEF3C7);
+                      statusBadgeFg = const Color(0xFFB45309);
+                      statusLabel = 'ON BREAK';
+                      statusSubtitle = '☕ Ended #${lastCompletedQNum ?? '--'} • Taking breather';
+                    } else if (chamberStatus == 'calling') {
+                      statusBadgeBg = const Color(0xFFDBEAFE);
+                      statusBadgeFg = const Color(0xFF1D4ED8);
+                      statusLabel = 'ADMITTED';
+                      statusSubtitle = '🚪 Token #${activeQNum ?? '--'} entering chamber';
+                    } else if (chamberStatus == 'in_consultation') {
+                      statusBadgeBg = const Color(0xFFEDE9FE);
+                      statusBadgeFg = const Color(0xFF6D28D9);
+                      statusLabel = 'CONSULTING';
+                      statusSubtitle = '🩺 Consulting Token #${activeQNum ?? '--'}${activePName != null && activePName.isNotEmpty ? ' ($activePName)' : ''}';
+                    } else {
+                      statusBadgeBg = const Color(0xFFF1F5F9);
+                      statusBadgeFg = const Color(0xFF64748B);
+                      statusLabel = 'IDLE';
+                      statusSubtitle = '${doc.specialty} • Fee: ₹${doc.consultationFee}';
+                    }
+
+                    return ListTile(
+                      dense: true,
+                      leading: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Colors.indigo.shade50,
+                            child: Text(
+                              doc.name.isNotEmpty ? doc.name[0].toUpperCase() : 'D',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.indigo.shade800,
+                              ),
+                            ),
+                          ),
+                          if (chamberStatus == 'ready_for_next')
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                width: 9,
+                                height: 9,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF22C55E),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1.5),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                  ),
-                  title: Text(
-                    "Dr. ${doc.name}",
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
-                  subtitle: Text(
-                    "${doc.specialty} • Fee: ₹${doc.consultationFee}",
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      "$patientCount tokens",
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                    ),
-                  ),
+                      title: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              "Dr. ${doc.name}",
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: statusBadgeBg,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              statusLabel,
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: statusBadgeFg,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      subtitle: Text(
+                        statusSubtitle,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: chamberStatus == 'ready_for_next'
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                          color: chamberStatus == 'ready_for_next'
+                              ? const Color(0xFF15803D)
+                              : Colors.grey.shade700,
+                        ),
+                      ),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          "$patientCount tokens",
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),

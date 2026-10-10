@@ -87,6 +87,11 @@ class _ConsultationEncounterScreenState
         patientPhone: widget.appointment.patientPhone,
         uuidGenerator: _uuid.v4,
       );
+      await clinic.notifyConsultationStarted(
+        doctorId: widget.doctor.id,
+        date: widget.appointment.scheduledDate,
+        appointment: widget.appointment,
+      );
     } catch (e) {
       debugPrint('Error loading consultation history: $e');
     } finally {
@@ -140,7 +145,12 @@ class _ConsultationEncounterScreenState
       );
 
       await clinic.saveConsultation(consultation);
-      await clinic.clearChamberSession(widget.doctor.id, widget.appointment.scheduledDate);
+      await clinic.notifyConsultationEnded(
+        doctorId: widget.doctor.id,
+        date: widget.appointment.scheduledDate,
+        queueNumber: widget.appointment.queueNumber,
+        patientName: widget.appointment.patientName,
+      );
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

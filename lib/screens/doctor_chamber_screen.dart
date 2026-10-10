@@ -31,6 +31,13 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   bool _isAutoNavigating = false;
   List<Appointment> _latestAppointments = [];
 
+  String _chamberStatus = 'idle';
+  int? _lastCompletedQueueNumber;
+  String? _lastCompletedPatientName;
+  int? _activeQueueNumber;
+  String? _activePatientName;
+  bool _isBusySignaling = false;
+
   @override
   void initState() {
     super.initState();
@@ -52,13 +59,22 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
       final data = snapshot.data();
       if (data == null) return;
 
-      final status = data['status'] as String?;
+      final status = (data['status'] as String?) ?? 'idle';
       final activeApptId = data['activeAppointmentId'] as String?;
+      final activeQNum = (data['activeQueueNumber'] as num?)?.toInt();
+      final activePName = data['patientName'] as String?;
+      final lastQNum = (data['lastCompletedQueueNumber'] as num?)?.toInt();
+      final lastPName = data['lastCompletedPatientName'] as String?;
 
       setState(() {
+        _chamberStatus = status;
         _activeCallingApptId = (status == 'calling' || status == 'in_consultation')
             ? activeApptId
             : null;
+        _activeQueueNumber = activeQNum;
+        _activePatientName = activePName;
+        _lastCompletedQueueNumber = lastQNum;
+        _lastCompletedPatientName = lastPName;
       });
 
       if (status == 'calling' &&
@@ -70,6 +86,39 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
         _autoOpenConsultationForId(activeApptId);
       }
     });
+  }
+
+  Future<void> _handleNextPatient() async {
+    setState(() => _isBusySignaling = true);
+    try {
+      await _firebaseService.notifyReadyForNext(
+        doctorId: widget.doctor.id,
+        date: _selectedDate,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text('Signaled Reception: Chamber Ready for Next Patient!'),
+              ],
+            ),
+            backgroundColor: Colors.teal.shade800,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error signaling reception: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBusySignaling = false);
+    }
   }
 
   Future<void> _autoOpenConsultationForId(String appointmentId) async {
@@ -176,6 +225,19 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
                           setState(() => _selectedDate = DateTime(now.year, now.month, now.day));
                           _listenToChamberSession();
                         },
+                      ),
+                      const SizedBox(height: 16),
+                      ChamberControlBanner(
+                        status: _chamberStatus,
+                        lastCompletedQueueNumber: _lastCompletedQueueNumber,
+                        lastCompletedPatientName: _lastCompletedPatientName,
+                        activeQueueNumber: _activeQueueNumber,
+                        activePatientName: _activePatientName,
+                        isBusy: _isBusySignaling,
+                        onNextPatient: _handleNextPatient,
+                        onOpenActivePatient: _activeCallingApptId != null
+                            ? () => _autoOpenConsultationForId(_activeCallingApptId!)
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       ChamberMetricsGrid.fromAppointments(

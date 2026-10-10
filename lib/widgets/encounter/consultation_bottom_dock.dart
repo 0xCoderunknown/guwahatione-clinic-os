@@ -48,7 +48,7 @@ class ConsultationBottomDock extends StatelessWidget {
                   )
                 : const Icon(Icons.check_circle_outline_rounded, size: 18),
             label: Text(
-              isSaving ? 'Signing & Saving...' : 'Complete & Sign Consultation',
+              isSaving ? 'Saving & Ending...' : 'CONSULTATION END (Save & Sign)',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             onPressed: isSaving ? null : onCompleteAndSign,
