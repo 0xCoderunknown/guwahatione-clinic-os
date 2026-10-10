@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../models/consultation.dart';
+import '../../utils/formatters.dart';
 
 /// Printable diagnostic orders, lifestyle notes, follow-up advice, and physician signature block.
 class PrintOrdersAndFooter extends StatelessWidget {
   final Consultation consultation;
 
-  const PrintOrdersAndFooter({
-    super.key,
-    required this.consultation,
-  });
+  const PrintOrdersAndFooter({super.key, required this.consultation});
 
   @override
   Widget build(BuildContext context) {
@@ -39,10 +36,12 @@ class PrintOrdersAndFooter extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
                   ),
                   const SizedBox(height: 2),
-                  ...c.orderedTests.map((o) => Text(
-                        "• ${o.testName}${o.instructions != null ? ' (${o.instructions})' : ''}",
-                        style: const TextStyle(fontSize: 11),
-                      )),
+                  ...c.orderedTests.map(
+                    (o) => Text(
+                      "• ${o.testName}${o.instructions != null ? ' (${o.instructions})' : ''}",
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
                   const SizedBox(height: 6),
                 ],
                 if (hasAdvice) ...[
@@ -56,11 +55,17 @@ class PrintOrdersAndFooter extends StatelessWidget {
                 ],
                 if (hasFollowUp)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     color: Colors.grey.shade100,
                     child: Text(
-                      'Next Follow-Up / Review: ${DateFormat('EEEE, dd MMM yyyy').format(c.nextFollowUpDate!)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                      'Next Follow-Up / Review: ${AppFormatters.dateWithDay(c.nextFollowUpDate!)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
                     ),
                   ),
               ],
@@ -85,7 +90,9 @@ class PrintOrdersAndFooter extends StatelessWidget {
                 Container(
                   width: 120,
                   decoration: const BoxDecoration(
-                    border: Border(top: BorderSide(color: Colors.black45, width: 0.8)),
+                    border: Border(
+                      top: BorderSide(color: Colors.black45, width: 0.8),
+                    ),
                   ),
                 ),
               ],
@@ -97,13 +104,18 @@ class PrintOrdersAndFooter extends StatelessWidget {
                 Container(
                   width: 180,
                   decoration: const BoxDecoration(
-                    border: Border(top: BorderSide(color: Colors.black87, width: 1)),
+                    border: Border(
+                      top: BorderSide(color: Colors.black87, width: 1),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Dr. ${consultation.doctorName}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
                 Text(
                   'Authorized Medical Consultant',

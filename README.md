@@ -62,7 +62,8 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 ## ✨ Features
 
 ### 📋 Longitudinal Clinical Records & Chamber Prescribing
-- **Chamber Auto-Sync** — Real-time synchronization between reception and doctor chamber. When reception calls a patient, the doctor's chamber screen automatically displays the active encounter, with an incoming alert banner if another encounter is currently open.
+- **🤝 Doctor-Reception 2-Way Chamber Handshake** — Real-time state-machine synchronization (`counters/chamber_{doctorId}_{date}`) between reception desk and doctor chamber. Doctors control pacing via "CONSULTATION END" and "NEXT PATIENT", preventing patient misidentification and counter confusion while providing a built-in 10-second breather. Includes Reception Speed Bump protection and Doctor Emergency Safety Valve override.
+- **🇮🇳 Indian Date & Demographics Format (`DD-MM-YYYY`)** — Complete UI and print formatting adherence to Indian clinical standards (`dd-MM-yyyy` / `dd-MM-yy`) across token accordions, appointment pickers, audit cards, and prescription headers.
 - **💊 Clinical Dosage & Duration Presets (`MedicineEngine`)** — Automatically fills standard outpatient dosage, frequency, timing, and duration presets for common medication categories (PPIs, antihypertensives, antidiabetics, statins, antibiotics, liquids, topicals) upon selection.
 - **📑 Collapsible Encounter Sections** — Collapsible Step 2 (Vitals & Clinical Examination) and Step 4 (Medication Prescribing & Reconciliation) with summary chips to minimize page scrolling.
 - **🏷️ Doctor Prescribing Search Preferences** — Configurable `searchPreference` (`brandFirst` vs `compositionFirst`) with dual-mode ranking in `MedicineEngine` and an inline `[🏷️ Brand | 🧪 Salt]` toggle.
@@ -275,9 +276,10 @@ lib/
 │   │   └── appointment_accordion.dart       # Live token card with actions (absent, attended, call in)
 │   ├── chamber/                             # Doctor chamber catalog screen components
 │   │   ├── chamber_app_bar.dart             # Header with live time, sync indicator, and PIN logout
+│   │   ├── chamber_control_banner.dart      # 2-way handshake control banner (Call Next, In-Consultation badge)
 │   │   ├── chamber_metrics_grid.dart        # Real-time KPI summary cards (Total, In Queue, Revenue)
 │   │   ├── chamber_queue_header.dart        # Section header for consultant queue
-│   │   └── chamber_token_card.dart          # Token tile with status badge & consultation launcher
+│   │   └── chamber_token_card.dart          # Token tile with status badge, override modal & consultation launcher
 │   ├── dashboard/                           # Command center reception dashboard components
 │   │   ├── dashboard_header_bar.dart        # Reception header bar with quick action chips
 │   │   ├── dashboard_kpi_strip.dart         # Responsive daily KPI cards with automatic breakpoints
@@ -330,7 +332,7 @@ The repository maintains an active automated testing suite covering domain busin
 flutter test
 ```
 
-- **35+ Unit & Widget Tests:** Sub-second execution covering revenue math, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, and print schedule segregation.
+- **42 Unit & Widget Tests:** Sub-second execution covering revenue math, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, and print schedule segregation.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---

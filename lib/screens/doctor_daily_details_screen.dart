@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+
 import '../core/engines/engines.dart';
 import '../models/appointment.dart';
+import '../utils/formatters.dart';
 
 class DoctorDailyDetailsScreen extends StatelessWidget {
   final String doctorName;
@@ -28,7 +29,7 @@ class DoctorDailyDetailsScreen extends StatelessWidget {
           children: [
             Text(doctorName, style: const TextStyle(fontSize: 18)),
             Text(
-              DateFormat('dd MMM yyyy').format(date),
+              AppFormatters.date(date),
               style: const TextStyle(fontSize: 12, color: Colors.white70),
             ),
           ],

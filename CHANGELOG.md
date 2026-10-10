@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.9.0] — 2026-10-10
+
+### Added
+- **Doctor-Reception 2-Way Chamber Handshake Protocol:**
+  - **Synchronized Pacing & The Breather:** When a physician clicks **"CONSULTATION END (Save & Sign)"**, the chamber session atomically transitions to `consultation_ended`. Reception immediately sees the doctor is wrapping up / taking a breather.
+  - **Doctor Readiness Trigger:** Prominent, single-click **"NEXT PATIENT"** banner (`ChamberControlBanner`) enabling doctors to signal `ready_for_next` at their own pace.
+  - **Reception Physical Presence Verification:** Reception desk visually alerts with 🟢 `READY FOR NEXT`. Reception verifies physical presence at the counter, skips absent tokens, and admits verified patients into the chamber (`calling`).
+  - **Zero-Confusion Auto-File Load:** Admitting a patient pushes their exact clinical chart to the doctor's chamber screen with zero risk of loading a skipped patient's record.
+  - **Reception Breather Speed Bump:** Added confirmation dialog in `DashboardTodayQueueCard` and `AppointmentAccordion` preventing accidental patient admission while the doctor is on break.
+  - **Doctor Emergency Safety Valve:** Added manual direct-admission override dialog in `ChamberTokenCard` allowing physicians to admit patients directly if the reception desk is offline or unresponsive.
+- **Indian Date Format Standardization (DD-MM-YYYY / DD-MM-YY):**
+  - Centralized all date representations across the app to Indian standard numerical formatting (`dd-MM-yyyy`, `dd-MM-yy`, and `EEEE, dd-MM-yyyy`) via `AppFormatters`.
+  - Standardized booking dialogs, print headers, print follow-up dates, daily detail headers, and accordion cards to use `AppFormatters`.
+
+### Changed
+- Replaced direct `DateFormat` invocations across print previews, accordions, and booking dialogs with centralized `AppFormatters`.
+- Bumped project version to `1.9.0+12`.
+
 ## [1.8.3] — 2026-10-09
 
 ### Fixed

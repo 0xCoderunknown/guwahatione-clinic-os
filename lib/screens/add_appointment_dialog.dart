@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../core/engines/engines.dart';
 import '../models/appointment.dart';
+import '../utils/formatters.dart';
 import '../models/doctor.dart';
 import '../models/patient_review_eligibility.dart';
 import '../providers/clinic_provider.dart';
@@ -68,10 +68,12 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
               children: [
                 // 1. Date Selector
                 ListTile(
-                  title: Text("Date: ${DateFormat('dd MMM yyyy').format(_selectedDate)}"),
+                  title: Text("Date: ${AppFormatters.date(_selectedDate)}"),
                   trailing: const Icon(Icons.calendar_today),
                   tileColor: Colors.grey.shade100,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   onTap: _pickDate,
                 ),
                 const SizedBox(height: 16),
@@ -83,7 +85,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                   ageController: _ageController,
                   selectedGender: _selectedGender,
                   isLoading: _isLoading,
-                  onGenderChanged: (val) => setState(() => _selectedGender = val),
+                  onGenderChanged: (val) =>
+                      setState(() => _selectedGender = val),
                   onPhoneChanged: _onPhoneChanged,
                 ),
                 if (_historyInfo != null) ...[
@@ -194,7 +197,10 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Network error fetching patient: $e"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text("Network error fetching patient: $e"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -241,14 +247,14 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
               "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paid)}";
         }
       } else if (eligibility.isWithin14Days) {
-        final dateStr = DateFormat('dd MMM yyyy').format(eligibility.lastVisitDate!);
+        final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
         _historyColor = Colors.teal.shade100;
         _historyInfo =
             "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n✅ Eligible for 14-day Free Review (${eligibility.daysSinceLastVisit} days ago)";
         _selectedPayment = PaymentType.freeReview;
         _amountController.text = "0";
       } else {
-        final dateStr = DateFormat('dd MMM yyyy').format(eligibility.lastVisitDate!);
+        final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
         _historyColor = Colors.amber.shade100;
         _historyInfo =
             "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n⚠️ 14 days have passed (${eligibility.daysSinceLastVisit} days ago)";
@@ -268,7 +274,9 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       if (!_reviewEligibility.hasVisitedDoctorEarlier) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Free Review is only available for returning patients of this doctor.'),
+            content: Text(
+              'Free Review is only available for returning patients of this doctor.',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -277,16 +285,17 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
       if (!_reviewEligibility.isWithin14Days) {
         final dateStr = _reviewEligibility.lastVisitDate != null
-            ? DateFormat('dd MMM yyyy').format(_reviewEligibility.lastVisitDate!)
+            ? AppFormatters.date(_reviewEligibility.lastVisitDate!)
             : 'N/A';
         final days = _reviewEligibility.daysSinceLastVisit ?? 15;
 
-        final proceed = await BookingEligibilityBanner.showFourteenDaysWarningDialog(
-          context,
-          doctorName: _selectedDoctor?.name ?? 'the doctor',
-          dateStr: dateStr,
-          days: days,
-        );
+        final proceed =
+            await BookingEligibilityBanner.showFourteenDaysWarningDialog(
+              context,
+              doctorName: _selectedDoctor?.name ?? 'the doctor',
+              dateStr: dateStr,
+              days: days,
+            );
         if (!proceed) {
           setState(() {
             _selectedPayment = PaymentType.paid;
@@ -309,9 +318,9 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedDoctor == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a doctor")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please select a doctor")));
       return;
     }
 

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
 import '../../providers/clinic_provider.dart';
+import '../../utils/formatters.dart';
 import '../booking/booking_eligibility_banner.dart';
 import '../common/appointment_status_chip.dart';
 import '../common/payment_badge.dart';
@@ -53,7 +53,10 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
             Expanded(
               child: Text(
                 widget.appointment.patientName,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
             ),
             AppointmentStatusChip(
@@ -111,9 +114,9 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                   StreamBuilder(
                     stream: Provider.of<ClinicProvider>(context, listen: false)
                         .streamChamberSession(
-                      widget.appointment.doctorId,
-                      widget.appointment.scheduledDate,
-                    ),
+                          widget.appointment.doctorId,
+                          widget.appointment.scheduledDate,
+                        ),
                     builder: (context, chamberSnap) {
                       final cData = chamberSnap.data?.data();
                       final cStatus = (cData?['status'] as String?) ?? 'idle';
@@ -232,7 +235,10 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                                   builder: (ctx) => AlertDialog(
                                     title: Row(
                                       children: [
-                                        Icon(Icons.coffee_rounded, color: Colors.amber.shade800),
+                                        Icon(
+                                          Icons.coffee_rounded,
+                                          color: Colors.amber.shade800,
+                                        ),
                                         const SizedBox(width: 8),
                                         const Text('Doctor Taking Breather'),
                                       ],
@@ -243,12 +249,18 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                                     ),
                                     actions: [
                                       TextButton(
-                                        onPressed: () => Navigator.pop(ctx, false),
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
                                         child: const Text('Wait for Doctor'),
                                       ),
                                       FilledButton(
-                                        style: FilledButton.styleFrom(backgroundColor: const Color(0xFFB45309)),
-                                        onPressed: () => Navigator.pop(ctx, true),
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: const Color(
+                                            0xFFB45309,
+                                          ),
+                                        ),
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
                                         child: const Text('Send Inside Anyway'),
                                       ),
                                     ],
@@ -355,14 +367,15 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
           if (!eligibility.isWithin14Days) {
             if (!mounted) return;
             final dateStr = eligibility.lastVisitDate != null
-                ? DateFormat('dd MMM yyyy').format(eligibility.lastVisitDate!)
+                ? AppFormatters.date(eligibility.lastVisitDate!)
                 : 'N/A';
-            final proceed = await BookingEligibilityBanner.showFourteenDaysWarningDialog(
-              context,
-              doctorName: widget.appointment.doctorName,
-              dateStr: dateStr,
-              days: eligibility.daysSinceLastVisit ?? 15,
-            );
+            final proceed =
+                await BookingEligibilityBanner.showFourteenDaysWarningDialog(
+                  context,
+                  doctorName: widget.appointment.doctorName,
+                  dateStr: dateStr,
+                  days: eligibility.daysSinceLastVisit ?? 15,
+                );
             if (proceed != true) return;
           }
         }

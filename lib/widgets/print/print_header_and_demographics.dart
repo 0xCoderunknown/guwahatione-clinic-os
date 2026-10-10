@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../models/appointment.dart';
 import '../../models/consultation.dart';
+import '../../utils/formatters.dart';
 
 /// Top printable section: digital letterhead / pre-printed spacer + patient demographics & allergies strip.
 class PrintHeaderAndDemographics extends StatelessWidget {
@@ -31,7 +31,10 @@ class PrintHeaderAndDemographics extends StatelessWidget {
             height: 130,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+              border: Border.all(
+                color: Colors.grey.shade300,
+                style: BorderStyle.solid,
+              ),
               color: Colors.grey.shade50,
             ),
             child: Text(
@@ -130,7 +133,10 @@ class PrintHeaderAndDemographics extends StatelessWidget {
                 flex: 3,
                 child: Text(
                   'Patient Name: ${c.patientName}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
               ),
               Expanded(
@@ -144,7 +150,10 @@ class PrintHeaderAndDemographics extends StatelessWidget {
                 flex: 2,
                 child: Text(
                   'Token: #${appointment?.queueNumber.toString().padLeft(2, '0') ?? '01'}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                   textAlign: TextAlign.right,
                 ),
               ),
@@ -163,7 +172,7 @@ class PrintHeaderAndDemographics extends StatelessWidget {
               Expanded(
                 flex: 4,
                 child: Text(
-                  'Date: ${DateFormat('dd MMM yyyy, hh:mm a').format(c.createdAt)}',
+                  'Date: ${AppFormatters.dateTime(c.createdAt)}',
                   style: const TextStyle(fontSize: 12),
                   textAlign: TextAlign.right,
                 ),
@@ -185,10 +194,14 @@ class PrintHeaderAndDemographics extends StatelessWidget {
               ),
               Expanded(
                 child: Text(
-                  hasAllergies ? patientAllergies.join(', ') : 'Nil Known Drug Allergies',
+                  hasAllergies
+                      ? patientAllergies.join(', ')
+                      : 'Nil Known Drug Allergies',
                   style: TextStyle(
                     fontSize: 11,
-                    fontWeight: hasAllergies ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: hasAllergies
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     color: hasAllergies ? Colors.red.shade900 : Colors.black87,
                   ),
                 ),
