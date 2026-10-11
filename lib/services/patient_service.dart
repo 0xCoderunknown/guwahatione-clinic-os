@@ -17,7 +17,10 @@ class PatientService {
   Future<Patient?> getPatient(String phoneNumber) async {
     final doc = await _patientsRef.doc(phoneNumber).get();
     if (doc.exists && doc.data() != null) {
-      return Patient.fromJson(doc.data()!);
+      final data = Map<String, dynamic>.from(doc.data()!);
+      data['id'] ??= doc.id;
+      data['phoneNumber'] ??= doc.id;
+      return Patient.fromJson(data);
     }
     return null;
   }

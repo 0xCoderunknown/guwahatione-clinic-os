@@ -40,6 +40,7 @@ class ConsultationService {
     // 3. Keep patient record synced (lastVisitDate stamped on consultation completion)
     final patientDoc = _patientsRef.doc(consultation.patientPhone);
     batch.set(patientDoc, {
+      'id': consultation.patientPhone,
       'lastVisitDate': consultation.createdAt.toIso8601String(),
       'name': consultation.patientName,
       'age': consultation.patientAge,

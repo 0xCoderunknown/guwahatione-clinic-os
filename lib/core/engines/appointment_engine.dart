@@ -337,4 +337,54 @@ abstract class AppointmentEngine {
       relativeSummary: relativeSummary,
     );
   }
+
+  /// Calculates the provisional next queue token number for a doctor on a target date.
+  ///
+  /// Invariant: Queue numbers are consecutive starting from 1 for the day.
+  /// Scans existing appointments for the doctor on [targetDate] and returns max(queueNumber) + 1.
+  static int calculateProvisionalNextToken({
+    required List<Appointment> appointments,
+    required String doctorId,
+    required DateTime targetDate,
+  }) {
+    final start = DateTime(targetDate.year, targetDate.month, targetDate.day);
+    final end = start.add(const Duration(days: 1));
+
+    int maxQueue = 0;
+    for (final a in appointments) {
+      if (a.doctorId == doctorId &&
+          !a.scheduledDate.isBefore(start) &&
+          a.scheduledDate.isBefore(end)) {
+        if (a.queueNumber > maxQueue) {
+          maxQueue = a.queueNumber;
+        }
+      }
+    }
+    return maxQueue + 1;
+  }
+
+  /// Calculates provisional estimated consultation window for the next token in queue.
+  static EstimatedConsultationWindow calculateProvisionalEstimatedWindow({
+    required List<Appointment> appointments,
+    required String doctorId,
+    required DateTime targetDate,
+    DateTime? currentTime,
+    int averageMinutesPerPatient = 8,
+  }) {
+    final nextToken = calculateProvisionalNextToken(
+      appointments: appointments,
+      doctorId: doctorId,
+      targetDate: targetDate,
+    );
+    final doctorAppointments = appointments
+        .where((a) => a.doctorId == doctorId)
+        .toList();
+
+    return calculateEstimatedWindow(
+      doctorAppointments: doctorAppointments,
+      targetQueueNumber: nextToken,
+      currentTime: currentTime,
+      averageMinutesPerPatient: averageMinutesPerPatient,
+    );
+  }
 }

@@ -125,7 +125,9 @@ class BookingService {
         .get();
 
     return snapshot.docs.map((doc) {
-      return Appointment.fromJson(doc.data());
+      final data = Map<String, dynamic>.from(doc.data());
+      data['id'] ??= doc.id;
+      return Appointment.fromJson(data);
     }).toList();
   }
 

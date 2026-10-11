@@ -203,6 +203,27 @@ class ClinicProvider with ChangeNotifier {
     );
   }
 
+  /// Returns the provisional next token number for a doctor on a target date.
+  int getProvisionalNextToken(String doctorId, {DateTime? targetDate}) {
+    return AppointmentEngine.calculateProvisionalNextToken(
+      appointments: _todayAppointments,
+      doctorId: doctorId,
+      targetDate: targetDate ?? DateTime.now(),
+    );
+  }
+
+  /// Returns the provisional estimated consultation window for a doctor on a target date.
+  EstimatedConsultationWindow getProvisionalEstimatedWindow(
+    String doctorId, {
+    DateTime? targetDate,
+  }) {
+    return AppointmentEngine.calculateProvisionalEstimatedWindow(
+      appointments: _todayAppointments,
+      doctorId: doctorId,
+      targetDate: targetDate ?? DateTime.now(),
+    );
+  }
+
   Future<void> bookAppointment({
     required String phoneNumber,
     required String name,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/engines/engines.dart';
@@ -10,6 +11,7 @@ import '../utils/formatters.dart';
 import '../widgets/widgets.dart';
 
 /// Modal dialog for receptionist to register patient walk-ins and book appointments.
+/// Features 100% keyboard-first navigation and provisional token preview on doctor selection.
 class AddAppointmentDialog extends StatefulWidget {
   const AddAppointmentDialog({super.key});
 
@@ -24,9 +26,19 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   final _ageController = TextEditingController();
   final _amountController = TextEditingController();
 
+  final _phoneFocusNode = FocusNode();
+  final _nameFocusNode = FocusNode();
+  final _ageFocusNode = FocusNode();
+  final _genderFocusNode = FocusNode();
+  final _doctorFocusNode = FocusNode();
+  final _paymentFocusNode = FocusNode();
+  final _amountFocusNode = FocusNode();
+  final _submitFocusNode = FocusNode();
+
   DateTime _selectedDate = DateTime.now();
   PaymentType _selectedPayment = PaymentType.paid;
-  String _selectedGender = 'Male';
+  String? _selectedGender;
+  bool _genderHasError = false;
 
   Doctor? _selectedDoctor;
   bool _isNewPatient = false;
@@ -53,91 +65,160 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   }
 
   @override
+  void dispose() {
+    _phoneController.dispose();
+    _nameController.dispose();
+    _ageController.dispose();
+    _amountController.dispose();
+
+    _phoneFocusNode.dispose();
+    _nameFocusNode.dispose();
+    _ageFocusNode.dispose();
+    _genderFocusNode.dispose();
+    _doctorFocusNode.dispose();
+    _paymentFocusNode.dispose();
+    _amountFocusNode.dispose();
+    _submitFocusNode.dispose();
+    super.dispose();
+  }
+
+  int? get _provisionalToken {
+    if (_selectedDoctor == null) return null;
+    final provider = Provider.of<ClinicProvider>(context, listen: false);
+    return AppointmentEngine.calculateProvisionalNextToken(
+      appointments: provider.todayAppointments,
+      doctorId: _selectedDoctor!.id,
+      targetDate: _selectedDate,
+    );
+  }
+
+  String? get _provisionalTimeWindow {
+    if (_selectedDoctor == null || _provisionalToken == null) return null;
+    final provider = Provider.of<ClinicProvider>(context, listen: false);
+    final window = AppointmentEngine.calculateProvisionalEstimatedWindow(
+      appointments: provider.todayAppointments,
+      doctorId: _selectedDoctor!.id,
+      targetDate: _selectedDate,
+      currentTime: DateTime.now(),
+    );
+    final startStr = AppFormatters.time(window.estimatedStart);
+    final endStr = AppFormatters.time(window.estimatedEnd);
+    return '~$startStr – $endStr';
+  }
+
+  @override
   Widget build(BuildContext context) {
     final doctors = Provider.of<ClinicProvider>(context).doctors;
 
-    return AlertDialog(
-      title: const Text('New Appointment'),
-      content: SizedBox(
-        width: 420,
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 1. Date Selector
-                ListTile(
-                  title: Text("Date: ${AppFormatters.date(_selectedDate)}"),
-                  trailing: const Icon(Icons.calendar_today),
-                  tileColor: Colors.grey.shade100,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.enter): () {
+          if (!_isLoading) _saveAppointment();
+        },
+        const SingleActivator(LogicalKeyboardKey.numpadEnter): () {
+          if (!_isLoading) _saveAppointment();
+        },
+      },
+      child: AlertDialog(
+        title: const Text('New Appointment'),
+        content: SizedBox(
+          width: 460,
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 1. Date Selector
+                  ListTile(
+                    title: Text("Date: ${AppFormatters.date(_selectedDate)}"),
+                    trailing: const Icon(Icons.calendar_today),
+                    tileColor: Colors.grey.shade100,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    onTap: _pickDate,
                   ),
-                  onTap: _pickDate,
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                // 2. Patient Demographics & Phone Search
-                BookingPatientFields(
-                  phoneController: _phoneController,
-                  nameController: _nameController,
-                  ageController: _ageController,
-                  selectedGender: _selectedGender,
-                  isLoading: _isLoading,
-                  onGenderChanged: (val) =>
-                      setState(() => _selectedGender = val),
-                  onPhoneChanged: _onPhoneChanged,
-                ),
-                if (_historyInfo != null) ...[
-                  const SizedBox(height: 8),
-                  BookingEligibilityBanner(
-                    historyInfo: _historyInfo,
-                    historyColor: _historyColor,
-                    isNewPatient: _isNewPatient,
+                  // 2. Patient Demographics & Phone Search (Keyboard-First)
+                  BookingPatientFields(
+                    phoneController: _phoneController,
+                    nameController: _nameController,
+                    ageController: _ageController,
+                    selectedGender: _selectedGender,
+                    isLoading: _isLoading,
+                    phoneFocusNode: _phoneFocusNode,
+                    nameFocusNode: _nameFocusNode,
+                    ageFocusNode: _ageFocusNode,
+                    genderFocusNode: _genderFocusNode,
+                    genderHasError: _genderHasError,
+                    onGenderChanged: (val) {
+                      setState(() {
+                        _selectedGender = val;
+                        _genderHasError = false;
+                      });
+                    },
+                    onPhoneChanged: _onPhoneChanged,
+                    onSubmitted: _saveAppointment,
+                  ),
+                  if (_historyInfo != null) ...[
+                    const SizedBox(height: 10),
+                    BookingEligibilityBanner(
+                      historyInfo: _historyInfo,
+                      historyColor: _historyColor,
+                      isNewPatient: _isNewPatient,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+
+                  // 3. Doctor Selection, Provisional Token Preview, Payment Policy & Fee
+                  BookingPaymentSection(
+                    doctors: doctors,
+                    selectedDoctor: _selectedDoctor,
+                    doctorFocusNode: _doctorFocusNode,
+                    paymentFocusNode: _paymentFocusNode,
+                    amountFocusNode: _amountFocusNode,
+                    provisionalToken: _provisionalToken,
+                    provisionalTimeWindow: _provisionalTimeWindow,
+                    onDoctorChanged: (val) {
+                      setState(() {
+                        _selectedDoctor = val;
+                        if (_selectedPayment == PaymentType.paid && val != null) {
+                          _amountController.text = "${val.consultationFee}";
+                        }
+                      });
+                      if (_phoneController.text.length == 10) {
+                        _updateEligibilityAndPayment();
+                      }
+                    },
+                    selectedPayment: _selectedPayment,
+                    onPaymentChanged: _onPaymentChanged,
+                    reviewEligibility: _reviewEligibility,
+                    amountController: _amountController,
+                    onSubmitted: _saveAppointment,
                   ),
                 ],
-                const SizedBox(height: 16),
-
-                // 3. Doctor Selection, Payment Policy & Fee
-                BookingPaymentSection(
-                  doctors: doctors,
-                  selectedDoctor: _selectedDoctor,
-                  onDoctorChanged: (val) {
-                    setState(() {
-                      _selectedDoctor = val;
-                      if (_selectedPayment == PaymentType.paid && val != null) {
-                        _amountController.text = "${val.consultationFee}";
-                      }
-                    });
-                    if (_phoneController.text.length == 10) {
-                      _updateEligibilityAndPayment();
-                    }
-                  },
-                  selectedPayment: _selectedPayment,
-                  onPaymentChanged: _onPaymentChanged,
-                  reviewEligibility: _reviewEligibility,
-                  amountController: _amountController,
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _saveAppointment,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.teal,
-            foregroundColor: Colors.white,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-          child: const Text('Book Appointment'),
-        ),
-      ],
+          ElevatedButton(
+            focusNode: _submitFocusNode,
+            onPressed: _saveAppointment,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Book Appointment'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -182,15 +263,30 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
       if (patient != null) {
         _nameController.text = patient.name;
-        _ageController.text = patient.age.toString();
-        _selectedGender = patient.gender;
+        _ageController.text = patient.age > 0 ? patient.age.toString() : '';
+        _selectedGender = ['Male', 'Female', 'Other'].contains(patient.gender)
+            ? patient.gender
+            : null;
+        _genderHasError = false;
         _isNewPatient = false;
         _patientAppointments = await provider.getAppointmentsForPatient(phone);
+
+        // Auto-advance focus to Doctor selector on existing record match
+        if (mounted) {
+          _doctorFocusNode.requestFocus();
+        }
       } else {
         _isNewPatient = true;
         _patientAppointments = [];
+        _selectedGender = null;
+        _genderHasError = false;
         _amountController.text =
             "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paid)}";
+
+        // Auto-advance focus to Patient Name on new patient record
+        if (mounted) {
+          _nameFocusNode.requestFocus();
+        }
       }
 
       _updateEligibilityAndPayment();
@@ -317,7 +413,20 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   Future<void> _saveAppointment() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (_selectedGender == null || _selectedGender!.isEmpty) {
+      setState(() => _genderHasError = true);
+      _genderFocusNode.requestFocus();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please select patient sex (Male, Female, or Other)."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (_selectedDoctor == null) {
+      _doctorFocusNode.requestFocus();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Please select a doctor")));
@@ -339,12 +448,12 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
     try {
       await Provider.of<ClinicProvider>(context, listen: false).bookAppointment(
-        phoneNumber: _phoneController.text,
-        name: _nameController.text,
-        age: int.parse(_ageController.text),
-        gender: _selectedGender,
+        phoneNumber: _phoneController.text.trim(),
+        name: _nameController.text.trim(),
+        age: int.parse(_ageController.text.trim()),
+        gender: _selectedGender!,
         paymentType: _selectedPayment,
-        amountCollected: int.parse(_amountController.text),
+        amountCollected: int.parse(_amountController.text.trim()),
         scheduledDate: _selectedDate,
         selectedDoctor: _selectedDoctor!,
         isNewPatient: _isNewPatient,

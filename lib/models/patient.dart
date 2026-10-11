@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Patient {
   final String id; // Phone number is the key ID
   final String name;
@@ -33,20 +35,40 @@ class Patient {
   }
 
   factory Patient.fromJson(Map<String, dynamic> json) {
+    final phone = json['phoneNumber'] as String? ??
+        json['phone'] as String? ??
+        json['patientPhone'] as String? ??
+        json['id'] as String? ??
+        '';
+
+    DateTime? parsedLastVisit;
+    final rawVisit = json['lastVisitDate'];
+    if (rawVisit is Timestamp) {
+      parsedLastVisit = rawVisit.toDate();
+    } else if (rawVisit is String) {
+      parsedLastVisit = DateTime.tryParse(rawVisit);
+    } else if (rawVisit is DateTime) {
+      parsedLastVisit = rawVisit;
+    }
+
+    final rawGender = json['gender'] as String? ?? 'Male';
+    final normalizedGender = (rawGender.toLowerCase() == 'female')
+        ? 'Female'
+        : (rawGender.toLowerCase() == 'other')
+            ? 'Other'
+            : 'Male';
+
     return Patient(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      age: (json['age'] as num).toInt(),
-      gender: json['gender'] as String,
-      allergies:
-          (json['allergies'] as List<dynamic>?)
+      id: json['id'] as String? ?? (phone.isNotEmpty ? phone : 'unknown'),
+      name: json['name'] as String? ?? 'Unknown Patient',
+      age: (json['age'] as num?)?.toInt() ?? 0,
+      gender: normalizedGender,
+      allergies: (json['allergies'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
-      lastVisitDate: json['lastVisitDate'] is String
-          ? DateTime.parse(json['lastVisitDate'] as String)
-          : null,
-      phoneNumber: json['phoneNumber'] as String,
+      lastVisitDate: parsedLastVisit,
+      phoneNumber: phone,
     );
   }
 
