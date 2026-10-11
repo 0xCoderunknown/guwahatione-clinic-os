@@ -15,15 +15,21 @@ class PrintClinicalSnapshot extends StatelessWidget {
 
     final vitalsParts = <String>[];
     if (vitals != null) {
-      if (vitals.bpFormatted != null)
+      if (vitals.bpFormatted != null) {
         vitalsParts.add("BP: ${vitals.bpFormatted}");
-      if (vitals.pulseRate != null)
+      }
+      if (vitals.pulseRate != null) {
         vitalsParts.add("Pulse: ${vitals.pulseRate} bpm");
-      if (vitals.spO2 != null) vitalsParts.add("SpO2: ${vitals.spO2}%");
-      if (vitals.temperature != null)
+      }
+      if (vitals.spO2 != null) {
+        vitalsParts.add("SpO2: ${vitals.spO2}%");
+      }
+      if (vitals.temperature != null) {
         vitalsParts.add("Temp: ${vitals.temperature}°F");
-      if (vitals.weightKg != null)
+      }
+      if (vitals.weightKg != null) {
         vitalsParts.add("Weight: ${vitals.weightKg} kg");
+      }
     }
 
     final hasComplaints = c.chiefComplaints.isNotEmpty;

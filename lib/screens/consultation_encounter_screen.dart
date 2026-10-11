@@ -346,8 +346,9 @@ class _ConsultationEncounterScreenState
                             context,
                             currentDate: form.nextFollowUpDate,
                           );
-                      if (picked != null)
+                      if (picked != null) {
                         setState(() => form.nextFollowUpDate = picked);
+                      }
                     },
                   ),
                   const SizedBox(height: 40),
