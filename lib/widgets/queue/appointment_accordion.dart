@@ -21,6 +21,7 @@ class AppointmentAccordion extends StatefulWidget {
   final ValueChanged<bool>? onExpansionChanged;
   final bool isInChamber;
   final bool isBypassed;
+  final bool showDoctorTag;
 
   const AppointmentAccordion({
     super.key,
@@ -29,6 +30,7 @@ class AppointmentAccordion extends StatefulWidget {
     this.onExpansionChanged,
     this.isInChamber = false,
     this.isBypassed = false,
+    this.showDoctorTag = false,
   });
 
   @override
@@ -93,6 +95,9 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
         },
         leading: TokenBadge(
           queueNumber: widget.appointment.queueNumber,
+          doctorTag: widget.showDoctorTag
+              ? AppFormatters.doctorInitials(widget.appointment.doctorName)
+              : null,
           isCompleted: widget.appointment.status == AppointmentStatus.completed,
           isAbsent: widget.appointment.status == AppointmentStatus.absent,
           size: 38,

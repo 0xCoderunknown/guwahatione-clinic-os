@@ -75,5 +75,25 @@ class AppFormatters {
     clean = clean.replaceAll(RegExp(r'paedetric', caseSensitive: false), 'Paediatric');
     return clean;
   }
+
+  /// Extracts compact doctor initials (e.g. 'Dr. Bhaskar Thakuria' -> 'BT').
+  static String doctorInitials(String? name) {
+    if (name == null || name.trim().isEmpty) return '';
+    final clean = name
+        .trim()
+        .replaceFirst(RegExp(r'^dr\.?\s*', caseSensitive: false), '')
+        .trim();
+    if (clean.isEmpty) return 'DR';
+    final parts = clean
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.length == 1) {
+      return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
+    }
+    final first = parts.first[0].toUpperCase();
+    final last = parts.last[0].toUpperCase();
+    return '$first$last';
+  }
 }
 

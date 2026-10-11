@@ -11,10 +11,12 @@ import '../common/token_badge.dart';
 /// finished patients out of the primary operational flow.
 class CompletedConsultationsAccordion extends StatefulWidget {
   final List<Appointment> completedAppointments;
+  final bool showDoctorTag;
 
   const CompletedConsultationsAccordion({
     super.key,
     required this.completedAppointments,
+    this.showDoctorTag = false,
   });
 
   @override
@@ -129,6 +131,9 @@ class _CompletedConsultationsAccordionState
                       children: [
                         TokenBadge(
                           queueNumber: appt.queueNumber,
+                          doctorTag: widget.showDoctorTag
+                              ? AppFormatters.doctorInitials(appt.doctorName)
+                              : null,
                           isCompleted: true,
                           size: 32,
                         ),

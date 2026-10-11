@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 /// Standardized queue / token avatar badge for GuwahatiOne Clinic OS.
 class TokenBadge extends StatelessWidget {
   final int queueNumber;
+  final String? doctorTag;
   final bool isCalling;
   final bool isCompleted;
   final bool isAbsent;
@@ -11,6 +12,7 @@ class TokenBadge extends StatelessWidget {
   const TokenBadge({
     super.key,
     required this.queueNumber,
+    this.doctorTag,
     this.isCalling = false,
     this.isCompleted = false,
     this.isAbsent = false,
@@ -41,7 +43,49 @@ class TokenBadge extends StatelessWidget {
       borderColor = const Color(0xFFCBD5E1);
     }
 
-    final fontSize = size * 0.42;
+    final hasTag = doctorTag != null && doctorTag!.trim().isNotEmpty;
+    final text = hasTag ? '#$queueNumber • ${doctorTag!.trim()}' : '#$queueNumber';
+    final fontSize = hasTag ? (size * 0.36) : (size * 0.42);
+
+    final content = Text(
+      text,
+      style: TextStyle(
+        fontSize: fontSize,
+        fontWeight: FontWeight.bold,
+        color: textColor,
+        letterSpacing: -0.2,
+      ),
+    );
+
+    if (hasTag) {
+      return Container(
+        height: size,
+        padding: EdgeInsets.symmetric(
+          horizontal: (size * 0.22).clamp(6.0, 10.0),
+        ),
+        constraints: BoxConstraints(minWidth: size),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(size * 0.25),
+          border: Border.all(color: borderColor, width: isCalling ? 2 : 1),
+          boxShadow: isCalling
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [content],
+        ),
+      );
+    }
 
     return Container(
       width: size,
@@ -61,15 +105,7 @@ class TokenBadge extends StatelessWidget {
             : null,
       ),
       alignment: Alignment.center,
-      child: Text(
-        "#$queueNumber",
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.bold,
-          color: textColor,
-          letterSpacing: -0.2,
-        ),
-      ),
+      child: content,
     );
   }
 }

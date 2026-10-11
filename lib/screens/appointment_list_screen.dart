@@ -219,6 +219,7 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
         if (queueView.completed.isNotEmpty)
           CompletedConsultationsAccordion(
             completedAppointments: queueView.completed,
+            showDoctorTag: _selectedDoctorId == null,
           ),
 
         // 2. Active In-Chamber Patient Banner / Card
@@ -229,6 +230,7 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
             isInChamber: true,
             isBypassed: false,
             isExpanded: _expandedAppointmentId == queueView.inChamber!.id,
+            showDoctorTag: _selectedDoctorId == null,
             onExpansionChanged: (expanded) {
               setState(() {
                 _expandedAppointmentId =
@@ -282,6 +284,7 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
               isInChamber: false,
               isBypassed: isBypassed,
               isExpanded: isExpanded,
+              showDoctorTag: _selectedDoctorId == null,
               onExpansionChanged: (expanded) {
                 setState(() {
                   _expandedAppointmentId = expanded ? appt.id : null;
