@@ -202,3 +202,27 @@
 | `defaultFrequency` | `String?` | Clinical default regimen (e.g. `"1-0-0 (OD)"`, `"1-0-1 (BD)"`). |
 | `defaultTiming` | `String?` | Clinical default timing (e.g. `"Before Food"`, `"After Food"`). |
 | `defaultDurationDays` | `int?` | Clinical default duration in days (e.g. `30`, `5`), or `null` for chronic. |
+
+---
+
+## ⚙️ 7. `clinic_config` Collection (Authentication & System Settings)
+
+- **Document ID:** `settings` (or `auth`).
+- **Purpose:** Clinic-wide operational configuration and master PIN hashes.
+
+### Fields
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `ownerPinHash` | `String` | No | SHA-256 hashed 6-digit PIN for Clinic Owner role (`owner`). Default hash resolves to master PIN `123456`. |
+| `clinicName` | `String` | No | Official clinic display title. |
+| `address` | `String` | No | Clinic postal address for prescription headers. |
+
+---
+
+## 🔒 8. Composite Invariants & Business Logic Contracts
+
+1. **Queue Concurrency & Immutability:** Daily counter tokens ($1 \dots N$) are issued via atomic Firestore transaction at `counters/queue_{doctorId}_{yyyy-MM-dd}`. Never delete an appointment document; cancellations must use `AppointmentStatus.absent` with `amountCollected: 0`.
+2. **Duplicate Patient Booking Prevention:** A patient cannot hold multiple active (non-absent) appointments with the same doctor on the same calendar day. The composite validation key is:
+   $$\text{scheduledDate} + \text{doctorId} + \text{normalized patientName} + \text{patientPhone}$$
+   Family members sharing a phone number are distinguished by `normalized patientName`.
+3. **14-Day Free Review Policy:** Free reviews are valid only if the patient has a prior non-absent consultation with the **same** doctor within 14 calendar days.

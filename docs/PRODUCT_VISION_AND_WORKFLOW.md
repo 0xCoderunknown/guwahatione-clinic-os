@@ -22,11 +22,12 @@ GuwahatiOne Clinic OS is built to focus on one primary role:
 
 ## 👥 2. User Roles & Daily Operational Setup
 
-| Role | Environment | Key Responsibilities |
-|---|---|---|
-| **Receptionist / Assistant** | Counter PC / Tablet | Patient demographic intake (Name, Age, Gender, Phone), atomic queue token allocation, calling tokens, fee ledger. |
-| **Consulting Physician** | Chamber Laptop / Monitor | Focused patient consultation, rapid vitals/findings recording, medication prescribing, test orders, review of past records. |
-| **Patient** | Chamber & Waiting Room | Receives an atomic token, receives an approximate consultation window, walks away with a clear, legible A4/A5 printed prescription. |
+| Role | Environment | Authentication | Key Responsibilities |
+|---|---|---|---|
+| **Clinic Owner / Admin** | Counter PC / Management Display | 6-Digit Master PIN (`123456`) | Full administrative authority: Doctor CRUD, schedule and consultation fee adjustments, catalogue curation, and financial revenue audits. |
+| **Receptionist / Assistant** | Counter PC / Tablet | 4-Digit Counter PIN (`0000`) | Rapid walk-in registration (keyboard-first), atomic daily token allocation, physical arrival verification, chamber calling, and ledger recording. |
+| **Consulting Physician** | Chamber Laptop / Monitor | 4-Digit Doctor PIN (Chamber) | Focused patient consultation, rapid vitals/findings recording, medication reconciliation & prescribing, diagnostic orders, and review pacing. |
+| **Patient** | Chamber & Waiting Room | None | Receives an atomic token, receives an approximate consultation window, walks away with a clear, legible A4/A5 printed prescription. |
 
 ---
 
@@ -35,14 +36,18 @@ GuwahatiOne Clinic OS is built to focus on one primary role:
 ```
 [ Reception Desk ]
    1. Patient arrives (Walk-in or pre-booked).
-   2. Reception enters Name, Age, Gender, Phone, selects Doctor (e.g., Dr. Bhaskar).
-   3. System assigns consecutive queue number (e.g., Token #04) and estimated consultation time.
-   4. When the patient's turn arrives, Reception clicks "Start / Call In" in the Appointment Register.
+   2. Reception opens New Appointment modal (100% keyboard-navigable via Tab, M/F/O hotkeys, Enter).
+   3. Types phone number (10 digits). On new patient, advances to Name; on existing patient, auto-fills and jumps to Doctor.
+   4. Selects Doctor: System immediately computes and displays provisional live token & consultation time window:
+      "🎟️ Next Token: #04 • Est. Time: ~08:00 PM – 08:20 PM"
+   5. If duplicate booking is attempted for the same doctor on the same day, system intercepts with warning and lockout.
+   6. Reception submits (Enter). Counter allocates consecutive token #04 atomically.
+   7. When the patient's turn arrives, Reception clicks "SEND IN" / "Call In" in the Live Queue.
           │
           ▼ (Real-time sync to Chamber)
 [ Doctor Chamber Screen ]
-   5. Doctor's screen displays clean Header with Patient Demographics & Allergy Alert.
-   6. Body is blank and organized into 3 fast, sequential sections:
+   8. Doctor's screen displays clean Header with Patient Demographics & Allergy Alert.
+   9. Body is blank and organized into 3 fast, sequential sections:
 ```
 
 ### Step-by-Step Chamber Flow:

@@ -78,13 +78,15 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 
 ### 🏢 Clinic Operations & Ledger Integrity
 - **⚡ Agile Reception Queue & Discretionary Chamber Dispatch (`AppointmentListScreen`)** — Top-level collapsible `CompletedConsultationsAccordion` archives finished consultations, keeping the lobby list focused on waiting patients. Single-expansion controlled accordion with high-visibility `[SEND IN]` button. Chamber occupancy collision guard alerts reception before replacing an in-consultation patient. Late/bypassed tokens (`[BYPASSED / LATE]`) maintain their permanent token and queue visibility without destructive "Skip" states or database mutations.
-- **Reception Dashboard (`DashboardScreen`)** — Responsive dashboard with daily KPI cards, live queue preview, quick reception actions, and layout adaptation across mobile, laptop, and desktop displays.
+- **⌨️ Keyboard-First Walk-In Registration (`AddAppointmentDialog`)** — 100% mouse-free counter operation: Tab focus progression, physical hotkey Sex toggle (`M`/`F`/`O` and arrows) with no accidental Male default, 10-digit auto-fill search jumping straight to doctor selection, and global Enter-key booking commitment.
+- **🎟️ Live Provisional Token & Estimated Wait Time Badge** — Immediately calculates and displays next queue token (`#X`) and dynamic arrival window (`~hh:mm A – hh:mm B`) upon doctor selection via pure domain `AppointmentEngine`.
+- **🛑 Same-Day Duplicate Booking Guard & Family Exception** — Composite uniqueness validation `(Date + DoctorId + Normalized Patient Name + Phone)` with live amber alert banner and submit lockout preventing double bookings for the same patient, while explicitly preserving family member bookings under shared phone numbers.
+- **🔒 3-Tier Role Security & Owner Master PIN** — Counter Reception PIN (`0000`), Doctor Chamber PIN (4 digits), and Master Owner PIN (6 digits in `clinic_config`) unlocking Doctor CRUD, schedule updates, consultation fee edits, and financial ledger audits.
+- **Reception Dashboard (`DashboardScreen`)** — Responsive dashboard with daily KPI cards, live queue preview, quick reception actions, and layout adaptation across mobile, laptop (1366×768 vertical budgeting), and desktop (FHD up to 1800px split panels).
 - **🌐 Web-First Responsive Architecture** — Responsive Flutter app for Chrome/Edge counter PCs and Android. An iOS platform project is not currently checked in.
 - **🩺 Doctor Chamber Live Board** — Read-only chamber dashboard for consultants showing live token order, active calling token status, and fee share with 1-tap access to patient clinical records and consultation encounters.
-- **🔒 Role-Based PIN Authentication** — Reception PIN (`0000` default) and 4-digit Chamber PIN per doctor.
 - **🛡️ Audit-Proof Ledger** — Zero deletions allowed; consecutive token sequence is preserved on screen and database.
 - **🚫 Explicit "Absent / No-Show" Status** — Replaced "Cancel" with "Absent" so slots are preserved on the doctor ledger with ₹0 amount.
-- **📅 Rapid Appointment Booking** — 10-digit phone search with automatic patient history, gender/sex capture, and 14-day same-doctor free review detection.
 - **💳 Smart Payment Types** — Paid (per doctor fee), Free Review (strictly for returning patients of same doctor within 14 days, with warning if >14 days), Free Family (courtesy).
 - **📊 Daily Revenue Analytics & Auditing** — Real-time earnings breakdown calculated by `RevenueEngine` grouped by doctor with chamber preview mode.
 - **🔢 Atomic Queue Numbers** — Race-condition-safe queue numbering per doctor and day using Firestore transactions.

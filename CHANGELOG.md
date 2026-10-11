@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.11.0] — 2026-10-11
+
+### Added
+- **Keyboard-First Walk-In Registration Modal (`AddAppointmentDialog`):**
+  - **100% Mouse-Free Ergonomics:** Full Tab-chaining across Phone (autofocus) ➔ Name ➔ Age ➔ Sex ➔ Doctor ➔ Payment ➔ Submit.
+  - **Physical Sex Hotkey Selector (`KeyboardGenderSelector`):** Replaced rigid dropdown with 3-way toggle row `[ Male ]  [ Female ]  [ Other ]`. Typing `M`/`m`, `F`/`f`, `O`/`o` or using arrow keys selects options instantly with clear focus ring highlights.
+  - **No Accidental Sex Defaults:** `gender` starts unselected (`null`) for new patients, enforcing explicit selection with validation error highlighting to prevent clinical mismatches.
+  - **Smart Phone Auto-Advance:** 10 digits entered searches patient directory; existing records auto-fill details and jump directly to Doctor picker, while new records advance to Patient Name.
+  - **Global Enter Key Submission:** Pressing Enter or NumpadEnter from any field validates and atomically commits the booking.
+- **Provisional Live Token Preview & Wait Time Badge:**
+  - Instantly computes next token number upon doctor selection via pure domain `AppointmentEngine.calculateProvisionalNextToken`.
+  - Calculates dynamic estimated consultation time window (`AppointmentEngine.calculateProvisionalEstimatedWindow`):
+    `🎟️ Next Token: #13 • Est. Time: ~07:45 PM – 08:05 PM`
+  - Gracefully prompts `Select a doctor to preview token & wait time` when unselected.
+- **Same-Day Duplicate Booking Protection per Doctor:**
+  - Enforces composite uniqueness: `(Target Date + DoctorId + Normalized Patient Name + Phone)`.
+  - Real-time warning alert banner in dialog: `⚠️ [Patient Name] already holds Token #[queueNumber] with Dr. [Doctor Name] for today.`
+  - Disables submit button and Enter shortcut while duplicate is detected.
+  - Provides 1-click `[ View Token #[queueNumber] ]` helper button closing the modal and filtering today's live queue to that token.
+  - **Family Member Exception:** Preserved ability for family members sharing a phone number (e.g., father booking for child) to book Token #2 by updating Patient Name.
+- **Owner Role & 6-Digit Master PIN Authentication:**
+  - Introduced unified 3-tier user role structure (`receptionist`, `doctor`, `owner`).
+  - Clinic owner authentication via 6-digit master PIN hashed in Firestore (`clinic_config/settings`), unlocking doctor CRUD, consultation fee edits, and revenue audit access.
+  - Restored Doctor Editing modal (`DoctorListScreen`), allowing owners to modify name, specialty, phone, available schedule days, and consultation fees.
+
+### Fixed
+- **Defensive Patient Model Parsing:** Resolved `type Null is not a subtype of type String` during phone lookup by handling null `id`, `phoneNumber`, `gender`, and multi-type `lastVisitDate` (Firestore Timestamp, ISO String, or DateTime).
+- **Service Layer Composite Uniqueness:** Updated `BookingService.hasAppointmentForDate` and `FirebaseService.hasAppointmentForDate` to accept composite patient name and doctor ID parameters.
+
+---
+
+## [1.10.0] — 2026-10-10
+
+### Added
+- **Agile Reception Queue & Discretionary Chamber Dispatch:**
+  - **Top-Level Collapsible Accordion (`CompletedConsultationsAccordion`):** Groups finished visits into a collapsible drawer, keeping the lobby list focused on waiting patients.
+  - **Discretionary Chamber Dispatch:** Added high-visibility `[SEND IN]` button with chamber occupancy collision detection, alerting counter staff if a consultation is currently active.
+  - **Non-Destructive Late / Bypassed Token Tracking:** Pure domain `partitionQueueForReception` tags waiting tokens lower than active chamber token as `[BYPASSED / LATE]` without mutating database status, preserving receptionist triage autonomy for emergencies.
+- **Air Traffic Control Arrival Estimation:**
+  - Dynamic estimated arrival time calculations (`AppointmentEngine.calculateEstimatedWindow`) considering chamber start times, consultations ahead, and 8-minute OPD averages.
+- **Responsive Layout Optimization Across Clinic Counter Tiers:**
+  - **FHD 21.5"-24" Counter Monitors (1920×1080):** Container constraints expanded up to 1800px with side-by-side split panels (`flex: 6` Queue, `flex: 4` Doctor Roster) for widths $\ge 1050\text{px}$.
+  - **Counter Laptops (1366×768 & 1536×864):** Vertical budget optimizations suppressing redundant headers, compacting padding, and rendering today's live queue above the fold.
+  - **Double AppBar Suppression:** Suppressed secondary screen AppBars when embedded in `OwnerShell` on desktop.
+
+---
+
 ## [1.9.0] — 2026-10-10
 
 ### Added
