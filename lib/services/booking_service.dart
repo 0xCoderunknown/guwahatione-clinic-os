@@ -131,21 +131,36 @@ class BookingService {
     }).toList();
   }
 
-  /// Checks if a patient already has a non-absent appointment on this date.
-  Future<bool> hasAppointmentForDate(String phone, DateTime date) async {
+  /// Checks if a patient already has a non-absent appointment on this date with a specific doctor and name.
+  Future<bool> hasAppointmentForDate({
+    required String phone,
+    required DateTime date,
+    String? patientName,
+    String? doctorId,
+  }) async {
     final start = DateTime(date.year, date.month, date.day);
     final end = start.add(const Duration(days: 1));
 
-    final query = await _appointmentsRef
-        .where('patientPhone', isEqualTo: phone)
-        .get();
+    var queryRef =
+        _appointmentsRef.where('patientPhone', isEqualTo: phone.trim());
+    if (doctorId != null && doctorId.isNotEmpty) {
+      queryRef = queryRef.where('doctorId', isEqualTo: doctorId);
+    }
+    final query = await queryRef.get();
 
+    final cleanName = patientName?.trim().toLowerCase();
     for (var doc in query.docs) {
       final appt = Appointment.fromJson(doc.data());
       if (appt.status != AppointmentStatus.absent) {
         if (!appt.scheduledDate.isBefore(start) &&
             appt.scheduledDate.isBefore(end)) {
-          return true;
+          if (cleanName != null && cleanName.isNotEmpty) {
+            if (appt.patientName.trim().toLowerCase() == cleanName) {
+              return true;
+            }
+          } else {
+            return true;
+          }
         }
       }
     }

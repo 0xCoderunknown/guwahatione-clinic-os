@@ -113,8 +113,17 @@ class FirebaseService {
   Future<List<Appointment>> getAppointmentsForPatient(String phone) =>
       _bookingService.getAppointmentsForPatient(phone);
 
-  Future<bool> hasAppointmentForDate(String phone, DateTime date) =>
-      _bookingService.hasAppointmentForDate(phone, date);
+  Future<bool> hasAppointmentForDate(
+    String phone,
+    DateTime date, {
+    String? patientName,
+    String? doctorId,
+  }) => _bookingService.hasAppointmentForDate(
+    phone: phone,
+    date: date,
+    patientName: patientName,
+    doctorId: doctorId,
+  );
 
   // ---------------------------------------------------------------------------
   // Chamber Real-Time Session (Zero-Touch Sync)

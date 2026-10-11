@@ -259,12 +259,59 @@ abstract class AppointmentEngine {
     return AppConstants.isDateBlocked(date);
   }
 
+  /// Checks if an active (non-absent) booking already exists for the exact same patient
+  /// with the same doctor on the given target date.
+  ///
+  /// Composite key: (targetDate + doctorId + normalized patientName + patientPhone)
+  static Appointment? findDuplicateBooking({
+    required List<Appointment> appointments,
+    required String? doctorId,
+    required String patientName,
+    required String patientPhone,
+    required DateTime targetDate,
+  }) {
+    if (doctorId == null || doctorId.isEmpty) return null;
+    final cleanPhone = patientPhone.trim();
+    final cleanName = patientName.trim().toLowerCase();
+    if (cleanPhone.isEmpty || cleanName.isEmpty) return null;
+
+    final start = DateTime(targetDate.year, targetDate.month, targetDate.day);
+    final end = start.add(const Duration(days: 1));
+
+    for (final a in appointments) {
+      if (a.doctorId != doctorId) continue;
+      if (a.status == AppointmentStatus.absent) continue;
+      if (a.scheduledDate.isBefore(start) || !a.scheduledDate.isBefore(end)) {
+        continue;
+      }
+
+      if (a.patientPhone.trim() == cleanPhone &&
+          a.patientName.trim().toLowerCase() == cleanName) {
+        return a;
+      }
+    }
+    return null;
+  }
+
   /// Validates whether a patient already has an active (non-absent) booking on the target date.
   static bool hasDuplicateBookingOnDate({
     required List<Appointment> appointments,
     required String phoneNumber,
     required DateTime targetDate,
+    String? patientName,
+    String? doctorId,
   }) {
+    if (patientName != null && doctorId != null) {
+      return findDuplicateBooking(
+            appointments: appointments,
+            doctorId: doctorId,
+            patientName: patientName,
+            patientPhone: phoneNumber,
+            targetDate: targetDate,
+          ) !=
+          null;
+    }
+
     final start = DateTime(targetDate.year, targetDate.month, targetDate.day);
     final end = start.add(const Duration(days: 1));
 

@@ -11,7 +11,7 @@ import '../utils/formatters.dart';
 import '../widgets/widgets.dart';
 
 /// Modal dialog for receptionist to register patient walk-ins and book appointments.
-/// Features 100% keyboard-first navigation and provisional token preview on doctor selection.
+/// Features 100% keyboard-first navigation, provisional token preview, and same-day duplicate booking prevention.
 class AddAppointmentDialog extends StatefulWidget {
   const AddAppointmentDialog({super.key});
 
@@ -45,6 +45,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   bool _isLoading = false;
 
   List<Appointment> _patientAppointments = [];
+  Appointment? _duplicateAppointment;
+
   PatientReviewEligibility _reviewEligibility = const PatientReviewEligibility(
     hasVisitedDoctorEarlier: false,
     isWithin14Days: false,
@@ -57,6 +59,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   @override
   void initState() {
     super.initState();
+    _nameController.addListener(_checkDuplicateBooking);
     final doctors = Provider.of<ClinicProvider>(context, listen: false).doctors;
     if (doctors.length == 1) {
       _selectedDoctor = doctors.first;
@@ -66,6 +69,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
   @override
   void dispose() {
+    _nameController.removeListener(_checkDuplicateBooking);
     _phoneController.dispose();
     _nameController.dispose();
     _ageController.dispose();
@@ -80,6 +84,43 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     _amountFocusNode.dispose();
     _submitFocusNode.dispose();
     super.dispose();
+  }
+
+  List<Appointment> get _allRelevantAppointments {
+    final provider = Provider.of<ClinicProvider>(context, listen: false);
+    final map = <String, Appointment>{};
+    for (final a in provider.todayAppointments) {
+      map[a.id] = a;
+    }
+    for (final a in _patientAppointments) {
+      map[a.id] = a;
+    }
+    return map.values.toList();
+  }
+
+  void _checkDuplicateBooking() {
+    final phone = _phoneController.text.trim();
+    final name = _nameController.text.trim();
+    final docId = _selectedDoctor?.id;
+
+    if (phone.isEmpty || name.isEmpty || docId == null) {
+      if (_duplicateAppointment != null) {
+        setState(() => _duplicateAppointment = null);
+      }
+      return;
+    }
+
+    final duplicate = AppointmentEngine.findDuplicateBooking(
+      appointments: _allRelevantAppointments,
+      doctorId: docId,
+      patientName: name,
+      patientPhone: phone,
+      targetDate: _selectedDate,
+    );
+
+    if (_duplicateAppointment?.id != duplicate?.id) {
+      setState(() => _duplicateAppointment = duplicate);
+    }
   }
 
   int? get _provisionalToken {
@@ -113,10 +154,10 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.enter): () {
-          if (!_isLoading) _saveAppointment();
+          if (!_isLoading && _duplicateAppointment == null) _saveAppointment();
         },
         const SingleActivator(LogicalKeyboardKey.numpadEnter): () {
-          if (!_isLoading) _saveAppointment();
+          if (!_isLoading && _duplicateAppointment == null) _saveAppointment();
         },
       },
       child: AlertDialog(
@@ -160,7 +201,9 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                       });
                     },
                     onPhoneChanged: _onPhoneChanged,
-                    onSubmitted: _saveAppointment,
+                    onSubmitted: () {
+                      if (_duplicateAppointment == null) _saveAppointment();
+                    },
                   ),
                   if (_historyInfo != null) ...[
                     const SizedBox(height: 10),
@@ -188,6 +231,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                           _amountController.text = "${val.consultationFee}";
                         }
                       });
+                      _checkDuplicateBooking();
                       if (_phoneController.text.length == 10) {
                         _updateEligibilityAndPayment();
                       }
@@ -196,8 +240,16 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     onPaymentChanged: _onPaymentChanged,
                     reviewEligibility: _reviewEligibility,
                     amountController: _amountController,
-                    onSubmitted: _saveAppointment,
+                    onSubmitted: () {
+                      if (_duplicateAppointment == null) _saveAppointment();
+                    },
                   ),
+
+                  // 4. Duplicate Booking Warning Alert Banner
+                  if (_duplicateAppointment != null) ...[
+                    const SizedBox(height: 14),
+                    _buildDuplicateWarningBanner(_duplicateAppointment!),
+                  ],
                 ],
               ),
             ),
@@ -210,12 +262,100 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
           ),
           ElevatedButton(
             focusNode: _submitFocusNode,
-            onPressed: _saveAppointment,
+            onPressed: (_isLoading || _duplicateAppointment != null)
+                ? null
+                : _saveAppointment,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.teal,
               foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.grey.shade300,
+              disabledForegroundColor: Colors.grey.shade600,
             ),
             child: const Text('Book Appointment'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDuplicateWarningBanner(Appointment duplicate) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF3C7), // Warm amber background
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0xFFB45309),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '⚠️ ${duplicate.patientName} already holds Token #${duplicate.queueNumber} with Dr. ${duplicate.doctorName} for today.',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF92400E),
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Expanded(
+                child: Text(
+                  'Modify Name if booking for a family member.',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: Color(0xFFB45309),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.open_in_new_rounded, size: 14),
+                label: Text('View Token #${duplicate.queueNumber}'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF92400E),
+                  side: const BorderSide(color: Color(0xFFD97706)),
+                  visualDensity: VisualDensity.compact,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+                onPressed: () {
+                  final prov =
+                      Provider.of<ClinicProvider>(context, listen: false);
+                  prov.setDashboardSearchQuery('${duplicate.queueNumber}');
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Viewing Token #${duplicate.queueNumber} • ${duplicate.patientName}',
+                      ),
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -231,6 +371,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     );
     if (picked != null) {
       setState(() => _selectedDate = picked);
+      _checkDuplicateBooking();
       if (_phoneController.text.length == 10) {
         _updateEligibilityAndPayment();
       }
@@ -238,6 +379,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   }
 
   void _onPhoneChanged(String val) {
+    _checkDuplicateBooking();
     if (val.length == 10) {
       _searchPatient(val);
     } else if (val.length < 10) {
@@ -290,6 +432,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       }
 
       _updateEligibilityAndPayment();
+      _checkDuplicateBooking();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -412,6 +555,18 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
   Future<void> _saveAppointment() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_duplicateAppointment != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "${_duplicateAppointment!.patientName} already holds Token #${_duplicateAppointment!.queueNumber} with Dr. ${_duplicateAppointment!.doctorName} for today.",
+          ),
+          backgroundColor: Colors.amber.shade900,
+        ),
+      );
+      return;
+    }
 
     if (_selectedGender == null || _selectedGender!.isEmpty) {
       setState(() => _genderHasError = true);

@@ -244,9 +244,13 @@ class ClinicProvider with ChangeNotifier {
       final hasDuplicate = await _firebaseService.hasAppointmentForDate(
         phoneNumber,
         scheduledDate,
+        patientName: name,
+        doctorId: selectedDoctor.id,
       );
       if (hasDuplicate) {
-        throw Exception('Patient already has an appointment on this date.');
+        throw Exception(
+          'Patient "$name" already has an active appointment with Dr. ${selectedDoctor.name} on this date.',
+        );
       }
 
       // Enforce: Only a patient who visited earlier with the same doctor can get a free review.
