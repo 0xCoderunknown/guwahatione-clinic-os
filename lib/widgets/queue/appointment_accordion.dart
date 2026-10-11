@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
+import '../../models/chamber_session.dart';
 import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
 import '../booking/booking_eligibility_banner.dart';
@@ -232,29 +233,27 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                 ),
                 const SizedBox(height: 16),
                 if (widget.appointment.status == AppointmentStatus.pending) ...[
-                  StreamBuilder(
+                  StreamBuilder<ChamberSession>(
                     stream: Provider.of<ClinicProvider>(context, listen: false)
                         .streamChamberSession(
                           widget.appointment.doctorId,
                           widget.appointment.scheduledDate,
                         ),
                     builder: (context, chamberSnap) {
-                      final cData = chamberSnap.data?.data();
-                      final cStatus = (cData?['status'] as String?) ?? 'idle';
-                      final isDoctorReady = cStatus == 'ready_for_next';
-                      final isDoctorOnBreak = cStatus == 'consultation_ended';
-                      final activeApptId =
-                          cData?['activeAppointmentId'] as String?;
-                      final activeQueueNum =
-                          cData?['activeQueueNumber'] as int?;
-                      final activePatName =
-                          (cData?['patientName'] as String?) ?? 'Patient';
+                      final session = chamberSnap.data;
+                      final isDoctorReady = session?.isReadyForNext ?? false;
+                      final isDoctorOnBreak =
+                          session?.isConsultationEnded ?? false;
+                      final activeApptId = session?.activeAppointmentId;
+                      final activeQueueNum = session?.activeQueueNumber;
+                      final activePatName = session?.patientName ?? 'Patient';
 
                       final isThisInChamber =
                           widget.isInChamber ||
                           (activeApptId == widget.appointment.id);
                       final isAnotherPatientInChamber =
                           activeApptId != null &&
+                          activeApptId.isNotEmpty &&
                           activeApptId != widget.appointment.id;
 
                       String buttonLabel = 'SEND IN TO DOCTOR';
@@ -643,9 +642,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
     AppointmentStatus status,
   ) async {
     final provider = Provider.of<ClinicProvider>(context, listen: false);
-    final doctor = provider.doctors
-        .where((d) => d.id == widget.appointment.doctorId)
-        .firstOrNull;
+    final doctor = provider.getDoctorById(widget.appointment.doctorId);
 
     int amount = 0;
     if (status == AppointmentStatus.completed) {

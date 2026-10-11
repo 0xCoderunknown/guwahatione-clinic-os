@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/appointment.dart';
+import '../models/chamber_session.dart';
 import '../models/consultation.dart';
 import '../models/doctor.dart';
 import '../models/medicine.dart';
@@ -139,7 +140,7 @@ class FirebaseService {
     appointment: appointment,
   );
 
-  Stream<DocumentSnapshot<Map<String, dynamic>>> streamChamberSession(
+  Stream<ChamberSession> streamChamberSession(
     String doctorId,
     DateTime date,
   ) => _chamberService.streamChamberSession(doctorId, date);

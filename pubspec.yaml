@@ -2,7 +2,7 @@ name: appointment_app
 description: GuwahatiOne Clinic OS — Open-source clinic & chamber management platform
 publish_to: 'none'
 
-version: 1.12.0+15
+version: 1.13.0+16
 
 environment:
   sdk: ^3.13.5

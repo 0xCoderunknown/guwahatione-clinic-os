@@ -1,9 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/engines/engines.dart';
 import '../models/appointment.dart';
+import '../models/chamber_session.dart';
 import '../providers/clinic_provider.dart';
 import '../services/firebase_service.dart';
 import '../widgets/widgets.dart';
@@ -172,23 +172,19 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
 
                 // If effectiveDoctorId is known, stream their chamber session doc for chamber sync
                 if (effectiveDoctorId != null) {
-                  return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  return StreamBuilder<ChamberSession>(
                     stream: clinicProvider.streamChamberSession(
                       effectiveDoctorId,
                       _selectedDate,
                     ),
                     builder: (context, chamberSnap) {
-                      final cData = chamberSnap.data?.data();
-                      final activeApptId =
-                          cData?['activeAppointmentId'] as String?;
-                      final activeQueueNum =
-                          cData?['activeQueueNumber'] as int?;
+                      final session = chamberSnap.data;
 
                       final queueView =
                           AppointmentEngine.partitionQueueForReception(
                         appointments: filtered,
-                        activeAppointmentId: activeApptId,
-                        activeQueueNumber: activeQueueNum,
+                        activeAppointmentId: session?.activeAppointmentId,
+                        activeQueueNumber: session?.activeQueueNumber,
                       );
 
                       return _buildQueueListView(queueView);

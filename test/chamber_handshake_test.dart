@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/models/appointment.dart';
+import 'package:appointment_app/models/chamber_session.dart';
 import 'package:appointment_app/widgets/chamber/chamber_control_banner.dart';
 import 'package:appointment_app/widgets/chamber/chamber_token_card.dart';
 
@@ -206,6 +207,84 @@ void main() {
       await tester.pump();
 
       expect(recordPressed, isTrue);
+    });
+  });
+
+  group('ChamberSession Domain Model Tests', () {
+    final testDate = DateTime(2026, 10, 11);
+
+    test('ChamberSession.empty initializes idle defaults', () {
+      final session = ChamberSession.empty('doc-1', testDate);
+
+      expect(session.doctorId, 'doc-1');
+      expect(session.date, testDate);
+      expect(session.status, 'idle');
+      expect(session.isIdle, isTrue);
+      expect(session.isReadyForNext, isFalse);
+      expect(session.isConsultationEnded, isFalse);
+      expect(session.isCalling, isFalse);
+      expect(session.isInConsultation, isFalse);
+      expect(session.hasActivePatient, isFalse);
+      expect(session.activeAppointmentId, isNull);
+    });
+
+    test('ChamberSession.fromMap handles null and empty maps cleanly', () {
+      final sessionFromNull = ChamberSession.fromMap(
+        null,
+        doctorId: 'doc-1',
+        date: testDate,
+      );
+      expect(sessionFromNull.isIdle, isTrue);
+
+      final sessionFromEmpty = ChamberSession.fromMap(
+        {},
+        doctorId: 'doc-1',
+        date: testDate,
+      );
+      expect(sessionFromEmpty.isIdle, isTrue);
+    });
+
+    test('ChamberSession.fromMap correctly parses active and finished chamber states', () {
+      final callingMap = {
+        'status': 'calling',
+        'activeAppointmentId': 'appt-123',
+        'activeQueueNumber': 5,
+        'patientName': 'Sunita Das',
+        'patientPhone': '9864012345',
+      };
+      final callingSession = ChamberSession.fromMap(
+        callingMap,
+        doctorId: 'doc-1',
+        date: testDate,
+      );
+      expect(callingSession.isCalling, isTrue);
+      expect(callingSession.hasActivePatient, isTrue);
+      expect(callingSession.activeAppointmentId, 'appt-123');
+      expect(callingSession.activeQueueNumber, 5);
+      expect(callingSession.patientName, 'Sunita Das');
+
+      final readyMap = {'status': 'ready_for_next'};
+      final readySession = ChamberSession.fromMap(
+        readyMap,
+        doctorId: 'doc-1',
+        date: testDate,
+      );
+      expect(readySession.isReadyForNext, isTrue);
+      expect(readySession.hasActivePatient, isFalse);
+
+      final breakMap = {
+        'status': 'consultation_ended',
+        'lastCompletedQueueNumber': 4,
+        'lastCompletedPatientName': 'Previous Patient',
+      };
+      final breakSession = ChamberSession.fromMap(
+        breakMap,
+        doctorId: 'doc-1',
+        date: testDate,
+      );
+      expect(breakSession.isConsultationEnded, isTrue);
+      expect(breakSession.lastCompletedQueueNumber, 4);
+      expect(breakSession.lastCompletedPatientName, 'Previous Patient');
     });
   });
 }

@@ -434,4 +434,12 @@ abstract class AppointmentEngine {
       averageMinutesPerPatient: averageMinutesPerPatient,
     );
   }
+
+  /// Counts appointments booked for a specific doctor.
+  static int countDoctorAppointments({
+    required List<Appointment> appointments,
+    required String doctorId,
+  }) {
+    return appointments.where((a) => a.doctorId == doctorId).length;
+  }
 }

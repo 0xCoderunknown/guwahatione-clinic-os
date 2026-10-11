@@ -55,37 +55,26 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
     _chamberSessionSub?.cancel();
     _chamberSessionSub = _firebaseService
         .streamChamberSession(widget.doctor.id, _selectedDate)
-        .listen((snapshot) {
-          if (!snapshot.exists || !mounted) return;
-          final data = snapshot.data();
-          if (data == null) return;
-
-          final status = (data['status'] as String?) ?? 'idle';
-          final activeApptId = data['activeAppointmentId'] as String?;
-          final activeQNum = (data['activeQueueNumber'] as num?)?.toInt();
-          final activePName = data['patientName'] as String?;
-          final lastQNum = (data['lastCompletedQueueNumber'] as num?)?.toInt();
-          final lastPName = data['lastCompletedPatientName'] as String?;
+        .listen((session) {
+          if (!mounted) return;
 
           setState(() {
-            _chamberStatus = status;
+            _chamberStatus = session.status;
             _activeCallingApptId =
-                (status == 'calling' || status == 'in_consultation')
-                ? activeApptId
-                : null;
-            _activeQueueNumber = activeQNum;
-            _activePatientName = activePName;
-            _lastCompletedQueueNumber = lastQNum;
-            _lastCompletedPatientName = lastPName;
+                session.hasActivePatient ? session.activeAppointmentId : null;
+            _activeQueueNumber = session.activeQueueNumber;
+            _activePatientName = session.patientName;
+            _lastCompletedQueueNumber = session.lastCompletedQueueNumber;
+            _lastCompletedPatientName = session.lastCompletedPatientName;
           });
 
-          if (status == 'calling' &&
-              activeApptId != null &&
-              activeApptId.isNotEmpty &&
-              activeApptId != _lastHandledCallingAppointmentId &&
+          if (session.isCalling &&
+              session.activeAppointmentId != null &&
+              session.activeAppointmentId!.isNotEmpty &&
+              session.activeAppointmentId != _lastHandledCallingAppointmentId &&
               !_isAutoNavigating) {
-            _lastHandledCallingAppointmentId = activeApptId;
-            _autoOpenConsultationForId(activeApptId);
+            _lastHandledCallingAppointmentId = session.activeAppointmentId!;
+            _autoOpenConsultationForId(session.activeAppointmentId!);
           }
         });
   }

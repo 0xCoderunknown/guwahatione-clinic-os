@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.13.0] — 2026-10-11
+
+### Architecture & Domain Engine Purification
+- **Purified Firebase Layer & Gateway Abstraction:**
+  - **Zero Firestore SDK Leaks:** Completely eliminated `DocumentSnapshot` and `cloud_firestore` imports from all screens (`appointment_list_screen.dart`, `doctor_chamber_screen.dart`, `consultation_encounter_screen.dart`) and widgets.
+  - **Introduced `ChamberSession` Domain Model:** Created strongly typed, pure Dart domain model `lib/models/chamber_session.dart` with status properties and typed boolean getters (`isReadyForNext`, `isCalling`, `isInConsultation`, `isConsultationEnded`, `isIdle`, `hasActivePatient`).
+  - **Chamber Stream Mapping:** Updated `ChamberService` and `FirebaseService` facade to map raw Firestore snapshots into typed `Stream<ChamberSession>` before dispatching to state providers and UI.
+  - **Provider Cleanup:** Purged `cloud_firestore` import from `ClinicProvider` and added convenience helper `getDoctorById(doctorId)`.
+- **UI & Widget Purification (Engine Delegation):**
+  - **Appointment Count Delegation:** Replaced raw `.where((a) => a.doctorId == doc.id).length` loops in `DashboardDoctorRosterCard` and `DashboardTodayQueueCard` with `AppointmentEngine.countDoctorAppointments`.
+  - **Prescription Segregation Delegation:** Replaced raw `.where` filtering in `RxReconciliationSection` with pure domain method `MedicineEngine.segregatePrescriptions`.
+  - **StreamBuilder Type Safety:** Typed all chamber stream builders across presentation widgets (`StreamBuilder<ChamberSession>`) with boolean getters replacing ad-hoc string comparisons.
+- **Automated Test Suite Expansion:**
+  - Added unit test suites for `ChamberSession` deserialization, default states, and typed status flags.
+  - Added unit test suite for `AppointmentEngine.countDoctorAppointments`.
+  - All 54 automated unit and widget tests passing cleanly with zero warnings in `flutter analyze`.
+
+---
+
 ## [1.12.0] — 2026-10-11
 
 ### Architecture & Refactoring

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/appointment.dart';
+import '../models/chamber_session.dart';
 import 'firestore_paths.dart';
 
 /// Service managing zero-touch real-time sync between Reception and Doctor Chamber screens.
@@ -32,13 +33,22 @@ class ChamberService {
     }, SetOptions(merge: true));
   }
 
-  /// Streams active chamber session document for a given doctor and date.
-  Stream<DocumentSnapshot<Map<String, dynamic>>> streamChamberSession(
+  /// Streams active chamber session for a given doctor and date as a strongly typed domain model.
+  Stream<ChamberSession> streamChamberSession(
     String doctorId,
     DateTime date,
   ) {
     final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);
-    return _countersRef.doc(chamberDocId).snapshots();
+    return _countersRef.doc(chamberDocId).snapshots().map((snapshot) {
+      if (!snapshot.exists) {
+        return ChamberSession.empty(doctorId, date);
+      }
+      return ChamberSession.fromMap(
+        snapshot.data(),
+        doctorId: doctorId,
+        date: date,
+      );
+    });
   }
 
   /// Broadcasts consultation ended event from doctor to reception desk.

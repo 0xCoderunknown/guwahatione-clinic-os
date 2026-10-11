@@ -57,25 +57,20 @@ class _ConsultationEncounterScreenState
           widget.doctor.id,
           widget.appointment.scheduledDate,
         )
-        .listen((snapshot) {
-          if (!snapshot.exists || !mounted) return;
-          final data = snapshot.data();
-          if (data == null) return;
-          final activeApptId = data['activeAppointmentId'] as String?;
-          final status = data['status'] as String?;
+        .listen((session) {
+          if (!mounted) return;
 
-          if (status == 'calling' &&
-              activeApptId != null &&
-              activeApptId.isNotEmpty &&
-              activeApptId != widget.appointment.id) {
+          if (session.isCalling &&
+              session.activeAppointmentId != null &&
+              session.activeAppointmentId!.isNotEmpty &&
+              session.activeAppointmentId != widget.appointment.id) {
             setState(() {
-              _incomingCallingApptId = activeApptId;
+              _incomingCallingApptId = session.activeAppointmentId;
               _incomingCallingPatientName =
-                  data['patientName'] as String? ?? 'Next Patient';
-              _incomingCallingQueueNumber = (data['activeQueueNumber'] as num?)
-                  ?.toInt();
+                  session.patientName ?? 'Next Patient';
+              _incomingCallingQueueNumber = session.activeQueueNumber;
             });
-          } else if (status == 'idle' || activeApptId == null) {
+          } else if (session.isIdle || session.activeAppointmentId == null) {
             setState(() => _incomingCallingApptId = null);
           }
         });

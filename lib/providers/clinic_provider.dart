@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../core/engines/engines.dart';
 import '../models/appointment.dart';
+import '../models/chamber_session.dart';
 import '../models/consultation.dart';
 import '../models/doctor.dart';
 import '../models/medicine.dart';
@@ -30,6 +30,9 @@ class ClinicProvider with ChangeNotifier {
   bool _isLoading = false;
 
   List<Doctor> get doctors => _doctors;
+
+  Doctor? getDoctorById(String doctorId) =>
+      _doctors.where((d) => d.id == doctorId).firstOrNull;
 
   bool get hasLoadedDoctors => _hasLoadedDoctors;
 
@@ -414,7 +417,7 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
-  Stream<DocumentSnapshot<Map<String, dynamic>>> streamChamberSession(
+  Stream<ChamberSession> streamChamberSession(
     String doctorId,
     DateTime date,
   ) {

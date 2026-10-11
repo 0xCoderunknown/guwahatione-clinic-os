@@ -221,6 +221,47 @@ void main() {
       expect(view.isBypassed('appt_12'), isFalse);
       expect(view.isBypassed('appt_13'), isFalse);
     });
+
+    test('countDoctorAppointments accurately tallies appointments per doctor', () {
+      final appts = [
+        createAppt('appt_1', 1, AppointmentStatus.pending),
+        createAppt('appt_2', 2, AppointmentStatus.pending),
+        Appointment(
+          id: 'appt_3',
+          patientPhone: '9864033333',
+          patientName: 'Patient Three',
+          doctorId: 'doc_2',
+          doctorName: 'Dr. Other',
+          scheduledDate: DateTime(2026, 10, 11),
+          amountCollected: 500,
+          paymentType: PaymentType.paid,
+          status: AppointmentStatus.pending,
+          queueNumber: 1,
+        ),
+      ];
+
+      expect(
+        AppointmentEngine.countDoctorAppointments(
+          appointments: appts,
+          doctorId: 'doc_1',
+        ),
+        2,
+      );
+      expect(
+        AppointmentEngine.countDoctorAppointments(
+          appointments: appts,
+          doctorId: 'doc_2',
+        ),
+        1,
+      );
+      expect(
+        AppointmentEngine.countDoctorAppointments(
+          appointments: appts,
+          doctorId: 'doc_999',
+        ),
+        0,
+      );
+    });
   });
 }
 

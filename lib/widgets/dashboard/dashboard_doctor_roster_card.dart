@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/engines/engines.dart';
+import '../../models/chamber_session.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/clinic_provider.dart';
 import '../../screens/doctor_list_screen.dart';
@@ -86,51 +88,49 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
               itemBuilder: (ctx, i) {
                 final doc = doctors[i];
-                final patientCount = provider.todayAppointments
-                    .where((a) => a.doctorId == doc.id)
-                    .length;
+                final patientCount = AppointmentEngine.countDoctorAppointments(
+                  appointments: provider.todayAppointments,
+                  doctorId: doc.id,
+                );
 
-                return StreamBuilder(
+                return StreamBuilder<ChamberSession>(
                   stream: provider.streamChamberSession(doc.id, DateTime.now()),
                   builder: (context, chamberSnap) {
-                    final chamberData = chamberSnap.data?.data();
-                    final chamberStatus =
-                        (chamberData?['status'] as String?) ?? 'idle';
-                    final lastCompletedQNum =
-                        (chamberData?['lastCompletedQueueNumber'] as num?)
-                            ?.toInt();
-                    final activeQNum =
-                        (chamberData?['activeQueueNumber'] as num?)?.toInt();
-                    final activePName = chamberData?['patientName'] as String?;
+                    final session = chamberSnap.data;
+                    final isReady = session?.isReadyForNext ?? false;
+                    final isEnded = session?.isConsultationEnded ?? false;
+                    final isCalling = session?.isCalling ?? false;
+                    final isInConsultation = session?.isInConsultation ?? false;
 
                     Color statusBadgeBg;
                     Color statusBadgeFg;
                     String statusLabel;
                     String statusSubtitle;
 
-                    if (chamberStatus == 'ready_for_next') {
+                    if (isReady) {
                       statusBadgeBg = const Color(0xFFDCFCE7);
                       statusBadgeFg = const Color(0xFF15803D);
                       statusLabel = 'READY FOR NEXT';
                       statusSubtitle = '🟢 Doctor is READY! Call next patient.';
-                    } else if (chamberStatus == 'consultation_ended') {
+                    } else if (isEnded) {
                       statusBadgeBg = const Color(0xFFFEF3C7);
                       statusBadgeFg = const Color(0xFFB45309);
                       statusLabel = 'ON BREAK';
                       statusSubtitle =
-                          '☕ Ended #${lastCompletedQNum ?? '--'} • Taking breather';
-                    } else if (chamberStatus == 'calling') {
+                          '☕ Ended #${session?.lastCompletedQueueNumber ?? '--'} • Taking breather';
+                    } else if (isCalling) {
                       statusBadgeBg = const Color(0xFFDBEAFE);
                       statusBadgeFg = const Color(0xFF1D4ED8);
                       statusLabel = 'ADMITTED';
                       statusSubtitle =
-                          '🚪 Token #${activeQNum ?? '--'} entering chamber';
-                    } else if (chamberStatus == 'in_consultation') {
+                          '🚪 Token #${session?.activeQueueNumber ?? '--'} entering chamber';
+                    } else if (isInConsultation) {
                       statusBadgeBg = const Color(0xFFEDE9FE);
                       statusBadgeFg = const Color(0xFF6D28D9);
                       statusLabel = 'CONSULTING';
+                      final activePName = session?.patientName;
                       statusSubtitle =
-                          '🩺 Consulting Token #${activeQNum ?? '--'}${activePName != null && activePName.isNotEmpty ? ' ($activePName)' : ''}';
+                          '🩺 Consulting Token #${session?.activeQueueNumber ?? '--'}${activePName != null && activePName.isNotEmpty ? ' ($activePName)' : ''}';
                     } else {
                       statusBadgeBg = const Color(0xFFF1F5F9);
                       statusBadgeFg = const Color(0xFF64748B);
@@ -157,7 +157,7 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (chamberStatus == 'ready_for_next')
+                          if (isReady)
                             Positioned(
                               right: 0,
                               bottom: 0,
@@ -215,10 +215,10 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                         statusSubtitle,
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: chamberStatus == 'ready_for_next'
+                          fontWeight: isReady
                               ? FontWeight.w600
                               : FontWeight.normal,
-                          color: chamberStatus == 'ready_for_next'
+                          color: isReady
                               ? const Color(0xFF15803D)
                               : Colors.grey.shade700,
                         ),
@@ -229,30 +229,30 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: chamberStatus == 'ready_for_next'
+                          color: isReady
                               ? const Color(0xFFDCFCE7)
-                              : (chamberStatus == 'in_consultation'
+                              : (isInConsultation
                                     ? const Color(0xFFEDE9FE)
                                     : Colors.grey.shade100),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: chamberStatus == 'ready_for_next'
+                            color: isReady
                                 ? const Color(0xFF86EFAC)
                                 : Colors.transparent,
                           ),
                         ),
                         child: Text(
-                          chamberStatus == 'ready_for_next'
+                          isReady
                               ? '▶ CALL NEXT'
-                              : (chamberStatus == 'in_consultation'
-                                    ? 'Token #${activeQNum ?? '--'}'
+                              : (isInConsultation
+                                    ? 'Token #${session?.activeQueueNumber ?? '--'}'
                                     : '$patientCount tokens'),
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: chamberStatus == 'ready_for_next'
+                            color: isReady
                                 ? const Color(0xFF15803D)
-                                : (chamberStatus == 'in_consultation'
+                                : (isInConsultation
                                       ? const Color(0xFF6D28D9)
                                       : Colors.grey.shade800),
                           ),

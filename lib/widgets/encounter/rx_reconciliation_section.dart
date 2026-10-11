@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/engines/engines.dart';
 import '../../models/medicine.dart';
 import '../../models/prescription_item.dart';
 import '../../utils/medicine_search_scorer.dart';
@@ -206,17 +207,20 @@ class RxReconciliationSection extends StatelessWidget {
                 ),
               ],
             )
-          : CollapsedMedicineSummary(
-              continuedCount: form.reconciliationItems
-                  .where((i) => i.action == MedicationAction.continueAction)
-                  .length,
-              stoppedCount: form.reconciliationItems
-                  .where((i) => i.action == MedicationAction.stop)
-                  .length,
-              newCount: form.newPrescriptions.length,
-              onTap: () {
-                form.isMedicineExpanded = !form.isMedicineExpanded;
-                onUpdate();
+          : Builder(
+              builder: (context) {
+                final partition = MedicineEngine.segregatePrescriptions(
+                  form.reconciliationItems,
+                );
+                return CollapsedMedicineSummary(
+                  continuedCount: partition.continuedMeds.length,
+                  stoppedCount: partition.stoppedMeds.length,
+                  newCount: form.newPrescriptions.length,
+                  onTap: () {
+                    form.isMedicineExpanded = !form.isMedicineExpanded;
+                    onUpdate();
+                  },
+                );
               },
             ),
     );

@@ -219,10 +219,32 @@
 
 ---
 
-## 🔒 8. Composite Invariants & Business Logic Contracts
+## 🚪 8. `chamber_sessions` Collection (Real-Time Chamber Handshake)
+
+- **Document ID:** `chamber_{doctorId}_{yyyy-MM-dd}`
+- **Purpose:** Real-time state coordination between Reception desk dispatch and Doctor consultation chamber.
+- **Model:** `ChamberSession` (`lib/models/chamber_session.dart`). Zero SDK leaks to UI presentation layer.
+
+### Fields
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `doctorId` | `String` | Yes | Doctor identifier. |
+| `status` | `String` | Yes | `'idle'`, `'ready_for_next'`, `'calling'`, `'in_consultation'`, `'consultation_ended'`. |
+| `activeAppointmentId` | `String?` | No | Currently called or active appointment ID inside chamber. |
+| `activeQueueNumber` | `int?` | No | Currently called or active queue token number. |
+| `patientName` | `String?` | No | Patient currently called or consulting. |
+| `patientPhone` | `String?` | No | Contact number of active patient. |
+| `lastCompletedQueueNumber` | `int?` | No | Most recently concluded token number. |
+| `lastCompletedPatientName` | `String?` | No | Name of most recently concluded patient. |
+| `updatedAt` | `FieldValue` | Yes | Server timestamp of state transition. |
+
+---
+
+## 🔒 9. Composite Invariants & Business Logic Contracts
 
 1. **Queue Concurrency & Immutability:** Daily counter tokens ($1 \dots N$) are issued via atomic Firestore transaction at `counters/queue_{doctorId}_{yyyy-MM-dd}`. Never delete an appointment document; cancellations must use `AppointmentStatus.absent` with `amountCollected: 0`.
 2. **Duplicate Patient Booking Prevention:** A patient cannot hold multiple active (non-absent) appointments with the same doctor on the same calendar day. The composite validation key is:
    $$\text{scheduledDate} + \text{doctorId} + \text{normalized patientName} + \text{patientPhone}$$
    Family members sharing a phone number are distinguished by `normalized patientName`.
 3. **14-Day Free Review Policy:** Free reviews are valid only if the patient has a prior non-absent consultation with the **same** doctor within 14 calendar days.
+4. **Clean Presentation Boundary:** Zero raw Firebase objects (`DocumentSnapshot`, `FieldValue`, `cloud_firestore`) may cross into Flutter screens or widgets; all data flow routes via pure domain models (`ChamberSession`, `Appointment`, etc.) and dedicated engines.

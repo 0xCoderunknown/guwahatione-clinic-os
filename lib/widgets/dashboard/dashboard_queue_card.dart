@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
+import '../../models/chamber_session.dart';
 import '../../providers/clinic_provider.dart';
 import '../../screens/appointment_list_screen.dart';
 import '../../utils/formatters.dart';
@@ -129,9 +130,10 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                     ),
                     const SizedBox(width: 8),
                     ...doctors.map((doc) {
-                      final count = widget.provider.todayAppointments
-                          .where((a) => a.doctorId == doc.id)
-                          .length;
+                      final count = AppointmentEngine.countDoctorAppointments(
+                        appointments: widget.provider.todayAppointments,
+                        doctorId: doc.id,
+                      );
                       final isSelected = _selectedDoctorId == doc.id;
                       return Padding(
                         padding: const EdgeInsets.only(right: 8.0),
@@ -296,19 +298,17 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                     ],
                   ),
                   trailing: appt.status == AppointmentStatus.pending
-                      ? StreamBuilder(
+                      ? StreamBuilder<ChamberSession>(
                           stream: widget.provider.streamChamberSession(
                             appt.doctorId,
                             appt.scheduledDate,
                           ),
                           builder: (context, chamberSnap) {
-                            final cData = chamberSnap.data?.data();
-                            final cStatus =
-                                (cData?['status'] as String?) ?? 'idle';
+                            final session = chamberSnap.data;
                             final isDoctorReady =
-                                cStatus == 'ready_for_next';
+                                session?.isReadyForNext ?? false;
                             final isDoctorOnBreak =
-                                cStatus == 'consultation_ended';
+                                session?.isConsultationEnded ?? false;
 
                             final btnBg = isDoctorReady
                                 ? const Color(0xFF15803D)
