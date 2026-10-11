@@ -19,17 +19,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 850;
+    final canPop = Navigator.canPop(context);
+    final showAppBar = !isDesktop || canPop;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Daily Statistics"),
-        actions: [
-          // DATE PICKER BUTTON
-          IconButton(
-            icon: const Icon(Icons.calendar_today),
-            onPressed: _pickDate,
-          ),
-        ],
-      ),
+      appBar: showAppBar
+          ? AppBar(
+              title: const Text("Daily Statistics"),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: _pickDate,
+                ),
+              ],
+            )
+          : null,
       body: Column(
         children: [
           Padding(

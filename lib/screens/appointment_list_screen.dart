@@ -26,8 +26,12 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 850;
+    final canPop = Navigator.canPop(context);
+    final showAppBar = !isDesktop || canPop;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Appointments')),
+      appBar: showAppBar ? AppBar(title: const Text('Appointments')) : null,
       body: Column(
         children: [
           Container(

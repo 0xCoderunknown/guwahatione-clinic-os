@@ -10,8 +10,14 @@ class DoctorListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 850;
+    final canPop = Navigator.canPop(context);
+    final showAppBar = !isDesktop || canPop;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Doctors & Chamber PINs')),
+      appBar: showAppBar
+          ? AppBar(title: const Text('Doctors & Chamber PINs'))
+          : null,
       body: Consumer<ClinicProvider>(
         builder: (context, provider, child) {
           final doctors = provider.doctors;

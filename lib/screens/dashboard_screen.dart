@@ -62,30 +62,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
         builder: (context, provider, child) {
           return Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1400),
+              constraints: const BoxConstraints(maxWidth: 1800),
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
                   horizontal: isDesktop ? 24.0 : 16.0,
-                  vertical: 20.0,
+                  vertical: 14.0,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // 1. Clinic Date & Quick Greeting Bar
                     DashboardHeaderBar(provider: provider),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
 
                     // 2. Responsive KPI Metrics Strip
                     DashboardKpiStrip(provider: provider, screenWidth: width),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 14),
 
                     // 3. Quick Reception Action Chips
                     const DashboardQuickActionChips(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
                     // 4. Content Area: Today's Live Queue & Doctor Roster
                     if (width >= 1050)
-                      // Desktop: Side-by-side split panels
+                      // Desktop / Counter PC: Side-by-side split panels
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -93,7 +93,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             flex: 6,
                             child: DashboardTodayQueueCard(provider: provider),
                           ),
-                          const SizedBox(width: 20),
+                          const SizedBox(width: 18),
                           Expanded(
                             flex: 4,
                             child: DashboardDoctorRosterCard(
@@ -107,7 +107,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Column(
                         children: [
                           DashboardTodayQueueCard(provider: provider),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                           DashboardDoctorRosterCard(provider: provider),
                         ],
                       ),

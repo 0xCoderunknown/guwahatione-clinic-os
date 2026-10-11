@@ -79,33 +79,37 @@ class DashboardKpiStrip extends StatelessWidget {
       ),
     ];
 
-    if (screenWidth >= 900) {
-      // Desktop / 14" Laptop: 4 columns in a sleek horizontal row
-      return Row(
-        children: cards.map((item) {
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6.0),
-              child: DashboardMetricCard(data: item),
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 720) {
+          // Desktop / Laptop: 4 columns in a sleek horizontal row
+          return Row(
+            children: cards.map((item) {
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                  child: DashboardMetricCard(data: item),
+                ),
+              );
+            }).toList(),
           );
-        }).toList(),
-      );
-    } else {
-      // Mobile / Tablet: 2x2 compact grid with healthy aspect ratio (1.6)
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: cards.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 1.6,
-        ),
-        itemBuilder: (ctx, i) => DashboardMetricCard(data: cards[i]),
-      );
-    }
+        } else {
+          // Mobile / Compact Tablet: 2x2 compact grid with healthy aspect ratio (1.6)
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: cards.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 1.6,
+            ),
+            itemBuilder: (ctx, i) => DashboardMetricCard(data: cards[i]),
+          );
+        }
+      },
+    );
   }
 }
 

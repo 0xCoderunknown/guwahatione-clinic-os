@@ -16,9 +16,13 @@ class DashboardHeaderBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final todayStr = AppFormatters.dateWithDay(DateTime.now());
+    final isDesktop = MediaQuery.of(context).size.width >= 850;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      padding: EdgeInsets.symmetric(
+        horizontal: isDesktop ? 16 : 14,
+        vertical: isDesktop ? 10 : 12,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -26,8 +30,8 @@ class DashboardHeaderBar extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -41,7 +45,7 @@ class DashboardHeaderBar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
                   color: Colors.teal.shade50,
                   borderRadius: BorderRadius.circular(8),
@@ -49,72 +53,112 @@ class DashboardHeaderBar extends StatelessWidget {
                 child: Icon(
                   Icons.today_rounded,
                   color: Colors.teal.shade700,
-                  size: 20,
+                  size: 18,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     todayStr,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF0F172A),
                     ),
                   ),
                   const Text(
                     'OPD Consultation Chamber & Reception Desk',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                   ),
                 ],
               ),
             ],
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.green.shade200),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.currency_rupee,
-                      size: 14,
-                      color: Colors.green,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      "₹${provider.dailyRevenue}",
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green.shade800,
+          if (!isDesktop)
+            // On mobile / compact view: show daily revenue badge (since mobile has no top shell bar)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.currency_rupee,
+                        size: 13,
+                        color: Colors.green,
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      "collected today",
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.green.shade700,
+                      const SizedBox(width: 2),
+                      Text(
+                        "₹${provider.dailyRevenue}",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green.shade800,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 3),
+                      Text(
+                        "today",
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.green.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            )
+          else
+            // On desktop / laptop: show active OPD operation status
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.sensors_rounded,
+                        size: 13,
+                        color: Colors.teal,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Live Queue: ${provider.todayAppointments.length} Tokens • ${provider.doctors.length} Doctors Active',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF334155),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
