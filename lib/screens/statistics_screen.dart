@@ -64,133 +64,39 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 }
 
                 final appointments = snapshot.data!;
+                final doctorStats =
+                    RevenueEngine.calculateDoctorAnalytics(appointments);
 
-                // GROUP BY DOCTOR LOGIC
-                // Map<DoctorID, List<Appointment>>
-                final Map<String, List<Appointment>> doctorGroups = {};
-                for (var appt in appointments) {
-                  if (!doctorGroups.containsKey(appt.doctorId)) {
-                    doctorGroups[appt.doctorId] = [];
-                  }
-                  doctorGroups[appt.doctorId]!.add(appt);
-                }
-
-                return ListView(
+                return ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  children: doctorGroups.entries.map((entry) {
-                    return _buildDoctorCard(context, entry.value);
-                  }).toList(),
+                  itemCount: doctorStats.length,
+                  itemBuilder: (context, index) {
+                    final stats = doctorStats[index];
+                    return DoctorStatisticsCard(
+                      stats: stats,
+                      onTap: () {
+                        final doctorAppts = appointments
+                            .where((a) => a.doctorId == stats.doctorId)
+                            .toList();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DoctorDailyDetailsScreen(
+                              doctorName: stats.doctorName,
+                              date: _selectedDate,
+                              appointments: doctorAppts,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 );
               },
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDoctorCard(BuildContext context, List<Appointment> doctorAppts) {
-    if (doctorAppts.isEmpty) return const SizedBox.shrink();
-
-    // Use pure domain engine for doctor statistics
-    final analyticsList = RevenueEngine.calculateDoctorAnalytics(doctorAppts);
-    if (analyticsList.isEmpty) return const SizedBox.shrink();
-    final stats = analyticsList.first;
-
-    final doctorName = stats.doctorName;
-    final totalPatients = stats.totalPatients;
-    final completed = stats.completed;
-    final pending = stats.pending;
-    final absent = stats.absent;
-    final free = stats.free;
-    final revenue = stats.realizedRevenue;
-
-    return Card(
-      elevation: 4,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () {
-          // NAVIGATE TO DETAIL SCREEN
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => DoctorDailyDetailsScreen(
-                doctorName: doctorName,
-                date: _selectedDate,
-                appointments: doctorAppts,
-              ),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    doctorName,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    "₹$revenue",
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                ],
-              ),
-              const Divider(),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _statItem("Total", "$totalPatients", Colors.black),
-                  _statItem("Done", "$completed", Colors.green),
-                  _statItem("Pending", "$pending", Colors.orange),
-                  _statItem("Free/Fam", "$free", Colors.blue),
-                ],
-              ),
-              if (absent > 0) ...[
-                const SizedBox(height: 8),
-                Text(
-                  "$absent patient(s) marked absent/no-show",
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.red,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _statItem(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ],
     );
   }
 
@@ -206,3 +112,4 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
   }
 }
+

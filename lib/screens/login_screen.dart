@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/doctor.dart';
 import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
+import '../widgets/widgets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -156,9 +157,25 @@ class _LoginScreenState extends State<LoginScreen>
                         controller: _tabController,
                         children: [
                           // Doctor Chamber Tab
-                          _buildDoctorLogin(doctors),
+                          DoctorLoginForm(
+                            doctors: doctors,
+                            selectedDoctor: _selectedDoctor,
+                            pinController: _doctorPinController,
+                            isLoading: _isLoading,
+                            onDoctorChanged: (val) {
+                              setState(() {
+                                _selectedDoctor = val;
+                                _errorMessage = null;
+                              });
+                            },
+                            onLogin: _handleDoctorLogin,
+                          ),
                           // Reception Desk / Owner Tab
-                          _buildOwnerLogin(),
+                          ReceptionLoginForm(
+                            pinController: _ownerPinController,
+                            isLoading: _isLoading,
+                            onLogin: _handleOwnerLogin,
+                          ),
                         ],
                       ),
                     ),
@@ -203,161 +220,6 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDoctorLogin(List<Doctor> doctors) {
-    if (doctors.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.people_outline, size: 36, color: Colors.grey.shade400),
-            const SizedBox(height: 12),
-            Text(
-              'No doctors registered yet.\nLogin as Reception to add doctors.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        DropdownButtonFormField<Doctor>(
-          initialValue: _selectedDoctor,
-          decoration: InputDecoration(
-            labelText: 'Select Doctor',
-            prefixIcon: const Icon(Icons.person_pin_rounded),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-          ),
-          items: doctors.map((doc) {
-            return DropdownMenuItem<Doctor>(
-              value: doc,
-              child: Text(
-                '${doc.name} (${doc.specialty})',
-                overflow: TextOverflow.ellipsis,
-              ),
-            );
-          }).toList(),
-          onChanged: (val) {
-            setState(() {
-              _selectedDoctor = val;
-              _errorMessage = null;
-            });
-          },
-        ),
-        const SizedBox(height: 14),
-        TextField(
-          controller: _doctorPinController,
-          obscureText: true,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: 'Chamber PIN',
-            hintText: 'Enter 4-digit PIN (default: 1234)',
-            prefixIcon: const Icon(Icons.lock_outline_rounded),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-          ),
-          onSubmitted: (_) => _handleDoctorLogin(),
-        ),
-        const Spacer(),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: Colors.teal,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          onPressed: _isLoading ? null : _handleDoctorLogin,
-          child: _isLoading
-              ? const SizedBox(
-                  height: 18,
-                  width: 18,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Text(
-                  'Enter Chamber View',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOwnerLogin() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Text(
-          'Reception Desk & Admin Mode',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF334155),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Full access to book appointments, manage doctors, and view financial audits.',
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _ownerPinController,
-          obscureText: true,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: 'Reception / Owner PIN',
-            hintText: 'Enter PIN (default: 0000)',
-            prefixIcon: const Icon(Icons.security_rounded),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-          ),
-          onSubmitted: (_) => _handleOwnerLogin(),
-        ),
-        const Spacer(),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF0F172A),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          onPressed: _isLoading ? null : _handleOwnerLogin,
-          child: _isLoading
-              ? const SizedBox(
-                  height: 18,
-                  width: 18,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Text(
-                  'Access Reception Desk',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                ),
-        ),
-      ],
     );
   }
 

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.12.0] — 2026-10-11
+
+### Architecture & Refactoring
+- **Screen Coordinator Scaffold Standardization Across All Screens:**
+  - Migrated all screens in `lib/screens/` to strict **Thin Coordinator Scaffolds** (orchestrating only layout bounds, responsive breakpoints, lifecycles, and navigation triggers).
+  - **Relocated `AddAppointmentDialog`:** Moved from `lib/screens/` to `lib/widgets/booking/add_appointment_dialog.dart` and re-exported in `lib/widgets/widgets.dart`.
+  - **Catalogue Engine Delegation:** Stripped in-memory filtering and sorting calculations out of `MedicineCatalogueScreen`, delegating to pure domain methods `MedicineEngine.filterAndSortCatalogue` and `MedicineEngine.countUniqueMolecules`.
+  - **Extracted `DoctorStatisticsCard`:** Extracted doctor stats cards and KPI metrics from `StatisticsScreen` into `lib/widgets/dashboard/doctor_statistics_card.dart` (reducing `StatisticsScreen` to 98 lines).
+  - **Extracted `DoctorRosterCard`:** Extracted doctor profile cards, PIN badges, and action buttons from `DoctorListScreen` into `lib/widgets/common/doctor_roster_card.dart` (reducing `DoctorListScreen` to 85 lines).
+  - **Extracted `DoctorDailyBreakdownTable`:** Extracted breakdown tables and fee footers from `DoctorDailyDetailsScreen` into `lib/widgets/dashboard/doctor_daily_breakdown_table.dart` (reducing `DoctorDailyDetailsScreen` to 38 lines).
+  - **Extracted `DoctorForm`:** Extracted doctor registration and edit forms from `AddDoctorScreen` into `lib/widgets/common/doctor_form.dart` (reducing `AddDoctorScreen` to 28 lines).
+  - **Extracted Auth Sub-Forms:** Extracted `DoctorLoginForm` and `ReceptionLoginForm` into `lib/widgets/auth/`, reducing `LoginScreen` from 418 lines down to 215 lines.
+  - **Extracted `ChamberQueueList`:** Extracted token sequence list and empty state from `DoctorChamberScreen` into `lib/widgets/chamber/chamber_queue_list.dart`.
+
+---
+
 ## [1.11.0] — 2026-10-11
 
 ### Added

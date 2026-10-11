@@ -273,24 +273,11 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
                       const SizedBox(height: 24),
                       ChamberQueueHeader(totalBooked: appointments.length),
                       const SizedBox(height: 12),
-                      if (appointments.isEmpty)
-                        const ChamberEmptyQueue()
-                      else
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: appointments.length,
-                          separatorBuilder: (ctx, i) =>
-                              const SizedBox(height: 8),
-                          itemBuilder: (ctx, index) {
-                            final appt = appointments[index];
-                            return ChamberTokenCard(
-                              appointment: appt,
-                              isCallingNow: appt.id == _activeCallingApptId,
-                              onConsult: () => _openConsultation(appt),
-                            );
-                          },
-                        ),
+                      ChamberQueueList(
+                        appointments: appointments,
+                        activeCallingApptId: _activeCallingApptId,
+                        onConsult: _openConsultation,
+                      ),
                     ],
                   ),
                 ),

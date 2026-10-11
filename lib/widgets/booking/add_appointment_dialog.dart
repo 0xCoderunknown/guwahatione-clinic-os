@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../core/engines/engines.dart';
-import '../models/appointment.dart';
-import '../models/doctor.dart';
-import '../models/patient_review_eligibility.dart';
-import '../providers/clinic_provider.dart';
-import '../utils/formatters.dart';
-import '../widgets/widgets.dart';
+import '../../core/engines/engines.dart';
+import '../../models/appointment.dart';
+import '../../models/doctor.dart';
+import '../../models/patient_review_eligibility.dart';
+import '../../providers/clinic_provider.dart';
+import '../../utils/formatters.dart';
+import 'booking_eligibility_banner.dart';
+import 'booking_patient_fields.dart';
+import 'booking_payment_section.dart';
 
 /// Modal dialog for receptionist to register patient walk-ins and book appointments.
 /// Features 100% keyboard-first navigation, provisional token preview, and same-day duplicate booking prevention.

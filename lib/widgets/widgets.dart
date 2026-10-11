@@ -1,5 +1,9 @@
 // Barrel export file for GuwahatiOne Clinic OS widgets.
+// Auth Widgets
+export 'auth/doctor_login_form.dart';
+export 'auth/reception_login_form.dart';
 // Booking Widgets
+export 'booking/add_appointment_dialog.dart';
 export 'booking/booking_eligibility_banner.dart';
 export 'booking/booking_patient_fields.dart';
 export 'booking/booking_payment_section.dart';
@@ -13,10 +17,13 @@ export 'chamber/chamber_app_bar.dart';
 export 'chamber/chamber_control_banner.dart';
 export 'chamber/chamber_metrics_grid.dart';
 export 'chamber/chamber_queue_header.dart';
+export 'chamber/chamber_queue_list.dart';
 export 'chamber/chamber_token_card.dart';
 export 'common/allergy_alert_banner.dart';
 export 'common/appointment_status_chip.dart';
 export 'common/clinic_date_nav_bar.dart';
+export 'common/doctor_form.dart';
+export 'common/doctor_roster_card.dart';
 export 'common/metric_kpi_card.dart';
 export 'common/payment_badge.dart';
 export 'common/section_card.dart';
@@ -26,6 +33,8 @@ export 'dashboard/dashboard_doctor_roster_card.dart';
 export 'dashboard/dashboard_header_bar.dart';
 export 'dashboard/dashboard_kpi_strip.dart';
 export 'dashboard/dashboard_queue_card.dart';
+export 'dashboard/doctor_daily_breakdown_table.dart';
+export 'dashboard/doctor_statistics_card.dart';
 // Clinical Encounter Widgets
 export 'encounter/advice_and_orders_section.dart';
 export 'encounter/chamber_calling_alert_bar.dart';

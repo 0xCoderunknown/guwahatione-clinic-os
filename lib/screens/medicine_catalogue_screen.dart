@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/engines/engines.dart';
 import '../models/medicine.dart';
 import '../models/user_role.dart';
 import '../providers/auth_provider.dart';
@@ -43,33 +44,15 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
     final clinic = Provider.of<ClinicProvider>(context);
     final auth = Provider.of<AuthProvider>(context);
     final isDesktop = MediaQuery.of(context).size.width >= 850;
-
-    final query = _searchController.text.trim().toLowerCase();
     final allMeds = clinic.medicines;
 
-    final filtered = allMeds.where((m) {
-      final matchesQuery =
-          query.isEmpty ||
-          m.productName.toLowerCase().contains(query) ||
-          m.composition.toLowerCase().contains(query) ||
-          m.strength.toLowerCase().contains(query);
+    final filtered = MedicineEngine.filterAndSortCatalogue(
+      catalog: allMeds,
+      query: _searchController.text,
+      formFilter: _selectedFormFilter,
+    );
 
-      final matchesForm =
-          _selectedFormFilter == 'All' || m.form == _selectedFormFilter;
-
-      return matchesQuery && matchesForm;
-    }).toList();
-
-    filtered.sort((a, b) {
-      final compCmp = a.composition.compareTo(b.composition);
-      if (compCmp != 0) return compCmp;
-      return a.productName.compareTo(b.productName);
-    });
-
-    final uniqueCompositions = allMeds
-        .map((m) => m.composition.trim().toLowerCase())
-        .toSet()
-        .length;
+    final uniqueCompositions = MedicineEngine.countUniqueMolecules(allMeds);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),

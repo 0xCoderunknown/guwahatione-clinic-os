@@ -403,4 +403,42 @@ abstract class MedicineEngine {
       stoppedMeds: stopped,
     );
   }
+
+  /// Filters and sorts catalogue medicines by search query and dosage form.
+  static List<Medicine> filterAndSortCatalogue({
+    required List<Medicine> catalog,
+    required String query,
+    String formFilter = 'All',
+  }) {
+    final cleanQuery = query.trim().toLowerCase();
+    final filtered = catalog.where((m) {
+      final matchesQuery = cleanQuery.isEmpty ||
+          m.productName.toLowerCase().contains(cleanQuery) ||
+          m.composition.toLowerCase().contains(cleanQuery) ||
+          m.strength.toLowerCase().contains(cleanQuery);
+
+      final matchesForm =
+          formFilter == 'All' || m.form.toLowerCase() == formFilter.toLowerCase();
+
+      return matchesQuery && matchesForm;
+    }).toList();
+
+    filtered.sort((a, b) {
+      final compCmp = a.composition.compareTo(b.composition);
+      if (compCmp != 0) return compCmp;
+      return a.productName.compareTo(b.productName);
+    });
+
+    return filtered;
+  }
+
+  /// Counts the total number of distinct chemical compositions/molecules in the catalogue.
+  static int countUniqueMolecules(List<Medicine> catalog) {
+    return catalog
+        .map((m) => m.composition.trim().toLowerCase())
+        .where((c) => c.isNotEmpty)
+        .toSet()
+        .length;
+  }
 }
+

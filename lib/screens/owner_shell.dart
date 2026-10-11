@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
-import 'add_appointment_dialog.dart';
+import '../widgets/widgets.dart';
 import 'appointment_list_screen.dart';
 import 'dashboard_screen.dart';
 import 'doctor_list_screen.dart';

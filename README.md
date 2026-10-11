@@ -248,11 +248,10 @@ lib/
 │   ├── patient_service.dart                 # Patient demographics & allergy directory queries
 │   └── firestore_paths.dart                 # Centralized type-safe collection & counter path builders
 ├── screens/
-│   ├── login_screen.dart                    # Role selector (Doctor Chamber vs Reception Desk)
+│   ├── login_screen.dart                    # Role selector shell (Doctor Chamber vs Reception Desk)
 │   ├── owner_shell.dart                     # Responsive shell (Desktop rail vs mobile bar)
 │   ├── dashboard_screen.dart                # Reception KPI overview cards & 1-tap "Call In"
 │   ├── appointment_list_screen.dart         # Live queue, absent marking, payment updates & "Call In"
-│   ├── add_appointment_dialog.dart          # Rapid booking with patient history search
 │   ├── doctor_chamber_screen.dart           # Real-time zero-touch chamber sync board & active token badge
 │   ├── consultation_encounter_screen.dart   # Lightweight (<300 lines) 5-step encounter coordinator scaffold
 │   ├── prescription_print_screen.dart       # High-contrast A4/A5 print preview with letterhead toggle
@@ -263,15 +262,21 @@ lib/
 │   └── statistics_screen.dart               # Financial audit & doctor payout summary
 ├── widgets/
 │   ├── widgets.dart                         # Central barrel export across all widget domains
+│   ├── auth/                                # Authentication form components
+│   │   ├── doctor_login_form.dart           # Doctor selector and chamber PIN keypad
+│   │   └── reception_login_form.dart        # Reception / Owner PIN authorization form
 │   ├── common/                              # Reusable atomic UI primitives
 │   │   ├── allergy_alert_banner.dart        # Reusable allergy banner with interactive add/remove
 │   │   ├── appointment_status_chip.dart     # Standardized appointment status chips
 │   │   ├── clinic_date_nav_bar.dart         # Standardized date navigation header
+│   │   ├── doctor_form.dart                 # Doctor profile, fee, PIN, and schedule form
+│   │   ├── doctor_roster_card.dart          # Doctor roster card with PIN badge & quick actions
 │   │   ├── metric_kpi_card.dart             # Unified vertical & horizontal KPI metrics tile
 │   │   ├── payment_badge.dart               # Visual payment type badges
 │   │   ├── section_card.dart                # Collapsible animated section cards with badges & actions
 │   │   └── token_badge.dart                 # Uniform token sequence badges
 │   ├── booking/                             # Reception appointment booking dialog components
+│   │   ├── add_appointment_dialog.dart      # Rapid booking modal with patient history search
 │   │   ├── booking_eligibility_banner.dart  # 14-day policy warning banner & static confirmation dialog
 │   │   ├── booking_patient_fields.dart      # Phone search, patient name, age, and gender fields
 │   │   └── booking_payment_section.dart     # Paid, Free Review, and Family courtesy payment radio section
@@ -282,6 +287,7 @@ lib/
 │   │   ├── chamber_control_banner.dart      # 2-way handshake control banner (Call Next, In-Consultation badge)
 │   │   ├── chamber_metrics_grid.dart        # Real-time KPI summary cards (Total, In Queue, Revenue)
 │   │   ├── chamber_queue_header.dart        # Section header for consultant queue
+│   │   ├── chamber_queue_list.dart          # Token sequence list with live calling state
 │   │   └── chamber_token_card.dart          # Token tile with status badge, override modal & consultation launcher
 │   ├── dashboard/                           # Command center reception dashboard components
 │   │   ├── dashboard_header_bar.dart        # Reception header bar with quick action chips
