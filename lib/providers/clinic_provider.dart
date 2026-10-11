@@ -129,6 +129,7 @@ class ClinicProvider with ChangeNotifier {
     List<String> days, {
     String pin = '1234',
     int consultationFee = 500,
+    String? medicalRegNumber,
   }) async {
     _setLoading(true);
     try {
@@ -141,6 +142,7 @@ class ClinicProvider with ChangeNotifier {
         blockedDates: [],
         pin: pin,
         consultationFee: consultationFee,
+        medicalRegNumber: medicalRegNumber,
       );
       await _firebaseService.addDoctor(newDoctor);
     } catch (e) {

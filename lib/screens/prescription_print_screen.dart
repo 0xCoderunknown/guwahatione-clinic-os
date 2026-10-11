@@ -21,6 +21,7 @@ class PrescriptionPrintScreen extends StatefulWidget {
   final Appointment? appointment;
   final List<String> patientAllergies;
   final String? doctorSpecialty;
+  final String? doctorRegNumber;
 
   const PrescriptionPrintScreen({
     super.key,
@@ -28,6 +29,7 @@ class PrescriptionPrintScreen extends StatefulWidget {
     this.appointment,
     this.patientAllergies = const [],
     this.doctorSpecialty,
+    this.doctorRegNumber,
   });
 
   @override
@@ -220,7 +222,10 @@ class _PrescriptionPrintScreenState extends State<PrescriptionPrintScreen> {
         const SizedBox(height: 14),
 
         // 4. Diagnostic Orders, Advice & Physician Signature Block
-        PrintOrdersAndFooter(consultation: c),
+        PrintOrdersAndFooter(
+          consultation: c,
+          doctorRegNumber: widget.doctorRegNumber,
+        ),
       ],
     );
   }

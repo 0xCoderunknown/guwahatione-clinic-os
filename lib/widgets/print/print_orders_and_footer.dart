@@ -6,8 +6,13 @@ import '../../utils/formatters.dart';
 /// Printable diagnostic orders, lifestyle notes, follow-up advice, and physician signature block.
 class PrintOrdersAndFooter extends StatelessWidget {
   final Consultation consultation;
+  final String? doctorRegNumber;
 
-  const PrintOrdersAndFooter({super.key, required this.consultation});
+  const PrintOrdersAndFooter({
+    super.key,
+    required this.consultation,
+    this.doctorRegNumber,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +122,19 @@ class PrintOrdersAndFooter extends StatelessWidget {
                     fontSize: 12,
                   ),
                 ),
+                if ((doctorRegNumber != null && doctorRegNumber!.trim().isNotEmpty) ||
+                    (consultation.doctorRegNumber != null &&
+                        consultation.doctorRegNumber!.trim().isNotEmpty)) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    'Reg. No: ${(doctorRegNumber != null && doctorRegNumber!.trim().isNotEmpty) ? doctorRegNumber!.trim() : consultation.doctorRegNumber!.trim()}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                ],
                 Text(
                   'Authorized Medical Consultant',
                   style: TextStyle(fontSize: 10, color: Colors.grey.shade700),

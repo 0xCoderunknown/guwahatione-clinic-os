@@ -132,6 +132,7 @@ class _ConsultationEncounterScreenState
           appointment: widget.appointment,
           patientAllergies: form.allergies,
           doctorSpecialty: widget.doctor.specialty,
+          doctorRegNumber: widget.doctor.medicalRegNumber,
         ),
       ),
     );
@@ -148,6 +149,7 @@ class _ConsultationEncounterScreenState
         patientName: widget.appointment.patientName,
         doctorId: widget.doctor.id,
         doctorName: widget.doctor.name,
+        doctorRegNumber: widget.doctor.medicalRegNumber,
       );
 
       await clinic.saveConsultation(consultation);

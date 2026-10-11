@@ -274,6 +274,7 @@ class EncounterFormState {
     required String patientName,
     required String doctorId,
     required String doctorName,
+    String? doctorRegNumber,
   }) {
     final vitals = buildVitals();
     return Consultation(
@@ -285,6 +286,7 @@ class EncounterFormState {
       patientGender: patientGender,
       doctorId: doctorId,
       doctorName: doctorName,
+      doctorRegNumber: doctorRegNumber,
       createdAt: DateTime.now(),
       vitals: vitals.hasAny ? vitals : null,
       chiefComplaints: List.from(chiefComplaints),

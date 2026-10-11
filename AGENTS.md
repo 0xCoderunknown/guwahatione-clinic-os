@@ -43,6 +43,16 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
    - **Suppression of Double AppBars on Embedded Desktop Screens:** When secondary screens (`AppointmentListScreen`, `DoctorListScreen`, `StatisticsScreen`, `MedicineCatalogueScreen`) are embedded in `OwnerShell` on desktop, their inner `AppBar` must be suppressed (`!isDesktop || Navigator.canPop(context)`), preventing stacked duplicate headers.
    - **Mobile (Pixel / iPhone 390–430px):** Must remain seamless edge-to-edge with bottom navigation bar, single top AppBar, and 2×2 metric KPI grid.
 
+6. **Mandatory Indian Date Format (`DD-MM-YYYY`):**
+   - **All dates displayed in UI, printed prescriptions, reports, changelogs (`CHANGELOG.md`, `docs/archive/CHANGELOG_ARCHIVE.md`), and markdown documentation MUST strictly use Indian numerical date formatting (`DD-MM-YYYY` or `DD-MM-YY`).**
+   - Never use `YYYY-MM-DD` or `MM/DD/YYYY` in human-facing text, changelogs, release notes, or markdown documentation.
+   - Internal database storage and query tokens continue to use standard Firestore `Timestamp` or ISO-8601 strings, but any date presented to humans, doctors, patients, receptionists, or written in markdown files must strictly be formatted as `DD-MM-YYYY`.
+
+7. **Doctor-Paced Chamber Handshake Protocol (Zero Forced Admission):**
+   - The chamber real-time sync channel (`counters/chamber_{doctorId}_{yyyy-MM-dd}`) follows a strict 5-state lifecycle: `idle` ➔ `ready_for_next` ➔ `calling` ➔ `in_consultation` ➔ `consultation_ended`.
+   - When a physician completes an encounter, the session enters `consultation_ended` (Breather).
+   - Reception cannot force a patient into the chamber during a consultation or breather without explicit doctor readiness (`ready_for_next`), preventing physician burn-out and consultation collisions.
+
 ---
 
 ## 🏗️ 2. Architectural & Technical Stack Rules
@@ -54,7 +64,7 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
 | **State Management** | **Provider** (`ChangeNotifierProvider`) | **Strictly Provider only.** Do NOT introduce Riverpod, Bloc, MobX, GetX, or ad-hoc global state. |
 | **Backend & DB** | Cloud Firestore | Follow [SCHEMA_AND_MODELS.md](docs/SCHEMA_AND_MODELS.md). Never invent arbitrary field names. |
 | **Idempotency** | Deterministic IDs (`med_*`, `counters/*`) | Default OPD medicines must use canonical IDs. Queue counters use daily atomic keys. |
-| **Auth & Security** | Role-based PINs | Reception PIN (`0000`), Doctor PIN (4 digits). Never bypass role guards. |
+| **Auth & Security** | 3-Tier Role Guarding | Clinic Owner PIN (6 digits, master admin/fees), Doctor PIN (4 digits, chamber operations), Reception PIN (`0000`, counter booking/queue). Never bypass role guards. |
 | **Printing** | `platform_print.dart` | High-contrast monochrome A4/A5 letterhead printing via web `dart:js_interop` & desktop stubs. |
 
 ---
@@ -91,12 +101,13 @@ You are being managed by a strict Product Manager. Follow this exact workflow:
 └── recipes/      -> Change checklists (add_clinical_field.md, modify_booking_rule.md)
 lib/
 ├── core/         -> Pure domain engines (revenue_engine, appointment_engine, medicine_engine)
-├── models/       -> Pure data models & serialization (Appointment, Consultation, Patient, Doctor, Medicine, Vitals)
+├── models/       -> Pure data models (Appointment, Consultation, Patient, Doctor, Medicine, Vitals, ChamberSession, UserRole)
 ├── providers/    -> App state (AuthProvider for PIN sessions, ClinicProvider for live streams)
 ├── services/     -> Modular Firestore service layer (FirestorePaths, booking, consultation, chamber, catalogue, doctor, patient)
 ├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
-├── widgets/      -> Reusable UI sub-packages (common, booking, queue, chamber, dashboard, encounter, print)
-└── utils/        -> Helpers (Default medicines, constants, platform print, formatters)
+├── widgets/      -> Reusable UI sub-packages (auth, booking, catalogue, chamber, common, dashboard, encounter, print, queue)
+└── utils/        -> Helpers (Default medicines, app constants, platform print, formatters)
+test/             -> Automated test suite (80+ unit and widget tests covering engines, flows, and models)
 docs/
 ├── SCHEMA_AND_MODELS.md  -> Master data dictionary for Firestore collections & models
 ├── PRODUCT_VISION_AND_WORKFLOW.md -> Clinical encounter blueprint & real-world OPD intent
@@ -113,3 +124,6 @@ docs/
 - ❌ **Hardcoding doctor fees or bypassing 14-day free review logic.**
 - ❌ **Putting financial math, review eligibility calculations, or pharmacological defaults directly inside UI widget `build()` methods.**
 - ❌ **Breaking responsive layout or introducing max-width bottlenecks** (e.g. hard-capping desktop screens at 1400px leaving large side margins, wasting vertical space with duplicate headers on 1366x768 laptops, or introducing stacked duplicate AppBars inside `OwnerShell`).
+- ❌ **Using non-Indian date formats (e.g. `YYYY-MM-DD` or `MM/DD/YYYY`) in UI, printed prescriptions, changelogs, release notes, or any markdown documentation.** (Must strictly use `DD-MM-YYYY` or `DD-MM-YY`).
+- ❌ **Bypassing 3-tier role authorization or exposing owner settings (doctor CRUD, fee configuration) to reception or chamber PIN sessions.**
+- ❌ **Forcing patient chamber admission during an active consultation or doctor breather (`consultation_ended`) without explicit `ready_for_next` handshake.**

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/core/engines/engines.dart';
 import 'package:appointment_app/models/appointment.dart';
+import 'package:appointment_app/models/doctor.dart';
 
 void main() {
   group('AppointmentEngine - Dynamic Estimated Consultation Window Tests', () {
@@ -261,6 +262,229 @@ void main() {
         ),
         0,
       );
+    });
+  });
+
+  group('AppointmentEngine - Duplicate Booking Prevention Tests', () {
+    final targetDate = DateTime(2026, 10, 15, 11, 0);
+
+    final existingAppts = [
+      Appointment(
+        id: 'appt_1',
+        patientPhone: '9876543210',
+        patientName: 'Ramesh Das',
+        doctorId: 'doc_1',
+        doctorName: 'Dr. Baruah',
+        scheduledDate: DateTime(2026, 10, 15, 10, 0),
+        amountCollected: 500,
+        paymentType: PaymentType.paid,
+        status: AppointmentStatus.pending,
+        queueNumber: 1,
+      ),
+      Appointment(
+        id: 'appt_2',
+        patientPhone: '9876543210',
+        patientName: 'Anita Das', // Family member sharing same phone
+        doctorId: 'doc_1',
+        doctorName: 'Dr. Baruah',
+        scheduledDate: DateTime(2026, 10, 15, 10, 15),
+        amountCollected: 500,
+        paymentType: PaymentType.paid,
+        status: AppointmentStatus.pending,
+        queueNumber: 2,
+      ),
+      Appointment(
+        id: 'appt_3',
+        patientPhone: '9998887776',
+        patientName: 'Suresh Kalita',
+        doctorId: 'doc_1',
+        doctorName: 'Dr. Baruah',
+        scheduledDate: DateTime(2026, 10, 15, 10, 30),
+        amountCollected: 0,
+        paymentType: PaymentType.paid,
+        status: AppointmentStatus.absent, // Absent slot
+        queueNumber: 3,
+      ),
+    ];
+
+    test('findDuplicateBooking detects exact same patient on same date and doctor', () {
+      final duplicate = AppointmentEngine.findDuplicateBooking(
+        appointments: existingAppts,
+        doctorId: 'doc_1',
+        patientName: '  ramesh das  ', // case & whitespace insensitive
+        patientPhone: '9876543210',
+        targetDate: targetDate,
+      );
+
+      expect(duplicate, isNotNull);
+      expect(duplicate?.id, 'appt_1');
+    });
+
+    test('Family member sharing same phone number is NOT blocked as duplicate', () {
+      final duplicate = AppointmentEngine.findDuplicateBooking(
+        appointments: existingAppts,
+        doctorId: 'doc_1',
+        patientName: 'Baby of Ramesh Das',
+        patientPhone: '9876543210',
+        targetDate: targetDate,
+      );
+
+      expect(duplicate, isNull);
+    });
+
+    test('Absent appointment slot does NOT block re-booking on same date', () {
+      final duplicate = AppointmentEngine.findDuplicateBooking(
+        appointments: existingAppts,
+        doctorId: 'doc_1',
+        patientName: 'Suresh Kalita',
+        patientPhone: '9998887776',
+        targetDate: targetDate,
+      );
+
+      expect(duplicate, isNull);
+    });
+
+    test('Different doctor on same date is NOT blocked as duplicate', () {
+      final duplicate = AppointmentEngine.findDuplicateBooking(
+        appointments: existingAppts,
+        doctorId: 'doc_2',
+        patientName: 'Ramesh Das',
+        patientPhone: '9876543210',
+        targetDate: targetDate,
+      );
+
+      expect(duplicate, isNull);
+    });
+  });
+
+  group('AppointmentEngine - Fee Resolution & Queue Partition Tests', () {
+    final mockDoc = Doctor(
+      id: 'doc_1',
+      name: 'Dr. Baruah',
+      specialty: 'Medicine',
+      phone: '9876543210',
+      availableDays: ['Mon'],
+      blockedDates: [],
+      consultationFee: 700,
+    );
+
+    test('resolveConsultationFee resolves zero for free reviews and family courtesy', () {
+      expect(
+        AppointmentEngine.resolveConsultationFee(
+          doctor: mockDoc,
+          paymentType: PaymentType.freeReview,
+        ),
+        0,
+      );
+      expect(
+        AppointmentEngine.resolveConsultationFee(
+          doctor: mockDoc,
+          paymentType: PaymentType.freeFamily,
+        ),
+        0,
+      );
+    });
+
+    test('resolveConsultationFee resolves doctor fee for paid visits', () {
+      expect(
+        AppointmentEngine.resolveConsultationFee(
+          doctor: mockDoc,
+          paymentType: PaymentType.paid,
+        ),
+        700,
+      );
+      expect(
+        AppointmentEngine.resolveConsultationFee(
+          doctor: null,
+          paymentType: PaymentType.paid,
+        ),
+        500, // Default constant
+      );
+    });
+
+    test('partitionQueue segments into pending, completed, and absent', () {
+      final appts = [
+        Appointment(
+          id: '1',
+          patientPhone: '111',
+          patientName: 'A',
+          doctorId: 'doc_1',
+          doctorName: 'Dr. B',
+          scheduledDate: DateTime.now(),
+          amountCollected: 500,
+          paymentType: PaymentType.paid,
+          status: AppointmentStatus.pending,
+          queueNumber: 1,
+        ),
+        Appointment(
+          id: '2',
+          patientPhone: '222',
+          patientName: 'B',
+          doctorId: 'doc_1',
+          doctorName: 'Dr. B',
+          scheduledDate: DateTime.now(),
+          amountCollected: 500,
+          paymentType: PaymentType.paid,
+          status: AppointmentStatus.completed,
+          queueNumber: 2,
+        ),
+        Appointment(
+          id: '3',
+          patientPhone: '333',
+          patientName: 'C',
+          doctorId: 'doc_1',
+          doctorName: 'Dr. B',
+          scheduledDate: DateTime.now(),
+          amountCollected: 0,
+          paymentType: PaymentType.paid,
+          status: AppointmentStatus.absent,
+          queueNumber: 3,
+        ),
+      ];
+
+      final partition = AppointmentEngine.partitionQueue(appts);
+      expect(partition.pending.length, 1);
+      expect(partition.completed.length, 1);
+      expect(partition.absent.length, 1);
+      expect(partition.total, 3);
+    });
+
+    test('calculateProvisionalNextToken increments highest queue number for doctor on date', () {
+      final today = DateTime(2026, 10, 11);
+      final appts = [
+        Appointment(
+          id: '1',
+          patientPhone: '111',
+          patientName: 'A',
+          doctorId: 'doc_1',
+          doctorName: 'Dr. B',
+          scheduledDate: DateTime(2026, 10, 11, 10, 0),
+          amountCollected: 500,
+          paymentType: PaymentType.paid,
+          status: AppointmentStatus.pending,
+          queueNumber: 4,
+        ),
+        Appointment(
+          id: '2',
+          patientPhone: '222',
+          patientName: 'B',
+          doctorId: 'doc_1',
+          doctorName: 'Dr. B',
+          scheduledDate: DateTime(2026, 10, 11, 11, 0),
+          amountCollected: 500,
+          paymentType: PaymentType.paid,
+          status: AppointmentStatus.pending,
+          queueNumber: 7,
+        ),
+      ];
+
+      final next = AppointmentEngine.calculateProvisionalNextToken(
+        appointments: appts,
+        doctorId: 'doc_1',
+        targetDate: today,
+      );
+
+      expect(next, 8);
     });
   });
 }

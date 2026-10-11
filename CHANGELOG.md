@@ -7,18 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.13.0] — 2026-10-11
+## [1.14.0] — 11-10-2026
 
-### Architecture & Domain Engine Purification
+### Added
+- **Doctor Medical Council Registration Number & Printout Signature Block (`P5`):**
+  - **Schema & Model Expansion:** Added optional `medicalRegNumber` to `Doctor` and immutable `doctorRegNumber` snapshot to `Consultation` models compliant with Indian medical-legal standards.
+  - **Doctor Registration & Edit Form:** Added Medical Council Registration Number input field (`lib/widgets/common/doctor_form.dart`) allowing clinic owners to configure credentials (e.g., `AMC-24891`, `NMC-10293`).
+  - **Roster Card Badge:** Added verified registration badge (`📋 Reg: {medicalRegNumber}`) on `DoctorRosterCard`.
+  - **Official Prescription Footer (`PrintOrdersAndFooter`):** Renders official doctor registration number directly under doctor name on both A4 and A5 printable sheets with automatic fallback to historical consultation record.
+  - **Seamless Encounter Passing:** Enriched `buildConsultation` and `_navigateToPrint` in `ConsultationEncounterScreen` to pass and snapshot the physician's registration number atomically.
+- **Pure Domain Engine Test Fortification (100% Engine Coverage):**
+  - **`RevenueEngine` Unit Test Suite (`test/revenue_engine_test.dart`):** Dedicated tests covering realized revenue calculation (strict exclusion of pending and absent appointments), doctor total fees, daily reception metrics, chamber KPIs, and multi-doctor analytics summaries.
+  - **`AppointmentEngine` Test Expansion (`test/appointment_engine_estimated_time_test.dart`):** Comprehensive unit tests for duplicate booking detection (`findDuplicateBooking` composite key matching targetDate + doctorId + normalized name + phone, family member exception preservation, absent slot rebooking), fee resolution across all payment policies, and provisional queue token calculations.
+  - **`MedicineEngine` Defaults Test Suite (`test/medicine_engine_defaults_test.dart`):** Unit tests covering pharmacological OPD defaults (fasting PPIs, morning antihypertensives, bedtime statins, course-length antibiotics, SOS antipyretics, non-tablet forms), prescription reconciliation segregation, and master catalogue filtering and unique molecule tallying.
+- **Automated Test Suite Expansion:**
+  - Expanded test suite from 54 to **81 automated tests** executing in sub-3 seconds with zero failures and zero warnings in `flutter analyze`.
+
+---
+
+## [1.13.0] — 11-10-2026
+
+### Changed
 - **Purified Firebase Layer & Gateway Abstraction:**
-  - **Zero Firestore SDK Leaks:** Completely eliminated `DocumentSnapshot` and `cloud_firestore` imports from all screens (`appointment_list_screen.dart`, `doctor_chamber_screen.dart`, `consultation_encounter_screen.dart`) and widgets.
-  - **Introduced `ChamberSession` Domain Model:** Created strongly typed, pure Dart domain model `lib/models/chamber_session.dart` with status properties and typed boolean getters (`isReadyForNext`, `isCalling`, `isInConsultation`, `isConsultationEnded`, `isIdle`, `hasActivePatient`).
-  - **Chamber Stream Mapping:** Updated `ChamberService` and `FirebaseService` facade to map raw Firestore snapshots into typed `Stream<ChamberSession>` before dispatching to state providers and UI.
-  - **Provider Cleanup:** Purged `cloud_firestore` import from `ClinicProvider` and added convenience helper `getDoctorById(doctorId)`.
+  - Completely eliminated `DocumentSnapshot` and `cloud_firestore` imports from all screens (`appointment_list_screen.dart`, `doctor_chamber_screen.dart`, `consultation_encounter_screen.dart`) and widgets.
+  - Updated `ChamberService` and `FirebaseService` facade to map raw Firestore snapshots into typed `Stream<ChamberSession>` before dispatching to state providers and UI.
+  - Purged `cloud_firestore` import from `ClinicProvider` and added convenience helper `getDoctorById(doctorId)`.
 - **UI & Widget Purification (Engine Delegation):**
-  - **Appointment Count Delegation:** Replaced raw `.where((a) => a.doctorId == doc.id).length` loops in `DashboardDoctorRosterCard` and `DashboardTodayQueueCard` with `AppointmentEngine.countDoctorAppointments`.
-  - **Prescription Segregation Delegation:** Replaced raw `.where` filtering in `RxReconciliationSection` with pure domain method `MedicineEngine.segregatePrescriptions`.
-  - **StreamBuilder Type Safety:** Typed all chamber stream builders across presentation widgets (`StreamBuilder<ChamberSession>`) with boolean getters replacing ad-hoc string comparisons.
+  - Replaced raw `.where((a) => a.doctorId == doc.id).length` loops in `DashboardDoctorRosterCard` and `DashboardTodayQueueCard` with `AppointmentEngine.countDoctorAppointments`.
+  - Replaced raw `.where` filtering in `RxReconciliationSection` with pure domain method `MedicineEngine.segregatePrescriptions`.
+  - Typed all chamber stream builders across presentation widgets (`StreamBuilder<ChamberSession>`) with boolean getters replacing ad-hoc string comparisons.
+
+### Added
+- **Introduced `ChamberSession` Domain Model:** Created strongly typed, pure Dart domain model `lib/models/chamber_session.dart` with status properties and typed boolean getters (`isReadyForNext`, `isCalling`, `isInConsultation`, `isConsultationEnded`, `isIdle`, `hasActivePatient`).
 - **Automated Test Suite Expansion:**
   - Added unit test suites for `ChamberSession` deserialization, default states, and typed status flags.
   - Added unit test suite for `AppointmentEngine.countDoctorAppointments`.
@@ -26,13 +46,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.12.0] — 2026-10-11
+## [1.12.0] — 11-10-2026
 
-### Architecture & Refactoring
+### Changed
 - **Screen Coordinator Scaffold Standardization Across All Screens:**
   - Migrated all screens in `lib/screens/` to strict **Thin Coordinator Scaffolds** (orchestrating only layout bounds, responsive breakpoints, lifecycles, and navigation triggers).
   - **Relocated `AddAppointmentDialog`:** Moved from `lib/screens/` to `lib/widgets/booking/add_appointment_dialog.dart` and re-exported in `lib/widgets/widgets.dart`.
   - **Catalogue Engine Delegation:** Stripped in-memory filtering and sorting calculations out of `MedicineCatalogueScreen`, delegating to pure domain methods `MedicineEngine.filterAndSortCatalogue` and `MedicineEngine.countUniqueMolecules`.
+
+### Added
+- **Sub-Component Extractions:**
   - **Extracted `DoctorStatisticsCard`:** Extracted doctor stats cards and KPI metrics from `StatisticsScreen` into `lib/widgets/dashboard/doctor_statistics_card.dart` (reducing `StatisticsScreen` to 98 lines).
   - **Extracted `DoctorRosterCard`:** Extracted doctor profile cards, PIN badges, and action buttons from `DoctorListScreen` into `lib/widgets/common/doctor_roster_card.dart` (reducing `DoctorListScreen` to 85 lines).
   - **Extracted `DoctorDailyBreakdownTable`:** Extracted breakdown tables and fee footers from `DoctorDailyDetailsScreen` into `lib/widgets/dashboard/doctor_daily_breakdown_table.dart` (reducing `DoctorDailyDetailsScreen` to 38 lines).
@@ -42,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.11.0] — 2026-10-11
+## [1.11.0] — 11-10-2026
 
 ### Added
 - **Keyboard-First Walk-In Registration Modal (`AddAppointmentDialog`):**
@@ -73,7 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.10.0] — 2026-10-10
+## [1.10.0] — 10-10-2026
 
 ### Added
 - **Agile Reception Queue & Discretionary Chamber Dispatch:**
@@ -89,87 +112,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.9.0] — 2026-10-10
-
-### Added
-- **Doctor-Reception 2-Way Chamber Handshake Protocol:**
-  - **Synchronized Pacing & The Breather:** When a physician clicks **"CONSULTATION END (Save & Sign)"**, the chamber session atomically transitions to `consultation_ended`. Reception immediately sees the doctor is wrapping up / taking a breather.
-  - **Doctor Readiness Trigger:** Prominent, single-click **"NEXT PATIENT"** banner (`ChamberControlBanner`) enabling doctors to signal `ready_for_next` at their own pace.
-  - **Reception Physical Presence Verification:** Reception desk visually alerts with 🟢 `READY FOR NEXT`. Reception verifies physical presence at the counter, skips absent tokens, and admits verified patients into the chamber (`calling`).
-  - **Zero-Confusion Auto-File Load:** Admitting a patient pushes their exact clinical chart to the doctor's chamber screen with zero risk of loading a skipped patient's record.
-  - **Reception Breather Speed Bump:** Added confirmation dialog in `DashboardTodayQueueCard` and `AppointmentAccordion` preventing accidental patient admission while the doctor is on break.
-  - **Doctor Emergency Safety Valve:** Added manual direct-admission override dialog in `ChamberTokenCard` allowing physicians to admit patients directly if the reception desk is offline or unresponsive.
-- **Indian Date Format Standardization (DD-MM-YYYY / DD-MM-YY):**
-  - Centralized all date representations across the app to Indian standard numerical formatting (`dd-MM-yyyy`, `dd-MM-yy`, and `EEEE, dd-MM-yyyy`) via `AppFormatters`.
-  - Standardized booking dialogs, print headers, print follow-up dates, daily detail headers, and accordion cards to use `AppFormatters`.
-
-### Changed
-- Replaced direct `DateFormat` invocations across print previews, accordions, and booking dialogs with centralized `AppFormatters`.
-- Bumped project version to `1.9.0+12`.
-
-## [1.8.3] — 2026-10-09
-
-### Fixed
-- **Documentation & Repo Hygiene:** Corrected clone repository URL in `README.md` to point to `guwahatione-clinic-os`.
-- **Testing Documentation:** Replaced obsolete test prohibition notices in `README.md` and `CONTRIBUTING.md` with active automated test guidance (35/35 passing domain & widget tests) and CI verification steps.
-- **Project Structure Tree:** Updated `README.md` services directory breakdown to include all modular sub-services in `lib/services/`.
-- **CI Build Pipeline:** Injected mock Firebase options template (`lib/firebase_options.dart.example`) prior to analyzer execution in GitHub Actions CI workflow, resolving failure caused by gitignored secret configuration in clean clones.
-
-## [1.8.2] — 2026-10-09
-
-### Added
-- **Modular Sub-Service Decomposition (`lib/services/`):**
-  - `FirestorePaths`: Centralized type-safe path, date key, and counter key builders.
-  - `BookingService`: Dedicated service for atomic bookings, queue allocations, and appointment queries.
-  - `ConsultationService`: Dedicated service for append-only encounters and longitudinal timelines.
-  - `ChamberService`: Zero-touch chamber calling broadcast and session lifecycle management.
-  - `CatalogueService`: Master medicine catalogue curation, deterministic seeds, deduplication, and search.
-  - `DoctorService` & `PatientService`: Targeted services for doctor roster and patient demographics.
-- **AI Operational Recipes (`.agents/recipes/`):**
-  - `add_clinical_field.md`: Standardized checklist for clinical encounter field additions.
-  - `modify_booking_rule.md`: Standardized checklist for booking and queue policy modifications.
-- **Fast Domain Automated Testing Re-Enabled:**
-  - Removed test skip annotations; enabled sub-second suite execution (35/35 tests passing).
-  - Added automated test execution step to GitHub Actions CI workflow.
-  - Enabled `unawaited_futures` rule in `analysis_options.yaml`.
-
-### Changed
-- Refactored `FirebaseService` into a lightweight, backward-compatible facade delegating to modular services.
-- Archived pre-1.8 release notes to `docs/archive/CHANGELOG_ARCHIVE.md` to optimize context token footprint.
-
-## [1.8.1] — 2026-10-09
-
-### Fixed
-- Queue counters now follow the documented per-doctor, per-day key and `currentNumber` field.
-- Saved doctor sessions wait for the initial doctor list before validation.
-- Patient `lastVisitDate` now reflects completed consultations rather than scheduled bookings, and booking preserves existing patient fields.
-- Queue allocation, appointment creation, and patient demographic upsert now commit atomically.
-- Updated AI maintenance guidance and added CI dependency-resolution and analyzer checks.
-
-## [1.8.0] — 2026-10-07
-
-### Added
-- **Core Domain Engine Architecture (`lib/core/engines/`):**
-  - **`RevenueEngine` (`lib/core/engines/revenue_engine.dart`):** Pure Dart financial engine calculating realized revenue (completed visits strictly), chamber KPIs, doctor fee shares, and owner analytics summaries.
-  - **`AppointmentEngine` (`lib/core/engines/appointment_engine.dart`):** Single source of truth for 14-day same-doctor free review eligibility, consultation fee resolution, and queue status partitioning (`pending`, `completed`, `absent`).
-  - **`MedicineEngine` (`lib/core/engines/medicine_engine.dart`):** Unified multi-mode search scoring, clinical default OPD regimens (form dosages, fasting PPIs, bedtime statins, course durations), and prescription reconciliation segregation.
-  - **`engines.dart`:** Central barrel export for domain engines.
-- **Unified UI Component Consolidation (`lib/widgets/common/`):**
-  - **`MetricKpiCard` (`lib/widgets/common/metric_kpi_card.dart`):** Unified metric card supporting both vertical (`MetricCardLayout.vertical`) and horizontal (`MetricCardLayout.horizontal`) responsive layouts.
-  - Re-exported `MetricKpiCard` in `lib/widgets/widgets.dart`.
-
-### Changed
-- **Decoupled Math from UI Presentation:**
-  - `ClinicProvider`: Rewired `dailyRevenue`, `checkReviewEligibility`, and `calculatePaymentType` to use `RevenueEngine` and `AppointmentEngine`.
-  - `ChamberMetricsGrid`: Replaced 6 manual `.where()` and `.fold()` passes with a single call to `RevenueEngine.calculateChamberKpis`; delegated `ChamberMetricTile` to `MetricKpiCard`.
-  - `DoctorDailyDetailsScreen`: Stripped inline `.fold()` in `build()` method; rewired to `RevenueEngine.calculateRealizedRevenue`.
-  - `StatisticsScreen`: Stripped inline stats calculations in `_buildDoctorCard`; rewired to `RevenueEngine.calculateDoctorAnalytics`. Replaced custom date header with `ClinicDateNavBar`.
-  - `DashboardKpiStrip`: Replaced inline `.where()` in `build()` with `RevenueEngine.calculateDailyMetrics`; delegated `DashboardMetricCard` to `MetricKpiCard`.
-  - `AddAppointmentDialog`: Replaced inline fee ternary calculations with `AppointmentEngine.resolveConsultationFee` and eligibility checks with `AppointmentEngine.evaluateReviewEligibility`.
-  - `AppointmentAccordion`: Dynamically resolves consultation fees using doctor configuration via `AppointmentEngine.resolveConsultationFee`.
-  - `AppointmentListScreen`: Replaced custom date row with unified `ClinicDateNavBar`.
-
----
-
 > **Historical Release Notes:**  
-> For changes in versions v1.0.0 through v1.7.0, see [`docs/archive/CHANGELOG_ARCHIVE.md`](docs/archive/CHANGELOG_ARCHIVE.md).
+> For changes in versions v1.0.0 through v1.9.0, see [`docs/archive/CHANGELOG_ARCHIVE.md`](docs/archive/CHANGELOG_ARCHIVE.md).

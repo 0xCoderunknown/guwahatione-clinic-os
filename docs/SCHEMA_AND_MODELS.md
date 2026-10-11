@@ -51,6 +51,7 @@
 | `pin` | `String` | Yes | 4-digit numeric PIN for chamber access (default: `'1234'`). |
 | `consultationFee` | `int` | Yes | Consultation fee in INR (e.g. `500`). |
 | `searchPreference` | `String` | No | Drug search mode: `'brandFirst'` or `'compositionFirst'` (default: `'brandFirst'`). |
+| `medicalRegNumber` | `String?` | No | State Medical Council / NMC registration number (e.g. `'AMC-24891'`). |
 
 ---
 
@@ -120,6 +121,7 @@
 | `patientGender` | `String` | Patient gender. |
 | `doctorId` | `String` | Prescribing doctor ID. |
 | `doctorName` | `String` | Prescribing doctor name. |
+| `doctorRegNumber` | `String?` | Medical Council registration number at time of consultation. |
 | `createdAt` | `Timestamp` | Time consultation took place. |
 | `vitals` | `Map` (Vitals) | Nested vitals map (see Vitals structure below). |
 | `chiefComplaints` | `List<String>` | List of presenting symptoms/complaints. |

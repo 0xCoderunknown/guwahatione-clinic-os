@@ -99,6 +99,40 @@ class DoctorRosterCard extends StatelessWidget {
                             ],
                           ),
                         ),
+                      if (doctor.medicalRegNumber != null &&
+                          doctor.medicalRegNumber!.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.teal.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: Colors.teal.shade200,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.verified_user_outlined,
+                                size: 12,
+                                color: Colors.teal.shade700,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Reg: ${doctor.medicalRegNumber}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.teal.shade900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       Text(
                         doctor.availableDays.join(', '),
                         style: TextStyle(

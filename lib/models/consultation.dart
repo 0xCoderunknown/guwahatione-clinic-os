@@ -16,6 +16,7 @@ class Consultation {
   final String patientGender;
   final String doctorId;
   final String doctorName;
+  final String? doctorRegNumber;
   final DateTime createdAt;
 
   // Step 2: Vitals & Clinical Examination
@@ -44,6 +45,7 @@ class Consultation {
     required this.patientGender,
     required this.doctorId,
     required this.doctorName,
+    this.doctorRegNumber,
     required this.createdAt,
     this.vitals,
     this.chiefComplaints = const [],
@@ -85,6 +87,7 @@ class Consultation {
       'patientGender': patientGender,
       'doctorId': doctorId,
       'doctorName': doctorName,
+      'doctorRegNumber': doctorRegNumber,
       'createdAt': Timestamp.fromDate(createdAt),
       'vitals': vitals?.toJson(),
       'chiefComplaints': chiefComplaints,
@@ -134,6 +137,7 @@ class Consultation {
       patientGender: json['patientGender'] as String? ?? 'Unspecified',
       doctorId: json['doctorId'] as String? ?? '',
       doctorName: json['doctorName'] as String? ?? '',
+      doctorRegNumber: json['doctorRegNumber'] as String?,
       createdAt: parsedCreatedAt,
       vitals: json['vitals'] != null
           ? Vitals.fromJson(Map<String, dynamic>.from(json['vitals'] as Map))
@@ -189,6 +193,7 @@ class Consultation {
     String? patientGender,
     String? doctorId,
     String? doctorName,
+    String? doctorRegNumber,
     DateTime? createdAt,
     Vitals? vitals,
     List<String>? chiefComplaints,
@@ -209,6 +214,7 @@ class Consultation {
       patientGender: patientGender ?? this.patientGender,
       doctorId: doctorId ?? this.doctorId,
       doctorName: doctorName ?? this.doctorName,
+      doctorRegNumber: doctorRegNumber ?? this.doctorRegNumber,
       createdAt: createdAt ?? this.createdAt,
       vitals: vitals ?? this.vitals,
       chiefComplaints: chiefComplaints ?? this.chiefComplaints,

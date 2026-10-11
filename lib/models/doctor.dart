@@ -8,6 +8,7 @@ class Doctor {
   final String pin; // 4-digit PIN for chamber access
   final int consultationFee; // Default consultation fee in INR
   final String searchPreference; // 'brandFirst' | 'compositionFirst'
+  final String? medicalRegNumber; // State Medical Council / NMC Reg No. (e.g. 'AMC-24891')
 
   Doctor({
     required this.id,
@@ -19,6 +20,7 @@ class Doctor {
     this.pin = '1234',
     this.consultationFee = 500,
     this.searchPreference = 'brandFirst',
+    this.medicalRegNumber,
   });
 
   Map<String, dynamic> toJson() {
@@ -32,6 +34,7 @@ class Doctor {
       'pin': pin,
       'consultationFee': consultationFee,
       'searchPreference': searchPreference,
+      'medicalRegNumber': medicalRegNumber,
     };
   }
 
@@ -50,6 +53,7 @@ class Doctor {
       pin: json['pin'] as String? ?? '1234',
       consultationFee: (json['consultationFee'] as num?)?.toInt() ?? 500,
       searchPreference: json['searchPreference'] as String? ?? 'brandFirst',
+      medicalRegNumber: json['medicalRegNumber'] as String?,
     );
   }
 
@@ -63,6 +67,7 @@ class Doctor {
     String? pin,
     int? consultationFee,
     String? searchPreference,
+    String? medicalRegNumber,
   }) {
     return Doctor(
       id: id ?? this.id,
@@ -74,6 +79,7 @@ class Doctor {
       pin: pin ?? this.pin,
       consultationFee: consultationFee ?? this.consultationFee,
       searchPreference: searchPreference ?? this.searchPreference,
+      medicalRegNumber: medicalRegNumber ?? this.medicalRegNumber,
     );
   }
 }

@@ -198,6 +198,7 @@ void main() {
             consultation: consultation,
             patientAllergies: const ['Penicillin'],
             doctorSpecialty: 'Cardiologist',
+            doctorRegNumber: 'AMC-24891',
           ),
         ),
       );
@@ -219,7 +220,10 @@ void main() {
       // 4. Verify Digital Header is present initially
       expect(find.text('GUWAHATIONE CLINIC & DIAGNOSTICS'), findsOneWidget);
 
-      // 5. Toggle Pre-printed Letterhead Mode ON
+      // 5. Verify Doctor Registration Number in Footer
+      expect(find.text('Reg. No: AMC-24891'), findsOneWidget);
+
+      // 6. Toggle Pre-printed Letterhead Mode ON
       final switchFinder = find.byType(Switch);
       expect(switchFinder, findsOneWidget);
       await tester.tap(switchFinder);

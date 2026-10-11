@@ -41,16 +41,17 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 | **Master Medicine Catalogue** | Chemical composition search scorer, OPD essential formulary, owner-only deduplication engine. | 🟢 Verified & Live |
 | **Prescription Printing** | Monochrome clean layout, A4 & A5 support, pre-printed clinic letterhead margin toggle, browser print via `dart:js_interop`. | 🟢 Verified & Live |
 | **Doctor Chamber Queue** | Real-time consultant token stream, doctor fee summary, patient history review. | 🟢 Verified & Live |
+| **Doctor Medical Reg & Print Footer (`P5`)** | Medical council registration number (`medicalRegNumber` / `doctorRegNumber`) in doctor profile, roster card badge, and official prescription signature footer block. | 🟢 Shipped & Verified (`v1.14.0`) |
+| **Domain Engine Test Fortification** | 100% unit test coverage across pure domain engines (`RevenueEngine`, `AppointmentEngine`, `MedicineEngine`) with 81 automated tests. | 🟢 Shipped & Verified (`v1.14.0`) |
 
 ---
 
 ## 🎯 3. Active Priority Backlog (Next Horizon)
 
-The primary clinical friction points (P1–P4) have been shipped in **v1.5.0**. The active roadmap now advances to secondary operational utilities:
+The primary clinical friction points (P1–P5) have been shipped. The active roadmap now advances to counter operational utilities:
 
 | Priority | Feature / Module | Problem Solved | Acceptance Criteria |
 |---|---|---|---|
-| **P5** | **Doctor Signature & Reg Stamp on Printout** | Currently printed prescriptions require manual pen signing and stamping. | Configurable digital signature and medical council registration number in doctor profile; renders cleanly on prescription print footer with toggle. |
 | **P6** | **Offline Queue Fallback Cache** | Counter PCs may experience momentary internet hiccups. | Local cache of daily appointments using browser storage / SQLite fallback to prevent counter freezes during transient dropouts. |
 | **P7** | **WhatsApp Prescription Deep Link** | Patients frequently request a digital copy on WhatsApp without clinic needing expensive SMS gateways. | 1-tap `wa.me/91...?text=...` deep link at reception counter allowing direct send via Web WhatsApp. |
 | **P8** | **Daily End-of-Day Financial Handover** | Reception shift handover requires manual cash counting. | Single-click end-of-day reconciliation view aggregating collected fees by doctor and payment type (Paid, Free Review, Family Courtesy). |

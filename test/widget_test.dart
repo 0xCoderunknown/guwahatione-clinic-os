@@ -49,7 +49,7 @@ void main() {
       expect(fromJson.scheduledDate, now);
     });
 
-    test('Doctor model includes PIN and consultation fee', () {
+    test('Doctor model includes PIN, consultation fee, and medicalRegNumber', () {
       final doctor = Doctor(
         id: 'doc-1',
         name: 'Dr. Sharma',
@@ -59,15 +59,18 @@ void main() {
         blockedDates: [],
         pin: '4321',
         consultationFee: 700,
+        medicalRegNumber: 'AMC-24891',
       );
 
       expect(doctor.pin, '4321');
       expect(doctor.consultationFee, 700);
+      expect(doctor.medicalRegNumber, 'AMC-24891');
 
       final json = doctor.toJson();
       final fromJsonDoc = Doctor.fromJson(json);
       expect(fromJsonDoc.pin, '4321');
       expect(fromJsonDoc.consultationFee, 700);
+      expect(fromJsonDoc.medicalRegNumber, 'AMC-24891');
     });
 
     test('Doctor copyWith updates fields correctly while retaining id and unedited properties', () {
@@ -81,6 +84,7 @@ void main() {
         pin: '4321',
         consultationFee: 700,
         searchPreference: 'brandFirst',
+        medicalRegNumber: 'AMC-24891',
       );
 
       final updated = doctor.copyWith(
@@ -89,6 +93,7 @@ void main() {
         consultationFee: 800,
         pin: '9999',
         availableDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+        medicalRegNumber: 'NMC-99999',
       );
 
       expect(updated.id, 'doc-1');
@@ -99,6 +104,7 @@ void main() {
       expect(updated.availableDays, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
       expect(updated.phone, '9876543210');
       expect(updated.searchPreference, 'brandFirst');
+      expect(updated.medicalRegNumber, 'NMC-99999');
     });
   });
 

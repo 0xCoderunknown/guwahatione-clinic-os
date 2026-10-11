@@ -213,6 +213,7 @@ void main() {
         patientGender: 'Male',
         doctorId: 'doc-1',
         doctorName: 'Dr. Sharma',
+        doctorRegNumber: 'AMC-12345',
         createdAt: now,
         vitals: const Vitals(systolicBp: 130, diastolicBp: 80, pulseRate: 72),
         chiefComplaints: ['Headache for 3 days', 'Routine follow-up'],
@@ -276,6 +277,7 @@ void main() {
       expect(fromJson.id, 'c-001');
       expect(fromJson.patientPhone, '9876543210');
       expect(fromJson.patientGender, 'Male');
+      expect(fromJson.doctorRegNumber, 'AMC-12345');
       expect(fromJson.vitals?.bpFormatted, '130/80 mmHg');
       expect(fromJson.reviewedInvestigations.first.testName, 'HbA1c');
       expect(fromJson.reviewedInvestigations.first.performedDate, labDate);

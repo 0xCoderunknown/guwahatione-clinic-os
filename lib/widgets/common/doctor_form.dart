@@ -28,6 +28,7 @@ class _DoctorFormState extends State<DoctorForm> {
   late final TextEditingController _phoneController;
   late final TextEditingController _feeController;
   late final TextEditingController _pinController;
+  late final TextEditingController _regNumberController;
 
   final List<String> _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   late List<String> _selectedDays;
@@ -44,6 +45,9 @@ class _DoctorFormState extends State<DoctorForm> {
       text: (d?.consultationFee ?? 500).toString(),
     );
     _pinController = TextEditingController(text: d?.pin ?? '1234');
+    _regNumberController = TextEditingController(
+      text: d?.medicalRegNumber ?? '',
+    );
     _selectedDays = d != null
         ? List<String>.from(d.availableDays)
         : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -56,6 +60,7 @@ class _DoctorFormState extends State<DoctorForm> {
     _phoneController.dispose();
     _feeController.dispose();
     _pinController.dispose();
+    _regNumberController.dispose();
     super.dispose();
   }
 
@@ -93,6 +98,15 @@ class _DoctorFormState extends State<DoctorForm> {
             ),
             keyboardType: TextInputType.phone,
             validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _regNumberController,
+            decoration: const InputDecoration(
+              labelText: 'Medical Council Reg No. (Optional)',
+              hintText: 'e.g., AMC-24891 / NMC-10293',
+              prefixIcon: Icon(Icons.badge_outlined),
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -195,6 +209,7 @@ class _DoctorFormState extends State<DoctorForm> {
     try {
       final fee = int.tryParse(_feeController.text.trim()) ?? 500;
       final pin = _pinController.text.trim();
+      final regNumber = _regNumberController.text.trim();
       final clinicProvider = Provider.of<ClinicProvider>(
         context,
         listen: false,
@@ -208,6 +223,7 @@ class _DoctorFormState extends State<DoctorForm> {
           availableDays: _selectedDays,
           consultationFee: fee,
           pin: pin.isNotEmpty ? pin : widget.doctor!.pin,
+          medicalRegNumber: regNumber.isNotEmpty ? regNumber : null,
         );
         await clinicProvider.updateDoctor(updatedDoctor);
       } else {
@@ -218,6 +234,7 @@ class _DoctorFormState extends State<DoctorForm> {
           _selectedDays,
           pin: pin.isNotEmpty ? pin : '1234',
           consultationFee: fee,
+          medicalRegNumber: regNumber.isNotEmpty ? regNumber : null,
         );
       }
 
