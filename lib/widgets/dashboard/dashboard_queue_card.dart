@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
 import '../../providers/clinic_provider.dart';
 import '../../screens/appointment_list_screen.dart';
@@ -7,15 +8,27 @@ import '../../utils/formatters.dart';
 import '../common/appointment_status_chip.dart';
 import '../common/token_badge.dart';
 
-/// "Today's Live Queue" panel with token cards, status badges, and calling triggers.
-class DashboardTodayQueueCard extends StatelessWidget {
+/// "Today's Live Queue" panel with doctor filters, dynamic consultation arrival windows,
+/// status badges, and 1-tap calling/absence triggers.
+class DashboardTodayQueueCard extends StatefulWidget {
   final ClinicProvider provider;
 
   const DashboardTodayQueueCard({super.key, required this.provider});
 
   @override
+  State<DashboardTodayQueueCard> createState() =>
+      _DashboardTodayQueueCardState();
+}
+
+class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
+  String? _selectedDoctorId; // null = All Doctors
+
+  @override
   Widget build(BuildContext context) {
-    final list = provider.todayAppointments;
+    final list = widget.provider.getFilteredAppointments(
+      doctorId: _selectedDoctorId,
+    );
+    final doctors = widget.provider.doctors;
 
     return Container(
       decoration: BoxDecoration(
@@ -51,6 +64,25 @@ class DashboardTodayQueueCard extends StatelessWidget {
                     color: Color(0xFF0F172A),
                   ),
                 ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${list.length} tokens',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal.shade800,
+                    ),
+                  ),
+                ),
                 const Spacer(),
                 TextButton(
                   onPressed: () => Navigator.push(
@@ -60,7 +92,7 @@ class DashboardTodayQueueCard extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    'Manage Queue →',
+                    'Full Ledger →',
                     style: TextStyle(fontSize: 12),
                   ),
                 ),
@@ -68,6 +100,66 @@ class DashboardTodayQueueCard extends StatelessWidget {
             ),
           ),
           const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+
+          // Doctor Queue Filter Tabs
+          if (doctors.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              color: const Color(0xFFF8FAFC),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    FilterChip(
+                      selected: _selectedDoctorId == null,
+                      label: Text(
+                        'All Doctors (${widget.provider.todayAppointments.length})',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: _selectedDoctorId == null
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      onSelected: (_) =>
+                          setState(() => _selectedDoctorId = null),
+                      selectedColor: Colors.teal.shade100,
+                      checkmarkColor: Colors.teal.shade800,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    const SizedBox(width: 8),
+                    ...doctors.map((doc) {
+                      final count = widget.provider.todayAppointments
+                          .where((a) => a.doctorId == doc.id)
+                          .length;
+                      final isSelected = _selectedDoctorId == doc.id;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: FilterChip(
+                          selected: isSelected,
+                          label: Text(
+                            '${doc.name} ($count)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          onSelected: (_) =>
+                              setState(() => _selectedDoctorId = doc.id),
+                          selectedColor: Colors.teal.shade100,
+                          checkmarkColor: Colors.teal.shade800,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+          const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+
           if (list.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
@@ -80,9 +172,11 @@ class DashboardTodayQueueCard extends StatelessWidget {
                       color: Colors.grey.shade300,
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'No appointments registered yet today',
-                      style: TextStyle(
+                    Text(
+                      widget.provider.dashboardSearchQuery.isNotEmpty
+                          ? 'No patient tokens match "${widget.provider.dashboardSearchQuery}"'
+                          : 'No appointments registered in this view',
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF475569),
@@ -90,7 +184,9 @@ class DashboardTodayQueueCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Tap "+ Book Walk-In Patient" to assign the first token.',
+                      widget.provider.dashboardSearchQuery.isNotEmpty
+                          ? 'Check the 10-digit phone number or clear search.'
+                          : 'Tap "+ Book Walk-In Patient" to assign the first token.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade500,
@@ -104,11 +200,21 @@ class DashboardTodayQueueCard extends StatelessWidget {
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: list.take(8).length,
+              itemCount: list.take(10).length,
               separatorBuilder: (_, index) =>
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
               itemBuilder: (ctx, i) {
                 final appt = list[i];
+
+                // Calculate estimated consultation arrival window for pending tokens
+                final docAppointments = widget.provider.todayAppointments
+                    .where((a) => a.doctorId == appt.doctorId)
+                    .toList();
+                final estimate = AppointmentEngine.calculateEstimatedWindow(
+                  doctorAppointments: docAppointments,
+                  targetQueueNumber: appt.queueNumber,
+                );
+
                 return ListTile(
                   dense: true,
                   leading: TokenBadge(
@@ -136,16 +242,62 @@ class DashboardTodayQueueCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  subtitle: Text(
-                    "Doctor: ${appt.doctorName} • Fee: ${AppFormatters.currency(appt.amountCollected)} (${appt.paymentType.displayName})",
-                    style: const TextStyle(fontSize: 11),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Dr. ${appt.doctorName} • Fee: ${AppFormatters.currency(appt.amountCollected)} (${appt.paymentType.displayName})",
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      if (appt.status == AppointmentStatus.pending) ...[
+                        const SizedBox(height: 3),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.schedule_rounded,
+                                size: 11,
+                                color: Colors.blue.shade700,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                estimate.relativeSummary,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue.shade900,
+                                ),
+                              ),
+                              Text(
+                                " • Est: ${estimate.formattedRange}",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.blue.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   trailing: appt.status == AppointmentStatus.pending
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             StreamBuilder(
-                              stream: provider.streamChamberSession(
+                              stream: widget.provider.streamChamberSession(
                                 appt.doctorId,
                                 appt.scheduledDate,
                               ),
@@ -243,7 +395,7 @@ class DashboardTodayQueueCard extends StatelessWidget {
                                       if (proceed != true) return;
                                     }
 
-                                    await provider.callTokenIntoChamber(
+                                    await widget.provider.callTokenIntoChamber(
                                       doctorId: appt.doctorId,
                                       date: appt.scheduledDate,
                                       appointment: appt,
@@ -265,10 +417,20 @@ class DashboardTodayQueueCard extends StatelessWidget {
                                 );
                               },
                             ),
-                            const SizedBox(width: 8),
-                            AppointmentStatusChip(
-                              status: appt.status,
-                              isCompact: true,
+                            const SizedBox(width: 4),
+                            // Quick 1-tap Mark Absent / No-Show button
+                            IconButton(
+                              icon: const Icon(
+                                Icons.person_off_rounded,
+                                size: 18,
+                              ),
+                              color: Colors.red.shade400,
+                              tooltip: 'Mark No-Show / Absent',
+                              onPressed: () => _confirmMarkAbsent(
+                                context,
+                                appt,
+                                widget.provider,
+                              ),
                             ),
                           ],
                         )
@@ -283,4 +445,52 @@ class DashboardTodayQueueCard extends StatelessWidget {
       ),
     );
   }
+
+  void _confirmMarkAbsent(
+    BuildContext context,
+    Appointment appt,
+    ClinicProvider provider,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.person_off_rounded, color: Colors.red.shade700),
+            const SizedBox(width: 8),
+            const Text('Mark Patient Absent?'),
+          ],
+        ),
+        content: Text(
+          'Mark Token #${appt.queueNumber} (${appt.patientName}) as Absent / No-Show?\n\n'
+          'The token number will be permanently preserved in the ledger with ₹0 fee.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await provider.markAppointmentAbsent(appt);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Marked Token #${appt.queueNumber} (${appt.patientName}) absent',
+                    ),
+                    backgroundColor: Colors.red.shade800,
+                  ),
+                );
+              }
+            },
+            child: const Text('Mark Absent'),
+          ),
+        ],
+      ),
+    );
+  }
 }
+

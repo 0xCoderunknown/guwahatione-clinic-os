@@ -36,6 +36,13 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
    - **NOT** an insurance claims billing platform.
    - Do **NOT** propose or build inventory management or retail point-of-sale features unless explicitly requested by the PM.
 
+5. **Real-World Responsive Layout Specifications Across Clinic Tiers:**
+   Every dashboard, encounter, and shell screen must strictly adhere to operational form factor standards:
+   - **Counter PC Monitors (FHD 21.5"-24" / 1920×1080):** Never bottleneck dashboard containers with small arbitrary caps like `maxWidth: 1400` that leave 150px+ dead margins on the sides. Container constraints must allow up to `1800px` with side-by-side split panels (`flex: 6` Queue, `flex: 4` Doctor Roster) when `width >= 1050`.
+   - **Counter Laptops (14"/15.6" / 1366×768 & 1536×864):** Usable vertical height is tightly budgeted (~640px). Never waste screen height with duplicate revenue badges or booking buttons when `OwnerShell`'s top AppBar already renders them. Inter-section gaps must stay compact (12–16px, never 24px+). "Today's Live Queue" must be visible above the fold without forced scrolling.
+   - **Suppression of Double AppBars on Embedded Desktop Screens:** When secondary screens (`AppointmentListScreen`, `DoctorListScreen`, `StatisticsScreen`, `MedicineCatalogueScreen`) are embedded in `OwnerShell` on desktop, their inner `AppBar` must be suppressed (`!isDesktop || Navigator.canPop(context)`), preventing stacked duplicate headers.
+   - **Mobile (Pixel / iPhone 390–430px):** Must remain seamless edge-to-edge with bottom navigation bar, single top AppBar, and 2×2 metric KPI grid.
+
 ---
 
 ## 🏗️ 2. Architectural & Technical Stack Rules
@@ -105,4 +112,4 @@ docs/
 - ❌ **Adding unapproved Firestore fields without updating `docs/SCHEMA_AND_MODELS.md`.**
 - ❌ **Hardcoding doctor fees or bypassing 14-day free review logic.**
 - ❌ **Putting financial math, review eligibility calculations, or pharmacological defaults directly inside UI widget `build()` methods.**
-- ❌ **Breaking responsive layout** on standard reception counter monitors (1366x768 / 1920x1080) or doctor mobile screens.
+- ❌ **Breaking responsive layout or introducing max-width bottlenecks** (e.g. hard-capping desktop screens at 1400px leaving large side margins, wasting vertical space with duplicate headers on 1366x768 laptops, or introducing stacked duplicate AppBars inside `OwnerShell`).

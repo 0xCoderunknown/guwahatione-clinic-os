@@ -1,17 +1,34 @@
 import 'package:flutter/material.dart';
 
 import '../../providers/clinic_provider.dart';
-import '../../screens/add_appointment_dialog.dart';
-import '../../screens/appointment_list_screen.dart';
-import '../../screens/doctor_list_screen.dart';
-import '../../screens/statistics_screen.dart';
 import '../../utils/formatters.dart';
 
-/// Top clinic greeting and live date bar with daily revenue collected badge.
-class DashboardHeaderBar extends StatelessWidget {
+/// Top clinic greeting, live date bar, and instant patient phone/token search bar.
+class DashboardHeaderBar extends StatefulWidget {
   final ClinicProvider provider;
 
   const DashboardHeaderBar({super.key, required this.provider});
+
+  @override
+  State<DashboardHeaderBar> createState() => _DashboardHeaderBarState();
+}
+
+class _DashboardHeaderBarState extends State<DashboardHeaderBar> {
+  late final TextEditingController _searchCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl = TextEditingController(
+      text: widget.provider.dashboardSearchQuery,
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +38,7 @@ class DashboardHeaderBar extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isDesktop ? 16 : 14,
-        vertical: isDesktop ? 10 : 12,
+        vertical: isDesktop ? 12 : 12,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -35,14 +52,11 @@ class DashboardHeaderBar extends StatelessWidget {
           ),
         ],
       ),
-      child: Wrap(
-        alignment: WrapAlignment.spaceBetween,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 12,
-        runSpacing: 8,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 padding: const EdgeInsets.all(7),
@@ -75,158 +89,94 @@ class DashboardHeaderBar extends StatelessWidget {
                   ),
                 ],
               ),
+              const Spacer(),
+              // Active Doctor Chamber count indicator
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.meeting_room_rounded,
+                      size: 13,
+                      color: Colors.teal,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${widget.provider.doctors.length} Doctors Active',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF334155),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-          if (!isDesktop)
-            // On mobile / compact view: show daily revenue badge (since mobile has no top shell bar)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.green.shade200),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.currency_rupee,
-                        size: 13,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        "₹${provider.dailyRevenue}",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green.shade800,
-                        ),
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        "today",
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.green.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            )
-          else
-            // On desktop / laptop: show active OPD operation status
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.sensors_rounded,
-                        size: 13,
-                        color: Colors.teal,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        'Live Queue: ${provider.todayAppointments.length} Tokens • ${provider.doctors.length} Doctors Active',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF334155),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          const SizedBox(height: 12),
+          // Instant Patient Phone / Name / Token Search
+          TextField(
+            controller: _searchCtrl,
+            onChanged: (val) {
+              widget.provider.setDashboardSearchQuery(val);
+              setState(() {});
+            },
+            decoration: InputDecoration(
+              isDense: true,
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              hintText:
+                  'Instant Queue Search: Type 10-digit phone, patient name, or token #...',
+              hintStyle: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade500,
+              ),
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+                size: 18,
+                color: Colors.teal,
+              ),
+              suffixIcon: _searchCtrl.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 16),
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        widget.provider.clearDashboardSearchQuery();
+                        setState(() {});
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Colors.teal, width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
             ),
+            style: const TextStyle(fontSize: 13),
+          ),
         ],
       ),
-    );
-  }
-}
-
-/// Quick Reception Navigation Action Chips.
-class DashboardQuickActionChips extends StatelessWidget {
-  const DashboardQuickActionChips({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 8,
-      children: [
-        ActionChip(
-          avatar: const Icon(
-            Icons.add_circle_outline,
-            size: 16,
-            color: Colors.teal,
-          ),
-          label: const Text('Book Walk-In Patient'),
-          onPressed: () {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (_) => const AddAppointmentDialog(),
-            );
-          },
-        ),
-        ActionChip(
-          avatar: const Icon(
-            Icons.format_list_numbered,
-            size: 16,
-            color: Color(0xFF2563EB),
-          ),
-          label: const Text('View Full Token Queue'),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AppointmentListScreen()),
-          ),
-        ),
-        ActionChip(
-          avatar: const Icon(
-            Icons.people_alt_outlined,
-            size: 16,
-            color: Color(0xFF7C3AED),
-          ),
-          label: const Text('Doctor Chamber PINs'),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const DoctorListScreen()),
-          ),
-        ),
-        ActionChip(
-          avatar: const Icon(
-            Icons.bar_chart_outlined,
-            size: 16,
-            color: Color(0xFF059669),
-          ),
-          label: const Text('Financial Audit & Payouts'),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const StatisticsScreen()),
-          ),
-        ),
-      ],
     );
   }
 }

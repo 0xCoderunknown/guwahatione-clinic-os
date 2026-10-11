@@ -161,23 +161,24 @@ class _OwnerShellState extends State<OwnerShell> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.green.shade50,
+                            color: Colors.amber.shade50,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.green.shade200),
+                            border: Border.all(color: Colors.amber.shade300),
                           ),
                           child: Row(
                             children: [
-                              const Icon(
-                                Icons.currency_rupee,
+                              Icon(
+                                Icons.hourglass_top_rounded,
                                 size: 14,
-                                color: Colors.green,
+                                color: Colors.amber.shade800,
                               ),
+                              const SizedBox(width: 5),
                               Text(
-                                "Today's Revenue: ₹${clinic.dailyRevenue}",
+                                "Lobby: ${clinic.waitingCount} Waiting",
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.green.shade800,
+                                  color: Colors.amber.shade900,
                                 ),
                               ),
                             ],

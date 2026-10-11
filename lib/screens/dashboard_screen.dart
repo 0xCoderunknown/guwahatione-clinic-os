@@ -60,7 +60,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
       body: Consumer<ClinicProvider>(
         builder: (context, provider, child) {
-          return Center(
+          return Align(
+            alignment: Alignment.topCenter,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1800),
               child: SingleChildScrollView(
@@ -77,13 +78,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                     // 2. Responsive KPI Metrics Strip
                     DashboardKpiStrip(provider: provider, screenWidth: width),
-                    const SizedBox(height: 14),
-
-                    // 3. Quick Reception Action Chips
-                    const DashboardQuickActionChips(),
                     const SizedBox(height: 16),
 
-                    // 4. Content Area: Today's Live Queue & Doctor Roster
+                    // 3. Content Area: Today's Live Queue & Doctor Roster
                     if (width >= 1050)
                       // Desktop / Counter PC: Side-by-side split panels
                       Row(

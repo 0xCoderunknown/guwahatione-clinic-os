@@ -220,17 +220,35 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
-                          vertical: 3,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                          color: chamberStatus == 'ready_for_next'
+                              ? const Color(0xFFDCFCE7)
+                              : (chamberStatus == 'in_consultation'
+                                    ? const Color(0xFFEDE9FE)
+                                    : Colors.grey.shade100),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: chamberStatus == 'ready_for_next'
+                                ? const Color(0xFF86EFAC)
+                                : Colors.transparent,
+                          ),
                         ),
                         child: Text(
-                          "$patientCount tokens",
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
+                          chamberStatus == 'ready_for_next'
+                              ? '▶ CALL NEXT'
+                              : (chamberStatus == 'in_consultation'
+                                    ? 'Token #${activeQNum ?? '--'}'
+                                    : '$patientCount tokens'),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: chamberStatus == 'ready_for_next'
+                                ? const Color(0xFF15803D)
+                                : (chamberStatus == 'in_consultation'
+                                      ? const Color(0xFF6D28D9)
+                                      : Colors.grey.shade800),
                           ),
                         ),
                       ),

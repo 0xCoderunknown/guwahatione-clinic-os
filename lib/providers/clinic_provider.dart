@@ -43,6 +43,46 @@ class ClinicProvider with ChangeNotifier {
       .where((a) => a.status == AppointmentStatus.pending)
       .length;
 
+  int get waitingCount => pendingCount;
+
+  int get completedCount => _todayAppointments
+      .where((a) => a.status == AppointmentStatus.completed)
+      .length;
+
+  int get absentCount => _todayAppointments
+      .where((a) => a.status == AppointmentStatus.absent)
+      .length;
+
+  String _dashboardSearchQuery = '';
+  String get dashboardSearchQuery => _dashboardSearchQuery;
+
+  void setDashboardSearchQuery(String query) {
+    _dashboardSearchQuery = query.trim().toLowerCase();
+    notifyListeners();
+  }
+
+  void clearDashboardSearchQuery() {
+    _dashboardSearchQuery = '';
+    notifyListeners();
+  }
+
+  /// Filters today's live queue by optional doctor selection and active search query.
+  List<Appointment> getFilteredAppointments({String? doctorId}) {
+    return _todayAppointments.where((a) {
+      if (doctorId != null && doctorId.isNotEmpty && a.doctorId != doctorId) {
+        return false;
+      }
+      if (_dashboardSearchQuery.isNotEmpty) {
+        final matchesPhone = a.patientPhone.contains(_dashboardSearchQuery);
+        final matchesName =
+            a.patientName.toLowerCase().contains(_dashboardSearchQuery);
+        final matchesToken = a.queueNumber.toString() == _dashboardSearchQuery;
+        if (!matchesPhone && !matchesName && !matchesToken) return false;
+      }
+      return true;
+    }).toList();
+  }
+
   int get dailyRevenue =>
       RevenueEngine.calculateRealizedRevenue(_todayAppointments);
 
@@ -243,6 +283,22 @@ class ClinicProvider with ChangeNotifier {
       );
     } catch (e) {
       debugPrint('Error updating status: $e');
+      rethrow;
+    }
+  }
+
+  /// 1-tap reception action to mark a patient absent (no-show), setting amount to 0
+  /// and strictly preserving the audit-proof token slot per Invariant #1.
+  Future<void> markAppointmentAbsent(Appointment appointment) async {
+    try {
+      await _firebaseService.updateAppointmentStatus(
+        appointment.id,
+        AppointmentStatus.absent,
+        collectedAmount: 0,
+        paymentType: appointment.paymentType,
+      );
+    } catch (e) {
+      debugPrint('Error marking appointment absent: $e');
       rethrow;
     }
   }

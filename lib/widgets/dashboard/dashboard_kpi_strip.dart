@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../core/engines/engines.dart';
 import '../../providers/clinic_provider.dart';
 import '../../screens/appointment_list_screen.dart';
 import '../../screens/doctor_list_screen.dart';
-import '../../screens/statistics_screen.dart';
 import '../common/metric_kpi_card.dart';
 
 /// Responsive KPI Metrics Strip for Reception Dashboard.
@@ -20,41 +18,11 @@ class DashboardKpiStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final metrics = RevenueEngine.calculateDailyMetrics(
-      provider.todayAppointments,
-    );
-
     final cards = [
       DashboardKpiData(
-        title: 'Today Appointments',
-        value: '${metrics.totalAppointments}',
-        subtitle: '${metrics.completedCount} completed',
-        icon: Icons.calendar_today_rounded,
-        color: const Color(0xFF2563EB),
-        // Blue
-        bgColor: const Color(0xFFEFF6FF),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AppointmentListScreen()),
-        ),
-      ),
-      DashboardKpiData(
-        title: 'Realized Revenue',
-        value: '₹${metrics.realizedRevenue}',
-        subtitle: 'From completed visits',
-        icon: Icons.account_balance_wallet_rounded,
-        color: const Color(0xFF059669),
-        // Green
-        bgColor: const Color(0xFFECFDF5),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const StatisticsScreen()),
-        ),
-      ),
-      DashboardKpiData(
-        title: 'Waiting Patients',
-        value: '${metrics.pendingCount}',
-        subtitle: 'Awaiting doctor consultation',
+        title: 'Waiting in Lobby',
+        value: '${provider.waitingCount}',
+        subtitle: 'Patients awaiting entry',
         icon: Icons.hourglass_top_rounded,
         color: const Color(0xFFD97706),
         // Amber
@@ -65,10 +33,36 @@ class DashboardKpiStrip extends StatelessWidget {
         ),
       ),
       DashboardKpiData(
-        title: 'Consulting Doctors',
-        value: '${provider.doctors.length}',
-        subtitle: 'Active OPD chambers',
-        icon: Icons.medical_services_rounded,
+        title: 'Completed Today',
+        value: '${provider.completedCount}',
+        subtitle: 'Finished consultations',
+        icon: Icons.check_circle_outline_rounded,
+        color: const Color(0xFF059669),
+        // Green
+        bgColor: const Color(0xFFECFDF5),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AppointmentListScreen()),
+        ),
+      ),
+      DashboardKpiData(
+        title: 'Total Registered',
+        value: '${provider.todayAppointments.length}',
+        subtitle: '${provider.absentCount} absent / no-shows',
+        icon: Icons.people_outline_rounded,
+        color: const Color(0xFF2563EB),
+        // Blue
+        bgColor: const Color(0xFFEFF6FF),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AppointmentListScreen()),
+        ),
+      ),
+      DashboardKpiData(
+        title: 'Queue Pace',
+        value: '~8-10 min',
+        subtitle: 'Est. avg time / patient',
+        icon: Icons.speed_rounded,
         color: const Color(0xFF7C3AED),
         // Purple
         bgColor: const Color(0xFFF5F3FF),

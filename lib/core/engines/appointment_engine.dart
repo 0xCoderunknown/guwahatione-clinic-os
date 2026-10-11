@@ -18,10 +18,27 @@ class QueuePartition {
   int get total => pending.length + completed.length + absent.length;
 }
 
+/// Estimated arrival and consultation window calculated for a queued token.
+class EstimatedConsultationWindow {
+  final DateTime estimatedStart;
+  final DateTime estimatedEnd;
+  final int patientsAhead;
+  final String formattedRange;
+  final String relativeSummary;
+
+  const EstimatedConsultationWindow({
+    required this.estimatedStart,
+    required this.estimatedEnd,
+    required this.patientsAhead,
+    required this.formattedRange,
+    required this.relativeSummary,
+  });
+}
+
 /// Pure Dart appointment, booking policy, and queue rules engine.
 ///
 /// Single source of truth for 14-day free review calculations, fee determinations,
-/// and queue partitioning. Zero Flutter UI dependencies.
+/// queue partitioning, and dynamic consultation arrival estimation. Zero Flutter UI dependencies.
 abstract class AppointmentEngine {
   /// Evaluates whether a patient is eligible for a Free Review with a specific doctor.
   ///
@@ -176,5 +193,68 @@ abstract class AppointmentEngine {
       if (a.status == AppointmentStatus.absent) return false;
       return !a.scheduledDate.isBefore(start) && a.scheduledDate.isBefore(end);
     });
+  }
+
+  /// Calculates dynamic estimated consultation time window for a token in a doctor's queue.
+  ///
+  /// Considers pending appointments ahead of this token, chamber start time, and clinical
+  /// average consultation duration (default: 8 minutes per patient).
+  static EstimatedConsultationWindow calculateEstimatedWindow({
+    required List<Appointment> doctorAppointments,
+    required int targetQueueNumber,
+    DateTime? chamberStartTime,
+    DateTime? currentTime,
+    int averageMinutesPerPatient = 8,
+  }) {
+    final now = currentTime ?? DateTime.now();
+
+    // Count pending patients ahead of this target token
+    final patientsAhead = doctorAppointments.where((a) {
+      return a.queueNumber < targetQueueNumber &&
+          a.status == AppointmentStatus.pending;
+    }).length;
+
+    if (patientsAhead <= 0) {
+      final start = now;
+      final end = start.add(Duration(minutes: averageMinutesPerPatient));
+      return EstimatedConsultationWindow(
+        estimatedStart: start,
+        estimatedEnd: end,
+        patientsAhead: 0,
+        formattedRange: 'Now / Next Up',
+        relativeSummary: 'Next in line',
+      );
+    }
+
+    // Determine baseline time
+    final baseTime = (chamberStartTime != null && chamberStartTime.isAfter(now))
+        ? chamberStartTime
+        : now;
+
+    final startMinutes = patientsAhead * averageMinutesPerPatient;
+    final estimatedStart = baseTime.add(Duration(minutes: startMinutes));
+    final estimatedEnd = estimatedStart.add(
+      Duration(minutes: averageMinutesPerPatient + 7),
+    );
+
+    String formatTime(DateTime dt) {
+      final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+      final minute = dt.minute.toString().padLeft(2, '0');
+      final period = dt.hour >= 12 ? 'PM' : 'AM';
+      return '$hour:$minute $period';
+    }
+
+    final formattedRange =
+        '${formatTime(estimatedStart)} – ${formatTime(estimatedEnd)}';
+    final waitMinutes = startMinutes;
+    final relativeSummary = '~$waitMinutes min wait ($patientsAhead ahead)';
+
+    return EstimatedConsultationWindow(
+      estimatedStart: estimatedStart,
+      estimatedEnd: estimatedEnd,
+      patientsAhead: patientsAhead,
+      formattedRange: formattedRange,
+      relativeSummary: relativeSummary,
+    );
   }
 }
