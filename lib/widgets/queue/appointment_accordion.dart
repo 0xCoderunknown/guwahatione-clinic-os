@@ -11,10 +11,25 @@ import '../common/payment_badge.dart';
 import '../common/token_badge.dart';
 
 /// Accordion card for reception appointment queue management.
+///
+/// Supports single-expansion accordion mode, prominent [SEND IN] chamber dispatch,
+/// visual indicators for active in-chamber or bypassed patients, and protective
+/// confirmation guards before overriding an occupied doctor chamber or marking absent.
 class AppointmentAccordion extends StatefulWidget {
   final Appointment appointment;
+  final bool? isExpanded;
+  final ValueChanged<bool>? onExpansionChanged;
+  final bool isInChamber;
+  final bool isBypassed;
 
-  const AppointmentAccordion({super.key, required this.appointment});
+  const AppointmentAccordion({
+    super.key,
+    required this.appointment,
+    this.isExpanded,
+    this.onExpansionChanged,
+    this.isInChamber = false,
+    this.isBypassed = false,
+  });
 
   @override
   State<AppointmentAccordion> createState() => _AppointmentAccordionState();
@@ -22,6 +37,7 @@ class AppointmentAccordion extends StatefulWidget {
 
 class _AppointmentAccordionState extends State<AppointmentAccordion> {
   late PaymentType _selectedPaymentType;
+  final ExpansibleController _tileController = ExpansibleController();
 
   @override
   void initState() {
@@ -35,13 +51,46 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
     if (oldWidget.appointment.paymentType != widget.appointment.paymentType) {
       _selectedPaymentType = widget.appointment.paymentType;
     }
+
+    if (widget.isExpanded != null && widget.isExpanded != oldWidget.isExpanded) {
+      if (widget.isExpanded! && !_tileController.isExpanded) {
+        _tileController.expand();
+      } else if (!widget.isExpanded! && _tileController.isExpanded) {
+        _tileController.collapse();
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Card styling based on queue state
+    Color cardBg = Colors.white;
+    BorderSide cardBorder = BorderSide.none;
+
+    if (widget.isInChamber) {
+      cardBg = const Color(0xFFF0FDF4); // Green 50
+      cardBorder = const BorderSide(color: Color(0xFF16A34A), width: 1.5);
+    } else if (widget.isBypassed) {
+      cardBg = const Color(0xFFFFFBEB); // Amber 50
+      cardBorder = const BorderSide(color: Color(0xFFFCD34D), width: 1.2);
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
+      color: cardBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: cardBorder,
+      ),
       child: ExpansionTile(
+        controller: _tileController,
+        initiallyExpanded: widget.isExpanded ?? false,
+        onExpansionChanged: (expanded) {
+          if (expanded) {
+            _selectedPaymentType = widget.appointment.paymentType;
+          }
+          widget.onExpansionChanged?.call(expanded);
+        },
         leading: TokenBadge(
           queueNumber: widget.appointment.queueNumber,
           isCompleted: widget.appointment.status == AppointmentStatus.completed,
@@ -51,12 +100,86 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
         title: Row(
           children: [
             Expanded(
-              child: Text(
-                widget.appointment.patientName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      widget.appointment.patientName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (widget.isInChamber) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0xFF16A34A)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.meeting_room_rounded,
+                            size: 11,
+                            color: Color(0xFF15803D),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'IN CHAMBER',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF15803D),
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (widget.isBypassed) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0xFFF59E0B)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.schedule_rounded,
+                            size: 11,
+                            color: Color(0xFFB45309),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'BYPASSED / LATE',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFFB45309),
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             AppointmentStatusChip(
@@ -83,13 +206,6 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
             ],
           ),
         ),
-        onExpansionChanged: (expanded) {
-          setState(() {
-            if (expanded) {
-              _selectedPaymentType = widget.appointment.paymentType;
-            }
-          });
-        },
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -122,19 +238,41 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                       final cStatus = (cData?['status'] as String?) ?? 'idle';
                       final isDoctorReady = cStatus == 'ready_for_next';
                       final isDoctorOnBreak = cStatus == 'consultation_ended';
+                      final activeApptId =
+                          cData?['activeAppointmentId'] as String?;
+                      final activeQueueNum =
+                          cData?['activeQueueNumber'] as int?;
+                      final activePatName =
+                          (cData?['patientName'] as String?) ?? 'Patient';
 
-                      String buttonLabel = 'Call In / Start Consultation';
-                      Color buttonBg = Colors.teal.shade700;
-                      IconData buttonIcon = Icons.record_voice_over_rounded;
+                      final isThisInChamber =
+                          widget.isInChamber ||
+                          (activeApptId == widget.appointment.id);
+                      final isAnotherPatientInChamber =
+                          activeApptId != null &&
+                          activeApptId != widget.appointment.id;
+
+                      String buttonLabel = 'SEND IN TO DOCTOR';
+                      Color buttonBg = const Color(0xFF0F766E); // Teal 700
+                      IconData buttonIcon = Icons.login_rounded;
 
                       if (isDoctorReady) {
-                        buttonLabel = 'Send Inside (Doctor is Ready)';
-                        buttonBg = const Color(0xFF15803D);
-                        buttonIcon = Icons.login_rounded;
+                        buttonLabel = 'SEND IN (Doctor is Ready)';
+                        buttonBg = const Color(0xFF15803D); // Green 700
+                        buttonIcon = Icons.check_circle_outline_rounded;
                       } else if (isDoctorOnBreak) {
-                        buttonLabel = 'Doctor on Break • Call In Anyway';
-                        buttonBg = const Color(0xFFB45309);
+                        buttonLabel = 'Doctor on Break • Send In Anyway';
+                        buttonBg = const Color(0xFFB45309); // Amber 700
                         buttonIcon = Icons.coffee_rounded;
+                      } else if (isAnotherPatientInChamber) {
+                        buttonLabel =
+                            'SEND IN (Token #$activeQueueNum Inside)';
+                        buttonBg = const Color(0xFFD97706); // Amber 600
+                        buttonIcon = Icons.swap_horiz_rounded;
+                      } else if (isThisInChamber) {
+                        buttonLabel = 'Already in Chamber';
+                        buttonBg = const Color(0xFF059669);
+                        buttonIcon = Icons.meeting_room_rounded;
                       }
 
                       return Column(
@@ -199,10 +337,45 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
-                                      'Dr. ${widget.appointment.doctorName} is taking a breather. Verify patient presence before calling.',
+                                      'Dr. ${widget.appointment.doctorName} is taking a breather. Verify patient presence before dispatching.',
                                       style: const TextStyle(
                                         fontSize: 11,
                                         color: Color(0xFFB45309),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else if (isAnotherPatientInChamber)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFFBEB),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: const Color(0xFFFCD34D),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.info_outline_rounded,
+                                    size: 14,
+                                    color: Color(0xFFB45309),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'Token #$activeQueueNum ($activePatName) is currently consulting Dr. ${widget.appointment.doctorName}.',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFFB45309),
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
@@ -213,7 +386,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                             style: FilledButton.styleFrom(
                               backgroundColor: buttonBg,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding: const EdgeInsets.symmetric(vertical: 13),
                             ),
                             icon: Icon(buttonIcon, size: 18),
                             label: Text(
@@ -229,7 +402,49 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                                 listen: false,
                               );
 
-                              if (isDoctorOnBreak) {
+                              // Guard 1: Another patient is already in chamber
+                              if (isAnotherPatientInChamber) {
+                                final proceed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Row(
+                                      children: [
+                                        Icon(
+                                          Icons.swap_horiz_rounded,
+                                          color: Color(0xFFD97706),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text('Chamber Currently Occupied'),
+                                      ],
+                                    ),
+                                    content: Text(
+                                      'Dr. ${widget.appointment.doctorName} is currently consulting '
+                                      'Token #$activeQueueNum ($activePatName).\n\n'
+                                      'Admitting Token #${widget.appointment.queueNumber} (${widget.appointment.patientName}) '
+                                      'will replace the active patient in chamber. Send inside anyway?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: const Text('Wait'),
+                                      ),
+                                      FilledButton(
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: const Color(
+                                            0xFFD97706,
+                                          ),
+                                        ),
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
+                                        child: const Text('Send Inside Anyway'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (proceed != true) return;
+                              } else if (isDoctorOnBreak) {
+                                // Guard 2: Doctor taking a breather
                                 final proceed = await showDialog<bool>(
                                   context: context,
                                   builder: (ctx) => AlertDialog(
@@ -278,7 +493,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      'Admitted Token #${widget.appointment.queueNumber} (${widget.appointment.patientName}) to Dr. ${widget.appointment.doctorName} chamber',
+                                      'Dispatched Token #${widget.appointment.queueNumber} (${widget.appointment.patientName}) to Dr. ${widget.appointment.doctorName}',
                                     ),
                                     backgroundColor: Colors.teal.shade800,
                                     duration: const Duration(seconds: 3),
@@ -300,11 +515,12 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
                         ),
                         onPressed: () {
                           _updateStatus(context, AppointmentStatus.completed);
                         },
-                        icon: const Icon(Icons.check),
+                        icon: const Icon(Icons.check, size: 18),
                         label: const Text('Mark Complete'),
                       ),
                     ),
@@ -312,13 +528,43 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                     Expanded(
                       child: OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.redAccent,
-                          side: const BorderSide(color: Colors.redAccent),
+                          foregroundColor: Colors.red.shade700,
+                          side: BorderSide(color: Colors.red.shade300),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
                         ),
-                        onPressed: () {
-                          _updateStatus(context, AppointmentStatus.absent);
+                        onPressed: () async {
+                          final confirmAbsent = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Mark Patient Absent?'),
+                              content: Text(
+                                'Mark Token #${widget.appointment.queueNumber} (${widget.appointment.patientName}) as absent?\n\n'
+                                'The token slot will be preserved on record with ₹0 fee collected. '
+                                'Only mark absent if the patient cancelled or the clinic shift has ended.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                FilledButton(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.red.shade700,
+                                  ),
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text('Confirm Absent'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmAbsent == true && context.mounted) {
+                            await _updateStatus(
+                              context,
+                              AppointmentStatus.absent,
+                            );
+                          }
                         },
-                        icon: const Icon(Icons.person_off_outlined),
+                        icon: const Icon(Icons.person_off_outlined, size: 18),
                         label: const Text('Mark Absent'),
                       ),
                     ),

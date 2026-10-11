@@ -18,6 +18,27 @@ class QueuePartition {
   int get total => pending.length + completed.length + absent.length;
 }
 
+/// Reception desk queue partitioning model reflecting in-chamber status,
+/// top-level completed history, and waiting/bypassed tokens.
+class ReceptionQueueView {
+  final List<Appointment> completed;
+  final Appointment? inChamber;
+  final List<Appointment> waiting;
+  final List<Appointment> absent;
+  final Set<String> bypassedAppointmentIds;
+
+  const ReceptionQueueView({
+    required this.completed,
+    this.inChamber,
+    required this.waiting,
+    required this.absent,
+    required this.bypassedAppointmentIds,
+  });
+
+  bool isBypassed(String appointmentId) =>
+      bypassedAppointmentIds.contains(appointmentId);
+}
+
 /// Estimated arrival and consultation window calculated for a queued token.
 class EstimatedConsultationWindow {
   final DateTime estimatedStart;
@@ -171,6 +192,65 @@ abstract class AppointmentEngine {
       pending: pending,
       completed: completed,
       absent: absent,
+    );
+  }
+
+  /// Partitions appointments for the Reception desk live queue view.
+  ///
+  /// Separates completed patients (for top collapsible accordion), isolates the active
+  /// in-chamber patient if matched, sorts waiting appointments by token, and marks
+  /// uncalled waiting tokens lower than the active chamber token as bypassed.
+  static ReceptionQueueView partitionQueueForReception({
+    required List<Appointment> appointments,
+    String? activeAppointmentId,
+    int? activeQueueNumber,
+  }) {
+    final List<Appointment> completed = [];
+    final List<Appointment> waiting = [];
+    final List<Appointment> absent = [];
+    Appointment? inChamber;
+
+    for (final a in appointments) {
+      if (a.status == AppointmentStatus.completed) {
+        completed.add(a);
+      } else if (a.status == AppointmentStatus.absent) {
+        absent.add(a);
+      } else if (a.status == AppointmentStatus.pending) {
+        final matchesActive = (activeAppointmentId != null &&
+                a.id == activeAppointmentId) ||
+            (activeAppointmentId == null &&
+                activeQueueNumber != null &&
+                a.queueNumber == activeQueueNumber);
+
+        if (matchesActive && inChamber == null) {
+          inChamber = a;
+        } else {
+          waiting.add(a);
+        }
+      }
+    }
+
+    // Sort completed descending by token so most recently completed are on top
+    completed.sort((a, b) => b.queueNumber.compareTo(a.queueNumber));
+
+    // Sort waiting ascending by token
+    waiting.sort((a, b) => a.queueNumber.compareTo(b.queueNumber));
+
+    final Set<String> bypassed = {};
+    if (inChamber != null) {
+      for (final a in waiting) {
+        if (a.queueNumber < inChamber.queueNumber) {
+          bypassed.add(a.id);
+        }
+      }
+    }
+
+    return ReceptionQueueView(
+      completed: completed,
+      inChamber: inChamber,
+      waiting: waiting,
+      absent: absent,
+      bypassedAppointmentIds: bypassed,
     );
   }
 

@@ -48,3 +48,4 @@ export 'print/print_medications_table.dart';
 export 'print/print_orders_and_footer.dart';
 // Queue Management Widgets
 export 'queue/appointment_accordion.dart';
+export 'queue/completed_consultations_accordion.dart';

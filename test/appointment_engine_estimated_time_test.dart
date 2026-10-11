@@ -134,4 +134,93 @@ void main() {
       expect(estimate.estimatedStart, DateTime(2026, 10, 11, 17, 10));
     });
   });
+
+  group('AppointmentEngine - partitionQueueForReception Tests', () {
+    final now = DateTime(2026, 10, 11, 10, 0);
+
+    Appointment createAppt(String id, int token, AppointmentStatus status) {
+      return Appointment(
+        id: id,
+        patientPhone: '98640000$token',
+        patientName: 'Patient $token',
+        doctorId: 'doc_1',
+        doctorName: 'Dr. Bhaskar Thakuria',
+        scheduledDate: now,
+        amountCollected: 500,
+        paymentType: PaymentType.paid,
+        status: status,
+        queueNumber: token,
+      );
+    }
+
+    test('Partitions completed, waiting, and inChamber correctly', () {
+      final appts = [
+        createAppt('appt_11', 11, AppointmentStatus.completed),
+        createAppt('appt_12', 12, AppointmentStatus.pending),
+        createAppt('appt_13', 13, AppointmentStatus.pending),
+        createAppt('appt_14', 14, AppointmentStatus.pending),
+        createAppt('appt_15', 15, AppointmentStatus.pending),
+      ];
+
+      // Token 13 is currently called into chamber
+      final view = AppointmentEngine.partitionQueueForReception(
+        appointments: appts,
+        activeAppointmentId: 'appt_13',
+        activeQueueNumber: 13,
+      );
+
+      expect(view.completed.length, 1);
+      expect(view.completed.first.id, 'appt_11');
+      expect(view.inChamber?.id, 'appt_13');
+
+      // Waiting list should have 12, 14, 15
+      expect(view.waiting.map((a) => a.queueNumber).toList(), [12, 14, 15]);
+
+      // Token 12 was bypassed because 12 < 13
+      expect(view.isBypassed('appt_12'), isTrue);
+      expect(view.isBypassed('appt_14'), isFalse);
+      expect(view.isBypassed('appt_15'), isFalse);
+    });
+
+    test('When VIP is admitted out of order, earlier waiting tokens are bypassed', () {
+      final appts = [
+        createAppt('appt_12', 12, AppointmentStatus.pending),
+        createAppt('appt_13', 13, AppointmentStatus.pending),
+        createAppt('appt_14', 14, AppointmentStatus.pending),
+        createAppt('appt_15', 15, AppointmentStatus.pending),
+      ];
+
+      // VIP Token 15 admitted directly
+      final view = AppointmentEngine.partitionQueueForReception(
+        appointments: appts,
+        activeAppointmentId: 'appt_15',
+        activeQueueNumber: 15,
+      );
+
+      expect(view.inChamber?.id, 'appt_15');
+      expect(view.waiting.map((a) => a.queueNumber).toList(), [12, 13, 14]);
+
+      // All 12, 13, 14 are bypassed
+      expect(view.isBypassed('appt_12'), isTrue);
+      expect(view.isBypassed('appt_13'), isTrue);
+      expect(view.isBypassed('appt_14'), isTrue);
+    });
+
+    test('When doctor is idle (no inChamber), no tokens are flagged as bypassed', () {
+      final appts = [
+        createAppt('appt_12', 12, AppointmentStatus.pending),
+        createAppt('appt_13', 13, AppointmentStatus.pending),
+      ];
+
+      final view = AppointmentEngine.partitionQueueForReception(
+        appointments: appts,
+      );
+
+      expect(view.inChamber, isNull);
+      expect(view.waiting.length, 2);
+      expect(view.isBypassed('appt_12'), isFalse);
+      expect(view.isBypassed('appt_13'), isFalse);
+    });
+  });
 }
+
