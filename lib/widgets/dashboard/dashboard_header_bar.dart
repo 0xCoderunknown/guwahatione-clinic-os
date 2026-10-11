@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
@@ -15,6 +16,7 @@ class DashboardHeaderBar extends StatefulWidget {
 
 class _DashboardHeaderBarState extends State<DashboardHeaderBar> {
   late final TextEditingController _searchCtrl;
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -22,12 +24,26 @@ class _DashboardHeaderBarState extends State<DashboardHeaderBar> {
     _searchCtrl = TextEditingController(
       text: widget.provider.dashboardSearchQuery,
     );
+    HardwareKeyboard.instance.addHandler(_handlePhysicalKey);
   }
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handlePhysicalKey);
     _searchCtrl.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  bool _handlePhysicalKey(KeyEvent event) {
+    if (event is KeyDownEvent &&
+        (event.logicalKey == LogicalKeyboardKey.slash ||
+            event.character == '/') &&
+        !_searchFocusNode.hasFocus) {
+      _searchFocusNode.requestFocus();
+      return true;
+    }
+    return false;
   }
 
   @override
@@ -127,6 +143,7 @@ class _DashboardHeaderBarState extends State<DashboardHeaderBar> {
           // Instant Patient Phone / Name / Token Search
           TextField(
             controller: _searchCtrl,
+            focusNode: _searchFocusNode,
             onChanged: (val) {
               widget.provider.setDashboardSearchQuery(val);
               setState(() {});
@@ -155,7 +172,43 @@ class _DashboardHeaderBarState extends State<DashboardHeaderBar> {
                         setState(() {});
                       },
                     )
-                  : null,
+                  : Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Tooltip(
+                            message: 'Type / anywhere to search',
+                            child: InkWell(
+                              onTap: () => _searchFocusNode.requestFocus(),
+                              borderRadius: BorderRadius.circular(4),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: const Color(0xFFCBD5E1),
+                                  ),
+                                ),
+                                child: const Text(
+                                  '/',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: const BorderSide(color: Color(0xFFE2E8F0)),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/doctor.dart';
 import '../providers/clinic_provider.dart';
+import '../utils/formatters.dart';
 
 class AddDoctorScreen extends StatefulWidget {
   final Doctor? doctor;
@@ -76,7 +77,7 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
               TextFormField(
                 controller: _specialtyController,
                 decoration: const InputDecoration(
-                  labelText: 'Specialty (e.g., General Physician)',
+                  labelText: 'Specialty (e.g., General Physician, Paediatrician)',
                   prefixIcon: Icon(Icons.medical_services_outlined),
                 ),
                 validator: (v) => v!.isEmpty ? 'Required' : null,
@@ -187,7 +188,7 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
       if (widget.doctor != null) {
         final updatedDoctor = widget.doctor!.copyWith(
           name: _nameController.text.trim(),
-          specialty: _specialtyController.text.trim(),
+          specialty: AppFormatters.specialty(_specialtyController.text.trim()),
           phone: _phoneController.text.trim(),
           availableDays: _selectedDays,
           consultationFee: fee,
@@ -197,7 +198,7 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
       } else {
         await clinicProvider.addDoctor(
           _nameController.text.trim(),
-          _specialtyController.text.trim(),
+          AppFormatters.specialty(_specialtyController.text.trim()),
           _phoneController.text.trim(),
           _selectedDays,
           pin: pin.isNotEmpty ? pin : '1234',

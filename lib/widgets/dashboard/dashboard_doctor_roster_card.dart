@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../providers/auth_provider.dart';
 import '../../providers/clinic_provider.dart';
 import '../../screens/doctor_list_screen.dart';
+import '../../utils/formatters.dart';
 
 /// "Doctor Chamber Roster" panel displaying active consulting physicians and live token counts.
 class DashboardDoctorRosterCard extends StatelessWidget {
@@ -12,6 +15,7 @@ class DashboardDoctorRosterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final doctors = provider.doctors;
+    final isOwner = Provider.of<AuthProvider>(context, listen: false).isOwner;
 
     return Container(
       decoration: BoxDecoration(
@@ -53,14 +57,15 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                     context,
                     MaterialPageRoute(builder: (_) => const DoctorListScreen()),
                   ),
-                  child: const Text(
-                    'Manage PINs →',
-                    style: TextStyle(fontSize: 12),
+                  child: Text(
+                    isOwner ? 'Manage PINs →' : 'View Doctors →',
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ),
               ],
             ),
           ),
+
           const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
           if (doctors.isEmpty)
             Padding(
@@ -131,7 +136,7 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       statusBadgeFg = const Color(0xFF64748B);
                       statusLabel = 'IDLE';
                       statusSubtitle =
-                          '${doc.specialty} • Fee: ₹${doc.consultationFee}';
+                          '${AppFormatters.specialty(doc.specialty)} • Fee: ₹${doc.consultationFee}';
                     }
 
                     return ListTile(
@@ -175,7 +180,7 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              "Dr. ${doc.name}",
+                              AppFormatters.doctorTitle(doc.name),
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -183,6 +188,7 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                               ),
                             ),
                           ),
+
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(

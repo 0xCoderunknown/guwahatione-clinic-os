@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
 import '../widgets/widgets.dart';
-import 'add_appointment_dialog.dart';
 
 /// Reception Dashboard Screen: live metrics, queue monitor, and doctor roster orchestrator.
 class DashboardScreen extends StatefulWidget {
@@ -115,25 +114,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => const AddAppointmentDialog(),
-          );
-        },
-        label: const Text(
-          'Book Walk-In',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        icon: const Icon(
-          Icons.person_add_rounded,
-          color: Colors.white,
-          size: 20,
-        ),
-        backgroundColor: Colors.teal.shade700,
-      ),
     );
   }
 }
+

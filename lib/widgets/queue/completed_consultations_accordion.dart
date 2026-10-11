@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/appointment.dart';
+import '../../utils/formatters.dart';
 import '../common/payment_badge.dart';
 import '../common/token_badge.dart';
 
@@ -145,7 +146,7 @@ class _CompletedConsultationsAccordionState
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${appt.patientPhone} • Dr. ${appt.doctorName}',
+                                '${appt.patientPhone} • ${AppFormatters.doctorTitle(appt.doctorName)}',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey.shade600,

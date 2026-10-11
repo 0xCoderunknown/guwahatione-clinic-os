@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
+import '../utils/formatters.dart';
 import 'add_doctor_screen.dart';
 import 'doctor_chamber_screen.dart';
 
@@ -13,10 +15,15 @@ class DoctorListScreen extends StatelessWidget {
     final isDesktop = MediaQuery.of(context).size.width >= 850;
     final canPop = Navigator.canPop(context);
     final showAppBar = !isDesktop || canPop;
+    final isOwner = Provider.of<AuthProvider>(context).isOwner;
 
     return Scaffold(
       appBar: showAppBar
-          ? AppBar(title: const Text('Doctors & Chamber PINs'))
+          ? AppBar(
+              title: Text(
+                isOwner ? 'Doctors & Chamber PINs' : 'Doctor Rosters & Schedules',
+              ),
+            )
           : null,
       body: Consumer<ClinicProvider>(
         builder: (context, provider, child) {
@@ -56,7 +63,7 @@ class DoctorListScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              doctor.name,
+                              AppFormatters.doctorTitle(doctor.name),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -64,7 +71,7 @@ class DoctorListScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${doctor.specialty} • Fee: ₹${doctor.consultationFee}',
+                              '${AppFormatters.specialty(doctor.specialty)} • Fee: ₹${doctor.consultationFee}',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey.shade700,
@@ -74,38 +81,39 @@ class DoctorListScreen extends StatelessWidget {
                             Wrap(
                               spacing: 8,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.shade50,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: Colors.amber.shade300,
+                                if (isOwner)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.shade50,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: Colors.amber.shade300,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.key,
+                                          size: 12,
+                                          color: Colors.amber,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Chamber PIN: ${doctor.pin}',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.amber.shade900,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.key,
-                                        size: 12,
-                                        color: Colors.amber,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Chamber PIN: ${doctor.pin}',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.amber.shade900,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                                 Text(
                                   doctor.availableDays.join(', '),
                                   style: TextStyle(
@@ -125,22 +133,24 @@ class DoctorListScreen extends StatelessWidget {
                         spacing: 8,
                         runSpacing: 6,
                         children: [
-                          OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.teal,
-                              side: const BorderSide(color: Colors.teal),
+                          if (isOwner)
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.teal,
+                                side: const BorderSide(color: Colors.teal),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        AddDoctorScreen(doctor: doctor),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.edit_outlined, size: 16),
+                              label: const Text('Edit'),
                             ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => AddDoctorScreen(doctor: doctor),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.edit_outlined, size: 16),
-                            label: const Text('Edit'),
-                          ),
                           OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.teal,
@@ -164,24 +174,28 @@ class DoctorListScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-
                 ),
               );
             },
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.teal,
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddDoctorScreen()),
-          );
-        },
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Add Doctor', style: TextStyle(color: Colors.white)),
-      ),
+      floatingActionButton: isOwner
+          ? FloatingActionButton.extended(
+              backgroundColor: Colors.teal,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddDoctorScreen()),
+                );
+              },
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                'Add Doctor',
+                style: TextStyle(color: Colors.white),
+              ),
+            )
+          : null,
     );
   }
 }

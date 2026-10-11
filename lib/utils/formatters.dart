@@ -56,4 +56,24 @@ class AppFormatters {
     }
     return '₹${amount.toStringAsFixed(2)}';
   }
+
+  /// Formats doctor title preventing duplicate "Dr. Dr." prefixes.
+  static String doctorTitle(String? name) {
+    if (name == null || name.trim().isEmpty) return 'Doctor';
+    final clean = name.trim();
+    if (clean.toLowerCase().startsWith('dr.') || clean.toLowerCase().startsWith('dr ')) {
+      final stripped = clean.replaceFirst(RegExp(r'^dr\.?\s*', caseSensitive: false), '').trim();
+      return 'Dr. $stripped';
+    }
+    return 'Dr. $clean';
+  }
+
+  /// Sanitizes specialty and corrects common typos like 'Paedetric' -> 'Paediatric'.
+  static String specialty(String? specialty) {
+    if (specialty == null || specialty.trim().isEmpty) return 'General';
+    var clean = specialty.trim();
+    clean = clean.replaceAll(RegExp(r'paedetric', caseSensitive: false), 'Paediatric');
+    return clean;
+  }
 }
+

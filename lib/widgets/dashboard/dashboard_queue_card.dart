@@ -247,7 +247,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        "Dr. ${appt.doctorName} • Fee: ${AppFormatters.currency(appt.amountCollected)} (${appt.paymentType.displayName})",
+                        "${AppFormatters.doctorTitle(appt.doctorName)} • Fee: ${AppFormatters.currency(appt.amountCollected)} (${appt.paymentType.displayName})",
                         style: const TextStyle(fontSize: 11),
                       ),
                       if (appt.status == AppointmentStatus.pending) ...[
@@ -366,7 +366,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                                             ],
                                           ),
                                           content: Text(
-                                            'Dr. ${appt.doctorName} is taking a breather and hasn\'t clicked \'NEXT PATIENT\' yet.\n\n'
+                                            '${AppFormatters.doctorTitle(appt.doctorName)} is taking a breather and hasn\'t clicked \'NEXT PATIENT\' yet.\n\n'
                                             'Send Token #${appt.queueNumber} (${appt.patientName}) inside anyway?',
                                           ),
                                           actions: [
@@ -406,7 +406,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                                       ).showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                            'Admitted Token #${appt.queueNumber} (${appt.patientName}) to Dr. ${appt.doctorName} chamber',
+                                            'Admitted Token #${appt.queueNumber} (${appt.patientName}) to ${AppFormatters.doctorTitle(appt.doctorName)} chamber',
                                           ),
                                           backgroundColor: Colors.teal.shade800,
                                           duration: const Duration(seconds: 3),

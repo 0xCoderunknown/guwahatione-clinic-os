@@ -194,7 +194,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
             children: [
               Expanded(
                 child: Text(
-                  '${widget.appointment.patientPhone} • Dr. ${widget.appointment.doctorName}',
+                  '${widget.appointment.patientPhone} • ${AppFormatters.doctorTitle(widget.appointment.doctorName)}',
                   style: const TextStyle(fontSize: 12),
                 ),
               ),
@@ -302,7 +302,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
-                                      'Dr. ${widget.appointment.doctorName} is READY for next patient!',
+                                      '${AppFormatters.doctorTitle(widget.appointment.doctorName)} is READY for next patient!',
                                       style: const TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
@@ -337,7 +337,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
-                                      'Dr. ${widget.appointment.doctorName} is taking a breather. Verify patient presence before dispatching.',
+                                      '${AppFormatters.doctorTitle(widget.appointment.doctorName)} is taking a breather. Verify patient presence before dispatching.',
                                       style: const TextStyle(
                                         fontSize: 11,
                                         color: Color(0xFFB45309),
@@ -371,7 +371,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
-                                      'Token #$activeQueueNum ($activePatName) is currently consulting Dr. ${widget.appointment.doctorName}.',
+                                      'Token #$activeQueueNum ($activePatName) is currently consulting ${AppFormatters.doctorTitle(widget.appointment.doctorName)}.',
                                       style: const TextStyle(
                                         fontSize: 11,
                                         color: Color(0xFFB45309),
@@ -418,7 +418,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                                       ],
                                     ),
                                     content: Text(
-                                      'Dr. ${widget.appointment.doctorName} is currently consulting '
+                                      '${AppFormatters.doctorTitle(widget.appointment.doctorName)} is currently consulting '
                                       'Token #$activeQueueNum ($activePatName).\n\n'
                                       'Admitting Token #${widget.appointment.queueNumber} (${widget.appointment.patientName}) '
                                       'will replace the active patient in chamber. Send inside anyway?',
@@ -459,7 +459,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                                       ],
                                     ),
                                     content: Text(
-                                      'Dr. ${widget.appointment.doctorName} is taking a breather and hasn\'t clicked \'NEXT PATIENT\' yet.\n\n'
+                                      '${AppFormatters.doctorTitle(widget.appointment.doctorName)} is taking a breather and hasn\'t clicked \'NEXT PATIENT\' yet.\n\n'
                                       'Send Token #${widget.appointment.queueNumber} (${widget.appointment.patientName}) inside anyway?',
                                     ),
                                     actions: [
@@ -493,7 +493,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      'Dispatched Token #${widget.appointment.queueNumber} (${widget.appointment.patientName}) to Dr. ${widget.appointment.doctorName}',
+                                      'Dispatched Token #${widget.appointment.queueNumber} (${widget.appointment.patientName}) to ${AppFormatters.doctorTitle(widget.appointment.doctorName)}',
                                     ),
                                     backgroundColor: Colors.teal.shade800,
                                     duration: const Duration(seconds: 3),
@@ -602,7 +602,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  'Free Review is only allowed for patients who previously visited Dr. ${widget.appointment.doctorName}.',
+                  'Free Review is only allowed for patients who previously visited ${AppFormatters.doctorTitle(widget.appointment.doctorName)}.',
                 ),
                 backgroundColor: Colors.red,
               ),
