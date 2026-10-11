@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.15.0] — 12-10-2026
+
+### Added
+- **Offline Queue Fallback Cache (`P6`):**
+  - **Local Persistence Gateway (`OfflineQueueCacheService`):** Silently caches daily appointment queue updates to local browser storage (`SharedPreferences`) using JSON serialization via `Appointment.toCacheMap()`.
+  - **Zero-Dropout Resilience:** Counter PC gracefully falls back to cached appointment ledger if broadband connectivity experiences transient hiccups or Firestore stream errors.
+  - **Reception Status Indicator:** Displays high-visibility amber badge `[ ⚡ Offline Cache (HH:mm) ]` in `DashboardTodayQueueCard` during dropouts, auto-clearing once live stream restores.
+- **WhatsApp Digital Prescription Deep Link (`P7`):**
+  - **Pure Domain Formatter (`WhatsAppEngine`):** Formats append-only consultations into standardized, human-readable WhatsApp markdown messages with Indian date formatting (`DD-MM-YYYY`), patient demographics, vitals, diagnosis, medication schedule (dosage, frequency, duration, timing), discontinued drug audits, and follow-up review interval.
+  - **1-Tap `wa.me` Deep Link Generation:** Cleanses Indian phone numbers to canonical `91XXXXXXXXXX` format and builds deep link URLs.
+  - **Cross-Platform Delivery:** Added green `[ 💬 Send on WhatsApp ]` action on `PrescriptionPrintScreen` and quick dispatch on `AppointmentAccordion` for completed visits, opening Web WhatsApp via zero-dependency `platform_url.dart`.
+- **Daily End-of-Day Financial Handover & Cash Reconciliation (`P8`):**
+  - **Domain Calculation Engine (`RevenueEngine.calculateCashHandover`):** Accurately summarizes daily cash collections across completed visits, filtering out pending/absent slots and segmenting visits by doctor and payment type (`Paid`, `Free Review`, `Free Family`).
+  - **Physical Cash Denomination Counter:** Interactive modal `DailyCashHandoverDialog` allowing receptionists to tally note counts (`₹500`, `₹200`, `₹100`, `₹50`, `₹20`, `₹10`) with live discrepancy evaluation (`🟢 ₹0 Difference • Balanced` vs `🔴 Shortage / Surplus`).
+  - **Reception Dashboard Trigger:** Added 1-tap `[ 🧾 Cash Handover ]` button on `DashboardHeaderBar` and printable handover slip action.
+- **Automated Test Suite Expansion:**
+  - Added unit test suites `test/offline_queue_cache_test.dart`, `test/whatsapp_engine_test.dart`, and `test/cash_handover_engine_test.dart`.
+  - Expanded test suite from 81 to **95 automated tests** executing in sub-3 seconds with 100% pass rate.
+
+---
+
 ## [1.14.0] — 11-10-2026
 
 ### Added

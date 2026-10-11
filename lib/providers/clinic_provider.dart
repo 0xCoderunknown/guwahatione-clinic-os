@@ -14,6 +14,7 @@ import '../models/patient_review_eligibility.dart';
 import '../models/prescription_item.dart';
 import '../models/user_role.dart';
 import '../services/firebase_service.dart';
+import '../services/offline_queue_cache_service.dart';
 
 class ClinicProvider with ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();
@@ -28,6 +29,11 @@ class ClinicProvider with ChangeNotifier {
   List<Medicine> _medicines = [];
   bool _hasLoadedDoctors = false;
   bool _isLoading = false;
+  bool _isOfflineFallback = false;
+  DateTime? _offlineCacheTimestamp;
+
+  bool get isOfflineFallback => _isOfflineFallback;
+  DateTime? get offlineCacheTimestamp => _offlineCacheTimestamp;
 
   List<Doctor> get doctors => _doctors;
 
@@ -97,12 +103,46 @@ class ClinicProvider with ChangeNotifier {
   void startListeningToAppointments([DateTime? specificDate]) {
     final targetDate = specificDate ?? DateTime.now();
     _appointmentSub?.cancel();
+
+    // Check if offline cached queue exists for instant display if currently empty
+    if (_todayAppointments.isEmpty) {
+      OfflineQueueCacheService.getCachedQueue(targetDate).then((cached) {
+        if (cached != null && cached.isNotEmpty && _todayAppointments.isEmpty) {
+          OfflineQueueCacheService.getCacheTimestamp(targetDate).then((ts) {
+            _todayAppointments = cached;
+            _isOfflineFallback = true;
+            _offlineCacheTimestamp = ts;
+            notifyListeners();
+          });
+        }
+      });
+    }
+
     _appointmentSub = _firebaseService
         .getAppointmentsForDate(targetDate)
-        .listen((appointments) {
-          _todayAppointments = appointments;
-          notifyListeners();
-        });
+        .listen(
+          (appointments) {
+            _todayAppointments = appointments;
+            _isOfflineFallback = false;
+            _offlineCacheTimestamp = null;
+            notifyListeners();
+            // Silently persist to offline local cache
+            unawaited(OfflineQueueCacheService.saveQueue(targetDate, appointments));
+          },
+          onError: (err) async {
+            // Broadband dropout or Firestore error: seamlessly fallback to offline cache
+            final cached =
+                await OfflineQueueCacheService.getCachedQueue(targetDate);
+            if (cached != null && cached.isNotEmpty) {
+              final ts =
+                  await OfflineQueueCacheService.getCacheTimestamp(targetDate);
+              _todayAppointments = cached;
+              _isOfflineFallback = true;
+              _offlineCacheTimestamp = ts;
+              notifyListeners();
+            }
+          },
+        );
   }
 
   void _subscribeToDoctors() {
@@ -456,6 +496,14 @@ class ClinicProvider with ChangeNotifier {
 
   Future<List<Consultation>> getPatientConsultations(String phone) async {
     return await _firebaseService.getConsultationsForPatient(phone);
+  }
+
+  Future<Consultation?> getConsultationForAppointment(
+    String appointmentId,
+    String phone,
+  ) async {
+    final list = await getPatientConsultations(phone);
+    return list.where((c) => c.appointmentId == appointmentId).firstOrNull;
   }
 
   Future<List<PrescriptionItem>> getActiveMedicationsForPatient(

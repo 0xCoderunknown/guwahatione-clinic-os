@@ -250,3 +250,19 @@
    Family members sharing a phone number are distinguished by `normalized patientName`.
 3. **14-Day Free Review Policy:** Free reviews are valid only if the patient has a prior non-absent consultation with the **same** doctor within 14 calendar days.
 4. **Clean Presentation Boundary:** Zero raw Firebase objects (`DocumentSnapshot`, `FieldValue`, `cloud_firestore`) may cross into Flutter screens or widgets; all data flow routes via pure domain models (`ChamberSession`, `Appointment`, etc.) and dedicated engines.
+5. **Mandatory Indian Date Formatting (`DD-MM-YYYY`):** While database and internal serialization continue to use standard Firestore `Timestamp` or ISO-8601 strings, all human-facing presentation and documentation must strictly use `DD-MM-YYYY` (via `AppFormatters`).
+
+---
+
+## 💾 10. Local Client Storage & Domain Handover Contracts
+
+### A. Offline Queue Fallback Storage (`SharedPreferences`)
+- **Key Pattern:** `offline_queue_{yyyy-MM-dd}`
+- **Timestamp Key Pattern:** `offline_queue_time_{yyyy-MM-dd}`
+- **Purpose:** Local browser/device cache enabling zero-dropout counter operations during broadband disruptions.
+- **Serialization:** JSON array of `Appointment.toCacheMap()` entries with ISO-8601 string dates.
+
+### B. Daily Cash Handover Domain Models
+- **`CashHandoverSummary`:** Aggregates realized cash, completed consultations, paid counts, and free reviews (Review & Family).
+- **`CashHandoverDoctorRow`:** Segments cash drawer receipts by doctor for closing sign-off.
+- **Denomination Math:** Evaluates note counts (`₹500`, `₹200`, `₹100`, `₹50`, `₹20`, `₹10`) against expected realized revenue to audit discrepancies.

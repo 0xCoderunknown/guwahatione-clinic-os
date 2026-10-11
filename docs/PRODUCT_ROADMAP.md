@@ -43,18 +43,20 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 | **Doctor Chamber Queue** | Real-time consultant token stream, doctor fee summary, patient history review. | 🟢 Verified & Live |
 | **Doctor Medical Reg & Print Footer (`P5`)** | Medical council registration number (`medicalRegNumber` / `doctorRegNumber`) in doctor profile, roster card badge, and official prescription signature footer block. | 🟢 Shipped & Verified (`v1.14.0`) |
 | **Domain Engine Test Fortification** | 100% unit test coverage across pure domain engines (`RevenueEngine`, `AppointmentEngine`, `MedicineEngine`) with 81 automated tests. | 🟢 Shipped & Verified (`v1.14.0`) |
+| **Offline Queue Fallback Cache (`P6`)** | Silent caching of daily appointments to local browser storage (`SharedPreferences`) with graceful zero-dropout fallback and amber status badge during broadband hiccups. | 🟢 Shipped & Verified (`v1.15.0`) |
+| **WhatsApp Prescription Deep Link (`P7`)** | Formatted clinical summaries via pure `WhatsAppEngine` with Indian date standard (`DD-MM-YYYY`), vitals, medication schedule, and 1-tap `wa.me` deep link delivery. | 🟢 Shipped & Verified (`v1.15.0`) |
+| **Daily Cash Handover & Note Counter (`P8`)** | End-of-day cash reconciliation modal (`DailyCashHandoverDialog`) with doctor-wise cash breakdown, interactive Indian note denomination counter, and discrepancy auditing. | 🟢 Shipped & Verified (`v1.15.0`) |
 
 ---
 
 ## 🎯 3. Active Priority Backlog (Next Horizon)
 
-The primary clinical friction points (P1–P5) have been shipped. The active roadmap now advances to counter operational utilities:
+All primary operational priorities (P1 through P8) have been successfully implemented and verified across 95 automated tests. Future enhancements are proposed based on operational feedback from reception counters and consulting physicians.
 
-| Priority | Feature / Module | Problem Solved | Acceptance Criteria |
+| Priority | Proposed Feature | Problem Solved | Acceptance Criteria |
 |---|---|---|---|
-| **P6** | **Offline Queue Fallback Cache** | Counter PCs may experience momentary internet hiccups. | Local cache of daily appointments using browser storage / SQLite fallback to prevent counter freezes during transient dropouts. |
-| **P7** | **WhatsApp Prescription Deep Link** | Patients frequently request a digital copy on WhatsApp without clinic needing expensive SMS gateways. | 1-tap `wa.me/91...?text=...` deep link at reception counter allowing direct send via Web WhatsApp. |
-| **P8** | **Daily End-of-Day Financial Handover** | Reception shift handover requires manual cash counting. | Single-click end-of-day reconciliation view aggregating collected fees by doctor and payment type (Paid, Free Review, Family Courtesy). |
+| **P9** | **Prescription Template Presets** | Visiting doctors prescribe repetitive sets of medicines for common OPD conditions (e.g. URI, Acute Gastritis). | 1-tap favorite prescription template loader in Step 4 prescribing pipeline. |
+| **P10** | **Multi-Chamber Queue Sound Announcer** | Counter receptionist wants audible token chime (e.g. "Token 5, please proceed to Chamber 1") for waiting lobby. | Web audio chime synthesized on chamber call-in trigger. |
 
 ---
 

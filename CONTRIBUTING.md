@@ -45,6 +45,7 @@ When making code changes:
 5. Keep Firestore access in `FirebaseService` / sub-services and delegate business policy to domain engines.
 6. Do not add dev-session markers (`// NEW:`, `// <---`) or uppercase section labels (`// HEADER ROW`) without a clear need.
 7. `AppConstants.defaultConsultationFee` is the fallback fee source; doctor-specific fees take precedence.
+8. **Mandatory Indian Date Format (`DD-MM-YYYY`):** All human-facing UI text, printed prescriptions, reports, changelogs, and markdown documentation must strictly use Indian formatting (`DD-MM-YYYY` or `DD-MM-YY`). Never present `YYYY-MM-DD` or `MM/DD/YYYY` to users or in documentation. Note: `AppConstants.blockedDates` uses ISO strings internally solely for dictionary lookup matching.
 
 ### Architecture Rules
 
@@ -58,14 +59,15 @@ widgets/      ← modularized Flutter presentation components
 utils/        ← constants and platform adapters
 ```
 
-### Planned Features (next tasks)
+### Planned Features & Roadmap Status
 
-- [ ] Doctor signature & medical registration stamp on printout (P5)
-- [ ] Offline queue fallback cache for transient network dropouts (P6)
-- [ ] WhatsApp prescription deep link (`wa.me`) at counter (P7)
-- [ ] Daily end-of-day financial handover reconciliation (P8)
-- [ ] Doctor leave / blocked-dates management UI
-- [ ] Patient directory screen with search
-- [ ] Edit doctor profile
-- [ ] Move `blockedDates` from `AppConstants` to Firestore
-- [ ] Dark mode
+- [x] Doctor signature & medical registration stamp on printout (P5) — *Shipped v1.14.0*
+- [x] Offline queue fallback cache for transient network dropouts (P6) — *Shipped v1.15.0*
+- [x] WhatsApp prescription deep link (`wa.me`) at counter (P7) — *Shipped v1.15.0*
+- [x] Daily end-of-day financial handover reconciliation (P8) — *Shipped v1.15.0*
+- [ ] Doctor leave / blocked-dates management UI (P9)
+- [ ] Searchable longitudinal patient directory & timeline view (P10)
+- [ ] Edit doctor profile & chamber configuration UI
+- [ ] Move `blockedDates` from `AppConstants` to dynamic Firestore collection
+- [ ] Dark mode support across counter and chamber displays
+

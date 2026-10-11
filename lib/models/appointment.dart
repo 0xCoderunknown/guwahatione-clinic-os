@@ -74,6 +74,23 @@ class Appointment {
     };
   }
 
+  /// JSON-safe serialization map (using ISO string instead of Firestore Timestamp)
+  /// specifically for offline cache persistence in SharedPreferences.
+  Map<String, dynamic> toCacheMap() {
+    return {
+      'id': id,
+      'patientPhone': patientPhone,
+      'patientName': patientName,
+      'status': status.name,
+      'paymentType': paymentType.name,
+      'amountCollected': amountCollected,
+      'queueNumber': queueNumber,
+      'scheduledDate': scheduledDate.toIso8601String(),
+      'doctorId': doctorId,
+      'doctorName': doctorName,
+    };
+  }
+
   factory Appointment.fromJson(Map<String, dynamic> json) {
     DateTime parsedDate;
     final rawDate = json['scheduledDate'];

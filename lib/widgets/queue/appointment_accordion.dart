@@ -6,6 +6,7 @@ import '../../models/appointment.dart';
 import '../../models/chamber_session.dart';
 import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
+import '../../utils/platform_url.dart';
 import '../booking/booking_eligibility_banner.dart';
 import '../common/appointment_status_chip.dart';
 import '../common/payment_badge.dart';
@@ -574,6 +575,62 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                     ),
                   ],
                 ),
+                if (widget.appointment.status == AppointmentStatus.completed) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF16A34A),
+                        side: const BorderSide(
+                          color: Color(0xFF16A34A),
+                          width: 1.2,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      icon: const Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 18,
+                      ),
+                      label: const Text(
+                        'Send WhatsApp Digital Prescription',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () async {
+                        final clinic = Provider.of<ClinicProvider>(
+                          context,
+                          listen: false,
+                        );
+                        final consult =
+                            await clinic.getConsultationForAppointment(
+                              widget.appointment.id,
+                              widget.appointment.patientPhone,
+                            );
+                        String msg;
+                        if (consult != null) {
+                          msg = WhatsAppEngine.formatPrescriptionMessage(
+                            consultation: consult,
+                            queueNumber: widget.appointment.queueNumber,
+                          );
+                        } else {
+                          msg =
+                              '*GuwahatiOne Clinic — OPD Visit Receipt*\n'
+                              '🗓️ Date: ${AppFormatters.date(widget.appointment.scheduledDate)} | Token: #${widget.appointment.queueNumber}\n'
+                              '👤 Patient: ${widget.appointment.patientName}\n'
+                              '👨‍⚕️ Doctor: ${AppFormatters.doctorTitle(widget.appointment.doctorName)}\n'
+                              '💵 Amount Paid: ${AppFormatters.currency(widget.appointment.amountCollected)}\n\n'
+                              'Status: Completed\n'
+                              'Thank you for visiting GuwahatiOne Clinic.';
+                        }
+                        final link = WhatsAppEngine.buildDeepLink(
+                          phone: widget.appointment.patientPhone,
+                          message: msg,
+                        );
+                        openUrl(link);
+                      },
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

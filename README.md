@@ -89,6 +89,10 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 - **🚫 Explicit "Absent / No-Show" Status** — Replaced "Cancel" with "Absent" so slots are preserved on the doctor ledger with ₹0 amount.
 - **💳 Smart Payment Types** — Paid (per doctor fee), Free Review (strictly for returning patients of same doctor within 14 days, with warning if >14 days), Free Family (courtesy).
 - **📊 Daily Revenue Analytics & Auditing** — Real-time earnings breakdown calculated by `RevenueEngine` grouped by doctor with chamber preview mode.
+- **⚡ Offline Queue Fallback Cache (`P6`)** — Silent local caching of daily appointment ledgers to `SharedPreferences` (`OfflineQueueCacheService`) preventing counter PC freezes during broadband dropouts, accompanied by an automatic amber status badge.
+- **💬 WhatsApp Digital Prescription Deep Link (`P7`)** — 1-tap `wa.me` deep link delivery (`WhatsAppEngine`) generating structured clinical prescription summaries with Indian date standard (`DD-MM-YYYY`), vitals, medication schedule, and follow-up review windows.
+- **🧾 Daily Cash Handover & Note Denomination Counter (`P8`)** — End-of-day closing reconciliation modal (`DailyCashHandoverDialog`) with doctor-wise cash breakdown, interactive currency note calculator (`₹500`, `₹200`, `₹100`, `₹50`, `₹20`, `₹10`), live discrepancy analysis, and printable handover slip.
+- **📋 Doctor Medical Council Registration & Printout Footer (`P5`)** — Configurable registration number (e.g. `AMC-24891`) on doctor profiles, roster cards, and official prescription signature footer block.
 - **🔢 Atomic Queue Numbers** — Race-condition-safe queue numbering per doctor and day using Firestore transactions.
 - **🔴 Real-time Firestore Streams** — Live updates across counter PC and doctor chambers via Firestore listeners.
 
@@ -100,7 +104,7 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 |---|---|
 | Platforms | Web (Desktop Counter / Tablet / Mobile), Android |
 | UI Framework | Flutter 3.x (Material 3 Responsive) |
-| Domain Engines | Pure Dart (`RevenueEngine`, `AppointmentEngine`, `MedicineEngine`) |
+| Domain Engines | Pure Dart (`RevenueEngine`, `AppointmentEngine`, `MedicineEngine`, `WhatsAppEngine`) |
 | State Management | Provider |
 | Backend / DB | Cloud Firestore (Firebase) |
 | Hosting | Firebase Hosting (SPA Web App) |
@@ -189,8 +193,9 @@ firebase deploy --only hosting
 ## ⚙️ Configuration & Access PINs
 
 ### Default PINs (Out of the Box)
-* **Reception Desk / Owner:** `0000` (can be modified directly in code or app)
-* **Doctor Chamber View:** Default `1234` (configurable per doctor in the Doctors management screen)
+* **Clinic Owner / Master Admin:** `123456` (6-digit PIN: doctor CRUD, fee schedule overrides, financial analytics & audits)
+* **Reception Desk:** `0000` (4-digit PIN: counter booking, queue management, physical arrival check, cash collection)
+* **Doctor Chamber View:** Default `1234` (4-digit PIN: configurable per doctor in Doctor management, consultation encounter)
 
 All tunable constants live in [`lib/utils/app_constants.dart`](lib/utils/app_constants.dart):
 
@@ -221,11 +226,13 @@ lib/
 ├── core/
 │   └── engines/
 │       ├── engines.dart                     # Central barrel export for all domain engines
-│       ├── revenue_engine.dart              # Pure realized revenue math, chamber KPIs & doctor rollups
+│       ├── revenue_engine.dart              # Pure realized revenue math, chamber KPIs, doctor rollups & cash handover
 │       ├── appointment_engine.dart          # 14-day free review eligibility, fee resolution & queue states
-│       └── medicine_engine.dart             # Chemical search scoring, default OPD regimens & Rx segregation
+│       ├── medicine_engine.dart             # Chemical search scoring, default OPD regimens & Rx segregation
+│       └── whatsapp_engine.dart             # Structured clinical summary formatting & wa.me deep links
 ├── models/
 │   ├── appointment.dart                     # Appointment schema, PaymentType & AppointmentStatus
+│   ├── chamber_session.dart                 # Pure domain model for 2-way doctor-reception chamber handshake
 │   ├── consultation.dart                    # Immutable encounter schema with active/stopped getters
 │   ├── diagnostic_investigation.dart        # Lab review (performedDate) & OrderedTest schemas
 │   ├── doctor.dart                          # Doctor schema with Chamber PIN, fee, and searchPreference
@@ -237,7 +244,7 @@ lib/
 │   └── vitals.dart                          # Vitals schema (BP, pulse, SpO2, temp, weight)
 ├── providers/
 │   ├── auth_provider.dart                   # PIN authentication & SharedPreferences session
-│   └── clinic_provider.dart                 # Real-time streams, chamber sync, consultations & appointments
+│   └── clinic_provider.dart                 # Real-time streams, chamber sync, consultations & offline queue fallback
 ├── services/
 │   ├── firebase_service.dart                # Unified services facade delegating to granular sub-services
 │   ├── booking_service.dart                 # Atomic queue bookings, counter transactions & queries
@@ -246,6 +253,7 @@ lib/
 │   ├── catalogue_service.dart               # Formulary curation, deterministic seeds & deduplication
 │   ├── doctor_service.dart                  # Doctor roster & chamber credential management
 │   ├── patient_service.dart                 # Patient demographics & allergy directory queries
+│   ├── offline_queue_cache_service.dart     # Silent local queue caching & dropout resilience
 │   └── firestore_paths.dart                 # Centralized type-safe collection & counter path builders
 ├── screens/
 │   ├── login_screen.dart                    # Role selector shell (Doctor Chamber vs Reception Desk)
@@ -254,7 +262,7 @@ lib/
 │   ├── appointment_list_screen.dart         # Live queue, absent marking, payment updates & "Call In"
 │   ├── doctor_chamber_screen.dart           # Real-time zero-touch chamber sync board & active token badge
 │   ├── consultation_encounter_screen.dart   # Lightweight (<300 lines) 5-step encounter coordinator scaffold
-│   ├── prescription_print_screen.dart       # High-contrast A4/A5 print preview with letterhead toggle
+│   ├── prescription_print_screen.dart       # High-contrast A4/A5 print preview with letterhead toggle & WhatsApp share
 │   ├── medicine_catalogue_screen.dart       # Admin medicine catalogue management & seeding
 │   ├── doctor_list_screen.dart              # Doctor roster, PIN display & chamber preview
 │   ├── add_doctor_screen.dart               # Register doctor with fee & chamber PIN
@@ -281,7 +289,8 @@ lib/
 │   │   ├── booking_patient_fields.dart      # Phone search, patient name, age, and gender fields
 │   │   └── booking_payment_section.dart     # Paid, Free Review, and Family courtesy payment radio section
 │   ├── queue/                               # Reception queue management
-│   │   └── appointment_accordion.dart       # Live token card with actions (absent, attended, call in)
+│   │   ├── appointment_accordion.dart       # Live token card with actions (absent, attended, send in, WhatsApp slip)
+│   │   └── completed_consultations_accordion.dart # Collapsible archive for completed patient consultations
 │   ├── chamber/                             # Doctor chamber catalog screen components
 │   │   ├── chamber_app_bar.dart             # Header with live time, sync indicator, and PIN logout
 │   │   ├── chamber_control_banner.dart      # 2-way handshake control banner (Call Next, In-Consultation badge)
@@ -290,10 +299,13 @@ lib/
 │   │   ├── chamber_queue_list.dart          # Token sequence list with live calling state
 │   │   └── chamber_token_card.dart          # Token tile with status badge, override modal & consultation launcher
 │   ├── dashboard/                           # Command center reception dashboard components
-│   │   ├── dashboard_header_bar.dart        # Reception header bar with quick action chips
+│   │   ├── daily_cash_handover_dialog.dart  # End-of-day closing reconciliation & note denomination counter
+│   │   ├── dashboard_header_bar.dart        # Reception header bar with quick action chips & cash handover
 │   │   ├── dashboard_kpi_strip.dart         # Responsive daily KPI cards with automatic breakpoints
-│   │   ├── dashboard_queue_card.dart        # Live queue preview with 1-tap "Call In" buttons
-│   │   └── dashboard_doctor_roster_card.dart# Doctor roster with live chamber calling status
+│   │   ├── dashboard_queue_card.dart        # Live queue preview with offline cache status badge
+│   │   ├── dashboard_doctor_roster_card.dart# Doctor roster with live chamber calling status
+│   │   ├── doctor_daily_breakdown_table.dart# Doctor-wise patient & fee breakdown table
+│   │   └── doctor_statistics_card.dart      # Doctor statistical card with KPI chips
 │   ├── encounter/                           # Step-by-step clinical encounter widgets
 │   │   ├── advice_and_orders_section.dart   # Step 5: Advice, lab test orders, and quick follow-up chips
 │   │   ├── chamber_calling_alert_bar.dart   # Live reception chamber calling alert banner
@@ -327,21 +339,24 @@ lib/
     ├── medicine_search_scorer.dart          # Transparent adapter forwarding to MedicineEngine
     ├── platform_print.dart                  # Unified cross-platform print interface
     ├── platform_print_web.dart              # Web print implementation using dart:js_interop
-    └── platform_print_stub.dart             # Native desktop/mobile fallback print stub
+    ├── platform_print_stub.dart             # Native desktop/mobile fallback print stub
+    ├── platform_url.dart                    # Cross-platform URL launcher interface
+    ├── platform_url_web.dart                # Web window.open via dart:js_interop
+    └── platform_url_stub.dart               # Non-web platform URL stub
 ```
 
 ---
 
 ## 🧪 Testing
 
-The repository maintains an active automated testing suite covering domain business rules, serialization models, print schedule filtering, and clinical state machines:
+The repository maintains an active automated testing suite covering domain business rules, serialization models, print schedule filtering, offline caching, and clinical state machines:
 
 ```bash
 # Run all automated tests
 flutter test
 ```
 
-- **42 Unit & Widget Tests:** Sub-second execution covering revenue math, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, and print schedule segregation.
+- **95 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, and print schedule segregation with 100% pass rate.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---

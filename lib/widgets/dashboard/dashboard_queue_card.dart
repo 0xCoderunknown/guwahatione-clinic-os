@@ -84,6 +84,41 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                     ),
                   ),
                 ),
+                if (widget.provider.isOfflineFallback) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFF59E0B)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.cloud_off_rounded,
+                          size: 12,
+                          color: Color(0xFFB45309),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          widget.provider.offlineCacheTimestamp != null
+                              ? 'Offline Cache (${AppFormatters.time(widget.provider.offlineCacheTimestamp)})'
+                              : 'Offline Cache',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFB45309),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const Spacer(),
                 TextButton(
                   onPressed: () => Navigator.push(

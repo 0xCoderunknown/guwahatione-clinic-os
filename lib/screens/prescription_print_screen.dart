@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../core/engines/engines.dart';
 import '../models/appointment.dart';
 import '../models/consultation.dart';
 import '../utils/platform_print.dart';
+import '../utils/platform_url.dart';
 import '../widgets/widgets.dart';
 
 enum PaperSize {
@@ -50,6 +52,38 @@ class _PrescriptionPrintScreenState extends State<PrescriptionPrintScreen> {
         elevation: 0.5,
         backgroundColor: Colors.white,
         actions: [
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF16A34A),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            ),
+            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+            label: const Text(
+              'Send on WhatsApp',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            onPressed: () {
+              final msg = WhatsAppEngine.formatPrescriptionMessage(
+                consultation: widget.consultation,
+                queueNumber: widget.appointment?.queueNumber,
+              );
+              final link = WhatsAppEngine.buildDeepLink(
+                phone: widget.consultation.patientPhone,
+                message: msg,
+              );
+              openUrl(link);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Opening WhatsApp for ${widget.consultation.patientName}...',
+                  ),
+                  backgroundColor: const Color(0xFF16A34A),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
           FilledButton.icon(
             style: FilledButton.styleFrom(
               backgroundColor: Colors.teal.shade700,
