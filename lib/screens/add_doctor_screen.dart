@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/doctor.dart';
 import '../providers/clinic_provider.dart';
 
 class AddDoctorScreen extends StatefulWidget {
-  const AddDoctorScreen({super.key});
+  final Doctor? doctor;
+
+  const AddDoctorScreen({super.key, this.doctor});
 
   @override
   State<AddDoctorScreen> createState() => _AddDoctorScreenState();
@@ -12,19 +15,49 @@ class AddDoctorScreen extends StatefulWidget {
 
 class _AddDoctorScreenState extends State<AddDoctorScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _specialtyController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _feeController = TextEditingController(text: '500');
-  final _pinController = TextEditingController(text: '1234');
+  late final TextEditingController _nameController;
+  late final TextEditingController _specialtyController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _feeController;
+  late final TextEditingController _pinController;
 
   final List<String> _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  final List<String> _selectedDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  late List<String> _selectedDays;
+
+  @override
+  void initState() {
+    super.initState();
+    final d = widget.doctor;
+    _nameController = TextEditingController(text: d?.name ?? '');
+    _specialtyController = TextEditingController(text: d?.specialty ?? '');
+    _phoneController = TextEditingController(text: d?.phone ?? '');
+    _feeController = TextEditingController(
+      text: (d?.consultationFee ?? 500).toString(),
+    );
+    _pinController = TextEditingController(text: d?.pin ?? '1234');
+    _selectedDays = d != null
+        ? List<String>.from(d.availableDays)
+        : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _specialtyController.dispose();
+    _phoneController.dispose();
+    _feeController.dispose();
+    _pinController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.doctor != null;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Doctor')),
+      appBar: AppBar(
+        title: Text(isEditing ? 'Edit Doctor' : 'Add Doctor'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -124,9 +157,9 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 onPressed: _saveDoctor,
-                child: const Text(
-                  'Save Doctor',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
+                child: Text(
+                  isEditing ? 'Save Changes' : 'Save Doctor',
+                  style: const TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
             ],
@@ -149,16 +182,40 @@ class _AddDoctorScreenState extends State<AddDoctorScreen> {
     try {
       final fee = int.tryParse(_feeController.text.trim()) ?? 500;
       final pin = _pinController.text.trim();
+      final clinicProvider = Provider.of<ClinicProvider>(context, listen: false);
 
-      await Provider.of<ClinicProvider>(context, listen: false).addDoctor(
-        _nameController.text.trim(),
-        _specialtyController.text.trim(),
-        _phoneController.text.trim(),
-        _selectedDays,
-        pin: pin.isNotEmpty ? pin : '1234',
-        consultationFee: fee,
-      );
+      if (widget.doctor != null) {
+        final updatedDoctor = widget.doctor!.copyWith(
+          name: _nameController.text.trim(),
+          specialty: _specialtyController.text.trim(),
+          phone: _phoneController.text.trim(),
+          availableDays: _selectedDays,
+          consultationFee: fee,
+          pin: pin.isNotEmpty ? pin : widget.doctor!.pin,
+        );
+        await clinicProvider.updateDoctor(updatedDoctor);
+      } else {
+        await clinicProvider.addDoctor(
+          _nameController.text.trim(),
+          _specialtyController.text.trim(),
+          _phoneController.text.trim(),
+          _selectedDays,
+          pin: pin.isNotEmpty ? pin : '1234',
+          consultationFee: fee,
+        );
+      }
+
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.doctor != null
+                ? 'Doctor details updated successfully'
+                : 'Doctor added successfully',
+          ),
+          backgroundColor: Colors.teal,
+        ),
+      );
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;

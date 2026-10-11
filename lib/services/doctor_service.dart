@@ -17,6 +17,10 @@ class DoctorService {
     await _doctorsRef.doc(doctor.id).set(doctor.toJson());
   }
 
+  Future<void> updateDoctor(Doctor doctor) async {
+    await _doctorsRef.doc(doctor.id).update(doctor.toJson());
+  }
+
   Future<void> updateDoctorSearchPreference(
     String doctorId,
     String searchPreference,

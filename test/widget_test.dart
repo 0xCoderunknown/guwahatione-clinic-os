@@ -69,7 +69,39 @@ void main() {
       expect(fromJsonDoc.pin, '4321');
       expect(fromJsonDoc.consultationFee, 700);
     });
+
+    test('Doctor copyWith updates fields correctly while retaining id and unedited properties', () {
+      final doctor = Doctor(
+        id: 'doc-1',
+        name: 'Dr. Sharma',
+        specialty: 'Cardiology',
+        phone: '9876543210',
+        availableDays: ['Mon', 'Wed', 'Fri'],
+        blockedDates: [],
+        pin: '4321',
+        consultationFee: 700,
+        searchPreference: 'brandFirst',
+      );
+
+      final updated = doctor.copyWith(
+        name: 'Dr. A. Sharma',
+        specialty: 'Senior Cardiologist',
+        consultationFee: 800,
+        pin: '9999',
+        availableDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+      );
+
+      expect(updated.id, 'doc-1');
+      expect(updated.name, 'Dr. A. Sharma');
+      expect(updated.specialty, 'Senior Cardiologist');
+      expect(updated.consultationFee, 800);
+      expect(updated.pin, '9999');
+      expect(updated.availableDays, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+      expect(updated.phone, '9876543210');
+      expect(updated.searchPreference, 'brandFirst');
+    });
   });
+
 
   group('Free Review 14-Day & Same Doctor Business Rule Tests', () {
     final doc1 = 'doc-baruah';

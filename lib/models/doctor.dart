@@ -52,4 +52,29 @@ class Doctor {
       searchPreference: json['searchPreference'] as String? ?? 'brandFirst',
     );
   }
+
+  Doctor copyWith({
+    String? id,
+    String? name,
+    String? specialty,
+    String? phone,
+    List<String>? availableDays,
+    List<DateTime>? blockedDates,
+    String? pin,
+    int? consultationFee,
+    String? searchPreference,
+  }) {
+    return Doctor(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      specialty: specialty ?? this.specialty,
+      phone: phone ?? this.phone,
+      availableDays: availableDays ?? this.availableDays,
+      blockedDates: blockedDates ?? this.blockedDates,
+      pin: pin ?? this.pin,
+      consultationFee: consultationFee ?? this.consultationFee,
+      searchPreference: searchPreference ?? this.searchPreference,
+    );
+  }
 }
+

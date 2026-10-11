@@ -119,27 +119,52 @@ class DoctorListScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.teal,
-                          side: const BorderSide(color: Colors.teal),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DoctorChamberScreen(
-                                doctor: doctor,
-                                isPreviewMode: true,
-                              ),
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.teal,
+                              side: const BorderSide(color: Colors.teal),
                             ),
-                          );
-                        },
-                        icon: const Icon(Icons.visibility, size: 16),
-                        label: const Text('Chamber View'),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AddDoctorScreen(doctor: doctor),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.edit_outlined, size: 16),
+                            label: const Text('Edit'),
+                          ),
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.teal,
+                              side: const BorderSide(color: Colors.teal),
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => DoctorChamberScreen(
+                                    doctor: doctor,
+                                    isPreviewMode: true,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.visibility, size: 16),
+                            label: const Text('Chamber View'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
+
                 ),
               );
             },

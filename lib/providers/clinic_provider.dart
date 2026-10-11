@@ -147,6 +147,17 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
+  Future<void> updateDoctor(Doctor doctor) async {
+    _setLoading(true);
+    try {
+      await _firebaseService.updateDoctor(doctor);
+    } catch (e) {
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   Future<Patient?> searchPatient(String phoneNumber) async {
     _setLoading(true);
     try {

@@ -171,6 +171,8 @@ class FirebaseService {
 
   Future<void> addDoctor(Doctor doctor) => _doctorService.addDoctor(doctor);
 
+  Future<void> updateDoctor(Doctor doctor) => _doctorService.updateDoctor(doctor);
+
   Future<void> updateDoctorSearchPreference(
     String doctorId,
     String searchPreference,
