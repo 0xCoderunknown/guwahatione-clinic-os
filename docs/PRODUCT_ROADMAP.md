@@ -49,6 +49,7 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 | **Asynchronous OPD Booking & 1-Tap Desk Check-In** | Advance and phone bookings register as `VisitStatus.booked` with zero lobby clutter; physical arrival triggers 1-tap `QuickCheckInDialog` with granular payment reconciliation (`paidCash`, `paidUpi`, `postPay`, `freeReview`, `freeFamily`, `unpaid`). | 🟢 Shipped & Verified (`v1.16.0`) |
 | **Restricted Emergency Door Self-Call Runway** | `ChamberDoorOverrideBar` strictly displays only the top 1–2 physically checked-in patients (`waitingInLobby`) with amber warning modals to prevent queue chaos during receptionist breaks. | 🟢 Shipped & Verified (`v1.16.1`) |
 | **Read-Only Archive State for Historical Chamber Dates** | Selecting any date prior to today switches doctor chamber to immutable archive mode (`ChamberArchiveBanner`), suppressing all live controls, self-call bars, and admissions while allowing review of past consultation notes. | 🟢 Shipped & Verified (`v1.16.2`) |
+| **Widget Architecture Consolidation** | Consolidated 56 widget files down to 44 files (-21%), eliminated 3 pass-through wrapper screens, inlined tightly-coupled micro-widgets, pruned orphan dead code, and synchronized barrel exports. | 🟢 Shipped & Verified (`v1.16.5`) |
 
 ---
 

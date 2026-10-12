@@ -363,3 +363,134 @@ class _ConsultationEncounterScreenState
     );
   }
 }
+
+/// Notification banner alerting doctor that reception has called the next patient into the chamber.
+class ChamberCallingAlertBar extends StatelessWidget {
+  final int? queueNumber;
+  final String? patientName;
+  final VoidCallback onSwitch;
+  final VoidCallback onDismiss;
+
+  const ChamberCallingAlertBar({
+    super.key,
+    required this.queueNumber,
+    required this.patientName,
+    required this.onSwitch,
+    required this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF3C7),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFF59E0B)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.notifications_active_rounded,
+            color: Color(0xFFB45309),
+            size: 22,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Token #${queueNumber ?? ''} (${patientName ?? 'Next Patient'}) was called to chamber by Reception.",
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: Color(0xFF92400E),
+              ),
+            ),
+          ),
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFB45309),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              visualDensity: VisualDensity.compact,
+            ),
+            onPressed: onSwitch,
+            child: const Text(
+              'Switch Now',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(width: 6),
+          IconButton(
+            icon: const Icon(Icons.close, size: 16, color: Color(0xFF92400E)),
+            tooltip: 'Dismiss',
+            onPressed: onDismiss,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bottom persistent docking bar for saving and signing consultation encounter.
+class ConsultationBottomDock extends StatelessWidget {
+  final bool isSaving;
+  final VoidCallback onCancel;
+  final VoidCallback onCompleteAndSign;
+
+  const ConsultationBottomDock({
+    super.key,
+    required this.isSaving,
+    required this.onCancel,
+    required this.onCompleteAndSign,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          OutlinedButton(
+            onPressed: isSaving ? null : onCancel,
+            child: const Text('Cancel / Back'),
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.teal.shade700,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            icon: isSaving
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.check_circle_outline_rounded, size: 18),
+            label: Text(
+              isSaving
+                  ? 'Saving & Ending...'
+                  : 'CONSULTATION END (Save & Sign)',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            onPressed: isSaving ? null : onCompleteAndSign,
+          ),
+        ],
+      ),
+    );
+  }
+}

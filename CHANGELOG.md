@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.16.5] — 12-10-2026
+
+### Refactored & Consolidated
+- **Widget Architecture Consolidation (Cleaned 12 Redundant Files):**
+  - **Eliminated Pass-Through Thin Screens:**
+    - Merged `DoctorDailyBreakdownTable` directly into `DoctorDailyDetailsScreen` (`doctor_daily_details_screen.dart`), turning a 45-line shell into a self-contained detail screen and removing a misplaced widget from `widgets/dashboard/`.
+    - Merged `DoctorStatisticsCard` directly into `StatisticsScreen` (`statistics_screen.dart`), making it self-contained and removing a misplaced widget from `widgets/dashboard/`.
+    - Merged `DoctorForm` directly into `AddDoctorScreen` (`add_doctor_screen.dart`), turning an anemic 30-line shell into a complete, self-contained doctor credential form.
+    - Merged `DoctorRosterCard` directly into `DoctorListScreen` (`doctor_list_screen.dart`), removing false categorization in `widgets/common/` and eliminating naming confusion with `DashboardDoctorRosterCard`.
+  - **Micro-Widget Inlining within Subsystems:**
+    - Merged `VitalsInputGrid` directly into `VitalsAndExamSection` (`vitals_and_exam_section.dart`), consolidating all Step 2 encounter inputs in one file.
+    - Merged `ChamberQueueList` into `ChamberQueueHeader` (`chamber_queue_header.dart`), unifying queue list rendering and headers.
+    - Merged `PrintClinicalSnapshot` into `PrintHeaderAndDemographics` (`print_header_and_demographics.dart`), combining patient demographics and vitals snapshot for letterheads.
+  - **Screen Micro-Dock Co-location:**
+    - Co-located `ChamberCallingAlertBar` and `ConsultationBottomDock` directly in `ConsultationEncounterScreen` (`consultation_encounter_screen.dart`).
+    - Merged `DoctorLoginForm` and `ReceptionLoginForm` directly into `LoginScreen` (`login_screen.dart`), eliminating cross-file prop drilling and retiring the `widgets/auth/` directory.
+  - **Dead Code Pruning:**
+    - Removed unreferenced orphan `AllergyAlertBanner` (`widgets/common/allergy_alert_banner.dart`).
+  - **Centralized Barrel Synchronization:**
+    - Cleaned and updated `lib/widgets/widgets.dart` barrel exports, reducing total widget files from 56 to 44 (-21%).
+  - **Automated Verification:**
+    - `flutter analyze` completed with 0 errors and 0 warnings.
+    - All 122 automated unit and widget tests pass seamlessly.
+
+---
+
 ## [1.16.4] — 12-10-2026
 
 ### Refactored & Modularized

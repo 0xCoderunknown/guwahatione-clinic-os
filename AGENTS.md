@@ -113,7 +113,7 @@ lib/
 ├── providers/    -> App state (AuthProvider for PIN sessions, ClinicProvider for live streams)
 ├── services/     -> Modular Firestore service layer (FirestorePaths, booking, consultation, chamber, catalogue, doctor, patient)
 ├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
-├── widgets/      -> Reusable UI sub-packages (auth, booking, catalogue, chamber, common, dashboard, encounter, print, queue)
+├── widgets/      -> Reusable UI sub-packages (booking, catalogue, chamber, common, dashboard, encounter, print, queue)
 └── utils/        -> Helpers (Default medicines, app constants, platform print, formatters)
 test/             -> Automated test suite (122+ unit and widget tests covering engines, flows, and models)
 docs/

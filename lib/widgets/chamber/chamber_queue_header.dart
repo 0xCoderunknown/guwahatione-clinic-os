@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../models/appointment.dart';
+import 'chamber_token_card.dart';
+
 /// Header displaying queue count and live sync indicator.
 class ChamberQueueHeader extends StatelessWidget {
   final int totalBooked;
@@ -141,6 +144,46 @@ class ChamberEmptyQueue extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Renders either the empty queue placeholder or the sequential token card list
+/// for the Doctor Chamber screen.
+class ChamberQueueList extends StatelessWidget {
+  final List<Appointment> appointments;
+  final String? activeCallingApptId;
+  final bool isPastDate;
+  final ValueChanged<Appointment> onConsult;
+
+  const ChamberQueueList({
+    super.key,
+    required this.appointments,
+    required this.activeCallingApptId,
+    this.isPastDate = false,
+    required this.onConsult,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (appointments.isEmpty) {
+      return const ChamberEmptyQueue();
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: appointments.length,
+      separatorBuilder: (ctx, i) => const SizedBox(height: 8),
+      itemBuilder: (ctx, index) {
+        final appt = appointments[index];
+        return ChamberTokenCard(
+          appointment: appt,
+          isCallingNow: appt.id == activeCallingApptId,
+          isPastDate: isPastDate,
+          onConsult: () => onConsult(appt),
+        );
+      },
     );
   }
 }

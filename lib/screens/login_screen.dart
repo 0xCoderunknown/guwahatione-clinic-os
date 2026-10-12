@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../models/doctor.dart';
 import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
-import '../widgets/widgets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -276,5 +275,197 @@ class _LoginScreenState extends State<LoginScreen>
             'Incorrect PIN (Testing: Reception: 0000 | Admin: 849201).',
       );
     }
+  }
+}
+
+/// Presentation form for Doctor Chamber authentication.
+class DoctorLoginForm extends StatelessWidget {
+  final List<Doctor> doctors;
+  final Doctor? selectedDoctor;
+  final TextEditingController pinController;
+  final bool isLoading;
+  final ValueChanged<Doctor?> onDoctorChanged;
+  final VoidCallback onLogin;
+
+  const DoctorLoginForm({
+    super.key,
+    required this.doctors,
+    required this.selectedDoctor,
+    required this.pinController,
+    required this.isLoading,
+    required this.onDoctorChanged,
+    required this.onLogin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (doctors.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.people_outline, size: 36, color: Colors.grey.shade400),
+            const SizedBox(height: 12),
+            Text(
+              'No doctors registered yet.\nLogin as Reception to add doctors.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DropdownButtonFormField<Doctor>(
+          initialValue: selectedDoctor,
+          decoration: InputDecoration(
+            labelText: 'Select Doctor',
+            prefixIcon: const Icon(Icons.person_pin_rounded),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
+          ),
+          items: doctors.map((doc) {
+            return DropdownMenuItem<Doctor>(
+              value: doc,
+              child: Text(
+                '${doc.name} (${doc.specialty})',
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
+          }).toList(),
+          onChanged: onDoctorChanged,
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: pinController,
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: 'Chamber PIN',
+            hintText: 'Enter 4-digit PIN (default: 1234)',
+            prefixIcon: const Icon(Icons.lock_outline_rounded),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
+          ),
+          onSubmitted: (_) => onLogin(),
+        ),
+        const Spacer(),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.teal,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: isLoading ? null : onLogin,
+          child: isLoading
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text(
+                  'Enter Chamber View',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Presentation form for Reception Desk / Owner authentication.
+class ReceptionLoginForm extends StatelessWidget {
+  final TextEditingController pinController;
+  final bool isLoading;
+  final VoidCallback onLogin;
+
+  const ReceptionLoginForm({
+    super.key,
+    required this.pinController,
+    required this.isLoading,
+    required this.onLogin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Reception Desk & Admin Mode',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF334155),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Full access to book appointments, manage doctors, and view financial audits.',
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: pinController,
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: 'Reception / Owner PIN',
+            hintText: 'PIN (Reception: 0000 | Admin: 849201)',
+            helperText: 'Testing PINs — Reception: 0000 | Admin: 849201',
+            helperStyle: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.blueGrey.shade700,
+            ),
+            prefixIcon: const Icon(Icons.security_rounded),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
+          ),
+          onSubmitted: (_) => onLogin(),
+        ),
+        const Spacer(),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF0F172A),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: isLoading ? null : onLogin,
+          child: isLoading
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text(
+                  'Access Reception Desk',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+        ),
+      ],
+    );
   }
 }
