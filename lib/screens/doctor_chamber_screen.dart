@@ -54,6 +54,8 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   bool get _isToday => DateUtils.isSameDay(_selectedDate, DateTime.now());
   bool get _isPastDate =>
       _selectedDate.isBefore(DateUtils.dateOnly(DateTime.now()));
+  String get _queueHeaderTitle =>
+      _isPastDate ? "Past Session Roster" : "Today's Patient Queue";
 
   void _listenToChamberSession() {
     _chamberSessionSub?.cancel();
@@ -383,9 +385,14 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
                       ChamberMetricsGrid.fromAppointments(
                         appointments: appointments,
                         isDesktop: isDesktop,
+                        isPastDate: _isPastDate,
                       ),
                       const SizedBox(height: 24),
-                      ChamberQueueHeader(totalBooked: chamberQueue.length),
+                      ChamberQueueHeader(
+                        title: _queueHeaderTitle,
+                        totalBooked: chamberQueue.length,
+                        isPastDate: _isPastDate,
+                      ),
                       const SizedBox(height: 12),
                       ChamberQueueList(
                         appointments: chamberQueue,

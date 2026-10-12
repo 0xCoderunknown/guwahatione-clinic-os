@@ -362,7 +362,7 @@ The repository maintains an active automated testing suite covering domain busin
 flutter test
 ```
 
-- **114 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, and print schedule segregation with 100% pass rate.
+- **118 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, and print schedule segregation with 100% pass rate.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---

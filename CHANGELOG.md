@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.16.3] — 12-10-2026
+
+### Audit Integrity & Historical View Hardening
+- **Dynamic Queue Header & Static Archive Badge (`ChamberQueueHeader`):**
+  - Section title automatically switches from `"Today's Patient Queue"` to `"Past Session Roster"` when viewing historical dates.
+  - Replaced the live sync indicator (`"🟢 Live Sync"`) with a muted static badge (`"⚪ Archived Snapshot"`) on past dates.
+- **Historical Chamber Metric Reconciliation (`ChamberMetricsGrid`):**
+  - Total tokens subtitle on historical dates updates to `"Shift completed"` instead of displaying phantom queue counts.
+  - Waiting queue count evaluates to `0` for closed past shifts.
+  - Reconciled `Absent / No-Show` count on historical dates to dynamically include unresolved tokens that never reached consultation, aligning with the visual `UNATTENDED / NO-SHOW` tags.
+- **Automated Test Fortification:**
+  - Expanded `test/chamber_read_only_archive_test.dart` with audit reconciliation and dynamic header tests, bringing test suite to **118 passing tests** with 100% success rate.
+
+---
+
 ## [1.16.2] — 12-10-2026
 
 ### Added & Hardened

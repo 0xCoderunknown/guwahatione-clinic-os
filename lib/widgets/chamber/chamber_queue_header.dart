@@ -3,11 +3,21 @@ import 'package:flutter/material.dart';
 /// Header displaying queue count and live sync indicator.
 class ChamberQueueHeader extends StatelessWidget {
   final int totalBooked;
+  final bool isPastDate;
+  final String? title;
 
-  const ChamberQueueHeader({super.key, required this.totalBooked});
+  const ChamberQueueHeader({
+    super.key,
+    required this.totalBooked,
+    this.isPastDate = false,
+    this.title,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final displayTitle =
+        title ?? (isPastDate ? "Past Session Roster" : "Today's Patient Queue");
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -19,9 +29,9 @@ class ChamberQueueHeader extends StatelessWidget {
               color: Color(0xFF334155),
             ),
             const SizedBox(width: 8),
-            const Text(
-              "Today's Patient Queue",
-              style: TextStyle(
+            Text(
+              displayTitle,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF0F172A),
@@ -45,27 +55,50 @@ class ChamberQueueHeader extends StatelessWidget {
             ),
           ],
         ),
-        Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: Colors.green,
-                shape: BoxShape.circle,
+        if (isPastDate)
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Colors.blueGrey.shade300,
+                  shape: BoxShape.circle,
+                ),
               ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              "Live Sync",
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey.shade600,
+              const SizedBox(width: 6),
+              Text(
+                "Archived Snapshot",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.blueGrey.shade600,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          )
+        else
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                "Live Sync",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }

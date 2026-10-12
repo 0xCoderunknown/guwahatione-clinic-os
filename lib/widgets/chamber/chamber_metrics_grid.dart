@@ -14,6 +14,7 @@ class ChamberMetricsGrid extends StatelessWidget {
   final int waitingCount;
   final int totalFees;
   final bool isDesktop;
+  final bool isPastDate;
 
   const ChamberMetricsGrid({
     super.key,
@@ -25,14 +26,24 @@ class ChamberMetricsGrid extends StatelessWidget {
     required this.waitingCount,
     required this.totalFees,
     required this.isDesktop,
+    this.isPastDate = false,
   });
 
   factory ChamberMetricsGrid.fromAppointments({
     Key? key,
     required List<Appointment> appointments,
     required bool isDesktop,
+    bool isPastDate = false,
   }) {
     final kpis = RevenueEngine.calculateChamberKpis(appointments);
+
+    final absentCount = appointments.where((a) =>
+        a.status == AppointmentStatus.absent ||
+        a.visitStatus == VisitStatus.cancelled ||
+        (isPastDate && a.visitStatus != VisitStatus.completed)
+    ).length;
+
+    final waitingCount = isPastDate ? 0 : kpis.waitingCount;
 
     return ChamberMetricsGrid(
       key: key,
@@ -40,10 +51,11 @@ class ChamberMetricsGrid extends StatelessWidget {
       attendedCount: kpis.attendedCount,
       paidCount: kpis.paidCount,
       freeCount: kpis.freeCount,
-      absentCount: kpis.absentCount,
-      waitingCount: kpis.waitingCount,
+      absentCount: absentCount,
+      waitingCount: waitingCount,
       totalFees: kpis.totalDoctorFees,
       isDesktop: isDesktop,
+      isPastDate: isPastDate,
     );
   }
 
@@ -53,7 +65,7 @@ class ChamberMetricsGrid extends StatelessWidget {
       ChamberMetricTile(
         title: "Total Tokens",
         value: "$totalBooked",
-        subtitle: "$waitingCount still in queue",
+        subtitle: isPastDate ? "Shift completed" : "$waitingCount still in queue",
         icon: Icons.confirmation_number_outlined,
         color: Colors.blue,
       ),
@@ -67,7 +79,7 @@ class ChamberMetricsGrid extends StatelessWidget {
       ChamberMetricTile(
         title: "Absent / No-Show",
         value: "$absentCount",
-        subtitle: "Slots preserved",
+        subtitle: isPastDate ? "Unattended / Closed" : "Slots preserved",
         icon: Icons.person_off_outlined,
         color: const Color(0xFF64748B),
       ),
