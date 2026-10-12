@@ -37,7 +37,7 @@ Follow this checklist whenever adding a new clinical field (e.g., examination ob
 
 ### Step 4: Update Print Output (`lib/widgets/print/`)
 1. If the clinical field belongs on the printed prescription:
-   - Add the rendering block in `PrintClinicalSnapshot` or `PrintOrdersAndFooter`.
+   - Add the rendering block in `PrintHeaderAndDemographics` or `PrintOrdersAndFooter`.
    - Ensure null-safe fallback (does not render blank space if field is null or empty).
 
 ---

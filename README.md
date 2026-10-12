@@ -107,7 +107,7 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 |---|---|
 | Platforms | Web (Desktop Counter / Tablet / Mobile), Android |
 | UI Framework | Flutter 3.x (Material 3 Responsive) |
-| Domain Engines | Pure Dart (`RevenueEngine`, `AppointmentEngine`, `MedicineEngine`, `WhatsAppEngine`) |
+| Domain Engines | Pure Dart (`RevenueEngine`, `AppointmentEngine`, `CashHandoverEngine`, `MedicineEngine`, `WhatsAppEngine`) |
 | State Management | Provider |
 | Backend / DB | Cloud Firestore (Firebase) |
 | Hosting | Firebase Hosting (SPA Web App) |
@@ -196,7 +196,7 @@ firebase deploy --only hosting
 ## ⚙️ Configuration & Access PINs
 
 ### Default PINs (Out of the Box)
-* **Clinic Owner / Master Admin:** `123456` (6-digit PIN: doctor CRUD, fee schedule overrides, financial analytics & audits)
+* **Clinic Owner / Master Admin:** `849201` (6-digit PIN: doctor CRUD, fee schedule overrides, financial analytics & audits)
 * **Reception Desk:** `0000` (4-digit PIN: counter booking, queue management, physical arrival check, cash collection)
 * **Doctor Chamber View:** Default `1234` (4-digit PIN: configurable per doctor in Doctor management, consultation encounter)
 
@@ -229,8 +229,9 @@ lib/
 ├── core/
 │   └── engines/
 │       ├── engines.dart                     # Central barrel export for all domain engines
-│       ├── revenue_engine.dart              # Pure realized revenue math, chamber KPIs, doctor rollups & cash handover
+│       ├── revenue_engine.dart              # Pure realized revenue math, chamber KPIs & doctor rollups
 │       ├── appointment_engine.dart          # 14-day free review eligibility, fee resolution & queue states
+│       ├── cash_handover_engine.dart        # End-of-day closing reconciliation & denomination counter
 │       ├── medicine_engine.dart             # Chemical search scoring, default OPD regimens & Rx segregation
 │       └── whatsapp_engine.dart             # Structured clinical summary formatting & wa.me deep links
 ├── models/
@@ -270,7 +271,6 @@ lib/
 │   ├── doctor_list_screen.dart              # Doctor roster, PIN display & chamber preview card
 │   ├── add_doctor_screen.dart               # Self-contained doctor registration, fee & chamber PIN form
 │   ├── doctor_daily_details_screen.dart     # Daily patient and fee breakdown details table
-│   ├── login_screen.dart                    # Self-contained doctor chamber & reception desk PIN authentication
 │   └── statistics_screen.dart               # Financial audit & doctor payout summary with KPI cards
 ├── widgets/
 │   ├── widgets.dart                         # Central barrel export across all widget domains
@@ -350,7 +350,7 @@ The repository maintains an active automated testing suite covering domain busin
 flutter test
 ```
 
-- **122 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, and print schedule segregation with 100% pass rate.
+- **145 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards, and print schedule segregation with 100% pass rate.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---

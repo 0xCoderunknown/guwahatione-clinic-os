@@ -17,11 +17,11 @@ Follow this checklist whenever modifying queue logic, 14-day free review policie
 
 ---
 
-### Step 2: Add or Update Unit Tests (`test/widget_test.dart`)
+### Step 2: Add or Update Unit Tests (`test/patient_review_and_models_test.dart`)
 1. Add boundary tests (e.g. Day 0, Day 14, Day 15, different doctor, absent visits).
 2. Run test to verify:
    ```bash
-   flutter test test/widget_test.dart
+   flutter test test/patient_review_and_models_test.dart
    ```
 
 ---

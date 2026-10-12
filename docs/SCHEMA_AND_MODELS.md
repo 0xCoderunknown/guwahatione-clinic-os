@@ -217,7 +217,7 @@
 ### Fields
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `ownerPinHash` | `String` | No | SHA-256 hashed 6-digit PIN for Clinic Owner role (`owner`). Default hash resolves to master PIN `123456`. |
+| `ownerPinHash` | `String` | No | SHA-256 hashed 6-digit PIN for Clinic Owner role (`owner`). Default hash resolves to master PIN `849201`. |
 | `clinicName` | `String` | No | Official clinic display title. |
 | `address` | `String` | No | Clinic postal address for prescription headers. |
 

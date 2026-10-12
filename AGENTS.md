@@ -108,14 +108,14 @@ You are being managed by a strict Product Manager. Follow this exact workflow:
 ├── rules/        -> AI workspace rules (clinic_os_rules.md)
 └── recipes/      -> Change checklists (add_clinical_field.md, modify_booking_rule.md)
 lib/
-├── core/         -> Pure domain engines (revenue_engine, appointment_engine, medicine_engine, whatsapp_engine)
+├── core/         -> Pure domain engines (appointment_engine, cash_handover_engine, medicine_engine, revenue_engine, whatsapp_engine)
 ├── models/       -> Pure data models (Appointment, Consultation, Patient, Doctor, Medicine, Vitals, ChamberSession, UserRole)
 ├── providers/    -> App state (AuthProvider for PIN sessions, ClinicProvider for live streams)
 ├── services/     -> Modular Firestore service layer (FirestorePaths, booking, consultation, chamber, catalogue, doctor, patient)
 ├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
 ├── widgets/      -> Reusable UI sub-packages (booking, catalogue, chamber, common, dashboard, encounter, print, queue)
 └── utils/        -> Helpers (Default medicines, app constants, platform print, formatters)
-test/             -> Automated test suite (122+ unit and widget tests covering engines, flows, and models)
+test/             -> Automated test suite (145+ unit and widget tests covering engines, flows, and models)
 docs/
 ├── SCHEMA_AND_MODELS.md  -> Master data dictionary for Firestore collections & models
 ├── PRODUCT_VISION_AND_WORKFLOW.md -> Clinical encounter blueprint & real-world OPD intent

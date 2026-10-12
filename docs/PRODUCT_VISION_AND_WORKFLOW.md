@@ -24,7 +24,7 @@ GuwahatiOne Clinic OS is built to focus on one primary role:
 
 | Role | Environment | Authentication | Key Responsibilities |
 |---|---|---|---|
-| **Clinic Owner / Admin** | Counter PC / Management Display | 6-Digit Master PIN (`123456`) | Full administrative authority: Doctor CRUD, schedule and consultation fee adjustments, catalogue curation, and financial revenue audits. |
+| **Clinic Owner / Admin** | Counter PC / Management Display | 6-Digit Master PIN (`849201`) | Full administrative authority: Doctor CRUD, schedule and consultation fee adjustments, catalogue curation, and financial revenue audits. |
 | **Receptionist / Assistant** | Counter PC / Tablet | 4-Digit Counter PIN (`0000`) | Rapid walk-in registration (keyboard-first), atomic daily token allocation, physical arrival verification, chamber calling, and ledger recording. |
 | **Consulting Physician** | Chamber Laptop / Monitor | 4-Digit Doctor PIN (Chamber) | Focused patient consultation, rapid vitals/findings recording, medication reconciliation & prescribing, diagnostic orders, and review pacing. |
 | **Patient** | Chamber & Waiting Room | None | Receives an atomic token, receives an approximate consultation window, walks away with a clear, legible A4/A5 printed prescription. |

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.16.9] — 12-10-2026
+
+### Audited & Synchronized
+- **Documentation Architecture & Credential Synchronization (`docs/`, `.agents/`, `README.md`, `AGENTS.md`):**
+  - **Owner Master PIN Alignment:** Rectified legacy credential documentation across `README.md`, `docs/SCHEMA_AND_MODELS.md`, and `docs/PRODUCT_VISION_AND_WORKFLOW.md` from `123456` to canonical Master PIN `849201` matching app constants and test suites.
+  - **Domain Engine Topology Synchronization:** Updated `README.md` and `AGENTS.md` project maps to explicitly include the 5th domain engine (`CashHandoverEngine`), synchronized automated test counters to 145 passing tests, and pruned redundant tree entries.
+  - **Developer Agent Recipes Fortification (`.agents/recipes/`):**
+    - Updated `add_clinical_field.md` to reference canonical `PrintHeaderAndDemographics` instead of deprecated `PrintClinicalSnapshot`.
+    - Updated `modify_booking_rule.md` unit test guidelines and commands to reference canonical `test/patient_review_and_models_test.dart` instead of legacy `test/widget_test.dart`.
+  - **Standards & Invariant Compliance:** Verified 100% adherence to Indian numerical date formatting (`DD-MM-YYYY`), pure Dart engine separation, and zero Firestore ledger deletions across the entire documentation catalog.
+
+---
+
 ## [1.16.8] — 12-10-2026
 
 ### Extracted & Modularized
