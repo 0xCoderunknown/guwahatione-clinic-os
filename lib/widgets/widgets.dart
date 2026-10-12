@@ -59,5 +59,7 @@ export 'print/print_header_and_demographics.dart';
 export 'print/print_medications_table.dart';
 export 'print/print_orders_and_footer.dart';
 // Queue Management Widgets
+export 'queue/accordion_dispatch_section.dart';
+export 'queue/accordion_status_actions.dart';
 export 'queue/appointment_accordion.dart';
 export 'queue/completed_consultations_accordion.dart';

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.16.4] — 12-10-2026
+
+### Refactored & Modularized
+- **Queue Tile Architecture Decomposition (`AppointmentAccordion`):**
+  - **Single Responsibility Principle:** Deconstructed the monolithic 786-line `AppointmentAccordion` into lightweight, atomic sub-widgets, reducing the coordinator file by ~50% (down to 398 lines).
+  - **Extracted `AccordionDispatchSection`:** Encapsulates the `ChamberSession` realtime stream listener, dynamic doctor readiness badges (`Ready`, `Breather`, `Occupied`), and guarded `SEND IN` dispatch buttons with occupied chamber collision and breather confirmation modals.
+  - **Extracted `AccordionStatusActions`:** Encapsulates `Mark Complete`, `Mark Absent` (with audit-proof slot preservation confirmation modal), and `Send WhatsApp Digital Prescription` generation.
+  - **Export Centralization:** Added exports to `lib/widgets/widgets.dart` barrel file.
+  - **Automated Test Fortification:** Added `test/accordion_modular_queue_test.dart`, expanding the test suite to **122 passing tests** with 100% success rate.
+
+---
+
 ## [1.16.3] — 12-10-2026
 
 ### Audit Integrity & Historical View Hardening

@@ -293,7 +293,9 @@ lib/
 │   │   ├── booking_payment_section.dart     # Paid, Free Review, and Family courtesy payment radio section
 │   │   └── quick_check_in_dialog.dart       # 1-tap & keyboard shortcut counter check-in & reconciliation
 │   ├── queue/                               # Reception queue management
-│   │   ├── appointment_accordion.dart       # Live token card with actions (absent, attended, send in, WhatsApp slip)
+│   │   ├── accordion_dispatch_section.dart  # Doctor ChamberSession stream, status banners & dispatch trigger
+│   │   ├── accordion_status_actions.dart    # Mark complete, audit-proof mark absent modal & WhatsApp digital Rx
+│   │   ├── appointment_accordion.dart       # Live token card coordinator with payment chips & check-in alert
 │   │   └── completed_consultations_accordion.dart # Collapsible archive for completed patient consultations
 │   ├── chamber/                             # Doctor chamber catalog screen components
 │   │   ├── chamber_app_bar.dart             # Header with live time, sync indicator, and PIN logout
@@ -362,7 +364,7 @@ The repository maintains an active automated testing suite covering domain busin
 flutter test
 ```
 
-- **118 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, and print schedule segregation with 100% pass rate.
+- **122 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, and print schedule segregation with 100% pass rate.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---
