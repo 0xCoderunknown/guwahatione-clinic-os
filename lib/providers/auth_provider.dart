@@ -62,8 +62,6 @@ class AuthProvider with ChangeNotifier {
 
   String get ownerMasterPin => _ownerMasterPin;
 
-  // Legacy getter for backwards compatibility
-  String get ownerPin => _receptionistPin;
 
   Future<void> initSession(List<Doctor> availableDoctors) async {
     final prefs = await SharedPreferences.getInstance();
@@ -223,8 +221,6 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Legacy setter
-  Future<void> setOwnerPin(String newPin) => setReceptionistPin(newPin);
 
   Future<void> logout() async {
     _currentRole = null;

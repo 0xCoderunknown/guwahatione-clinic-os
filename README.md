@@ -249,7 +249,6 @@ lib/
 │   ├── auth_provider.dart                   # PIN authentication & SharedPreferences session
 │   └── clinic_provider.dart                 # Real-time streams, chamber sync, consultations & offline queue fallback
 ├── services/
-│   ├── firebase_service.dart                # Unified services facade delegating to granular sub-services
 │   ├── booking_service.dart                 # Atomic queue bookings, counter transactions & queries
 │   ├── consultation_service.dart            # Append-only clinical encounter events & timeline queries
 │   ├── chamber_service.dart                 # Zero-touch doctor chamber calling sync & session lifecycle

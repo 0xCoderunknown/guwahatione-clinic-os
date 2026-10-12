@@ -33,6 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Screen Direct-Service Decoupling:**
     - Refactored `AppointmentListScreen` and `StatisticsScreen` to directly consume atomic `BookingService` instead of instantiating the full `FirebaseService` facade.
     - Refactored `DoctorChamberScreen` to directly consume atomic `BookingService` and `ChamberService`, decoupling the screen from `FirebaseService`.
+  - **State Management Layer Modernization (`ClinicProvider` & `AuthProvider`):**
+    - Refactored `ClinicProvider` (`clinic_provider.dart`) to directly consume atomic modular services (`BookingService`, `ChamberService`, `ConsultationService`, `CatalogueService`, `DoctorService`, `PatientService`), supporting modular dependency injection.
+    - Added stream idempotency in `startListeningToAppointments()`, preventing duplicate Firestore subscriptions and offline cache lookups when already listening to the active calendar date.
+    - Eliminated unnecessary UI listener rebuild churn with value equality guards in `_setLoading()`, `setDashboardSearchQuery()`, and `clearDashboardSearchQuery()`.
+    - Cleaned confusing legacy `ownerPin` and `setOwnerPin` aliases in `AuthProvider` (`auth_provider.dart`), securing role semantics between owner master PIN and receptionist PIN.
+  - **Retirement of Legacy Service Facade:**
+    - Deleted obsolete 254-line facade `lib/services/firebase_service.dart`. All screens and providers now directly consume single-responsibility services.
   - **Automated Verification:**
     - `flutter analyze` completed with 0 errors and 0 warnings.
     - All 122 automated unit and widget tests pass seamlessly.

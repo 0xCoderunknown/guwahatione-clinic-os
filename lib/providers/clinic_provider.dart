@@ -13,12 +13,22 @@ import '../models/patient.dart';
 import '../models/patient_review_eligibility.dart';
 import '../models/prescription_item.dart';
 import '../models/user_role.dart';
-import '../services/firebase_service.dart';
+import '../services/booking_service.dart';
+import '../services/catalogue_service.dart';
+import '../services/chamber_service.dart';
+import '../services/consultation_service.dart';
+import '../services/doctor_service.dart';
 import '../services/offline_queue_cache_service.dart';
+import '../services/patient_service.dart';
 
 class ClinicProvider with ChangeNotifier {
-  final FirebaseService _firebaseService = FirebaseService();
-  final Uuid _uuid = const Uuid();
+  final BookingService _bookingService;
+  final DoctorService _doctorService;
+  final CatalogueService _catalogueService;
+  final ChamberService _chamberService;
+  final ConsultationService _consultationService;
+  final PatientService _patientService;
+  final Uuid _uuid;
 
   StreamSubscription? _appointmentSub;
   StreamSubscription? _doctorSub;
@@ -31,6 +41,7 @@ class ClinicProvider with ChangeNotifier {
   bool _isLoading = false;
   bool _isOfflineFallback = false;
   DateTime? _offlineCacheTimestamp;
+  DateTime? _activeListeningDate;
 
   bool get isOfflineFallback => _isOfflineFallback;
   DateTime? get offlineCacheTimestamp => _offlineCacheTimestamp;
@@ -66,11 +77,14 @@ class ClinicProvider with ChangeNotifier {
   String get dashboardSearchQuery => _dashboardSearchQuery;
 
   void setDashboardSearchQuery(String query) {
-    _dashboardSearchQuery = query.trim().toLowerCase();
+    final clean = query.trim().toLowerCase();
+    if (_dashboardSearchQuery == clean) return;
+    _dashboardSearchQuery = clean;
     notifyListeners();
   }
 
   void clearDashboardSearchQuery() {
+    if (_dashboardSearchQuery.isEmpty) return;
     _dashboardSearchQuery = '';
     notifyListeners();
   }
@@ -95,13 +109,35 @@ class ClinicProvider with ChangeNotifier {
   int get dailyRevenue =>
       RevenueEngine.calculateRealizedRevenue(_todayAppointments);
 
-  ClinicProvider() {
+  ClinicProvider({
+    BookingService? bookingService,
+    DoctorService? doctorService,
+    CatalogueService? catalogueService,
+    ChamberService? chamberService,
+    ConsultationService? consultationService,
+    PatientService? patientService,
+    Uuid? uuid,
+  })  : _bookingService = bookingService ?? BookingService(),
+        _doctorService = doctorService ?? DoctorService(),
+        _catalogueService = catalogueService ?? CatalogueService(),
+        _chamberService = chamberService ?? ChamberService(),
+        _consultationService = consultationService ?? ConsultationService(),
+        _patientService = patientService ?? PatientService(),
+        _uuid = uuid ?? const Uuid() {
     _subscribeToDoctors();
     _subscribeToMedicines();
   }
 
   void startListeningToAppointments([DateTime? specificDate]) {
     final targetDate = specificDate ?? DateTime.now();
+
+    // Idempotent: avoid re-subscribing if already streaming this exact calendar day
+    if (_appointmentSub != null &&
+        _activeListeningDate != null &&
+        DateUtils.isSameDay(_activeListeningDate, targetDate)) {
+      return;
+    }
+    _activeListeningDate = targetDate;
     _appointmentSub?.cancel();
 
     // Check if offline cached queue exists for instant display if currently empty
@@ -118,7 +154,7 @@ class ClinicProvider with ChangeNotifier {
       });
     }
 
-    _appointmentSub = _firebaseService
+    _appointmentSub = _bookingService
         .getAppointmentsForDate(targetDate)
         .listen(
           (appointments) {
@@ -147,7 +183,7 @@ class ClinicProvider with ChangeNotifier {
 
   void _subscribeToDoctors() {
     _doctorSub?.cancel();
-    _doctorSub = _firebaseService.getDoctors().listen((doctors) {
+    _doctorSub = _doctorService.getDoctors().listen((doctors) {
       _doctors = doctors;
       _hasLoadedDoctors = true;
       notifyListeners();
@@ -156,7 +192,7 @@ class ClinicProvider with ChangeNotifier {
 
   void _subscribeToMedicines() {
     _medicineSub?.cancel();
-    _medicineSub = _firebaseService.getMedicines().listen((meds) {
+    _medicineSub = _catalogueService.getMedicines().listen((meds) {
       _medicines = meds;
       notifyListeners();
     });
@@ -184,7 +220,7 @@ class ClinicProvider with ChangeNotifier {
         consultationFee: consultationFee,
         medicalRegNumber: medicalRegNumber,
       );
-      await _firebaseService.addDoctor(newDoctor);
+      await _doctorService.addDoctor(newDoctor);
     } catch (e) {
       rethrow;
     } finally {
@@ -195,7 +231,7 @@ class ClinicProvider with ChangeNotifier {
   Future<void> updateDoctor(Doctor doctor) async {
     _setLoading(true);
     try {
-      await _firebaseService.updateDoctor(doctor);
+      await _doctorService.updateDoctor(doctor);
     } catch (e) {
       rethrow;
     } finally {
@@ -206,7 +242,7 @@ class ClinicProvider with ChangeNotifier {
   Future<Patient?> searchPatient(String phoneNumber) async {
     _setLoading(true);
     try {
-      return await _firebaseService.getPatient(phoneNumber);
+      return await _patientService.getPatient(phoneNumber);
     } finally {
       _setLoading(false);
     }
@@ -216,7 +252,7 @@ class ClinicProvider with ChangeNotifier {
   Future<List<Appointment>> getAppointmentsForPatient(
     String phoneNumber,
   ) async {
-    return await _firebaseService.getAppointmentsForPatient(phoneNumber);
+    return await _bookingService.getAppointmentsForPatient(phoneNumber);
   }
 
   /// Evaluates free review eligibility for a patient with a specific doctor.
@@ -295,9 +331,9 @@ class ClinicProvider with ChangeNotifier {
         throw Exception('Selected date is a clinic holiday.');
       }
 
-      final hasDuplicate = await _firebaseService.hasAppointmentForDate(
-        phoneNumber,
-        scheduledDate,
+      final hasDuplicate = await _bookingService.hasAppointmentForDate(
+        phone: phoneNumber,
+        date: scheduledDate,
         patientName: name,
         doctorId: selectedDoctor.id,
       );
@@ -309,7 +345,7 @@ class ClinicProvider with ChangeNotifier {
 
       // Enforce: Only a patient who visited earlier with the same doctor can get a free review.
       if (paymentType == PaymentType.freeReview) {
-        final patientAppts = await _firebaseService.getAppointmentsForPatient(
+        final patientAppts = await _bookingService.getAppointmentsForPatient(
           phoneNumber,
         );
         final eligibility = AppointmentEngine.evaluateReviewEligibility(
@@ -332,7 +368,7 @@ class ClinicProvider with ChangeNotifier {
         gender: gender,
         phoneNumber: phoneNumber,
       );
-      await _firebaseService.bookAppointment(
+      await _bookingService.bookAppointment(
         appointmentId: _uuid.v4(),
         patient: patient,
         visitStatus: visitStatus,
@@ -356,7 +392,7 @@ class ClinicProvider with ChangeNotifier {
     required int amountCollected,
   }) async {
     try {
-      await _firebaseService.checkInPatient(
+      await _bookingService.checkInPatient(
         appointmentId: appointmentId,
         paymentType: paymentType,
         amountCollected: amountCollected,
@@ -370,7 +406,7 @@ class ClinicProvider with ChangeNotifier {
   /// Direct admission of patient from lobby into chamber, updating visitStatus to inConsultation.
   Future<void> admitPatientToChamber(String appointmentId) async {
     try {
-      await _firebaseService.admitPatientToChamber(appointmentId);
+      await _bookingService.admitPatientToChamber(appointmentId);
     } catch (e) {
       debugPrint('Error admitting patient to chamber: $e');
       rethrow;
@@ -395,7 +431,7 @@ class ClinicProvider with ChangeNotifier {
         orElse: () => AppointmentStatus.pending,
       );
 
-      await _firebaseService.updateAppointmentStatus(
+      await _bookingService.updateAppointmentStatus(
         id,
         statusEnum,
         visitStatus: visitStatus,
@@ -412,7 +448,7 @@ class ClinicProvider with ChangeNotifier {
   /// and strictly preserving the audit-proof token slot per Invariant #1.
   Future<void> markAppointmentAbsent(Appointment appointment) async {
     try {
-      await _firebaseService.updateAppointmentStatus(
+      await _bookingService.updateAppointmentStatus(
         appointment.id,
         AppointmentStatus.absent,
         collectedAmount: 0,
@@ -434,7 +470,7 @@ class ClinicProvider with ChangeNotifier {
     required Appointment appointment,
   }) async {
     try {
-      await _firebaseService.callTokenIntoChamber(
+      await _chamberService.callTokenIntoChamber(
         doctorId: doctorId,
         date: date,
         appointment: appointment,
@@ -452,7 +488,7 @@ class ClinicProvider with ChangeNotifier {
     required String patientName,
   }) async {
     try {
-      await _firebaseService.notifyConsultationEnded(
+      await _chamberService.notifyConsultationEnded(
         doctorId: doctorId,
         date: date,
         queueNumber: queueNumber,
@@ -468,7 +504,7 @@ class ClinicProvider with ChangeNotifier {
     required DateTime date,
   }) async {
     try {
-      await _firebaseService.notifyReadyForNext(doctorId: doctorId, date: date);
+      await _chamberService.notifyReadyForNext(doctorId: doctorId, date: date);
     } catch (e) {
       debugPrint('Error notifying ready for next: $e');
       rethrow;
@@ -481,7 +517,7 @@ class ClinicProvider with ChangeNotifier {
     required Appointment appointment,
   }) async {
     try {
-      await _firebaseService.notifyConsultationStarted(
+      await _chamberService.notifyConsultationStarted(
         doctorId: doctorId,
         date: date,
         appointment: appointment,
@@ -493,7 +529,7 @@ class ClinicProvider with ChangeNotifier {
 
   Future<void> clearChamberSession(String doctorId, DateTime date) async {
     try {
-      await _firebaseService.clearChamberSession(doctorId, date);
+      await _chamberService.clearChamberSession(doctorId, date);
     } catch (e) {
       debugPrint('Error clearing chamber session: $e');
     }
@@ -503,7 +539,7 @@ class ClinicProvider with ChangeNotifier {
     String doctorId,
     DateTime date,
   ) {
-    return _firebaseService.streamChamberSession(doctorId, date);
+    return _chamberService.streamChamberSession(doctorId, date);
   }
 
   Future<void> updateDoctorSearchPreference(
@@ -511,7 +547,7 @@ class ClinicProvider with ChangeNotifier {
     String searchPreference,
   ) async {
     try {
-      await _firebaseService.updateDoctorSearchPreference(
+      await _doctorService.updateDoctorSearchPreference(
         doctorId,
         searchPreference,
       );
@@ -528,14 +564,14 @@ class ClinicProvider with ChangeNotifier {
   Future<void> saveConsultation(Consultation consultation) async {
     _setLoading(true);
     try {
-      await _firebaseService.saveConsultation(consultation);
+      await _consultationService.saveConsultation(consultation);
     } finally {
       _setLoading(false);
     }
   }
 
   Future<List<Consultation>> getPatientConsultations(String phone) async {
-    return await _firebaseService.getConsultationsForPatient(phone);
+    return await _consultationService.getConsultationsForPatient(phone);
   }
 
   Future<Consultation?> getConsultationForAppointment(
@@ -549,7 +585,7 @@ class ClinicProvider with ChangeNotifier {
   Future<List<PrescriptionItem>> getActiveMedicationsForPatient(
     String phone,
   ) async {
-    return await _firebaseService.getLatestActiveMedications(phone);
+    return await _consultationService.getLatestActiveMedications(phone);
   }
 
   // ---------------------------------------------------------------------------
@@ -581,7 +617,7 @@ class ClinicProvider with ChangeNotifier {
         manufacturer: manufacturer,
         category: category,
       );
-      await _firebaseService.addMedicine(med);
+      await _catalogueService.addMedicine(med);
     } finally {
       _setLoading(false);
     }
@@ -598,7 +634,7 @@ class ClinicProvider with ChangeNotifier {
     }
     _setLoading(true);
     try {
-      await _firebaseService.deleteMedicine(medicineId);
+      await _catalogueService.deleteMedicine(medicineId);
     } finally {
       _setLoading(false);
     }
@@ -612,7 +648,7 @@ class ClinicProvider with ChangeNotifier {
     }
     _setLoading(true);
     try {
-      return await _firebaseService.deduplicateMedicines();
+      return await _catalogueService.deduplicateMedicines();
     } finally {
       _setLoading(false);
     }
@@ -626,17 +662,18 @@ class ClinicProvider with ChangeNotifier {
     }
     _setLoading(true);
     try {
-      await _firebaseService.ensureDefaultMedicinesExist();
+      await _catalogueService.ensureDefaultMedicinesExist();
     } finally {
       _setLoading(false);
     }
   }
 
   Future<List<Medicine>> searchMedicines(String query) async {
-    return await _firebaseService.searchMedicines(query);
+    return await _catalogueService.searchMedicines(query);
   }
 
   void _setLoading(bool value) {
+    if (_isLoading == value) return;
     _isLoading = value;
     notifyListeners();
   }
