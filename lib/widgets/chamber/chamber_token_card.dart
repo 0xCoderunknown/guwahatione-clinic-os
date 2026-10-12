@@ -38,22 +38,29 @@ class ChamberTokenCard extends StatelessWidget {
       statusTitle = "ABSENT";
       paymentSubtitle = "Slot Preserved • ₹0";
     } else if (appointment.status == AppointmentStatus.completed) {
-      if (appointment.paymentType == PaymentType.paid) {
+      if (appointment.paymentType.isPaid ||
+          (appointment.paymentType == PaymentType.postPay &&
+              appointment.amountCollected > 0)) {
         badgeBg = const Color(0xFFDCFCE7);
         badgeFg = const Color(0xFF15803D);
         statusTitle = "COMPLETED";
         paymentSubtitle =
-            "Paid: ${AppFormatters.currency(appointment.amountCollected)}";
+            "Paid: ${AppFormatters.currency(appointment.amountCollected)} (${appointment.paymentType.displayName})";
       } else if (appointment.paymentType == PaymentType.freeReview) {
         badgeBg = const Color(0xFFFEF3C7);
         badgeFg = const Color(0xFFB45309);
         statusTitle = "FREE REVIEW";
         paymentSubtitle = "Follow-up / Report Check • ₹0";
-      } else {
+      } else if (appointment.paymentType == PaymentType.freeFamily) {
         badgeBg = const Color(0xFFEDE9FE);
         badgeFg = const Color(0xFF6D28D9);
         statusTitle = "FAMILY / COURTESY";
         paymentSubtitle = "Clinic Courtesy • ₹0";
+      } else {
+        badgeBg = const Color(0xFFFFFBEB);
+        badgeFg = const Color(0xFFB45309);
+        statusTitle = "COMPLETED";
+        paymentSubtitle = appointment.paymentType.displayName;
       }
     } else {
       // Pending / In Queue

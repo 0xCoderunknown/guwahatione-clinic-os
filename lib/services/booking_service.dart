@@ -25,11 +25,13 @@ class BookingService {
   Future<int> bookAppointment({
     required String appointmentId,
     required Patient patient,
+    VisitStatus visitStatus = VisitStatus.waitingInLobby,
     required PaymentType paymentType,
     required int amountCollected,
     required DateTime scheduledDate,
     required String doctorId,
     required String doctorName,
+    DateTime? checkedInAt,
   }) async {
     final counterRef = _countersRef.doc(
       FirestorePaths.doctorQueueCounter(doctorId, scheduledDate),
@@ -37,6 +39,9 @@ class BookingService {
     final appointmentRef = _appointmentsRef.doc(appointmentId);
     final patientRef = _patientsRef.doc(patient.phoneNumber);
     var queueNumber = 1;
+
+    final effectiveCheckedInAt = checkedInAt ??
+        (visitStatus == VisitStatus.waitingInLobby ? DateTime.now() : null);
 
     await _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(counterRef);
@@ -47,13 +52,14 @@ class BookingService {
         id: appointmentId,
         patientPhone: patient.phoneNumber,
         patientName: patient.name,
-        status: AppointmentStatus.pending,
+        visitStatus: visitStatus,
         paymentType: paymentType,
         amountCollected: amountCollected,
         queueNumber: queueNumber,
         scheduledDate: scheduledDate,
         doctorId: doctorId,
         doctorName: doctorName,
+        checkedInAt: effectiveCheckedInAt,
       );
 
       transaction.set(counterRef, {'currentNumber': queueNumber});
@@ -70,14 +76,43 @@ class BookingService {
     return queueNumber;
   }
 
-  /// Updates status and optionally collected amount or payment type.
+  /// 1-tap reception check-in workflow for advance/phone bookings.
+  /// Updates visitStatus to waitingInLobby, updates payment details, and timestamps checkedInAt.
+  Future<void> checkInPatient({
+    required String appointmentId,
+    required PaymentType paymentType,
+    required int amountCollected,
+    DateTime? checkedInAt,
+  }) async {
+    final Map<String, dynamic> data = {
+      'visitStatus': VisitStatus.waitingInLobby.name,
+      'status': AppointmentStatus.pending.name,
+      'paymentType': paymentType.name,
+      'amountCollected': amountCollected,
+      'checkedInAt': Timestamp.fromDate(checkedInAt ?? DateTime.now()),
+    };
+    await _appointmentsRef.doc(appointmentId).update(data);
+  }
+
+  /// Updates status and optionally collected amount, payment type, or visitStatus.
   Future<void> updateAppointmentStatus(
     String appointmentId,
     AppointmentStatus status, {
+    VisitStatus? visitStatus,
     int? collectedAmount,
     PaymentType? paymentType,
   }) async {
-    final Map<String, dynamic> data = {'status': status.name};
+    final effectiveVisitStatus = visitStatus ??
+        (status == AppointmentStatus.completed
+            ? VisitStatus.completed
+            : (status == AppointmentStatus.absent
+                ? VisitStatus.cancelled
+                : VisitStatus.waitingInLobby));
+
+    final Map<String, dynamic> data = {
+      'status': status.name,
+      'visitStatus': effectiveVisitStatus.name,
+    };
     if (collectedAmount != null) {
       data['amountCollected'] = collectedAmount;
     }

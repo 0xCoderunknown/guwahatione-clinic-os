@@ -207,6 +207,12 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
           appointments.sort((a, b) => a.queueNumber.compareTo(b.queueNumber));
           _latestAppointments = appointments;
 
+          // Chamber Queue: Strictly isolate patients physically present in clinic (waiting in lobby, in consultation, or completed/absent).
+          // Advance phone bookings (VisitStatus.booked) do not clutter the doctor's active live queue.
+          final chamberQueue = appointments
+              .where((a) => a.visitStatus != VisitStatus.booked)
+              .toList();
+
           return RefreshIndicator(
             onRefresh: () async => setState(() {}),
             child: SingleChildScrollView(
@@ -260,10 +266,10 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
                         isDesktop: isDesktop,
                       ),
                       const SizedBox(height: 24),
-                      ChamberQueueHeader(totalBooked: appointments.length),
+                      ChamberQueueHeader(totalBooked: chamberQueue.length),
                       const SizedBox(height: 12),
                       ChamberQueueList(
-                        appointments: appointments,
+                        appointments: chamberQueue,
                         activeCallingApptId: _activeCallingApptId,
                         onConsult: _openConsultation,
                       ),

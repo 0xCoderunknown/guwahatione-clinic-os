@@ -269,11 +269,20 @@ class ClinicProvider with ChangeNotifier {
     );
   }
 
+  int get lobbyWaitingCount => _todayAppointments
+      .where((a) => a.visitStatus == VisitStatus.waitingInLobby)
+      .length;
+
+  int get bookedCount => _todayAppointments
+      .where((a) => a.visitStatus == VisitStatus.booked)
+      .length;
+
   Future<void> bookAppointment({
     required String phoneNumber,
     required String name,
     required int age,
     String gender = 'Male',
+    VisitStatus visitStatus = VisitStatus.waitingInLobby,
     required PaymentType paymentType,
     required int amountCollected,
     required DateTime scheduledDate,
@@ -326,6 +335,7 @@ class ClinicProvider with ChangeNotifier {
       await _firebaseService.bookAppointment(
         appointmentId: _uuid.v4(),
         patient: patient,
+        visitStatus: visitStatus,
         paymentType: paymentType,
         amountCollected: amountCollected,
         scheduledDate: scheduledDate,
@@ -339,16 +349,35 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
+  /// 1-tap reception check-in & payment reconciliation from dashboard or queue view.
+  Future<void> checkInPatient({
+    required String appointmentId,
+    required PaymentType paymentType,
+    required int amountCollected,
+  }) async {
+    try {
+      await _firebaseService.checkInPatient(
+        appointmentId: appointmentId,
+        paymentType: paymentType,
+        amountCollected: amountCollected,
+      );
+    } catch (e) {
+      debugPrint('Error checking in patient: $e');
+      rethrow;
+    }
+  }
+
   Future<void> updateAppointmentStatus(
     String id,
     String status,
     String paymentType,
-    int amount,
-  ) async {
+    int amount, {
+    VisitStatus? visitStatus,
+  }) async {
     try {
       final pType = PaymentType.values.firstWhere(
         (e) => e.name == paymentType,
-        orElse: () => PaymentType.paid,
+        orElse: () => PaymentType.paidCash,
       );
 
       final statusEnum = AppointmentStatus.values.firstWhere(
@@ -359,6 +388,7 @@ class ClinicProvider with ChangeNotifier {
       await _firebaseService.updateAppointmentStatus(
         id,
         statusEnum,
+        visitStatus: visitStatus,
         collectedAmount: amount,
         paymentType: pType,
       );

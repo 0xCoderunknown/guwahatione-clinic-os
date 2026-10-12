@@ -89,12 +89,16 @@ class DoctorDailyBreakdownTable extends StatelessWidget {
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                if (appt.paymentType != PaymentType.paid)
+                                if (!appt.paymentType.isPaid)
                                   Text(
-                                    appt.paymentType.name.toUpperCase(),
-                                    style: const TextStyle(
+                                    appt.paymentType.displayName.toUpperCase(),
+                                    style: TextStyle(
                                       fontSize: 10,
-                                      color: Colors.orange,
+                                      fontWeight: FontWeight.bold,
+                                      color: appt.paymentType ==
+                                              PaymentType.unpaid
+                                          ? Colors.red
+                                          : Colors.orange.shade800,
                                     ),
                                   ),
                               ],

@@ -77,23 +77,34 @@ class BookingPaymentSection extends StatelessWidget {
           items: PaymentType.values.map((type) {
             String label;
             bool enabled = true;
-            if (type == PaymentType.paid) {
-              final fee =
-                  selectedDoctor?.consultationFee ??
-                  AppConstants.defaultConsultationFee;
-              label = 'Paid (₹$fee)';
-            } else if (type == PaymentType.freeFamily) {
-              label = 'FREE (Family)';
-            } else {
-              // PaymentType.freeReview
-              if (!reviewEligibility.hasVisitedDoctorEarlier) {
-                enabled = false;
-                label = 'FREE (Review) — Returning patients only';
-              } else if (reviewEligibility.isWithin14Days) {
-                label = 'FREE (Review) — Within 14 days';
-              } else {
-                label = 'FREE (Review) — ⚠️ >14 days passed';
-              }
+            final fee = selectedDoctor?.consultationFee ??
+                AppConstants.defaultConsultationFee;
+            switch (type) {
+              case PaymentType.paidCash:
+                label = 'Paid (Cash) — ₹$fee';
+                break;
+              case PaymentType.paidUpi:
+                label = 'Paid (UPI) — ₹$fee';
+                break;
+              case PaymentType.postPay:
+                label = 'Post-Pay (Pay on Exit)';
+                break;
+              case PaymentType.unpaid:
+                label = 'Unpaid (Phone Reservation)';
+                break;
+              case PaymentType.freeFamily:
+                label = 'FREE (Family / VVIP)';
+                break;
+              case PaymentType.freeReview:
+                if (!reviewEligibility.hasVisitedDoctorEarlier) {
+                  enabled = false;
+                  label = 'FREE (Review) — Returning patients only';
+                } else if (reviewEligibility.isWithin14Days) {
+                  label = 'FREE (Review) — Within 14 days';
+                } else {
+                  label = 'FREE (Review) — ⚠️ >14 days passed';
+                }
+                break;
             }
 
             return DropdownMenuItem<PaymentType>(

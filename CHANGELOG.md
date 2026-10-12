@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.16.0] — 12-10-2026
+
+### Added & Enhanced
+- **Asynchronous OPD Advance/Phone Booking & Desk Check-In Workflow:**
+  - **Granular Visit Lifecycle (`VisitStatus`):** Added explicit states (`booked`, `waitingInLobby`, `inConsultation`, `completed`, `cancelled`) alongside `checkedInAt` timestamp tracking.
+  - **Doctor Chamber Queue Isolation:** Advance and phone reservations (`VisitStatus.booked`) are cleanly segregated from the physician's active live queue and chamber waiting KPIs until patients physically arrive and check in at the counter.
+  - **1-Tap Quick Desk Check-In & Payment Reconciliation (`QuickCheckInDialog`):** Added rapid check-in modal supporting single-tap action and numpad shortcuts (`1`=Cash, `2`=UPI, `3`=Post-Pay, `4`=Free Review, `5`=Free Family) to streamline counter desk throughput.
+  - **Inviolable Discretionary Fee Waivers (`PaymentType.freeFamily`):** Enforced immutable courtesy/VVIP zero-rupee fee waivers that cannot be overwritten or coerced by historical visit review calculations.
+  - **Granular Payment Types:** Extended `PaymentType` to support `paidCash`, `paidUpi`, `postPay`, and `unpaid`, complete with backward compatibility aliases and helpers.
+  - **Reception & Queue UI Enhancements:** Added dedicated "Advance / Phone Bookings" section to queue accordion, clear status badges ("Booked (Phone)" vs "In Lobby"), and instant 1-tap check-in buttons on dashboard queue cards.
+  - **Automated Test Fortification:** Added `test/opd_checkin_payment_workflow_test.dart`, expanding automated test suite to **104 passing tests** with 100% success rate.
+
+---
+
 ## [1.15.1] — 12-10-2026
 
 ### Fixed & Enhanced

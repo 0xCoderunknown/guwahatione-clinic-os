@@ -269,7 +269,6 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
             ),
           ),
 
-          // 4. Waiting / Bypassed Patient Cards with single-expansion control
           ...queueView.waiting.map((appt) {
             final isBypassed = queueView.isBypassed(appt.id);
             final isExpanded = _expandedAppointmentId == appt.id;
@@ -288,7 +287,62 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
               },
             );
           }),
-        ] else if (queueView.inChamber == null && queueView.completed.isNotEmpty) ...[
+        ],
+
+        // 4. Advance / Phone Bookings Section
+        if (queueView.booked.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 14, bottom: 10, left: 2),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.phone_in_talk_rounded,
+                  size: 16,
+                  color: Color(0xFFB45309),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Advance / Phone Bookings (${queueView.booked.length})',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFB45309),
+                  ),
+                ),
+                const Spacer(),
+                const Text(
+                  'Admit to lobby upon arrival',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF92400E),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...queueView.booked.map((appt) {
+            final isExpanded = _expandedAppointmentId == appt.id;
+
+            return AppointmentAccordion(
+              key: ValueKey(appt.id),
+              appointment: appt,
+              isInChamber: false,
+              isBypassed: false,
+              isExpanded: isExpanded,
+              showDoctorTag: _selectedDoctorId == null,
+              onExpansionChanged: (expanded) {
+                setState(() {
+                  _expandedAppointmentId = expanded ? appt.id : null;
+                });
+              },
+            );
+          }),
+        ],
+        if (queueView.waiting.isEmpty &&
+            queueView.booked.isEmpty &&
+            queueView.inChamber == null &&
+            queueView.completed.isNotEmpty) ...[
           Container(
             margin: const EdgeInsets.only(top: 24),
             padding: const EdgeInsets.all(24),

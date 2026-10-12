@@ -38,7 +38,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   final _submitFocusNode = FocusNode();
 
   DateTime _selectedDate = DateTime.now();
-  PaymentType _selectedPayment = PaymentType.paid;
+  VisitStatus _selectedVisitStatus = VisitStatus.waitingInLobby;
+  PaymentType _selectedPayment = PaymentType.paidCash;
   String? _selectedGender;
   bool _genderHasError = false;
 
@@ -172,7 +173,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 1. Date Selector
+                  // 1. Date Selector & Booking Mode
                   ListTile(
                     title: Text("Date: ${AppFormatters.date(_selectedDate)}"),
                     trailing: const Icon(Icons.calendar_today),
@@ -181,6 +182,42 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     onTap: _pickDate,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Booking Mode Toggle: Walk-in (Immediate Lobby) vs Phone / Advance
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<VisitStatus>(
+                      segments: const [
+                        ButtonSegment<VisitStatus>(
+                          value: VisitStatus.waitingInLobby,
+                          icon: Icon(Icons.person_pin_circle_outlined, size: 16),
+                          label: Text('Walk-In (Desk Check-In)', style: TextStyle(fontSize: 12)),
+                        ),
+                        ButtonSegment<VisitStatus>(
+                          value: VisitStatus.booked,
+                          icon: Icon(Icons.phone_in_talk_outlined, size: 16),
+                          label: Text('Phone / Advance', style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                      selected: {_selectedVisitStatus},
+                      onSelectionChanged: (newSelection) {
+                        setState(() {
+                          _selectedVisitStatus = newSelection.first;
+                          if (_selectedVisitStatus == VisitStatus.booked &&
+                              _selectedPayment.isPaid) {
+                            _selectedPayment = PaymentType.unpaid;
+                            _amountController.text = "0";
+                          } else if (_selectedVisitStatus == VisitStatus.waitingInLobby &&
+                              _selectedPayment == PaymentType.unpaid) {
+                            _selectedPayment = PaymentType.paidCash;
+                            _amountController.text =
+                                "${_selectedDoctor?.consultationFee ?? 500}";
+                          }
+                        });
+                      },
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -450,6 +487,13 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   }
 
   void _updateEligibilityAndPayment() {
+    // INVIOLABLE CLINIC INVARIANT: Discretionary FREE (Family / VVIP) waivers
+    // must NEVER be overwritten or coerced by patient history or review window calculations!
+    if (_selectedPayment == PaymentType.freeFamily) {
+      _amountController.text = "0";
+      return;
+    }
+
     if (_isNewPatient || _phoneController.text.length < 10) {
       setState(() {
         _reviewEligibility = const PatientReviewEligibility(
@@ -460,9 +504,11 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         _historyInfo = "New Patient Record";
         _historyColor = Colors.green.shade100;
         if (_selectedPayment == PaymentType.freeReview) {
-          _selectedPayment = PaymentType.paid;
+          _selectedPayment = _selectedVisitStatus == VisitStatus.booked
+              ? PaymentType.unpaid
+              : PaymentType.paidCash;
           _amountController.text =
-              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paid)}";
+              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
         }
       });
       return;
@@ -483,9 +529,11 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         _historyInfo =
             "Existing Patient • No earlier visit with ${_selectedDoctor?.name ?? 'selected doctor'}\n(Free Review requires prior visit with same doctor)";
         if (_selectedPayment == PaymentType.freeReview) {
-          _selectedPayment = PaymentType.paid;
+          _selectedPayment = _selectedVisitStatus == VisitStatus.booked
+              ? PaymentType.unpaid
+              : PaymentType.paidCash;
           _amountController.text =
-              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paid)}";
+              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
         }
       } else if (eligibility.isWithin14Days) {
         final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
@@ -500,9 +548,11 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         _historyInfo =
             "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n⚠️ 14 days have passed (${eligibility.daysSinceLastVisit} days ago)";
         if (_selectedPayment == PaymentType.freeReview) {
-          _selectedPayment = PaymentType.paid;
+          _selectedPayment = _selectedVisitStatus == VisitStatus.booked
+              ? PaymentType.unpaid
+              : PaymentType.paidCash;
           _amountController.text =
-              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paid)}";
+              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
         }
       }
     });
@@ -539,9 +589,11 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
             );
         if (!proceed) {
           setState(() {
-            _selectedPayment = PaymentType.paid;
+            _selectedPayment = _selectedVisitStatus == VisitStatus.booked
+                ? PaymentType.unpaid
+                : PaymentType.paidCash;
             _amountController.text =
-                "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paid)}";
+                "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
           });
           return;
         }
@@ -609,6 +661,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         name: _nameController.text.trim(),
         age: int.parse(_ageController.text.trim()),
         gender: _selectedGender!,
+        visitStatus: _selectedVisitStatus,
         paymentType: _selectedPayment,
         amountCollected: int.parse(_amountController.text.trim()),
         scheduledDate: _selectedDate,

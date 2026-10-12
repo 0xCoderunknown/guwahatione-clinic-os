@@ -24,14 +24,23 @@ class PaymentBadge extends StatelessWidget {
     IconData icon;
 
     switch (paymentType) {
-      case PaymentType.paid:
+      case PaymentType.paidCash:
         bg = const Color(0xFFECFDF5);
         textColor = const Color(0xFF065F46);
         final amtStr = amount != null && amount! > 0
             ? AppFormatters.currency(amount)
-            : 'Paid';
-        label = amtStr;
-        icon = Icons.check_circle_rounded;
+            : 'Paid (Cash)';
+        label = amtStr.startsWith('₹') ? '$amtStr (Cash)' : amtStr;
+        icon = Icons.payments_rounded;
+        break;
+      case PaymentType.paidUpi:
+        bg = const Color(0xFFEFF6FF);
+        textColor = const Color(0xFF1D4ED8);
+        final amtStr = amount != null && amount! > 0
+            ? AppFormatters.currency(amount)
+            : 'Paid (UPI)';
+        label = amtStr.startsWith('₹') ? '$amtStr (UPI)' : amtStr;
+        icon = Icons.qr_code_2_rounded;
         break;
       case PaymentType.freeReview:
         bg = const Color(0xFFF0FDF4);
@@ -44,6 +53,18 @@ class PaymentBadge extends StatelessWidget {
         textColor = const Color(0xFF6D28D9);
         label = 'Courtesy / Family';
         icon = Icons.favorite_outline_rounded;
+        break;
+      case PaymentType.postPay:
+        bg = const Color(0xFFFFFBEB);
+        textColor = const Color(0xFFB45309);
+        label = 'Post-Pay (Exit)';
+        icon = Icons.hourglass_bottom_rounded;
+        break;
+      case PaymentType.unpaid:
+        bg = const Color(0xFFFEF2F2);
+        textColor = const Color(0xFFDC2626);
+        label = 'Unpaid';
+        icon = Icons.pending_actions_rounded;
         break;
     }
 

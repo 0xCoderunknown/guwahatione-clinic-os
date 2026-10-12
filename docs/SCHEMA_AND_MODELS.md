@@ -66,13 +66,15 @@
 | `id` | `String` | Yes | Appointment ID. |
 | `patientPhone` | `String` | Yes | Patient's phone number. |
 | `patientName` | `String` | Yes | Patient's name at time of booking. |
-| `status` | `String` (Enum) | Yes | `'pending'`, `'completed'`, or `'absent'`. |
-| `paymentType` | `String` (Enum) | Yes | `'paid'`, `'freeReview'`, or `'freeFamily'`. |
+| `status` | `String` (Enum) | Yes | `'pending'`, `'completed'`, or `'absent'` (retained for operational ledger). |
+| `visitStatus` | `String` (Enum) | Yes | `'booked'`, `'waitingInLobby'`, `'inConsultation'`, `'completed'`, or `'cancelled'`. |
+| `paymentType` | `String` (Enum) | Yes | `'paidCash'`, `'paidUpi'`, `'freeReview'`, `'freeFamily'`, `'postPay'`, or `'unpaid'`. |
 | `amountCollected`| `int` | Yes | Cash/UPI amount collected in INR. |
 | `queueNumber` | `int` | Yes | Strictly consecutive token number ($1, 2, 3 \dots N$). |
 | `scheduledDate` | `Timestamp` | Yes | Calendar date and time of appointment. |
 | `doctorId` | `String` | Yes | Assigned doctor ID. |
 | `doctorName` | `String` | Yes | Assigned doctor display name. |
+| `checkedInAt` | `Timestamp?` | No | Timestamp recorded when patient arrives at desk and checks in to lobby. |
 
 ---
 

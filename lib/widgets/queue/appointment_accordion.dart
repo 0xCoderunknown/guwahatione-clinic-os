@@ -8,6 +8,7 @@ import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_url.dart';
 import '../booking/booking_eligibility_banner.dart';
+import '../booking/quick_check_in_dialog.dart';
 import '../common/appointment_status_chip.dart';
 import '../common/payment_badge.dart';
 import '../common/token_badge.dart';
@@ -226,13 +227,61 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8.0,
+                  runSpacing: 6.0,
                   children: [
-                    _buildChoiceChip(PaymentType.paid, 'Paid (₹500)'),
+                    _buildChoiceChip(PaymentType.paidCash, 'Paid (Cash)'),
+                    _buildChoiceChip(PaymentType.paidUpi, 'Paid (UPI)'),
+                    _buildChoiceChip(PaymentType.postPay, 'Post-Pay (Exit)'),
+                    _buildChoiceChip(PaymentType.unpaid, 'Unpaid'),
                     _buildChoiceChip(PaymentType.freeReview, 'Free Review'),
-                    _buildChoiceChip(PaymentType.freeFamily, 'Family'),
+                    _buildChoiceChip(PaymentType.freeFamily, 'Family / VVIP'),
                   ],
                 ),
                 const SizedBox(height: 16),
+                if (widget.appointment.visitStatus == VisitStatus.booked) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFF59E0B)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline_rounded,
+                          color: Color(0xFFB45309),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Patient booked via phone/advance. Admit to lobby once arrived at desk.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F766E),
+                            foregroundColor: Colors.white,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          icon: const Icon(Icons.how_to_reg_rounded, size: 16),
+                          label: const Text('Check In'),
+                          onPressed: () => QuickCheckInDialog.show(
+                            context,
+                            appointment: widget.appointment,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (widget.appointment.status == AppointmentStatus.pending) ...[
                   StreamBuilder<ChamberSession>(
                     stream: Provider.of<ClinicProvider>(context, listen: false)
@@ -702,12 +751,15 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
     final doctor = provider.getDoctorById(widget.appointment.doctorId);
 
     int amount = 0;
+    VisitStatus? vStatus;
     if (status == AppointmentStatus.completed) {
+      vStatus = VisitStatus.completed;
       amount = AppointmentEngine.resolveConsultationFee(
         doctor: doctor,
         paymentType: _selectedPaymentType,
       );
     } else if (status == AppointmentStatus.absent) {
+      vStatus = VisitStatus.cancelled;
       amount = 0;
     }
 
@@ -717,6 +769,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
         status.name,
         _selectedPaymentType.name,
         amount,
+        visitStatus: vStatus,
       );
     } catch (e) {
       if (context.mounted) {

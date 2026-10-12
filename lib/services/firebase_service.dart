@@ -76,29 +76,47 @@ class FirebaseService {
   Future<int> bookAppointment({
     required String appointmentId,
     required Patient patient,
+    VisitStatus visitStatus = VisitStatus.waitingInLobby,
     required PaymentType paymentType,
     required int amountCollected,
     required DateTime scheduledDate,
     required String doctorId,
     required String doctorName,
+    DateTime? checkedInAt,
   }) => _bookingService.bookAppointment(
     appointmentId: appointmentId,
     patient: patient,
+    visitStatus: visitStatus,
     paymentType: paymentType,
     amountCollected: amountCollected,
     scheduledDate: scheduledDate,
     doctorId: doctorId,
     doctorName: doctorName,
+    checkedInAt: checkedInAt,
+  );
+
+  Future<void> checkInPatient({
+    required String appointmentId,
+    required PaymentType paymentType,
+    required int amountCollected,
+    DateTime? checkedInAt,
+  }) => _bookingService.checkInPatient(
+    appointmentId: appointmentId,
+    paymentType: paymentType,
+    amountCollected: amountCollected,
+    checkedInAt: checkedInAt,
   );
 
   Future<void> updateAppointmentStatus(
     String appointmentId,
     AppointmentStatus status, {
+    VisitStatus? visitStatus,
     int? collectedAmount,
     PaymentType? paymentType,
   }) => _bookingService.updateAppointmentStatus(
     appointmentId,
     status,
+    visitStatus: visitStatus,
     collectedAmount: collectedAmount,
     paymentType: paymentType,
   );

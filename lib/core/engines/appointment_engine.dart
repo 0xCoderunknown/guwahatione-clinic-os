@@ -24,6 +24,7 @@ class ReceptionQueueView {
   final List<Appointment> completed;
   final Appointment? inChamber;
   final List<Appointment> waiting;
+  final List<Appointment> booked;
   final List<Appointment> absent;
   final Set<String> bypassedAppointmentIds;
 
@@ -31,6 +32,7 @@ class ReceptionQueueView {
     required this.completed,
     this.inChamber,
     required this.waiting,
+    this.booked = const [],
     required this.absent,
     required this.bypassedAppointmentIds,
   });
@@ -150,7 +152,7 @@ abstract class AppointmentEngine {
     if (eligibility.hasVisitedDoctorEarlier && eligibility.isWithin14Days) {
       return PaymentType.freeReview;
     }
-    return PaymentType.paid;
+    return PaymentType.paidCash;
   }
 
   /// Resolves the exact amount to collect from the patient based on doctor configuration
@@ -162,8 +164,11 @@ abstract class AppointmentEngine {
     switch (paymentType) {
       case PaymentType.freeReview:
       case PaymentType.freeFamily:
+      case PaymentType.unpaid:
         return 0;
-      case PaymentType.paid:
+      case PaymentType.postPay:
+      case PaymentType.paidCash:
+      case PaymentType.paidUpi:
         return doctor?.consultationFee ?? AppConstants.defaultConsultationFee;
     }
   }
@@ -207,15 +212,18 @@ abstract class AppointmentEngine {
   }) {
     final List<Appointment> completed = [];
     final List<Appointment> waiting = [];
+    final List<Appointment> booked = [];
     final List<Appointment> absent = [];
     Appointment? inChamber;
 
     for (final a in appointments) {
-      if (a.status == AppointmentStatus.completed) {
+      if (a.visitStatus == VisitStatus.completed) {
         completed.add(a);
-      } else if (a.status == AppointmentStatus.absent) {
+      } else if (a.visitStatus == VisitStatus.cancelled) {
         absent.add(a);
-      } else if (a.status == AppointmentStatus.pending) {
+      } else if (a.visitStatus == VisitStatus.booked) {
+        booked.add(a);
+      } else {
         final matchesActive = (activeAppointmentId != null &&
                 a.id == activeAppointmentId) ||
             (activeAppointmentId == null &&
@@ -236,6 +244,9 @@ abstract class AppointmentEngine {
     // Sort waiting ascending by token
     waiting.sort((a, b) => a.queueNumber.compareTo(b.queueNumber));
 
+    // Sort booked ascending by token
+    booked.sort((a, b) => a.queueNumber.compareTo(b.queueNumber));
+
     final Set<String> bypassed = {};
     if (inChamber != null) {
       for (final a in waiting) {
@@ -249,6 +260,7 @@ abstract class AppointmentEngine {
       completed: completed,
       inChamber: inChamber,
       waiting: waiting,
+      booked: booked,
       absent: absent,
       bypassedAppointmentIds: bypassed,
     );

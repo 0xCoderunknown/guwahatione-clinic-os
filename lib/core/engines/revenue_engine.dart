@@ -94,7 +94,9 @@ abstract class RevenueEngine {
         .where(
           (a) =>
               a.status == AppointmentStatus.completed &&
-              a.paymentType == PaymentType.paid,
+              (a.paymentType.isPaid ||
+                  (a.paymentType == PaymentType.postPay &&
+                      a.amountCollected > 0)),
         )
         .fold(0, (sum, a) => sum + a.amountCollected);
   }
@@ -147,7 +149,9 @@ abstract class RevenueEngine {
       switch (a.status) {
         case AppointmentStatus.completed:
           attended++;
-          if (a.paymentType == PaymentType.paid) {
+          if (a.paymentType.isPaid ||
+              (a.paymentType == PaymentType.postPay &&
+                  a.amountCollected > 0)) {
             paid++;
             totalDoctorFees += a.amountCollected;
           } else {
@@ -155,7 +159,9 @@ abstract class RevenueEngine {
           }
           break;
         case AppointmentStatus.pending:
-          waiting++;
+          if (a.visitStatus != VisitStatus.booked) {
+            waiting++;
+          }
           break;
         case AppointmentStatus.absent:
           absent++;
@@ -199,7 +205,7 @@ abstract class RevenueEngine {
       int revenue = 0;
 
       for (final a in docAppts) {
-        if (a.paymentType != PaymentType.paid) {
+        if (!a.paymentType.isPaid && a.paymentType != PaymentType.postPay) {
           free++;
         }
         switch (a.status) {
@@ -268,11 +274,15 @@ abstract class RevenueEngine {
           totalCompleted++;
 
           switch (a.paymentType) {
-            case PaymentType.paid:
-              docPaid++;
-              totalPaid++;
-              docCash += a.amountCollected;
-              totalCash += a.amountCollected;
+            case PaymentType.paidCash:
+            case PaymentType.paidUpi:
+            case PaymentType.postPay:
+              if (a.amountCollected > 0) {
+                docPaid++;
+                totalPaid++;
+                docCash += a.amountCollected;
+                totalCash += a.amountCollected;
+              }
               break;
             case PaymentType.freeReview:
               docFreeReview++;
@@ -281,6 +291,8 @@ abstract class RevenueEngine {
             case PaymentType.freeFamily:
               docFreeFamily++;
               totalFreeFamily++;
+              break;
+            case PaymentType.unpaid:
               break;
           }
         }

@@ -6,6 +6,7 @@ import '../../models/chamber_session.dart';
 import '../../providers/clinic_provider.dart';
 import '../../screens/appointment_list_screen.dart';
 import '../../utils/formatters.dart';
+import '../booking/quick_check_in_dialog.dart';
 import '../common/appointment_status_chip.dart';
 import '../common/token_badge.dart';
 
@@ -272,7 +273,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                           fontSize: 13,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       Text(
                         '(${appt.patientPhone})',
                         style: TextStyle(
@@ -280,6 +281,47 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                           color: Colors.grey.shade600,
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      if (appt.visitStatus == VisitStatus.booked)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: const Color(0xFFF59E0B)),
+                          ),
+                          child: const Text(
+                            'Booked (Phone)',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                        )
+                      else if (appt.visitStatus == VisitStatus.waitingInLobby)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: const Color(0xFF86EFAC)),
+                          ),
+                          child: const Text(
+                            'In Lobby',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF166534),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                   subtitle: Column(
@@ -332,135 +374,150 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                       ],
                     ],
                   ),
-                  trailing: appt.status == AppointmentStatus.pending
-                      ? StreamBuilder<ChamberSession>(
-                          stream: widget.provider.streamChamberSession(
-                            appt.doctorId,
-                            appt.scheduledDate,
-                          ),
-                          builder: (context, chamberSnap) {
-                            final session = chamberSnap.data;
-                            final isDoctorReady =
-                                session?.isReadyForNext ?? false;
-                            final isDoctorOnBreak =
-                                session?.isConsultationEnded ?? false;
-
-                            final btnBg = isDoctorReady
-                                ? const Color(0xFF15803D)
-                                : (isDoctorOnBreak
-                                      ? const Color(0xFFB45309)
-                                      : Colors.teal.shade700);
-
-                            final btnLabel = isDoctorReady
-                                ? 'Send In'
-                                : (isDoctorOnBreak
-                                      ? 'On Break'
-                                      : 'Call In');
-
-                            return FilledButton.icon(
-                              style: FilledButton.styleFrom(
-                                backgroundColor: btnBg,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                visualDensity: VisualDensity.compact,
-                              ),
-                              icon: Icon(
-                                isDoctorReady
-                                    ? Icons.login_rounded
-                                    : (isDoctorOnBreak
-                                          ? Icons.coffee_rounded
-                                          : Icons
-                                                .record_voice_over_rounded),
-                                size: 14,
-                              ),
-                              label: Text(
-                                btnLabel,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              onPressed: () async {
-                                if (isDoctorOnBreak) {
-                                  final proceed = await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.coffee_rounded,
-                                            color: Colors.amber.shade800,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          const Text(
-                                            'Doctor Taking Breather',
-                                          ),
-                                        ],
-                                      ),
-                                      content: Text(
-                                        '${AppFormatters.doctorTitle(appt.doctorName)} is taking a breather and hasn\'t clicked \'NEXT PATIENT\' yet.\n\n'
-                                        'Send Token #${appt.queueNumber} (${appt.patientName}) inside anyway?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(ctx, false),
-                                          child: const Text(
-                                            'Wait for Doctor',
-                                          ),
-                                        ),
-                                        FilledButton(
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor: const Color(
-                                              0xFFB45309,
-                                            ),
-                                          ),
-                                          onPressed: () =>
-                                              Navigator.pop(ctx, true),
-                                          child: const Text(
-                                            'Send Inside Anyway',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                  if (proceed != true) return;
-                                }
-
-                                await widget.provider.callTokenIntoChamber(
-                                  doctorId: appt.doctorId,
-                                  date: appt.scheduledDate,
-                                  appointment: appt,
-                                );
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(
-                                    context,
-                                  ).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Admitted Token #${appt.queueNumber} (${appt.patientName}) to ${AppFormatters.doctorTitle(appt.doctorName)} chamber',
-                                      ),
-                                      backgroundColor: Colors.teal.shade800,
-                                      duration: const Duration(seconds: 3),
-                                    ),
-                                  );
-                                }
-                              },
-                            );
-                          },
-                        )
-                      : AppointmentStatusChip(
-                          status: appt.status,
-                          isCompact: true,
-                        ),
+                  trailing: _buildTrailingAction(appt, context),
                 );
               },
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTrailingAction(Appointment appt, BuildContext context) {
+    if (appt.visitStatus == VisitStatus.booked) {
+      return FilledButton.icon(
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF0F766E),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 6,
+          ),
+          visualDensity: VisualDensity.compact,
+        ),
+        icon: const Icon(Icons.how_to_reg_rounded, size: 14),
+        label: const Text(
+          'Check In',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        onPressed: () => QuickCheckInDialog.show(
+          context,
+          appointment: appt,
+        ),
+      );
+    }
+
+    if (appt.status == AppointmentStatus.pending) {
+      return StreamBuilder<ChamberSession>(
+        stream: widget.provider.streamChamberSession(
+          appt.doctorId,
+          appt.scheduledDate,
+        ),
+        builder: (context, chamberSnap) {
+          final session = chamberSnap.data;
+          final isDoctorReady = session?.isReadyForNext ?? false;
+          final isDoctorOnBreak = session?.isConsultationEnded ?? false;
+
+          final btnBg = isDoctorReady
+              ? const Color(0xFF15803D)
+              : (isDoctorOnBreak
+                  ? const Color(0xFFB45309)
+                  : Colors.teal.shade700);
+
+          final btnLabel = isDoctorReady
+              ? 'Send In'
+              : (isDoctorOnBreak ? 'On Break' : 'Call In');
+
+          return FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: btnBg,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              visualDensity: VisualDensity.compact,
+            ),
+            icon: Icon(
+              isDoctorReady
+                  ? Icons.login_rounded
+                  : (isDoctorOnBreak
+                      ? Icons.coffee_rounded
+                      : Icons.record_voice_over_rounded),
+              size: 14,
+            ),
+            label: Text(
+              btnLabel,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onPressed: () async {
+              if (isDoctorOnBreak) {
+                final proceed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Row(
+                      children: [
+                        Icon(
+                          Icons.coffee_rounded,
+                          color: Colors.amber.shade800,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Doctor Taking Breather'),
+                      ],
+                    ),
+                    content: Text(
+                      '${AppFormatters.doctorTitle(appt.doctorName)} is taking a breather and hasn\'t clicked \'NEXT PATIENT\' yet.\n\n'
+                      'Send Token #${appt.queueNumber} (${appt.patientName}) inside anyway?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Wait for Doctor'),
+                      ),
+                      FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFB45309),
+                        ),
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Send Inside Anyway'),
+                      ),
+                    ],
+                  ),
+                );
+                if (proceed != true) return;
+              }
+
+              await widget.provider.callTokenIntoChamber(
+                doctorId: appt.doctorId,
+                date: appt.scheduledDate,
+                appointment: appt,
+              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Admitted Token #${appt.queueNumber} (${appt.patientName}) to ${AppFormatters.doctorTitle(appt.doctorName)} chamber',
+                    ),
+                    backgroundColor: Colors.teal.shade800,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              }
+            },
+          );
+        },
+      );
+    }
+
+    return AppointmentStatusChip(
+      status: appt.status,
+      isCompact: true,
     );
   }
 }
