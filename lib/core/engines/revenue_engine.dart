@@ -1,4 +1,4 @@
-import '../../models/appointment.dart';
+import '../../models/models.dart';
 
 /// Aggregated KPI metrics for a doctor's chamber session.
 class ChamberKpiMetrics {

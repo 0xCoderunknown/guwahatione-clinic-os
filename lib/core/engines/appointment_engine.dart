@@ -1,6 +1,4 @@
-import '../../models/appointment.dart';
-import '../../models/doctor.dart';
-import '../../models/patient_review_eligibility.dart';
+import '../../models/models.dart';
 import '../../utils/app_constants.dart';
 
 /// Partitioned appointment queue segments.

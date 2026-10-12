@@ -1,5 +1,4 @@
-import '../../models/consultation.dart';
-import '../../models/prescription_item.dart';
+import '../../models/models.dart';
 import '../../utils/formatters.dart';
 
 /// Pure Dart domain engine for generating structured WhatsApp prescription messages

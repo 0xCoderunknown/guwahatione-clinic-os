@@ -1,5 +1,4 @@
-import '../../models/medicine.dart';
-import '../../models/prescription_item.dart';
+import '../../models/models.dart';
 
 /// Structured grouping result for medicine catalogue search queries.
 class CompositionGroupResult {
