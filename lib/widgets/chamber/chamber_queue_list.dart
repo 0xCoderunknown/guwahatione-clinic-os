@@ -9,12 +9,14 @@ import 'chamber_token_card.dart';
 class ChamberQueueList extends StatelessWidget {
   final List<Appointment> appointments;
   final String? activeCallingApptId;
+  final bool isPastDate;
   final ValueChanged<Appointment> onConsult;
 
   const ChamberQueueList({
     super.key,
     required this.appointments,
     required this.activeCallingApptId,
+    this.isPastDate = false,
     required this.onConsult,
   });
 
@@ -34,6 +36,7 @@ class ChamberQueueList extends StatelessWidget {
         return ChamberTokenCard(
           appointment: appt,
           isCallingNow: appt.id == activeCallingApptId,
+          isPastDate: isPastDate,
           onConsult: () => onConsult(appt),
         );
       },

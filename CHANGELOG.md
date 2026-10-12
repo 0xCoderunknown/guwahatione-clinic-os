@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.16.2] — 12-10-2026
+
+### Added & Hardened
+- **Read-Only Archive State for Historical Dates in Doctor Chamber:**
+  - **Temporal Guarding (`_isToday` vs `_isPastDate`):** Live chamber actions (chamber initialization, ready signals, and emergency door admissions) are strictly restricted to the current active calendar day (`today`).
+  - **Chamber Archive Indicator (`ChamberArchiveBanner`):** Historical dates completely hide live control banners and render `🔒 Chamber Shift Closed • Read-Only Archive` with formatted Indian date (`DD-MM-YYYY`).
+  - **EOD Unresolved Token Protection:** Past appointments left unresolved render as `UNATTENDED / NO-SHOW` with an `Unattended` static pill, eliminating active queue indicators or live admission options.
+  - **Historical Record Review:** Completed visits on past dates display `[ View Summary ]` to inspect longitudinal records in read-only mode with zero status mutation capability.
+  - **Automated Test Fortification:** Added `test/chamber_read_only_archive_test.dart`, expanding automated test suite to **114 passing tests** with 100% success rate.
+
+---
+
 ## [1.16.1] — 12-10-2026
 
 ### Security & Queue Integrity

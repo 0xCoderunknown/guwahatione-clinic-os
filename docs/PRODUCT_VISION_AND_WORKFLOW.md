@@ -34,20 +34,23 @@ GuwahatiOne Clinic OS is built to focus on one primary role:
 ## ⚡ 3. Scenario 1: New Patient OPD Encounter Walkthrough
 
 ```
-[ Reception Desk ]
-   1. Patient arrives (Walk-in or pre-booked).
+[ Reception Desk — Booking & Check-In ]
+   1. Patient books appointment (Phone/Advance Booking or Walk-in at counter).
    2. Reception opens New Appointment modal (100% keyboard-navigable via Tab, M/F/O hotkeys, Enter).
    3. Types phone number (10 digits). On new patient, advances to Name; on existing patient, auto-fills and jumps to Doctor.
    4. Selects Doctor: System immediately computes and displays provisional live token & consultation time window:
       "🎟️ Next Token: #04 • Est. Time: ~08:00 PM – 08:20 PM"
-   5. If duplicate booking is attempted for the same doctor on the same day, system intercepts with warning and lockout.
-   6. Reception submits (Enter). Counter allocates consecutive token #04 atomically.
-   7. When the patient's turn arrives, Reception clicks "SEND IN" / "Call In" in the Live Queue.
+   5. Duplicate booking guard: Prevents same-day accidental double bookings while permitting family members under shared phone.
+   6. Advance / Phone bookings are saved with `VisitStatus.booked` (holding token slot without cluttering the active lobby queue).
+   7. When patient physically arrives at the clinic desk:
+      - Reception performs 1-tap Check-In (`QuickCheckInDialog`) with payment reconciliation (`paidCash`, `paidUpi`, `postPay`, `freeReview`, `freeFamily`).
+      - Patient status updates to `VisitStatus.waitingInLobby`.
+   8. When doctor is ready (`ready_for_next`), Reception clicks "SEND IN" in the Live Queue.
           │
-          ▼ (Real-time sync to Chamber)
+          ▼ (Real-time sync to Chamber; fallback: Doctor Restricted Emergency Runway "Next at Door")
 [ Doctor Chamber Screen ]
-   8. Doctor's screen displays clean Header with Patient Demographics & Allergy Alert.
-   9. Body is blank and organized into 3 fast, sequential sections:
+   9. Doctor's screen displays clean Header with Patient Demographics & Allergy Alert.
+   10. Body is blank and organized into 3 fast, sequential sections:
 ```
 
 ### Step-by-Step Chamber Flow:

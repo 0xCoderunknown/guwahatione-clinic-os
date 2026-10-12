@@ -9,6 +9,7 @@ import '../encounter/encounter_dialogs.dart';
 class ChamberTokenCard extends StatelessWidget {
   final Appointment appointment;
   final bool isCallingNow;
+  final bool isPastDate;
   final VoidCallback onConsult;
   final VoidCallback? onViewHistory;
 
@@ -16,6 +17,7 @@ class ChamberTokenCard extends StatelessWidget {
     super.key,
     required this.appointment,
     required this.isCallingNow,
+    this.isPastDate = false,
     required this.onConsult,
     this.onViewHistory,
   });
@@ -27,7 +29,7 @@ class ChamberTokenCard extends StatelessWidget {
     String statusTitle;
     String paymentSubtitle;
 
-    if (isCallingNow) {
+    if (isCallingNow && !isPastDate) {
       badgeBg = const Color(0xFFDCFCE7);
       badgeFg = const Color(0xFF15803D);
       statusTitle = "CALLING / IN CHAMBER";
@@ -62,8 +64,14 @@ class ChamberTokenCard extends StatelessWidget {
         statusTitle = "COMPLETED";
         paymentSubtitle = appointment.paymentType.displayName;
       }
+    } else if (isPastDate) {
+      // EOD Unresolved Token: Pending visit left over from a past date
+      badgeBg = const Color(0xFFF1F5F9);
+      badgeFg = const Color(0xFF64748B);
+      statusTitle = "UNATTENDED / NO-SHOW";
+      paymentSubtitle = "Shift Closed • Past Date";
     } else {
-      // Pending / In Queue
+      // Pending / In Queue (Today)
       badgeBg = const Color(0xFFE0F2FE);
       badgeFg = const Color(0xFF0369A1);
       statusTitle = "WAITING";
@@ -73,7 +81,8 @@ class ChamberTokenCard extends StatelessWidget {
     final maskedPhone = _maskPhone(appointment.patientPhone);
 
     final canEnterConsultation =
-        appointment.status == AppointmentStatus.completed || isCallingNow;
+        appointment.status == AppointmentStatus.completed ||
+        (!isPastDate && isCallingNow);
 
     return InkWell(
       onTap: canEnterConsultation ? onConsult : null,
@@ -201,7 +210,7 @@ class ChamberTokenCard extends StatelessWidget {
             if (appointment.status != AppointmentStatus.absent) ...[
               const SizedBox(width: 14),
               if (appointment.status == AppointmentStatus.pending) ...[
-                if (isCallingNow)
+                if (!isPastDate && isCallingNow)
                   FilledButton.icon(
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.teal.shade700,
@@ -222,7 +231,7 @@ class ChamberTokenCard extends StatelessWidget {
                     ),
                     onPressed: onConsult,
                   )
-                else
+                else if (!isPastDate)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -252,6 +261,37 @@ class ChamberTokenCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.event_busy_rounded,
+                          size: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Unattended',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
               ] else
                 OutlinedButton.icon(
@@ -263,7 +303,10 @@ class ChamberTokenCard extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                   ),
                   icon: const Icon(Icons.description_outlined, size: 14),
-                  label: const Text('Record', style: TextStyle(fontSize: 11)),
+                  label: Text(
+                    isPastDate ? 'View Summary' : 'Record',
+                    style: const TextStyle(fontSize: 11),
+                  ),
                   onPressed: onConsult,
                 ),
             ],

@@ -46,12 +46,15 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 | **Offline Queue Fallback Cache (`P6`)** | Silent caching of daily appointments to local browser storage (`SharedPreferences`) with graceful zero-dropout fallback and amber status badge during broadband hiccups. | 🟢 Shipped & Verified (`v1.15.0`) |
 | **WhatsApp Prescription Deep Link (`P7`)** | Formatted clinical summaries via pure `WhatsAppEngine` with Indian date standard (`DD-MM-YYYY`), vitals, medication schedule, and 1-tap `wa.me` deep link delivery. | 🟢 Shipped & Verified (`v1.15.0`) |
 | **Daily Cash Handover & Note Counter (`P8`)** | End-of-day cash reconciliation modal (`DailyCashHandoverDialog`) with doctor-wise cash breakdown, interactive Indian note denomination counter, and discrepancy auditing. | 🟢 Shipped & Verified (`v1.15.0`) |
+| **Asynchronous OPD Booking & 1-Tap Desk Check-In** | Advance and phone bookings register as `VisitStatus.booked` with zero lobby clutter; physical arrival triggers 1-tap `QuickCheckInDialog` with granular payment reconciliation (`paidCash`, `paidUpi`, `postPay`, `freeReview`, `freeFamily`, `unpaid`). | 🟢 Shipped & Verified (`v1.16.0`) |
+| **Restricted Emergency Door Self-Call Runway** | `ChamberDoorOverrideBar` strictly displays only the top 1–2 physically checked-in patients (`waitingInLobby`) with amber warning modals to prevent queue chaos during receptionist breaks. | 🟢 Shipped & Verified (`v1.16.1`) |
+| **Read-Only Archive State for Historical Chamber Dates** | Selecting any date prior to today switches doctor chamber to immutable archive mode (`ChamberArchiveBanner`), suppressing all live controls, self-call bars, and admissions while allowing review of past consultation notes. | 🟢 Shipped & Verified (`v1.16.2`) |
 
 ---
 
 ## 🎯 3. Active Priority Backlog (Next Horizon)
 
-All primary operational priorities (P1 through P8) have been successfully implemented and verified across 95 automated tests. Future enhancements are proposed based on operational feedback from reception counters and consulting physicians.
+All primary operational priorities (P1 through P8) have been successfully implemented and verified across 114 automated tests. Future enhancements are proposed based on operational feedback from reception counters and consulting physicians.
 
 | Priority | Proposed Feature | Problem Solved | Acceptance Criteria |
 |---|---|---|---|

@@ -14,6 +14,7 @@ export 'catalogue/catalogue_medicine_card.dart';
 export 'catalogue/catalogue_search_toolbar.dart';
 // Chamber Widgets
 export 'chamber/chamber_app_bar.dart';
+export 'chamber/chamber_archive_banner.dart';
 export 'chamber/chamber_control_banner.dart';
 export 'chamber/chamber_door_override_bar.dart';
 export 'chamber/chamber_metrics_grid.dart';

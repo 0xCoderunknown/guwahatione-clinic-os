@@ -53,6 +53,14 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
    - When a physician completes an encounter, the session enters `consultation_ended` (Breather).
    - Reception cannot force a patient into the chamber during a consultation or breather without explicit doctor readiness (`ready_for_next`), preventing physician burn-out and consultation collisions.
 
+8. **Temporal Guarding & Read-Only Chamber Archive (Today-Only Live Operations):**
+   - Live physical actions (starting chamber shifts, signaling ready for next, emergency door admissions) are strictly restricted to the current active calendar date (`today`).
+   - Historical dates (past) switch Doctor Chamber to immutable read-only mode (`ChamberArchiveBanner`), suppressing live calling triggers and rendering unresolved tokens as `UNATTENDED / NO-SHOW`.
+
+9. **Restricted Emergency Door Self-Call Guardrail:**
+   - Any direct doctor door admission fallback (`ChamberDoorOverrideBar`) must strictly show ONLY the next 1–2 patients who are physically present in clinic (`waitingInLobby`) with confirmed payment/waiver (`PaymentType != unpaid`).
+   - Remote reservations (`VisitStatus.booked`) and unpaid tokens (`PaymentType.unpaid`) must NEVER appear in emergency self-call lists.
+
 ---
 
 ## 🏗️ 2. Architectural & Technical Stack Rules
@@ -107,7 +115,7 @@ lib/
 ├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
 ├── widgets/      -> Reusable UI sub-packages (auth, booking, catalogue, chamber, common, dashboard, encounter, print, queue)
 └── utils/        -> Helpers (Default medicines, app constants, platform print, formatters)
-test/             -> Automated test suite (95+ unit and widget tests covering engines, flows, and models)
+test/             -> Automated test suite (114+ unit and widget tests covering engines, flows, and models)
 docs/
 ├── SCHEMA_AND_MODELS.md  -> Master data dictionary for Firestore collections & models
 ├── PRODUCT_VISION_AND_WORKFLOW.md -> Clinical encounter blueprint & real-world OPD intent
@@ -127,3 +135,5 @@ docs/
 - ❌ **Using non-Indian date formats (e.g. `YYYY-MM-DD` or `MM/DD/YYYY`) in UI, printed prescriptions, changelogs, release notes, or any markdown documentation.** (Must strictly use `DD-MM-YYYY` or `DD-MM-YY`).
 - ❌ **Bypassing 3-tier role authorization or exposing owner settings (doctor CRUD, fee configuration) to reception or chamber PIN sessions.**
 - ❌ **Forcing patient chamber admission during an active consultation or doctor breather (`consultation_ended`) without explicit `ready_for_next` handshake.**
+- ❌ **Allowing live admissions, ready signals, or chamber operations on past historical dates.** (Must switch to immutable read-only mode).
+- ❌ **Exposing remote reservations (`VisitStatus.booked`) or uncollected dues (`PaymentType.unpaid`) in emergency door self-call lists.** (Strictly capped to top 1–2 verified lobby-checked-in patients).

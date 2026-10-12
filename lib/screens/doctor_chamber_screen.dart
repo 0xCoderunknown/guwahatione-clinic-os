@@ -51,8 +51,26 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
     super.dispose();
   }
 
+  bool get _isToday => DateUtils.isSameDay(_selectedDate, DateTime.now());
+  bool get _isPastDate =>
+      _selectedDate.isBefore(DateUtils.dateOnly(DateTime.now()));
+
   void _listenToChamberSession() {
     _chamberSessionSub?.cancel();
+    if (!_isToday) {
+      if (mounted) {
+        setState(() {
+          _chamberStatus = 'idle';
+          _activeCallingApptId = null;
+          _activeQueueNumber = null;
+          _activePatientName = null;
+          _lastCompletedQueueNumber = null;
+          _lastCompletedPatientName = null;
+        });
+      }
+      return;
+    }
+
     _chamberSessionSub = _firebaseService
         .streamChamberSession(widget.doctor.id, _selectedDate)
         .listen((session) {
@@ -162,6 +180,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   }
 
   Future<void> _handleDoorAdmit(Appointment appt) async {
+    if (!_isToday) return;
     setState(() => _isBusySignaling = true);
     try {
       // 1. Immediately update appointment visitStatus to inConsultation
@@ -216,6 +235,25 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   }
 
   Future<void> _openConsultation(Appointment appt) async {
+    if (_isPastDate) {
+      if (appt.status == AppointmentStatus.completed) {
+        await EncounterDialogs.showLongitudinalHistory(
+          context,
+          patientPhone: appt.patientPhone,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Token #${appt.queueNumber} (${appt.patientName}) was unattended. Past chamber shifts are read-only.',
+            ),
+            backgroundColor: Colors.blueGrey.shade800,
+          ),
+        );
+      }
+      return;
+    }
+
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -271,8 +309,8 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
           // 1. AppointmentStatus.pending
           // 2. VisitStatus.waitingInLobby
           // 3. PaymentType != PaymentType.unpaid
-          // Hidden when active consultation is underway to prevent physician distraction.
-          final doorEligibleTokens = (_chamberStatus == 'in_consultation')
+          // Strictly disabled on past dates and when active consultation is underway.
+          final doorEligibleTokens = (!_isToday || _chamberStatus == 'in_consultation')
               ? <Appointment>[]
               : appointments
                   .where((a) =>
@@ -315,27 +353,31 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      ChamberControlBanner(
-                        status: _chamberStatus,
-                        lastCompletedQueueNumber: _lastCompletedQueueNumber,
-                        lastCompletedPatientName: _lastCompletedPatientName,
-                        activeQueueNumber: _activeQueueNumber,
-                        activePatientName: _activePatientName,
-                        isBusy: _isBusySignaling,
-                        onNextPatient: _handleNextPatient,
-                        onOpenActivePatient: _activeCallingApptId != null
-                            ? () => _autoOpenConsultationForId(
-                                _activeCallingApptId!,
-                              )
-                            : null,
-                      ),
-                      if (doorEligibleTokens.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        ChamberDoorOverrideBar(
-                          eligibleTokens: doorEligibleTokens,
-                          onAdmit: _handleDoorAdmit,
+                      if (_isToday) ...[
+                        ChamberControlBanner(
+                          status: _chamberStatus,
+                          lastCompletedQueueNumber: _lastCompletedQueueNumber,
+                          lastCompletedPatientName: _lastCompletedPatientName,
+                          activeQueueNumber: _activeQueueNumber,
+                          activePatientName: _activePatientName,
                           isBusy: _isBusySignaling,
+                          onNextPatient: _handleNextPatient,
+                          onOpenActivePatient: _activeCallingApptId != null
+                              ? () => _autoOpenConsultationForId(
+                                  _activeCallingApptId!,
+                                )
+                              : null,
                         ),
+                        if (doorEligibleTokens.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          ChamberDoorOverrideBar(
+                            eligibleTokens: doorEligibleTokens,
+                            onAdmit: _handleDoorAdmit,
+                            isBusy: _isBusySignaling,
+                          ),
+                        ],
+                      ] else if (_isPastDate) ...[
+                        ChamberArchiveBanner(date: _selectedDate),
                       ],
                       const SizedBox(height: 16),
                       ChamberMetricsGrid.fromAppointments(
@@ -348,6 +390,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
                       ChamberQueueList(
                         appointments: chamberQueue,
                         activeCallingApptId: _activeCallingApptId,
+                        isPastDate: _isPastDate,
                         onConsult: _openConsultation,
                       ),
                     ],

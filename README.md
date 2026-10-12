@@ -87,7 +87,10 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 - **🩺 Doctor Chamber Live Board** — Read-only chamber dashboard for consultants showing live token order, active calling token status, and fee share with 1-tap access to patient clinical records and consultation encounters.
 - **🛡️ Audit-Proof Ledger** — Zero deletions allowed; consecutive token sequence is preserved on screen and database.
 - **🚫 Explicit "Absent / No-Show" Status** — Replaced "Cancel" with "Absent" so slots are preserved on the doctor ledger with ₹0 amount.
-- **💳 Smart Payment Types** — Paid (per doctor fee), Free Review (strictly for returning patients of same doctor within 14 days, with warning if >14 days), Free Family (courtesy).
+- **💳 Granular Payment Types** — Paid Cash, Paid UPI, Post-Pay, Free Review (strictly for returning patients of same doctor within 14 days), Free Family (inviolable courtesy waiver), and Unpaid (phone reservations).
+- **⏱️ Asynchronous OPD Advance Booking & 1-Tap Desk Check-In** — Phone reservations (`VisitStatus.booked`) remain segregated from the doctor chamber queue until physical counter check-in; rapid 1-tap & keyboard shortcut modal (`QuickCheckInDialog`) for counter payment reconciliation.
+- **🚪 Restricted Emergency Door Self-Call Runway** — Doctor chamber fallback runway (`ChamberDoorOverrideBar`) strictly capped to the next 1–2 verified lobby-checked-in patients (`waitingInLobby`) with confirmed fee/waiver, auto-hiding during active consultations.
+- **🔒 Read-Only Historical Chamber Archive** — Historical calendar dates switch Doctor Chamber to read-only archive mode (`ChamberArchiveBanner`), suppressing live calling triggers and marking unresolved appointments as `Unattended / No-Show`.
 - **📊 Daily Revenue Analytics & Auditing** — Real-time earnings breakdown calculated by `RevenueEngine` grouped by doctor with chamber preview mode.
 - **⚡ Offline Queue Fallback Cache (`P6`)** — Silent local caching of daily appointment ledgers to `SharedPreferences` (`OfflineQueueCacheService`) preventing counter PC freezes during broadband dropouts, accompanied by an automatic amber status badge.
 - **💬 WhatsApp Digital Prescription Deep Link (`P7`)** — 1-tap `wa.me` deep link delivery (`WhatsAppEngine`) generating structured clinical prescription summaries with Indian date standard (`DD-MM-YYYY`), vitals, medication schedule, and follow-up review windows.
@@ -287,17 +290,20 @@ lib/
 │   │   ├── add_appointment_dialog.dart      # Rapid booking modal with patient history search
 │   │   ├── booking_eligibility_banner.dart  # 14-day policy warning banner & static confirmation dialog
 │   │   ├── booking_patient_fields.dart      # Phone search, patient name, age, and gender fields
-│   │   └── booking_payment_section.dart     # Paid, Free Review, and Family courtesy payment radio section
+│   │   ├── booking_payment_section.dart     # Paid, Free Review, and Family courtesy payment radio section
+│   │   └── quick_check_in_dialog.dart       # 1-tap & keyboard shortcut counter check-in & reconciliation
 │   ├── queue/                               # Reception queue management
 │   │   ├── appointment_accordion.dart       # Live token card with actions (absent, attended, send in, WhatsApp slip)
 │   │   └── completed_consultations_accordion.dart # Collapsible archive for completed patient consultations
 │   ├── chamber/                             # Doctor chamber catalog screen components
 │   │   ├── chamber_app_bar.dart             # Header with live time, sync indicator, and PIN logout
+│   │   ├── chamber_archive_banner.dart      # Read-only shift closed archive banner for historical dates
 │   │   ├── chamber_control_banner.dart      # 2-way handshake control banner (Call Next, In-Consultation badge)
+│   │   ├── chamber_door_override_bar.dart   # Restricted emergency door self-call runway (top 1-2 lobby tokens)
 │   │   ├── chamber_metrics_grid.dart        # Real-time KPI summary cards (Total, In Queue, Revenue)
 │   │   ├── chamber_queue_header.dart        # Section header for consultant queue
 │   │   ├── chamber_queue_list.dart          # Token sequence list with live calling state
-│   │   └── chamber_token_card.dart          # Token tile with status badge, override modal & consultation launcher
+│   │   └── chamber_token_card.dart          # Token tile with status badge & consultation launcher
 │   ├── dashboard/                           # Command center reception dashboard components
 │   │   ├── daily_cash_handover_dialog.dart  # End-of-day closing reconciliation & note denomination counter
 │   │   ├── dashboard_header_bar.dart        # Reception header bar with quick action chips & cash handover
@@ -356,7 +362,7 @@ The repository maintains an active automated testing suite covering domain busin
 flutter test
 ```
 
-- **95 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, and print schedule segregation with 100% pass rate.
+- **114 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, and print schedule segregation with 100% pass rate.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---
