@@ -40,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Cleaned confusing legacy `ownerPin` and `setOwnerPin` aliases in `AuthProvider` (`auth_provider.dart`), securing role semantics between owner master PIN and receptionist PIN.
   - **Retirement of Legacy Service Facade:**
     - Deleted obsolete 254-line facade `lib/services/firebase_service.dart`. All screens and providers now directly consume single-responsibility services.
+  - **Data Models & Schema Hardening (`lib/models/`):**
+    - Hardened `Doctor.fromJson` (`doctor.dart`) with polymorphic date parsing (`Timestamp`, `DateTime`, `String`) for `blockedDates` to prevent runtime cast errors from arbitrary Firestore date formats.
+    - Enhanced `Patient.fromJson` (`patient.dart`) with whitespace trimming and Set-based deduplication for critical clinical allergy alert tags.
+    - Introduced clean barrel export file `lib/models/models.dart` exporting all 11 pure data models.
   - **Automated Verification:**
     - `flutter analyze` completed with 0 errors and 0 warnings.
     - All 122 automated unit and widget tests pass seamlessly.

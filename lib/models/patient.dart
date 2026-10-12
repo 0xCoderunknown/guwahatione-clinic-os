@@ -64,7 +64,9 @@ class Patient {
       age: (json['age'] as num?)?.toInt() ?? 0,
       gender: normalizedGender,
       allergies: (json['allergies'] as List<dynamic>?)
-              ?.map((e) => e.toString())
+              ?.map((e) => e.toString().trim())
+              .where((e) => e.isNotEmpty)
+              .toSet()
               .toList() ??
           const [],
       lastVisitDate: parsedLastVisit,

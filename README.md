@@ -234,6 +234,7 @@ lib/
 │       ├── medicine_engine.dart             # Chemical search scoring, default OPD regimens & Rx segregation
 │       └── whatsapp_engine.dart             # Structured clinical summary formatting & wa.me deep links
 ├── models/
+│   ├── models.dart                          # Central barrel file exporting all domain models
 │   ├── appointment.dart                     # Appointment schema, PaymentType & AppointmentStatus
 │   ├── chamber_session.dart                 # Pure domain model for 2-way doctor-reception chamber handshake
 │   ├── consultation.dart                    # Immutable encounter schema with active/stopped getters

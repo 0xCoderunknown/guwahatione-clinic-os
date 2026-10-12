@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Doctor {
   final String id;
   final String name;
@@ -46,9 +48,12 @@ class Doctor {
       phone: json['phone'] as String? ?? '',
       availableDays: List<String>.from(json['availableDays'] ?? []),
       blockedDates:
-          (json['blockedDates'] as List<dynamic>?)
-              ?.map((d) => DateTime.parse(d as String))
-              .toList() ??
+          (json['blockedDates'] as List<dynamic>?)?.map((d) {
+            if (d is Timestamp) return d.toDate();
+            if (d is DateTime) return d;
+            if (d is String) return DateTime.tryParse(d);
+            return null;
+          }).whereType<DateTime>().toList() ??
           [],
       pin: json['pin'] as String? ?? '1234',
       consultationFee: (json['consultationFee'] as num?)?.toInt() ?? 500,
