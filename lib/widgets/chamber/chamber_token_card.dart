@@ -77,10 +77,6 @@ class ChamberTokenCard extends StatelessWidget {
 
     return InkWell(
       onTap: canEnterConsultation ? onConsult : null,
-      onLongPress:
-          appointment.status == AppointmentStatus.pending && !isCallingNow
-          ? () => _handleDoctorManualOverride(context)
-          : null,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -227,53 +223,35 @@ class ChamberTokenCard extends StatelessWidget {
                     onPressed: onConsult,
                   )
                 else
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.hourglass_top_rounded,
+                          size: 13,
+                          color: Colors.grey.shade600,
                         ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Waiting Reception Call',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.hourglass_top_rounded,
-                              size: 13,
-                              color: Colors.grey.shade600,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Waiting Reception Call',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade700,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      IconButton(
-                        icon: const Icon(Icons.flash_on_rounded, size: 16),
-                        tooltip: 'Manual Override (If Reception Offline)',
-                        visualDensity: VisualDensity.compact,
-                        style: IconButton.styleFrom(
-                          foregroundColor: Colors.orange.shade800,
-                          backgroundColor: Colors.orange.shade50,
-                          padding: const EdgeInsets.all(6),
-                          minimumSize: const Size(28, 28),
-                        ),
-                        onPressed: () => _handleDoctorManualOverride(context),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
               ] else
                 OutlinedButton.icon(
@@ -291,41 +269,6 @@ class ChamberTokenCard extends StatelessWidget {
             ],
           ],
         ),
-      ),
-    );
-  }
-
-  void _handleDoctorManualOverride(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.amber.shade800),
-            const SizedBox(width: 8),
-            const Text('Manual Chamber Admission'),
-          ],
-        ),
-        content: Text(
-          'Reception has not yet admitted Token #${appointment.queueNumber} (${appointment.patientName}).\n\n'
-          'Is the patient physically inside your chamber? Use this override only if reception is offline or unresponsive.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.teal.shade800,
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              onConsult();
-            },
-            child: const Text('Admit Patient Directly'),
-          ),
-        ],
       ),
     );
   }

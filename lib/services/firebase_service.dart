@@ -107,6 +107,9 @@ class FirebaseService {
     checkedInAt: checkedInAt,
   );
 
+  Future<void> admitPatientToChamber(String appointmentId) =>
+      _bookingService.admitPatientToChamber(appointmentId);
+
   Future<void> updateAppointmentStatus(
     String appointmentId,
     AppointmentStatus status, {

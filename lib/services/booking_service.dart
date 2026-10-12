@@ -94,6 +94,14 @@ class BookingService {
     await _appointmentsRef.doc(appointmentId).update(data);
   }
 
+  /// Updates appointment visitStatus to inConsultation when entering chamber.
+  Future<void> admitPatientToChamber(String appointmentId) async {
+    await _appointmentsRef.doc(appointmentId).update({
+      'visitStatus': VisitStatus.inConsultation.name,
+      'status': AppointmentStatus.pending.name,
+    });
+  }
+
   /// Updates status and optionally collected amount, payment type, or visitStatus.
   Future<void> updateAppointmentStatus(
     String appointmentId,

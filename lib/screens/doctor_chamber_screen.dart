@@ -161,6 +161,60 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
     }
   }
 
+  Future<void> _handleDoorAdmit(Appointment appt) async {
+    setState(() => _isBusySignaling = true);
+    try {
+      // 1. Immediately update appointment visitStatus to inConsultation
+      await _firebaseService.admitPatientToChamber(appt.id);
+
+      // 2. Broadcast chamber session sync to inform reception desk
+      await _firebaseService.callTokenIntoChamber(
+        doctorId: widget.doctor.id,
+        date: _selectedDate,
+        appointment: appt,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.meeting_room_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Token #${appt.queueNumber} (${appt.patientName}) admitted directly from door.',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.teal.shade800,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // 3. Open consultation encounter workspace
+      await _openConsultation(appt);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error admitting patient: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBusySignaling = false);
+    }
+  }
+
   Future<void> _openConsultation(Appointment appt) async {
     await Navigator.push(
       context,
@@ -213,6 +267,21 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
               .where((a) => a.visitStatus != VisitStatus.booked)
               .toList();
 
+          // Emergency Door Fallback: Strictly capped to next 1-2 patients who are:
+          // 1. AppointmentStatus.pending
+          // 2. VisitStatus.waitingInLobby
+          // 3. PaymentType != PaymentType.unpaid
+          // Hidden when active consultation is underway to prevent physician distraction.
+          final doorEligibleTokens = (_chamberStatus == 'in_consultation')
+              ? <Appointment>[]
+              : appointments
+                  .where((a) =>
+                      a.status == AppointmentStatus.pending &&
+                      a.visitStatus == VisitStatus.waitingInLobby &&
+                      a.paymentType != PaymentType.unpaid)
+                  .take(2)
+                  .toList();
+
           return RefreshIndicator(
             onRefresh: () async => setState(() {}),
             child: SingleChildScrollView(
@@ -260,6 +329,14 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
                               )
                             : null,
                       ),
+                      if (doorEligibleTokens.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        ChamberDoorOverrideBar(
+                          eligibleTokens: doorEligibleTokens,
+                          onAdmit: _handleDoorAdmit,
+                          isBusy: _isBusySignaling,
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       ChamberMetricsGrid.fromAppointments(
                         appointments: appointments,

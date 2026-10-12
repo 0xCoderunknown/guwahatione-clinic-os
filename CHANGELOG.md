@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.16.1] — 12-10-2026
+
+### Security & Queue Integrity
+- **Restricted Emergency Door Override Runway (`ChamberDoorOverrideBar`):**
+  - **Eliminated Arbitrary Overrides:** Removed unconstrained manual override buttons and long-press triggers across queue cards, preventing arbitrary queue-jumping or admitting unverified/unpaid patients.
+  - **Strict "Next at Door" Quick-Selector:** Added an emergency self-call runway strictly capped to the next 1–2 patients in `VisitStatus.waitingInLobby` with confirmed payment/waiver (`PaymentType != unpaid`).
+  - **Zero Distraction / Auto-Hiding:** The emergency runway automatically hides during active physician consultations (`in_consultation`) or when no verified lobby-checked-in patients are waiting.
+  - **Atomic State Transition:** 1-tap door admission immediately updates appointment status to `VisitStatus.inConsultation`, syncs the live chamber session channel, and hydrates the consultation encounter workspace.
+  - **Automated Test Fortification:** Added `test/doctor_door_override_test.dart`, expanding automated test suite to **110 passing tests** with 100% success rate.
+
+---
+
 ## [1.16.0] — 12-10-2026
 
 ### Added & Enhanced
@@ -17,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Inviolable Discretionary Fee Waivers (`PaymentType.freeFamily`):** Enforced immutable courtesy/VVIP zero-rupee fee waivers that cannot be overwritten or coerced by historical visit review calculations.
   - **Granular Payment Types:** Extended `PaymentType` to support `paidCash`, `paidUpi`, `postPay`, and `unpaid`, complete with backward compatibility aliases and helpers.
   - **Reception & Queue UI Enhancements:** Added dedicated "Advance / Phone Bookings" section to queue accordion, clear status badges ("Booked (Phone)" vs "In Lobby"), and instant 1-tap check-in buttons on dashboard queue cards.
-  - **Automated Test Fortification:** Added `test/opd_checkin_payment_workflow_test.dart`, expanding automated test suite to **104 passing tests** with 100% success rate.
+  - **Automated Test Fortification:** Added `test/opd_checkin_payment_workflow_test.dart`.
 
 ---
 

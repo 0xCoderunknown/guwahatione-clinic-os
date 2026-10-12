@@ -367,6 +367,16 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
+  /// Direct admission of patient from lobby into chamber, updating visitStatus to inConsultation.
+  Future<void> admitPatientToChamber(String appointmentId) async {
+    try {
+      await _firebaseService.admitPatientToChamber(appointmentId);
+    } catch (e) {
+      debugPrint('Error admitting patient to chamber: $e');
+      rethrow;
+    }
+  }
+
   Future<void> updateAppointmentStatus(
     String id,
     String status,
