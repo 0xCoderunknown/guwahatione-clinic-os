@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../models/appointment.dart';
 import '../models/doctor.dart';
-import '../services/firebase_service.dart';
+import '../services/booking_service.dart';
+import '../services/chamber_service.dart';
 import '../widgets/widgets.dart';
 import 'consultation_encounter_screen.dart';
 
@@ -25,7 +26,8 @@ class DoctorChamberScreen extends StatefulWidget {
 
 class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   DateTime _selectedDate = DateTime.now();
-  final FirebaseService _firebaseService = FirebaseService();
+  final BookingService _bookingService = BookingService();
+  final ChamberService _chamberService = ChamberService();
   StreamSubscription? _chamberSessionSub;
   String? _activeCallingApptId;
   String? _lastHandledCallingAppointmentId;
@@ -73,7 +75,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
       return;
     }
 
-    _chamberSessionSub = _firebaseService
+    _chamberSessionSub = _chamberService
         .streamChamberSession(widget.doctor.id, _selectedDate)
         .listen((session) {
           if (!mounted) return;
@@ -102,7 +104,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   Future<void> _handleNextPatient() async {
     setState(() => _isBusySignaling = true);
     try {
-      await _firebaseService.notifyReadyForNext(
+      await _chamberService.notifyReadyForNext(
         doctorId: widget.doctor.id,
         date: _selectedDate,
       );
@@ -186,10 +188,10 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
     setState(() => _isBusySignaling = true);
     try {
       // 1. Immediately update appointment visitStatus to inConsultation
-      await _firebaseService.admitPatientToChamber(appt.id);
+      await _bookingService.admitPatientToChamber(appt.id);
 
       // 2. Broadcast chamber session sync to inform reception desk
-      await _firebaseService.callTokenIntoChamber(
+      await _chamberService.callTokenIntoChamber(
         doctorId: widget.doctor.id,
         date: _selectedDate,
         appointment: appt,
@@ -278,7 +280,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
         isPreviewMode: widget.isPreviewMode,
       ),
       body: StreamBuilder<List<Appointment>>(
-        stream: _firebaseService.getAppointmentsForDoctorAndDate(
+        stream: _bookingService.getAppointmentsForDoctorAndDate(
           widget.doctor.id,
           _selectedDate,
         ),

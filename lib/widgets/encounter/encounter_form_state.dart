@@ -6,8 +6,7 @@ import '../../models/medicine.dart';
 import '../../models/prescription_item.dart';
 import '../../models/vitals.dart';
 import '../../providers/clinic_provider.dart';
-import '../../utils/clinical_defaults_helper.dart';
-import '../../utils/medicine_search_scorer.dart';
+import '../../core/engines/engines.dart';
 
 /// Encapsulates all state, controllers, and mutation logic for a clinical consultation encounter.
 class EncounterFormState {
@@ -132,7 +131,7 @@ class EncounterFormState {
   // ---------------------------------------------------------------------------
 
   void stageMedicine(Medicine med) {
-    final defaults = ClinicalDefaultsHelper.getDefaultsForMedicine(med);
+    final defaults = MedicineEngine.getDefaultsForMedicine(med);
     stagedMedicine = med;
     stagedGenericGroup = null;
     stagedUnlistedName = null;
@@ -159,7 +158,7 @@ class EncounterFormState {
       strength: group.strength,
       form: group.form,
     );
-    final defaults = ClinicalDefaultsHelper.getDefaultsForMedicine(dummy);
+    final defaults = MedicineEngine.getDefaultsForMedicine(dummy);
     stagedMedicine = null;
     stagedGenericGroup = group;
     stagedUnlistedName = null;

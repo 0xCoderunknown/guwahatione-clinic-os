@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../models/medicine.dart';
-import '../../../utils/medicine_search_scorer.dart';
+import '../../../core/engines/engines.dart';
 
 /// Grouped search results view displaying chemical salts, associated clinic trade brands, and outside fallback options.
 class RxSearchResultsView extends StatelessWidget {

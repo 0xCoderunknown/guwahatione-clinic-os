@@ -6,9 +6,8 @@ import 'package:appointment_app/widgets/widgets.dart';
 import 'package:appointment_app/screens/login_screen.dart';
 import 'package:appointment_app/models/user_role.dart';
 import 'package:appointment_app/models/prescription_item.dart';
-import 'package:appointment_app/utils/medicine_search_scorer.dart';
+import 'package:appointment_app/core/engines/engines.dart';
 import 'package:appointment_app/utils/default_medicines.dart';
-import 'package:appointment_app/utils/clinical_defaults_helper.dart';
 
 void main() {
   group('Composition-First Medicine Search Scorer Tests', () {
@@ -64,7 +63,7 @@ void main() {
     ];
 
     test('Searching chemical composition "Azithromycin" ranks composition at top and groups clinic brands', () {
-      final results = MedicineSearchScorer.searchAndGroup(
+      final results = MedicineEngine.searchAndGroup(
         catalog: catalog,
         query: 'Azithromycin',
       );
@@ -85,7 +84,7 @@ void main() {
     });
 
     test('Searching "Paracetamol" returns Paracetamol 650 and Paracetamol 500 with grouped brands', () {
-      final results = MedicineSearchScorer.searchAndGroup(
+      final results = MedicineEngine.searchAndGroup(
         catalog: catalog,
         query: 'paracetamol',
       );
@@ -126,7 +125,7 @@ void main() {
         ),
       ];
 
-      final results = MedicineSearchScorer.searchAndGroup(
+      final results = MedicineEngine.searchAndGroup(
         catalog: mixedCatalog,
         query: 'Paracetamol',
       );
@@ -138,7 +137,7 @@ void main() {
     });
 
     test('Searching by brand name "Dolo" still matches and groups by its composition', () {
-      final results = MedicineSearchScorer.searchAndGroup(
+      final results = MedicineEngine.searchAndGroup(
         catalog: catalog,
         query: 'Dolo',
       );
@@ -170,7 +169,7 @@ void main() {
     });
 
     test('Brand-First search mode ranks trade brand prefix highest and sorts matching brand first', () {
-      final results = MedicineSearchScorer.searchAndGroup(
+      final results = MedicineEngine.searchAndGroup(
         catalog: catalog,
         query: 'Dolo',
         searchMode: 'brandFirst',
@@ -190,7 +189,7 @@ void main() {
         form: 'Tablet',
         category: 'Proton Pump Inhibitor',
       );
-      final ppiDefaults = ClinicalDefaultsHelper.getDefaultsForMedicine(ppi);
+      final ppiDefaults = MedicineEngine.getDefaultsForMedicine(ppi);
       expect(ppiDefaults.timing, 'Before Food (Empty Stomach)');
       expect(ppiDefaults.frequency, '1-0-0 (OD)');
       expect(ppiDefaults.durationDays, 14);
@@ -203,7 +202,7 @@ void main() {
         form: 'Tablet',
         category: 'Antihypertensive',
       );
-      final antihtnDefaults = ClinicalDefaultsHelper.getDefaultsForMedicine(antihtn);
+      final antihtnDefaults = MedicineEngine.getDefaultsForMedicine(antihtn);
       expect(antihtnDefaults.frequency, '1-0-0 (OD)');
       expect(antihtnDefaults.timing, 'After Food (Morning)');
       expect(antihtnDefaults.durationDays, 30); // 30-day routine OPD refill cycle
@@ -220,7 +219,7 @@ void main() {
         defaultTiming: 'After Breakfast',
         defaultDurationDays: null,
       );
-      final chronicDefaults = ClinicalDefaultsHelper.getDefaultsForMedicine(chronicMed);
+      final chronicDefaults = MedicineEngine.getDefaultsForMedicine(chronicMed);
       expect(chronicDefaults.durationDays, isNull);
     });
   });

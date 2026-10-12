@@ -5,7 +5,7 @@ import '../core/engines/engines.dart';
 import '../models/appointment.dart';
 import '../models/chamber_session.dart';
 import '../providers/clinic_provider.dart';
-import '../services/firebase_service.dart';
+import '../services/booking_service.dart';
 import '../widgets/widgets.dart';
 
 /// Reception desk screen for managing, dispatching, and tracking the live patient queue.
@@ -27,7 +27,7 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
   DateTime _selectedDate = DateTime.now();
   String? _selectedDoctorId; // null = All Doctors
   String? _expandedAppointmentId;
-  final FirebaseService _firebaseService = FirebaseService();
+  final BookingService _bookingService = BookingService();
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +130,7 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
           // Main Queue Content
           Expanded(
             child: StreamBuilder<List<Appointment>>(
-              stream: _firebaseService.getAppointmentsForDate(_selectedDate),
+              stream: _bookingService.getAppointmentsForDate(_selectedDate),
               builder: (context, apptSnapshot) {
                 if (apptSnapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

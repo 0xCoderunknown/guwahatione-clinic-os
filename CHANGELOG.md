@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Removed unreferenced orphan `AllergyAlertBanner` (`widgets/common/allergy_alert_banner.dart`).
   - **Centralized Barrel Synchronization:**
     - Cleaned and updated `lib/widgets/widgets.dart` barrel exports, reducing total widget files from 56 to 44 (-21%).
+  - **Legacy Utils Shim Retirement:**
+    - Replaced all calls to deprecated `ClinicalDefaultsHelper` and `MedicineSearchScorer` across `EncounterFormState`, `RxReconciliationSection`, `RxSearchResultsView`, `StagedMedicineForm`, and `catalogue_scoring_test.dart` directly with pure `MedicineEngine`.
+    - Deleted obsolete adapter shims `clinical_defaults_helper.dart` and `medicine_search_scorer.dart`.
+  - **Screen Direct-Service Decoupling:**
+    - Refactored `AppointmentListScreen` and `StatisticsScreen` to directly consume atomic `BookingService` instead of instantiating the full `FirebaseService` facade.
+    - Refactored `DoctorChamberScreen` to directly consume atomic `BookingService` and `ChamberService`, decoupling the screen from `FirebaseService`.
   - **Automated Verification:**
     - `flutter analyze` completed with 0 errors and 0 warnings.
     - All 122 automated unit and widget tests pass seamlessly.

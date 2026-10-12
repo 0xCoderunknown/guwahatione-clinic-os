@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../core/engines/engines.dart';
 import '../../models/medicine.dart';
 import '../../models/prescription_item.dart';
-import '../../utils/medicine_search_scorer.dart';
 import '../common/section_card.dart';
 import 'encounter_form_state.dart';
 import 'rx/reconciliation_item_row.dart';
@@ -39,7 +38,7 @@ class RxReconciliationSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final searchResults = form.medSearchController.text.trim().isNotEmpty
-        ? MedicineSearchScorer.searchAndGroup(
+        ? MedicineEngine.searchAndGroup(
             catalog: catalog,
             query: form.medSearchController.text,
             searchMode: form.searchMode,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/engines/engines.dart';
 import '../models/appointment.dart';
-import '../services/firebase_service.dart'; // Direct service access for clean stream
+import '../services/booking_service.dart'; // Direct service access for clean stream
 import '../widgets/widgets.dart';
 import 'doctor_daily_details_screen.dart';
 
@@ -15,7 +15,7 @@ class StatisticsScreen extends StatefulWidget {
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
   DateTime _selectedDate = DateTime.now();
-  final FirebaseService _firebaseService = FirebaseService();
+  final BookingService _bookingService = BookingService();
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +52,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
           Expanded(
             child: StreamBuilder<List<Appointment>>(
-              stream: _firebaseService.getAppointmentsForDate(_selectedDate),
+              stream: _bookingService.getAppointmentsForDate(_selectedDate),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());

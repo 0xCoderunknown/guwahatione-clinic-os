@@ -329,10 +329,8 @@ lib/
 │       └── catalogue_search_toolbar.dart    # Real-time search and filter toolbar
 └── utils/
     ├── app_constants.dart                   # Default fee, blocked clinic dates
-    ├── clinical_defaults_helper.dart        # Transparent adapter forwarding to MedicineEngine
     ├── default_medicines.dart               # Canonical essential OPD medications with deterministic IDs
     ├── formatters.dart                      # Centralized date, time, and currency formatters (AppFormatters)
-    ├── medicine_search_scorer.dart          # Transparent adapter forwarding to MedicineEngine
     ├── platform_print.dart                  # Unified cross-platform print interface
     ├── platform_print_web.dart              # Web print implementation using dart:js_interop
     ├── platform_print_stub.dart             # Native desktop/mobile fallback print stub
