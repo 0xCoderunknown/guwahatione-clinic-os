@@ -49,11 +49,21 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 | **Asynchronous OPD Booking & 1-Tap Desk Check-In** | Advance and phone bookings register as `VisitStatus.booked` with zero lobby clutter; physical arrival triggers 1-tap `QuickCheckInDialog` with granular payment reconciliation (`paidCash`, `paidUpi`, `postPay`, `freeReview`, `freeFamily`, `unpaid`). | 🟢 Shipped & Verified (`v1.16.0`) |
 | **Restricted Emergency Door Self-Call Runway** | `ChamberDoorOverrideBar` strictly displays only the top 1–2 physically checked-in patients (`waitingInLobby`) with amber warning modals to prevent queue chaos during receptionist breaks. | 🟢 Shipped & Verified (`v1.16.1`) |
 | **Read-Only Archive State for Historical Chamber Dates** | Selecting any date prior to today switches doctor chamber to immutable archive mode (`ChamberArchiveBanner`), suppressing all live controls, self-call bars, and admissions while allowing review of past consultation notes. | 🟢 Shipped & Verified (`v1.16.2`) |
-| **Widget Architecture Consolidation** | Consolidated 56 widget files down to 44 files (-21%), eliminated 3 pass-through wrapper screens, inlined tightly-coupled micro-widgets, pruned orphan dead code, and synchronized barrel exports. | 🟢 Shipped & Verified (`v1.16.5`) |
+| **Architectural Consolidation & Layer Modernization** | Consolidated widgets from 56 to 44 (-21%), decoupled screens and providers from monolithic `FirebaseService` (now retired), hardened polymorphic model deserialization, and added models barrel export. | 🟢 Shipped & Verified (`v1.16.5`) |
 
 ---
 
 ## 🎯 3. Active Priority Backlog (Next Horizon)
+
+### 📌 Upcoming Phase / Next Tomorrow:
+- **[TODO] Domain Engines & Math Audit (`lib/core/engines/`):**
+  - Comprehensive architectural review of all 5 pure Dart domain engines:
+    - [RevenueEngine](file:///d:/Android/guwahatione-clinic-os/lib/core/engines/revenue_engine.dart) (realized vs expected revenues, fee calculation, payment type segregation).
+    - [AppointmentEngine](file:///d:/Android/guwahatione-clinic-os/lib/core/engines/appointment_engine.dart) (14-day free review eligibility window, token sequence arithmetic, provisional consultation time windows, queue partitioning).
+    - [MedicineEngine](file:///d:/Android/guwahatione-clinic-os/lib/core/engines/medicine_engine.dart) (dual-mode scoring, OPD standard formulary regimens, brand vs composition search indexing).
+    - [WhatsAppEngine](file:///d:/Android/guwahatione-clinic-os/lib/core/engines/whatsapp_engine.dart) (prescribing summaries, Indian date formatting, deep-link URL encoding).
+    - [CashHandoverEngine](file:///d:/Android/guwahatione-clinic-os/lib/core/engines/cash_handover_engine.dart) (doctor breakdown aggregation, denomination math, reconciliation discrepancy auditing).
+  - Cross-verify engine purity (zero Flutter UI / zero Firebase SDK leaks) and ensure test suite coverage across edge cases.
 
 All primary operational priorities (P1 through P8) have been successfully implemented and verified across 122 automated tests. Future enhancements are proposed based on operational feedback from reception counters and consulting physicians.
 
