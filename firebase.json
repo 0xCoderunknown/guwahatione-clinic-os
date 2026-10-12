@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "guwahatione-clinicos",
     "public": "build/web",
     "ignore": [
       "firebase.json",
