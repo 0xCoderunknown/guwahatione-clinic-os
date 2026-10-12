@@ -152,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen>
 
                     // Tab View Content
                     SizedBox(
-                      height: 260,
+                      height: 275,
                       child: TabBarView(
                         controller: _tabController,
                         children: [
@@ -272,7 +272,8 @@ class _LoginScreenState extends State<LoginScreen>
 
     if (!success) {
       setState(
-        () => _errorMessage = 'Incorrect Reception PIN (default is 0000).',
+        () => _errorMessage =
+            'Incorrect PIN (Testing: Reception: 0000 | Admin: 849201).',
       );
     }
   }

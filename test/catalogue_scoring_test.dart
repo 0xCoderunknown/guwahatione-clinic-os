@@ -1,6 +1,8 @@
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/models/medicine.dart';
+import 'package:appointment_app/widgets/widgets.dart';
 import 'package:appointment_app/models/user_role.dart';
 import 'package:appointment_app/models/prescription_item.dart';
 import 'package:appointment_app/utils/medicine_search_scorer.dart';
@@ -299,6 +301,105 @@ void main() {
       expect(duplicateDocIds, containsAll(['doc-2', 'doc-3', 'doc-5']));
       expect(duplicateDocIds.length, 3);
       expect(seen.length, 2); // 1 Dolo 650 and 1 Pan 40 preserved
+    });
+  });
+
+  group('Catalogue Header & Reception Auth Responsive Widget Tests', () {
+    testWidgets('CatalogueHeaderAndStats renders cleanly without overflow on mobile (390px)', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CatalogueHeaderAndStats(
+              totalProducts: 42,
+              totalMolecules: 28,
+              onCleanDuplicates: () {},
+              onAddProduct: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Master Medicine Catalogue'), findsOneWidget);
+      expect(find.text('42'), findsOneWidget);
+      expect(find.text('28'), findsOneWidget);
+      expect(find.text('Clean Duplicates'), findsOneWidget);
+      expect(find.text('Add Product'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('CatalogueHeaderAndStats renders cleanly on wide desktop (1200px)', (tester) async {
+      tester.view.physicalSize = const Size(1200, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CatalogueHeaderAndStats(
+              totalProducts: 100,
+              totalMolecules: 65,
+              onCleanDuplicates: () {},
+              onAddProduct: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Master Medicine Catalogue'), findsOneWidget);
+      expect(find.text('100'), findsOneWidget);
+      expect(find.text('65'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('CatalogueSearchToolbar adapts to mobile width without overflow', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final controller = TextEditingController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: CatalogueSearchToolbar(
+              searchController: controller,
+              selectedFormFilter: 'All',
+              formOptions: const ['All', 'Tablet', 'Syrup'],
+              onFormFilterChanged: (_) {},
+              onSearchChanged: (_) {},
+              onClearSearch: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Dosage Form'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('ReceptionLoginForm renders testing credentials for Reception (0000) and Admin (849201)', (tester) async {
+      final pinCtrl = TextEditingController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              height: 275,
+              child: ReceptionLoginForm(
+                pinController: pinCtrl,
+                isLoading: false,
+                onLogin: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.textContaining('849201'), findsWidgets);
+      expect(find.textContaining('0000'), findsWidgets);
+      expect(tester.takeException(), isNull);
     });
   });
 }

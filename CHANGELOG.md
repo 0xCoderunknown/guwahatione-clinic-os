@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.15.1] — 12-10-2026
+
+### Fixed & Enhanced
+- **Mobile Responsive Catalogue Layout:**
+  - Refactored `CatalogueHeaderAndStats` using `LayoutBuilder` to fluidly adapt across mobile (<560px), tablet (560–800px), and desktop (>800px). Eliminates RenderFlex overflows on mobile viewports.
+  - Made `CatalogueSearchToolbar` responsive by stacking the search query input and dosage form dropdown on narrow screens.
+- **Human-Friendly Permission SnackBars:**
+  - Replaced harsh red error banners on "Clean Duplicates" and "Delete Medicine" with warm amber advisory notices (`#D97706`) explaining that Clinic Administrator (Owner) credentials are required.
+- **Reception & Admin Testing Login Credentials:**
+  - Added clear testing credential guidance directly to `ReceptionLoginForm` (`Reception: 0000 | Admin/Owner: 849201`) with expanded viewport tolerance in `LoginScreen`.
+- **Automated Test Suite Expansion:**
+  - Added responsive widget tests verifying mobile (390px) and desktop (1200px) layout stability with zero overflows. Test suite expanded to **99 automated tests** passing at 100%.
+
+---
+
 ## [1.15.0] — 12-10-2026
 
 ### Added

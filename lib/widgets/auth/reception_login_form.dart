@@ -38,7 +38,13 @@ class ReceptionLoginForm extends StatelessWidget {
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
             labelText: 'Reception / Owner PIN',
-            hintText: 'Enter PIN (default: 0000)',
+            hintText: 'PIN (Reception: 0000 | Admin: 849201)',
+            helperText: 'Testing PINs — Reception: 0000 | Admin: 849201',
+            helperStyle: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.blueGrey.shade700,
+            ),
             prefixIcon: const Icon(Icons.security_rounded),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             contentPadding: const EdgeInsets.symmetric(

@@ -163,10 +163,39 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
                 ).deleteMedicine(item.id, requestingRole: currentRole);
               } catch (e) {
                 if (context.mounted) {
+                  final errString = e.toString();
+                  final isPermission = errString.contains('Permission Denied') ||
+                      errString.contains('Only clinic administrators');
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text("Error: $e"),
-                      backgroundColor: Colors.red,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      backgroundColor: isPermission
+                          ? const Color(0xFFD97706) // Warm amber warning
+                          : const Color(0xFFDC2626),
+                      content: Row(
+                        children: [
+                          Icon(
+                            isPermission
+                                ? Icons.admin_panel_settings_outlined
+                                : Icons.error_outline,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              isPermission
+                                  ? 'Admin Access Required: Only clinic administrators (owner) can delete catalogue medicines.'
+                                  : 'Could not delete medicine: ${errString.replaceFirst("Exception: ", "")}',
+                              style: const TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
@@ -191,10 +220,27 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              purgedCount > 0
-                  ? 'Successfully removed $purgedCount duplicate medicine entries!'
-                  : 'Catalogue is clean! No duplicate medicines found.',
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    purgedCount > 0
+                        ? 'Successfully removed $purgedCount duplicate medicine entries!'
+                        : 'Catalogue is clean! No duplicate medicines found.',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
             ),
             backgroundColor: Colors.teal.shade800,
           ),
@@ -202,10 +248,39 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
       }
     } catch (e) {
       if (context.mounted) {
+        final errString = e.toString();
+        final isPermission = errString.contains('Permission Denied') ||
+            errString.contains('Only clinic administrators');
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error deduplicating catalogue: $e'),
-            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            backgroundColor: isPermission
+                ? const Color(0xFFD97706) // Warm amber warning
+                : const Color(0xFFDC2626),
+            content: Row(
+              children: [
+                Icon(
+                  isPermission
+                      ? Icons.admin_panel_settings_outlined
+                      : Icons.error_outline,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    isPermission
+                        ? 'Admin Access Required: Only clinic administrators (owner) can clean duplicates in the master catalogue.'
+                        : 'Could not deduplicate catalogue: ${errString.replaceFirst("Exception: ", "")}',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }
