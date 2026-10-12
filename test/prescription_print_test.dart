@@ -1,10 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:appointment_app/models/consultation.dart';
-import 'package:appointment_app/models/prescription_item.dart';
-import 'package:appointment_app/models/vitals.dart';
-import 'package:appointment_app/models/diagnostic_investigation.dart';
+import 'package:appointment_app/models/models.dart';
 import 'package:appointment_app/screens/prescription_print_screen.dart';
 
 void main() {

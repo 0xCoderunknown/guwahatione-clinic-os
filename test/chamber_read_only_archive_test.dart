@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/models/appointment.dart';
-import 'package:appointment_app/widgets/chamber/chamber_archive_banner.dart';
-import 'package:appointment_app/widgets/chamber/chamber_token_card.dart';
-import 'package:appointment_app/widgets/chamber/chamber_queue_header.dart';
-import 'package:appointment_app/widgets/chamber/chamber_metrics_grid.dart';
+import 'package:appointment_app/widgets/widgets.dart';
 
 void main() {
   group('ChamberArchiveBanner Widget Tests', () {

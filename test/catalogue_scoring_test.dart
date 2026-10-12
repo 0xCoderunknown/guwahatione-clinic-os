@@ -180,7 +180,7 @@ void main() {
       expect(results.first.associatedBrands.first.productName, 'Dolo 650');
     });
 
-    test('ClinicalDefaultsHelper populates appropriate dosage, frequency, and timing defaults', () {
+    test('MedicineEngine.getDefaultsForMedicine populates appropriate dosage, frequency, and timing defaults', () {
       const ppi = Medicine(
         id: 'med_pan_40',
         productName: 'Pan 40',

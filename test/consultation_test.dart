@@ -1,12 +1,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:appointment_app/models/patient.dart';
-import 'package:appointment_app/models/vitals.dart';
-import 'package:appointment_app/models/medicine.dart';
-import 'package:appointment_app/models/prescription_item.dart';
-import 'package:appointment_app/models/diagnostic_investigation.dart';
-import 'package:appointment_app/models/consultation.dart';
+import 'package:appointment_app/models/models.dart';
 
 void main() {
   group('Patient Model Clinical Tests', () {

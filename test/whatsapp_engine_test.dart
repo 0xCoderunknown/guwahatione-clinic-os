@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/core/engines/whatsapp_engine.dart';
-import 'package:appointment_app/models/consultation.dart';
-import 'package:appointment_app/models/prescription_item.dart';
-import 'package:appointment_app/models/vitals.dart';
+import 'package:appointment_app/models/models.dart';
 
 void main() {
   group('WhatsAppEngine Tests (P7)', () {

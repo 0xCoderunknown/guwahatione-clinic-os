@@ -61,11 +61,11 @@ class AppFormatters {
   static String doctorTitle(String? name) {
     if (name == null || name.trim().isEmpty) return 'Doctor';
     final clean = name.trim();
-    if (clean.toLowerCase().startsWith('dr.') || clean.toLowerCase().startsWith('dr ')) {
-      final stripped = clean.replaceFirst(RegExp(r'^dr\.?\s*', caseSensitive: false), '').trim();
-      return 'Dr. $stripped';
+    var stripped = clean;
+    while (stripped.toLowerCase().startsWith('dr.') || stripped.toLowerCase().startsWith('dr ')) {
+      stripped = stripped.replaceFirst(RegExp(r'^dr\.?\s*', caseSensitive: false), '').trim();
     }
-    return 'Dr. $clean';
+    return 'Dr. $stripped';
   }
 
   /// Sanitizes specialty and corrects common typos like 'Paedetric' -> 'Paediatric'.

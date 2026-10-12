@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.16.6] — 12-10-2026
+
+### Refactored & Fortified
+- **Test Suite Modernization & Quality Assurance Fortification:**
+  - **Eliminated Misleading Legacy `widget_test.dart`:**
+    - Renamed and refactored `test/widget_test.dart` to `test/patient_review_and_models_test.dart`, cleanly aligning test file naming with the tested domain subsystems (`PatientReviewEligibility`, `Appointment`, and `Doctor` domain models).
+    - Migrated multi-line model imports to canonical barrel export `models.dart`.
+  - **Added `AuthProvider` Security & PIN Guarding Suite (`test/auth_provider_test.dart`):**
+    - Introduced 12 automated unit tests verifying 3-tier role guarding (Owner Master PIN 6 digits `849201`, Receptionist PIN `0000`, Doctor Chamber PINs).
+    - Tested unified PIN evaluation without manual role selectors, ambiguous duplicate doctor PIN handling, elevated owner step-down to reception, custom PIN mutation, logout cleanup, and session persistence via `SharedPreferences`.
+  - **Added `AppFormatters` Clinical Formatting & Invariants Suite (`test/app_formatters_test.dart`):**
+    - Introduced 10 unit tests verifying mandatory Indian date formats (`DD-MM-YYYY`, `DD-MM-YY`, weekday strings, ISO Firestore counter keys), Indian Rupee currency formatting, doctor initials extraction, and specialty typo sanitization.
+    - Discovered and fixed duplicate `"Dr. Dr."` prefix regression in `AppFormatters.doctorTitle` using exhaustive leading prefix stripping.
+  - **Barrel Synchronization Across Test Suites:**
+    - Harmonized imports across `test/consultation_test.dart`, `test/prescription_print_test.dart`, `test/chamber_read_only_archive_test.dart`, `test/chamber_handshake_test.dart`, and `test/whatsapp_engine_test.dart` to consume canonical barrels (`models.dart`, `widgets.dart`).
+  - **Legacy Reference Pruning:**
+    - Replaced stale reference to retired `ClinicalDefaultsHelper` in `test/catalogue_scoring_test.dart` with `MedicineEngine.getDefaultsForMedicine`.
+  - **Automated Verification:**
+    - Test suite expanded from 122 to **144 automated tests** with 100% pass rate in sub-6 seconds.
+    - `flutter analyze` completed with 0 errors and 0 warnings.
+
+---
+
 ## [1.16.5] — 12-10-2026
 
 ### Refactored & Consolidated

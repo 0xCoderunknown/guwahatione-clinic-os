@@ -1,11 +1,8 @@
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:appointment_app/models/appointment.dart';
-import 'package:appointment_app/models/doctor.dart';
-import 'package:appointment_app/models/patient_review_eligibility.dart';
+import 'package:appointment_app/models/models.dart';
 
 void main() {
-  group('Appointment Model Audit Tests', () {
+  group('Appointment & Doctor Model Serialization Audit Tests', () {
     test('Appointment initializes with absent status and payment types', () {
       final appt = Appointment(
         id: 'appt-1',
@@ -108,10 +105,9 @@ void main() {
     });
   });
 
-
   group('Free Review 14-Day & Same Doctor Business Rule Tests', () {
-    final doc1 = 'doc-baruah';
-    final doc2 = 'doc-sharma';
+    const doc1 = 'doc-baruah';
+    const doc2 = 'doc-sharma';
     final today = DateTime(2026, 10, 20);
 
     test('Patient who never visited has no free review eligibility', () {
