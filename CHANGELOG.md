@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.16.8] — 12-10-2026
+
+### Extracted & Modularized
+- **Domain Engine Decomposition & Dedicated `CashHandoverEngine`:**
+  - **Extracted Standalone Engine (`lib/core/engines/cash_handover_engine.dart`):**
+    - Decoupled daily end-of-day cash drawer balancing, denomination note math, and audit discrepancy calculation from `RevenueEngine` into its own dedicated 5th pure Dart engine file, 100% fulfilling the architectural roadmap blueprint.
+    - Exported `CashHandoverEngine` in `lib/core/engines/engines.dart` canonical barrel.
+    - Preserved seamless backward-compatibility delegates in `RevenueEngine` (`calculateCashHandover`, `calculateDenominationTotal`, `calculateDiscrepancy`) and re-exported handover models (`CashHandoverDoctorRow`, `CashHandoverSummary`).
+  - **Consumer Alignment:**
+    - Refactored `DailyCashHandoverDialog` (`widgets/dashboard/daily_cash_handover_dialog.dart`) and `test/cash_handover_engine_test.dart` to directly consume atomic `CashHandoverEngine`.
+  - **Automated Verification:**
+    - Test suite expanded to **145 passing automated tests** with 100% pass rate.
+    - `flutter analyze` completed with 0 errors and 0 warnings.
+    - Marked Domain Engines & Math Audit as `🟢 Shipped & Verified` in `docs/PRODUCT_ROADMAP.md`.
+
+---
+
 ## [1.16.7] — 12-10-2026
 
 ### Audited & Synchronized

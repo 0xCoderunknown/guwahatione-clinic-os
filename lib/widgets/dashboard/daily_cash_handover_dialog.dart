@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/engines/revenue_engine.dart';
+import '../../core/engines/engines.dart';
 import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_print.dart';
@@ -64,13 +64,13 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final summary = RevenueEngine.calculateCashHandover(
+    final summary = CashHandoverEngine.calculateCashHandover(
       appointments: widget.provider.todayAppointments,
       date: now,
     );
 
-    final physicalTotal = RevenueEngine.calculateDenominationTotal(_counts);
-    final discrepancy = RevenueEngine.calculateDiscrepancy(
+    final physicalTotal = CashHandoverEngine.calculateDenominationTotal(_counts);
+    final discrepancy = CashHandoverEngine.calculateDiscrepancy(
       physicalCounted: physicalTotal,
       expectedCash: summary.totalRealizedCash,
     );

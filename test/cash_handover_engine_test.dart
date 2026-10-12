@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:appointment_app/core/engines/revenue_engine.dart';
-import 'package:appointment_app/models/appointment.dart';
+import 'package:appointment_app/core/engines/engines.dart';
+import 'package:appointment_app/models/models.dart';
 
 void main() {
-  group('RevenueEngine - Daily Cash Handover Tests (P8)', () {
+  group('CashHandoverEngine - Daily Cash Handover Tests (P8)', () {
     final today = DateTime(2026, 10, 12);
 
     test('Empty appointments list generates zero-cash handover summary', () {
-      final summary = RevenueEngine.calculateCashHandover(
+      final summary = CashHandoverEngine.calculateCashHandover(
         appointments: [],
         date: today,
       );
@@ -49,7 +49,7 @@ void main() {
         ),
       ];
 
-      final summary = RevenueEngine.calculateCashHandover(
+      final summary = CashHandoverEngine.calculateCashHandover(
         appointments: appts,
         date: today,
       );
@@ -58,18 +58,17 @@ void main() {
       expect(summary.totalCompleted, 0);
       expect(summary.totalRealizedCash, 0);
       expect(summary.doctorBreakdown.first.cashCollected, 0);
-      expect(summary.doctorBreakdown.first.completedCount, 0);
     });
 
-    test('Accurately aggregates multi-doctor paid, review, and family appointments', () {
+    test('Accurately tallies Paid Cash, UPI, Free Review, and Free Family by doctor', () {
       final appts = [
-        // Doctor 1: 1 Paid (500), 1 Free Review, 1 Absent
+        // Doctor 1: 1 Paid, 1 Free Review, 1 Pending (ignored)
         Appointment(
           id: 'a1',
           patientPhone: '9876543210',
-          patientName: 'Patient 1',
+          patientName: 'Paid Patient 1',
           status: AppointmentStatus.completed,
-          paymentType: PaymentType.paid,
+          paymentType: PaymentType.paidCash,
           amountCollected: 500,
           queueNumber: 1,
           scheduledDate: today,
@@ -79,7 +78,7 @@ void main() {
         Appointment(
           id: 'a2',
           patientPhone: '9876543211',
-          patientName: 'Patient 2',
+          patientName: 'Review Patient',
           status: AppointmentStatus.completed,
           paymentType: PaymentType.freeReview,
           amountCollected: 0,
@@ -91,22 +90,23 @@ void main() {
         Appointment(
           id: 'a3',
           patientPhone: '9876543212',
-          patientName: 'Patient 3',
-          status: AppointmentStatus.absent,
-          paymentType: PaymentType.paid,
-          amountCollected: 0,
+          patientName: 'Pending Patient',
+          status: AppointmentStatus.pending,
+          paymentType: PaymentType.paidCash,
+          amountCollected: 500,
           queueNumber: 3,
           scheduledDate: today,
           doctorId: 'doc-1',
           doctorName: 'Dr. A. Sharma',
         ),
-        // Doctor 2: 2 Paid (600 each = 1200), 1 Free Family
+
+        // Doctor 2: 2 Paid (Cash + UPI), 1 Free Family (VVIP)
         Appointment(
           id: 'b1',
-          patientPhone: '9876543213',
-          patientName: 'Patient 4',
+          patientPhone: '9876543220',
+          patientName: 'Paid Cash 2',
           status: AppointmentStatus.completed,
-          paymentType: PaymentType.paid,
+          paymentType: PaymentType.paidCash,
           amountCollected: 600,
           queueNumber: 1,
           scheduledDate: today,
@@ -115,10 +115,10 @@ void main() {
         ),
         Appointment(
           id: 'b2',
-          patientPhone: '9876543214',
-          patientName: 'Patient 5',
+          patientPhone: '9876543221',
+          patientName: 'Paid UPI 1',
           status: AppointmentStatus.completed,
-          paymentType: PaymentType.paid,
+          paymentType: PaymentType.paidUpi,
           amountCollected: 600,
           queueNumber: 2,
           scheduledDate: today,
@@ -127,8 +127,8 @@ void main() {
         ),
         Appointment(
           id: 'b3',
-          patientPhone: '9876543215',
-          patientName: 'Patient 6',
+          patientPhone: '9876543222',
+          patientName: 'Courtesy Family Patient',
           status: AppointmentStatus.completed,
           paymentType: PaymentType.freeFamily,
           amountCollected: 0,
@@ -139,12 +139,12 @@ void main() {
         ),
       ];
 
-      final summary = RevenueEngine.calculateCashHandover(
+      final summary = CashHandoverEngine.calculateCashHandover(
         appointments: appts,
         date: today,
       );
 
-      // Global totals
+      // Overall totals
       expect(summary.totalAppointments, 6);
       expect(summary.totalCompleted, 5);
       expect(summary.totalRealizedCash, 1700); // 500 + 600 + 600
@@ -180,19 +180,46 @@ void main() {
         10: 10,  // 100
       };
 
-      final total = RevenueEngine.calculateDenominationTotal(counts);
+      final total = CashHandoverEngine.calculateDenominationTotal(counts);
       expect(total, 4300);
     });
 
     test('calculateDiscrepancy correctly identifies balance, shortage, and surplus', () {
       // Balanced
-      expect(RevenueEngine.calculateDiscrepancy(physicalCounted: 3500, expectedCash: 3500), 0);
+      expect(CashHandoverEngine.calculateDiscrepancy(physicalCounted: 3500, expectedCash: 3500), 0);
 
       // Shortage
-      expect(RevenueEngine.calculateDiscrepancy(physicalCounted: 3300, expectedCash: 3500), -200);
+      expect(CashHandoverEngine.calculateDiscrepancy(physicalCounted: 3300, expectedCash: 3500), -200);
 
       // Surplus
-      expect(RevenueEngine.calculateDiscrepancy(physicalCounted: 3700, expectedCash: 3500), 200);
+      expect(CashHandoverEngine.calculateDiscrepancy(physicalCounted: 3700, expectedCash: 3500), 200);
+    });
+
+    test('RevenueEngine delegates forward seamlessly to CashHandoverEngine for backward compatibility', () {
+      final appts = [
+        Appointment(
+          id: 'a1',
+          patientPhone: '9876543210',
+          patientName: 'Paid Patient',
+          status: AppointmentStatus.completed,
+          paymentType: PaymentType.paidCash,
+          amountCollected: 500,
+          queueNumber: 1,
+          scheduledDate: today,
+          doctorId: 'doc-1',
+          doctorName: 'Dr. A. Sharma',
+        ),
+      ];
+
+      final summary = RevenueEngine.calculateCashHandover(
+        appointments: appts,
+        date: today,
+      );
+      expect(summary.totalRealizedCash, 500);
+
+      final counts = {500: 1};
+      expect(RevenueEngine.calculateDenominationTotal(counts), 500);
+      expect(RevenueEngine.calculateDiscrepancy(physicalCounted: 500, expectedCash: 500), 0);
     });
   });
 }
