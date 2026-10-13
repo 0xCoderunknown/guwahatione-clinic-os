@@ -51,6 +51,7 @@
 | `blockedDates` | `List<String>` (ISO 8601) | No | Dates doctor is on leave. |
 | `pin` | `String` | Yes | 4-digit numeric PIN for chamber access (default: `'1234'`). |
 | `consultationFee` | `int` | Yes | Consultation fee in INR (e.g. `500`). |
+| `freeReviewDays` | `int` | Yes | Free review policy window in days (`0` to `30`; `0` = no free review; default: `14`). |
 | `searchPreference` | `String` | No | Drug search mode: `'brandFirst'` or `'compositionFirst'` (default: `'brandFirst'`). |
 | `medicalRegNumber` | `String?` | No | State Medical Council / NMC registration number (e.g. `'AMC-24891'`). |
 

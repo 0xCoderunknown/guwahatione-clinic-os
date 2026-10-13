@@ -61,6 +61,13 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
    - Any direct doctor door admission fallback (`ChamberDoorOverrideBar`) must strictly show ONLY the next 1–2 patients who are physically present in clinic (`waitingInLobby`) with confirmed payment/waiver (`PaymentType != unpaid`).
    - Remote reservations (`VisitStatus.booked`) and unpaid tokens (`PaymentType.unpaid`) must NEVER appear in emergency self-call lists.
 
+10. **Zero Backward-Compatibility Debt (No Compatibility Shims):**
+    - **Backward compatibility is NOT required in this codebase.**
+    - Never write fallback bridges, legacy adapters, deprecated aliases, migration shims, or polyfill glue solely to maintain backward compatibility with obsolete schemas or retired APIs.
+    - Clean, modern, unified domain code is always prioritized over legacy preservation.
+    - If backward compatibility happens naturally without extra code or compromises, that is fine; if not, breaking clean is explicitly encouraged.
+    - **MANDATORY:** Whenever a breaking change is introduced (schema mutation, model property shift, API signature rewrite), you MUST explicitly inform the Product Manager.
+
 ---
 
 ## 🏗️ 2. Architectural & Technical Stack Rules
@@ -115,7 +122,7 @@ lib/
 ├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
 ├── widgets/      -> Reusable UI sub-packages (booking, catalogue, chamber, common, dashboard, encounter, print, queue)
 └── utils/        -> Helpers (Default medicines, app constants, platform print, formatters)
-test/             -> Automated test suite (155+ unit and widget tests covering engines, flows, and models)
+test/             -> Automated test suite (157+ unit and widget tests covering engines, flows, and models)
 docs/
 ├── SCHEMA_AND_MODELS.md  -> Master data dictionary for Firestore collections & models
 ├── PRODUCT_VISION_AND_WORKFLOW.md -> Clinical encounter blueprint & real-world OPD intent
@@ -129,7 +136,9 @@ docs/
 - ❌ **Deleting an appointment document from Firestore.** (Must use `AppointmentStatus.absent`).
 - ❌ **Changing state management library.** (Always use `Provider`).
 - ❌ **Adding unapproved Firestore fields without updating `docs/SCHEMA_AND_MODELS.md`.**
-- ❌ **Hardcoding doctor fees or bypassing 14-day free review logic.**
+- ❌ **Hardcoding doctor fees or bypassing doctor-configured free review logic (0 to 30 days).**
+- ❌ **Adding backward-compatibility bloatware, legacy polyfills, or adapter shims instead of writing clean modern domain code.**
+- ❌ **Introducing breaking changes without explicitly informing the Product Manager.**
 - ❌ **Putting financial math, review eligibility calculations, or pharmacological defaults directly inside UI widget `build()` methods.**
 - ❌ **Breaking responsive layout or introducing max-width bottlenecks** (e.g. hard-capping desktop screens at 1400px leaving large side margins, wasting vertical space with duplicate headers on 1366x768 laptops, or introducing stacked duplicate AppBars inside `OwnerShell`).
 - ❌ **Using non-Indian date formats (e.g. `YYYY-MM-DD` or `MM/DD/YYYY`) in UI, printed prescriptions, changelogs, release notes, or any markdown documentation.** (Must strictly use `DD-MM-YYYY` or `DD-MM-YY`).

@@ -214,6 +214,48 @@ class DoctorRosterCard extends StatelessWidget {
                             ],
                           ),
                         ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: doctor.freeReviewDays > 0
+                              ? Colors.blue.shade50
+                              : Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: doctor.freeReviewDays > 0
+                                ? Colors.blue.shade200
+                                : Colors.orange.shade200,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.event_repeat,
+                              size: 12,
+                              color: doctor.freeReviewDays > 0
+                                  ? Colors.blue.shade700
+                                  : Colors.orange.shade700,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              doctor.freeReviewDays > 0
+                                  ? 'Review: ${doctor.freeReviewDays}d'
+                                  : 'No Free Review',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: doctor.freeReviewDays > 0
+                                    ? Colors.blue.shade900
+                                    : Colors.orange.shade900,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       Text(
                         doctor.availableDays.join(', '),
                         style: TextStyle(

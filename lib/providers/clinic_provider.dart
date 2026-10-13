@@ -205,6 +205,7 @@ class ClinicProvider with ChangeNotifier {
     List<String> days, {
     String pin = '1234',
     int consultationFee = 500,
+    int freeReviewDays = 14,
     String? medicalRegNumber,
   }) async {
     _setLoading(true);
@@ -218,6 +219,7 @@ class ClinicProvider with ChangeNotifier {
         blockedDates: [],
         pin: pin,
         consultationFee: consultationFee,
+        freeReviewDays: freeReviewDays,
         medicalRegNumber: medicalRegNumber,
       );
       await _doctorService.addDoctor(newDoctor);
@@ -261,26 +263,30 @@ class ClinicProvider with ChangeNotifier {
     required String? doctorId,
     required DateTime scheduledDate,
     String? doctorName,
+    int freeReviewDays = 14,
   }) {
     return AppointmentEngine.evaluateReviewEligibility(
       patientHistory: patientAppointments,
       doctorId: doctorId,
       targetDate: scheduledDate,
       doctorName: doctorName,
+      freeReviewDays: freeReviewDays,
     );
   }
 
-  /// Returns [PaymentType.freeReview] if the patient visited the same doctor within 14 days,
+  /// Returns [PaymentType.freeReview] if the patient visited the same doctor within review window,
   /// otherwise [PaymentType.paid].
   PaymentType calculatePaymentType({
     required List<Appointment> patientAppointments,
     required String? doctorId,
     required DateTime scheduledDate,
+    int freeReviewDays = 14,
   }) {
     return AppointmentEngine.suggestPaymentType(
       patientHistory: patientAppointments,
       doctorId: doctorId,
       targetDate: scheduledDate,
+      freeReviewDays: freeReviewDays,
     );
   }
 

@@ -52,7 +52,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
   PatientReviewEligibility _reviewEligibility = const PatientReviewEligibility(
     hasVisitedDoctorEarlier: false,
-    isWithin14Days: false,
+    isWithinReviewPeriod: false,
     message: '',
   );
 
@@ -428,7 +428,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
           _patientAppointments = [];
           _reviewEligibility = const PatientReviewEligibility(
             hasVisitedDoctorEarlier: false,
-            isWithin14Days: false,
+            isWithinReviewPeriod: false,
             message: '',
           );
         });
@@ -498,7 +498,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       setState(() {
         _reviewEligibility = const PatientReviewEligibility(
           hasVisitedDoctorEarlier: false,
-          isWithin14Days: false,
+          isWithinReviewPeriod: false,
           message: 'New patient record',
         );
         _historyInfo = "New Patient Record";
@@ -519,6 +519,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       doctorId: _selectedDoctor?.id,
       targetDate: _selectedDate,
       doctorName: _selectedDoctor?.name,
+      freeReviewDays: _selectedDoctor?.freeReviewDays ?? 14,
     );
 
     setState(() {
@@ -535,18 +536,30 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
           _amountController.text =
               "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
         }
-      } else if (eligibility.isWithin14Days) {
+      } else if (eligibility.allowedReviewDays == 0) {
+        final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
+        _historyColor = Colors.orange.shade100;
+        _historyInfo =
+            "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n⚠️ ${_selectedDoctor?.name} does not offer free reviews (0-day policy)";
+        if (_selectedPayment == PaymentType.freeReview) {
+          _selectedPayment = _selectedVisitStatus == VisitStatus.booked
+              ? PaymentType.unpaid
+              : PaymentType.paidCash;
+          _amountController.text =
+              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
+        }
+      } else if (eligibility.isWithinReviewPeriod) {
         final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
         _historyColor = Colors.teal.shade100;
         _historyInfo =
-            "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n✅ Eligible for 14-day Free Review (${eligibility.daysSinceLastVisit} days ago)";
+            "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n✅ Eligible for ${eligibility.allowedReviewDays}-day Free Review (${eligibility.daysSinceLastVisit} days ago)";
         _selectedPayment = PaymentType.freeReview;
         _amountController.text = "0";
       } else {
         final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
         _historyColor = Colors.amber.shade100;
         _historyInfo =
-            "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n⚠️ 14 days have passed (${eligibility.daysSinceLastVisit} days ago)";
+            "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n⚠️ ${eligibility.allowedReviewDays} days have passed (${eligibility.daysSinceLastVisit} days ago)";
         if (_selectedPayment == PaymentType.freeReview) {
           _selectedPayment = _selectedVisitStatus == VisitStatus.booked
               ? PaymentType.unpaid
@@ -574,18 +587,19 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         return;
       }
 
-      if (!_reviewEligibility.isWithin14Days) {
+      if (!_reviewEligibility.isWithinReviewPeriod) {
         final dateStr = _reviewEligibility.lastVisitDate != null
             ? AppFormatters.date(_reviewEligibility.lastVisitDate!)
             : 'N/A';
         final days = _reviewEligibility.daysSinceLastVisit ?? 15;
 
         final proceed =
-            await BookingEligibilityBanner.showFourteenDaysWarningDialog(
+            await BookingEligibilityBanner.showReviewWarningDialog(
               context,
               doctorName: _selectedDoctor?.name ?? 'the doctor',
               dateStr: dateStr,
               days: days,
+              policyDays: _selectedDoctor?.freeReviewDays ?? 14,
             );
         if (!proceed) {
           setState(() {

@@ -67,72 +67,25 @@ abstract class AppointmentEngine {
   /// 1. Only a patient who visited earlier can get a free review, and that too if
   ///    they book with the SAME doctor.
   /// 2. If booked within 14 days of the previous visit, free review is fully eligible.
-  /// 3. If more than 14 days have passed, free review is flagged with an advisory warning.
-  /// 4. Absent visits never qualify as prior encounters.
+  /// Evaluates review eligibility against historical appointments for a given doctor.
+  /// 1. Only a patient who visited earlier can get a free review with the SAME doctor.
+  /// 2. If doctor policy has 0 free review days, free reviews are disabled/not offered.
+  /// 3. If within doctor's configured [freeReviewDays] (0 to 30), free review is fully eligible.
+  /// 4. If more than [freeReviewDays] have passed, free review is flagged with an advisory warning.
+  /// 5. Absent visits never qualify as prior encounters.
   static PatientReviewEligibility evaluateReviewEligibility({
     required List<Appointment> patientHistory,
     required String? doctorId,
     required DateTime targetDate,
     String? doctorName,
+    int freeReviewDays = 14,
   }) {
-    if (doctorId == null || doctorId.isEmpty) {
-      return const PatientReviewEligibility(
-        hasVisitedDoctorEarlier: false,
-        isWithin14Days: false,
-        message: 'No doctor selected.',
-      );
-    }
-
-    final targetDay = DateTime(
-      targetDate.year,
-      targetDate.month,
-      targetDate.day,
-    );
-
-    // Find all past visits with THIS doctor strictly before targetDay,
-    // excluding absent visits.
-    final pastVisitsWithDoctor = patientHistory.where((a) {
-      if (a.doctorId != doctorId) return false;
-      if (a.status == AppointmentStatus.absent) return false;
-      final aDay = DateTime(
-        a.scheduledDate.year,
-        a.scheduledDate.month,
-        a.scheduledDate.day,
-      );
-      return aDay.isBefore(targetDay);
-    }).toList();
-
-    if (pastVisitsWithDoctor.isEmpty) {
-      final docLabel = doctorName != null ? 'Dr. $doctorName' : 'this doctor';
-      return PatientReviewEligibility(
-        hasVisitedDoctorEarlier: false,
-        isWithin14Days: false,
-        message: 'No earlier visit with $docLabel.',
-      );
-    }
-
-    // Sort descending by scheduledDate to pick the most recent visit
-    pastVisitsWithDoctor.sort(
-      (a, b) => b.scheduledDate.compareTo(a.scheduledDate),
-    );
-    final latestVisit = pastVisitsWithDoctor.first;
-    final latestVisitDay = DateTime(
-      latestVisit.scheduledDate.year,
-      latestVisit.scheduledDate.month,
-      latestVisit.scheduledDate.day,
-    );
-
-    final daysSince = targetDay.difference(latestVisitDay).inDays;
-    final within14 = daysSince <= 14;
-
-    return PatientReviewEligibility(
-      hasVisitedDoctorEarlier: true,
-      lastVisitDate: latestVisit.scheduledDate,
-      daysSinceLastVisit: daysSince,
-      isWithin14Days: within14,
-      message: within14
-          ? 'Eligible for 14-day Free Review ($daysSince day${daysSince == 1 ? '' : 's'} ago)'
-          : '14 days have passed ($daysSince day${daysSince == 1 ? '' : 's'} ago)',
+    return PatientReviewEligibility.calculate(
+      appointments: patientHistory,
+      doctorId: doctorId,
+      targetDate: targetDate,
+      doctorName: doctorName,
+      allowedReviewDays: freeReviewDays,
     );
   }
 
@@ -141,13 +94,15 @@ abstract class AppointmentEngine {
     required List<Appointment> patientHistory,
     required String? doctorId,
     required DateTime targetDate,
+    int freeReviewDays = 14,
   }) {
     final eligibility = evaluateReviewEligibility(
       patientHistory: patientHistory,
       doctorId: doctorId,
       targetDate: targetDate,
+      freeReviewDays: freeReviewDays,
     );
-    if (eligibility.hasVisitedDoctorEarlier && eligibility.isWithin14Days) {
+    if (eligibility.hasVisitedDoctorEarlier && eligibility.isWithinReviewPeriod) {
       return PaymentType.freeReview;
     }
     return PaymentType.paidCash;

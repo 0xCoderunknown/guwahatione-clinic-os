@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:appointment_app/core/engines/engines.dart';
 import 'package:appointment_app/models/models.dart';
 
 void main() {
@@ -105,7 +106,7 @@ void main() {
       expect(json['status'], 'completed');
     });
 
-    test('Doctor model includes PIN, consultation fee, and medicalRegNumber', () {
+    test('Doctor model includes PIN, consultation fee, freeReviewDays, and medicalRegNumber', () {
       final doctor = Doctor(
         id: 'doc-1',
         name: 'Dr. Sharma',
@@ -115,17 +116,21 @@ void main() {
         blockedDates: [],
         pin: '4321',
         consultationFee: 700,
+        freeReviewDays: 30,
         medicalRegNumber: 'AMC-24891',
       );
 
       expect(doctor.pin, '4321');
       expect(doctor.consultationFee, 700);
+      expect(doctor.freeReviewDays, 30);
       expect(doctor.medicalRegNumber, 'AMC-24891');
 
       final json = doctor.toJson();
+      expect(json['freeReviewDays'], 30);
       final fromJsonDoc = Doctor.fromJson(json);
       expect(fromJsonDoc.pin, '4321');
       expect(fromJsonDoc.consultationFee, 700);
+      expect(fromJsonDoc.freeReviewDays, 30);
       expect(fromJsonDoc.medicalRegNumber, 'AMC-24891');
     });
 
@@ -139,6 +144,7 @@ void main() {
         blockedDates: [],
         pin: '4321',
         consultationFee: 700,
+        freeReviewDays: 14,
         searchPreference: 'brandFirst',
         medicalRegNumber: 'AMC-24891',
       );
@@ -147,6 +153,7 @@ void main() {
         name: 'Dr. A. Sharma',
         specialty: 'Senior Cardiologist',
         consultationFee: 800,
+        freeReviewDays: 0,
         pin: '9999',
         availableDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
         medicalRegNumber: 'NMC-99999',
@@ -156,6 +163,7 @@ void main() {
       expect(updated.name, 'Dr. A. Sharma');
       expect(updated.specialty, 'Senior Cardiologist');
       expect(updated.consultationFee, 800);
+      expect(updated.freeReviewDays, 0);
       expect(updated.pin, '9999');
       expect(updated.availableDays, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
       expect(updated.phone, '9876543210');
@@ -319,6 +327,115 @@ void main() {
 
       expect(eligibility.hasVisitedDoctorEarlier, isFalse);
       expect(eligibility.isWithin14Days, isFalse);
+    });
+
+    test('Doctor with 0-day policy disallows free review even for recent returning patient', () {
+      final appts = [
+        Appointment(
+          id: 'appt-1',
+          patientPhone: '9876543210',
+          patientName: 'Test Patient',
+          status: AppointmentStatus.completed,
+          paymentType: PaymentType.paid,
+          amountCollected: 1000,
+          queueNumber: 1,
+          scheduledDate: DateTime(2026, 10, 18), // 2 days ago
+          doctorId: doc1,
+          doctorName: 'Dr. Baruah',
+        ),
+      ];
+
+      final eligibility = PatientReviewEligibility.calculate(
+        appointments: appts,
+        doctorId: doc1,
+        targetDate: today,
+        doctorName: 'Dr. Baruah',
+        allowedReviewDays: 0, // No free reviews offered
+      );
+
+      expect(eligibility.hasVisitedDoctorEarlier, isTrue);
+      expect(eligibility.allowedReviewDays, 0);
+      expect(eligibility.isWithinReviewPeriod, isFalse);
+      expect(eligibility.isWithin14Days, isFalse);
+      expect(eligibility.message, contains('does not offer free reviews'));
+
+      final suggestedPayment = AppointmentEngine.suggestPaymentType(
+        patientHistory: appts,
+        doctorId: doc1,
+        targetDate: today,
+        freeReviewDays: 0,
+      );
+      expect(suggestedPayment, PaymentType.paidCash);
+    });
+
+    test('Doctor with 30-day policy allows free review up to 30 days and warns beyond 30 days', () {
+      final appts = [
+        Appointment(
+          id: 'appt-1',
+          patientPhone: '9876543210',
+          patientName: 'Test Patient',
+          status: AppointmentStatus.completed,
+          paymentType: PaymentType.paid,
+          amountCollected: 800,
+          queueNumber: 1,
+          scheduledDate: DateTime(2026, 9, 25), // 25 days before Oct 20
+          doctorId: doc1,
+          doctorName: 'Dr. Baruah',
+        ),
+      ];
+
+      // Test within 30-day window (25 days ago)
+      final eligible30 = PatientReviewEligibility.calculate(
+        appointments: appts,
+        doctorId: doc1,
+        targetDate: today,
+        doctorName: 'Dr. Baruah',
+        allowedReviewDays: 30,
+      );
+
+      expect(eligible30.hasVisitedDoctorEarlier, isTrue);
+      expect(eligible30.allowedReviewDays, 30);
+      expect(eligible30.isWithinReviewPeriod, isTrue);
+      expect(eligible30.daysSinceLastVisit, 25);
+      expect(eligible30.message, contains('Eligible for 30-day Free Review'));
+
+      final suggestedPayment = AppointmentEngine.suggestPaymentType(
+        patientHistory: appts,
+        doctorId: doc1,
+        targetDate: today,
+        freeReviewDays: 30,
+      );
+      expect(suggestedPayment, PaymentType.freeReview);
+
+      // Test expired 30-day window (35 days ago)
+      final apptsExpired = [
+        Appointment(
+          id: 'appt-1',
+          patientPhone: '9876543210',
+          patientName: 'Test Patient',
+          status: AppointmentStatus.completed,
+          paymentType: PaymentType.paid,
+          amountCollected: 800,
+          queueNumber: 1,
+          scheduledDate: DateTime(2026, 9, 15), // 35 days before Oct 20
+          doctorId: doc1,
+          doctorName: 'Dr. Baruah',
+        ),
+      ];
+
+      final expired30 = PatientReviewEligibility.calculate(
+        appointments: apptsExpired,
+        doctorId: doc1,
+        targetDate: today,
+        doctorName: 'Dr. Baruah',
+        allowedReviewDays: 30,
+      );
+
+      expect(expired30.hasVisitedDoctorEarlier, isTrue);
+      expect(expired30.allowedReviewDays, 30);
+      expect(expired30.isWithinReviewPeriod, isFalse);
+      expect(expired30.daysSinceLastVisit, 35);
+      expect(expired30.message, contains('30 days have passed'));
     });
   });
 }

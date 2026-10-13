@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Banner displaying patient registration history and 14-day review eligibility status.
+/// Banner displaying patient registration history and doctor-specific review eligibility status.
 class BookingEligibilityBanner extends StatelessWidget {
   final String? historyInfo;
   final Color historyColor;
@@ -51,32 +51,39 @@ class BookingEligibilityBanner extends StatelessWidget {
     );
   }
 
-  /// Warning dialog shown when a receptionist selects Free Review after 14 days have passed.
-  static Future<bool> showFourteenDaysWarningDialog(
+  /// Warning dialog shown when a receptionist selects Free Review after the doctor's
+  /// review period has expired or when the doctor has a 0-day (no free review) policy.
+  static Future<bool> showReviewWarningDialog(
     BuildContext context, {
     required String doctorName,
     required String dateStr,
     required int days,
+    int policyDays = 14,
   }) async {
+    final isZeroPolicy = policyDays <= 0;
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        icon: const Icon(
-          Icons.warning_amber_rounded,
-          color: Colors.amber,
+        icon: Icon(
+          isZeroPolicy ? Icons.block_rounded : Icons.warning_amber_rounded,
+          color: isZeroPolicy ? Colors.red.shade700 : Colors.amber,
           size: 48,
         ),
-        title: const Text(
-          '14 Days Passed Warning',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          isZeroPolicy
+              ? 'No Free Review Policy'
+              : '$policyDays Days Passed Warning',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '⚠️ 14 days have passed since the patient\'s last visit with Dr. $doctorName.',
+              isZeroPolicy
+                  ? '⚠️ Dr. $doctorName does not offer free reviews (0-day policy). Regular consultation fee applies.'
+                  : '⚠️ $policyDays days have passed since the patient\'s last visit with Dr. $doctorName.',
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
@@ -84,22 +91,30 @@ class BookingEligibilityBanner extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.amber.shade50,
+                color: isZeroPolicy ? Colors.red.shade50 : Colors.amber.shade50,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.amber.shade300),
+                border: Border.all(
+                  color: isZeroPolicy ? Colors.red.shade200 : Colors.amber.shade300,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('• Last Visit: $dateStr'),
-                  Text('• Days Elapsed: $days days (Policy limit: 14 days)'),
+                  Text(
+                    isZeroPolicy
+                        ? '• Doctor Policy: No Free Review (0 days)'
+                        : '• Days Elapsed: $days days (Policy limit: $policyDays days)',
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Only visits within 14 days qualify for free review. Do you want to proceed with a Free Review anyway?',
-              style: TextStyle(fontSize: 13),
+            Text(
+              isZeroPolicy
+                  ? 'This doctor does not offer free reviews. Do you want to override and grant an exception anyway?'
+                  : 'Only visits within $policyDays days qualify for free review. Do you want to proceed with a Free Review anyway?',
+              style: const TextStyle(fontSize: 13),
             ),
           ],
         ),
@@ -110,7 +125,8 @@ class BookingEligibilityBanner extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.amber.shade800,
+              backgroundColor:
+                  isZeroPolicy ? Colors.red.shade700 : Colors.amber.shade800,
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(ctx, true),

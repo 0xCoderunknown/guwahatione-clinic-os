@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.20.0] — 13-10-2026
+
+### Doctor-Configurable Free Review Policy (0 to 30 Days)
+- **Configurable Review Terms on Doctor Model (`lib/models/doctor.dart`):**
+  - Added `freeReviewDays` (`0` to `30` days, default: `14`) to the `Doctor` model, constructor, JSON serialization, and `copyWith`.
+  - Setting `freeReviewDays: 0` designates visiting super-specialists or physicians who do not offer free reviews (all visits billed at full fee).
+  - Configurable between `0` and `30` days to accommodate varied clinical specialties (e.g. 7 days for lab report review, 14 days for general OPD, 30 days for post-op surgical checks).
+- **Owner Doctor Onboarding & Policy Editing (`lib/screens/add_doctor_screen.dart`):**
+  - Added **Free Review Window (0 to 30 Days)** input with quick-select choice chips (`None (0d)`, `7 Days`, `14 Days`, `21 Days`, `30 Days`) and direct numeric entry validation.
+  - Policy changes saved by clinic owners immediately take effect across all future bookings and eligibility calculations.
+- **Roster Visibility (`lib/screens/doctor_list_screen.dart`):**
+  - Added review policy badges on `DoctorRosterCard` displaying active policy (`Review: 14d`, `Review: 30d`, or `No Free Review`).
+- **Domain Engine Refactor (`lib/core/engines/appointment_engine.dart` & `lib/models/patient_review_eligibility.dart`):**
+  - Upgraded `PatientReviewEligibility.calculate` and `AppointmentEngine.evaluateReviewEligibility` to evaluate against doctor's configured `freeReviewDays`.
+  - Upgraded `suggestPaymentType` to return `PaymentType.paidCash` if doctor has a `0`-day policy.
+- **Booking & Live Queue Dynamic Feedback (`lib/widgets/booking/`, `lib/widgets/queue/`):**
+  - Upgraded warning modal `BookingEligibilityBanner.showReviewWarningDialog` to display doctor-specific policies and elapsed day metrics.
+  - Upgraded `AppointmentAccordion` to evaluate live queue payment adjustments against assigned doctor's review terms.
+- **Automated Verification (`test/patient_review_and_models_test.dart`):**
+  - Added unit test coverage for `0`-day policy rejection, `30`-day policy qualification, and boundary handling, bringing the test suite to 157 passing tests.
+
+---
+
 ## [1.19.0] — 13-10-2026
 
 ### Security Hardening & Regulatory Compliance

@@ -9,6 +9,7 @@ class Doctor {
   final List<DateTime> blockedDates; // Days they are on leave
   final String pin; // 4-digit PIN for chamber access
   final int consultationFee; // Default consultation fee in INR
+  final int freeReviewDays; // Free review policy window in days (0 to 30; 0 = no free review)
   final String searchPreference; // 'brandFirst' | 'compositionFirst'
   final String? medicalRegNumber; // State Medical Council / NMC Reg No. (e.g. 'AMC-24891')
 
@@ -21,6 +22,7 @@ class Doctor {
     required this.blockedDates,
     this.pin = '1234',
     this.consultationFee = 500,
+    this.freeReviewDays = 14,
     this.searchPreference = 'brandFirst',
     this.medicalRegNumber,
   });
@@ -35,6 +37,7 @@ class Doctor {
       'blockedDates': blockedDates.map((d) => d.toIso8601String()).toList(),
       'pin': pin,
       'consultationFee': consultationFee,
+      'freeReviewDays': freeReviewDays,
       'searchPreference': searchPreference,
       'medicalRegNumber': medicalRegNumber,
     };
@@ -57,6 +60,7 @@ class Doctor {
           [],
       pin: json['pin'] as String? ?? '1234',
       consultationFee: (json['consultationFee'] as num?)?.toInt() ?? 500,
+      freeReviewDays: (json['freeReviewDays'] as num?)?.toInt() ?? 14,
       searchPreference: json['searchPreference'] as String? ?? 'brandFirst',
       medicalRegNumber: json['medicalRegNumber'] as String?,
     );
@@ -71,6 +75,7 @@ class Doctor {
     List<DateTime>? blockedDates,
     String? pin,
     int? consultationFee,
+    int? freeReviewDays,
     String? searchPreference,
     String? medicalRegNumber,
   }) {
@@ -83,6 +88,7 @@ class Doctor {
       blockedDates: blockedDates ?? this.blockedDates,
       pin: pin ?? this.pin,
       consultationFee: consultationFee ?? this.consultationFee,
+      freeReviewDays: freeReviewDays ?? this.freeReviewDays,
       searchPreference: searchPreference ?? this.searchPreference,
       medicalRegNumber: medicalRegNumber ?? this.medicalRegNumber,
     );

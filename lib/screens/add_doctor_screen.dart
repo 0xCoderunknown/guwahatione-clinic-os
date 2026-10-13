@@ -52,6 +52,7 @@ class _DoctorFormState extends State<DoctorForm> {
   late final TextEditingController _specialtyController;
   late final TextEditingController _phoneController;
   late final TextEditingController _feeController;
+  late final TextEditingController _reviewDaysController;
   late final TextEditingController _pinController;
   late final TextEditingController _regNumberController;
 
@@ -69,6 +70,9 @@ class _DoctorFormState extends State<DoctorForm> {
     _feeController = TextEditingController(
       text: (d?.consultationFee ?? 500).toString(),
     );
+    _reviewDaysController = TextEditingController(
+      text: (d?.freeReviewDays ?? 14).toString(),
+    );
     _pinController = TextEditingController(text: d?.pin ?? '1234');
     _regNumberController = TextEditingController(
       text: d?.medicalRegNumber ?? '',
@@ -84,6 +88,7 @@ class _DoctorFormState extends State<DoctorForm> {
     _specialtyController.dispose();
     _phoneController.dispose();
     _feeController.dispose();
+    _reviewDaysController.dispose();
     _pinController.dispose();
     _regNumberController.dispose();
     super.dispose();
@@ -168,6 +173,66 @@ class _DoctorFormState extends State<DoctorForm> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _reviewDaysController,
+            decoration: const InputDecoration(
+              labelText: 'Free Review Window (0 to 30 Days)',
+              hintText: 'e.g. 14 (Enter 0 for No Free Review)',
+              prefixIcon: Icon(Icons.event_repeat),
+              suffixText: 'Days',
+            ),
+            keyboardType: TextInputType.number,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Required';
+              final val = int.tryParse(v.trim());
+              if (val == null || val < 0 || val > 30) {
+                return 'Enter between 0 and 30 days';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6.0,
+            children: [
+              ChoiceChip(
+                label: const Text('None (0d)'),
+                selected: _reviewDaysController.text.trim() == '0',
+                onSelected: (selected) {
+                  if (selected) setState(() => _reviewDaysController.text = '0');
+                },
+              ),
+              ChoiceChip(
+                label: const Text('7 Days'),
+                selected: _reviewDaysController.text.trim() == '7',
+                onSelected: (selected) {
+                  if (selected) setState(() => _reviewDaysController.text = '7');
+                },
+              ),
+              ChoiceChip(
+                label: const Text('14 Days (Default)'),
+                selected: _reviewDaysController.text.trim() == '14',
+                onSelected: (selected) {
+                  if (selected) setState(() => _reviewDaysController.text = '14');
+                },
+              ),
+              ChoiceChip(
+                label: const Text('21 Days'),
+                selected: _reviewDaysController.text.trim() == '21',
+                onSelected: (selected) {
+                  if (selected) setState(() => _reviewDaysController.text = '21');
+                },
+              ),
+              ChoiceChip(
+                label: const Text('30 Days'),
+                selected: _reviewDaysController.text.trim() == '30',
+                onSelected: (selected) {
+                  if (selected) setState(() => _reviewDaysController.text = '30');
+                },
+              ),
+            ],
+          ),
           const SizedBox(height: 24),
           const Text(
             'Available Days',
@@ -233,6 +298,7 @@ class _DoctorFormState extends State<DoctorForm> {
 
     try {
       final fee = int.tryParse(_feeController.text.trim()) ?? 500;
+      final reviewDays = int.tryParse(_reviewDaysController.text.trim()) ?? 14;
       final pin = _pinController.text.trim();
       final regNumber = _regNumberController.text.trim();
       final clinicProvider = Provider.of<ClinicProvider>(
@@ -247,6 +313,7 @@ class _DoctorFormState extends State<DoctorForm> {
           phone: _phoneController.text.trim(),
           availableDays: _selectedDays,
           consultationFee: fee,
+          freeReviewDays: reviewDays,
           pin: pin.isNotEmpty ? pin : widget.doctor!.pin,
           medicalRegNumber: regNumber.isNotEmpty ? regNumber : null,
         );
@@ -259,6 +326,7 @@ class _DoctorFormState extends State<DoctorForm> {
           _selectedDays,
           pin: pin.isNotEmpty ? pin : '1234',
           consultationFee: fee,
+          freeReviewDays: reviewDays,
           medicalRegNumber: regNumber.isNotEmpty ? regNumber : null,
         );
       }

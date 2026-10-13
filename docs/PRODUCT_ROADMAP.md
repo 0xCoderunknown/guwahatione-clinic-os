@@ -54,12 +54,13 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 | **Backend Security Rules & State Model Parity** | Authoritative `firestore.rules` enforcing Zero Deletions and append-only consultations at database level, unified single source of truth for appointment status, and expanded test suite to 148 automated tests. | 🟢 Shipped & Verified (`v1.17.0`) |
 | **Phase 2: Atomic Locks & Forensic Audit Trail** | Atomic booking reservation locks (`counters/lock_*`) in Firestore transaction eliminating multi-desk race conditions, immutable append-only `appointment_events` collection logging every lifecycle shift, and expanded test suite to 153 automated tests. | 🟢 Shipped & Verified (`v1.18.0`) |
 | **Cryptographic Credential Hashing & Compliance Matrix** | Domain-salted SHA-256 PIN hashing in `AuthProvider` purging plaintext credentials from storage, DPDP Act & ABDM healthcare compliance matrix, and expanded test suite to 155 automated tests. | 🟢 Shipped & Verified (`v1.19.0`) |
+| **Doctor-Configurable Free Review Policy (0–30 Days)** | Added configurable `freeReviewDays` on `Doctor` model (`0` to `30` days, default: `14`), owner configuration UI with preset choice chips, roster visibility badges, dynamic review eligibility engine evaluation, warning dialogs, and expanded test suite to 157 automated tests. | 🟢 Shipped & Verified (`v1.20.0`) |
 
 ---
 
 ## 🎯 3. Active Priority Backlog (Next Horizon)
 
-All primary operational priorities (P1 through P8) have been successfully implemented and verified across 155 automated tests. Future enhancements are proposed based on operational feedback from reception counters and consulting physicians.
+All primary operational priorities (P1 through P8) have been successfully implemented and verified across 157 automated tests. Future enhancements are proposed based on operational feedback from reception counters and consulting physicians.
 
 | Priority | Proposed Feature | Problem Solved | Acceptance Criteria |
 |---|---|---|---|

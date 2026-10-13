@@ -313,11 +313,17 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
           final appts = await provider.getAppointmentsForPatient(
             widget.appointment.patientPhone,
           );
+          final doctor = provider.doctors
+              .where((d) => d.id == widget.appointment.doctorId)
+              .firstOrNull;
+          final freeReviewDays = doctor?.freeReviewDays ?? 14;
+
           final eligibility = AppointmentEngine.evaluateReviewEligibility(
             patientHistory: appts,
             doctorId: widget.appointment.doctorId,
             targetDate: widget.appointment.scheduledDate,
             doctorName: widget.appointment.doctorName,
+            freeReviewDays: freeReviewDays,
           );
 
           if (!eligibility.hasVisitedDoctorEarlier) {
@@ -333,17 +339,18 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
             return;
           }
 
-          if (!eligibility.isWithin14Days) {
+          if (!eligibility.isWithinReviewPeriod) {
             if (!mounted) return;
             final dateStr = eligibility.lastVisitDate != null
                 ? AppFormatters.date(eligibility.lastVisitDate!)
                 : 'N/A';
             final proceed =
-                await BookingEligibilityBanner.showFourteenDaysWarningDialog(
+                await BookingEligibilityBanner.showReviewWarningDialog(
                   context,
                   doctorName: widget.appointment.doctorName,
                   dateStr: dateStr,
                   days: eligibility.daysSinceLastVisit ?? 15,
+                  policyDays: freeReviewDays,
                 );
             if (proceed != true) return;
           }
