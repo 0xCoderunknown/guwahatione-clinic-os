@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 import 'package:appointment_app/models/models.dart';
+import 'package:appointment_app/providers/clinic_provider.dart';
 import 'package:appointment_app/widgets/widgets.dart';
 
 void main() {
@@ -317,4 +321,138 @@ void main() {
       expect(breakSession.lastCompletedPatientName, 'Previous Patient');
     });
   });
+
+  group('AccordionDispatchSection Doctor-Paced Readiness Guard Tests', () {
+    final testAppt = Appointment(
+      id: 'appt-1',
+      patientPhone: '9864011111',
+      patientName: 'Bikash Das',
+      status: AppointmentStatus.pending,
+      paymentType: PaymentType.paidCash,
+      amountCollected: 500,
+      queueNumber: 3,
+      scheduledDate: DateTime(2026, 10, 13),
+      doctorId: 'doc-1',
+      doctorName: 'Dr. Sharma',
+    );
+
+    testWidgets('Idle chamber locks dispatch button with waiting indicator', (tester) async {
+      final fakeProvider = _TestClinicProvider();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<ClinicProvider>.value(
+          value: fakeProvider,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AccordionDispatchSection(
+                appointment: testAppt,
+                isInChamber: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      fakeProvider.sessionController.add(ChamberSession.empty('doc-1', testAppt.scheduledDate));
+      await tester.pump();
+
+      expect(find.text('Waiting for Doctor to Signal Ready'), findsOneWidget);
+      expect(find.textContaining('Chamber is idle'), findsOneWidget);
+
+      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      expect(button.onPressed, isNull);
+    });
+
+    testWidgets('Breather state locks dispatch button with holding message', (tester) async {
+      final fakeProvider = _TestClinicProvider();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<ClinicProvider>.value(
+          value: fakeProvider,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AccordionDispatchSection(
+                appointment: testAppt,
+                isInChamber: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      fakeProvider.sessionController.add(ChamberSession(
+        doctorId: 'doc-1',
+        date: testAppt.scheduledDate,
+        status: 'consultation_ended',
+        lastCompletedQueueNumber: 2,
+        lastCompletedPatientName: 'Previous',
+      ));
+      await tester.pump();
+
+      expect(find.text('Doctor on Breather (Waiting for Doctor)'), findsOneWidget);
+      expect(find.textContaining('taking a breather'), findsOneWidget);
+
+      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      expect(button.onPressed, isNull);
+    });
+
+    testWidgets('Ready for next state enables SEND IN TO DOCTOR button', (tester) async {
+      final fakeProvider = _TestClinicProvider();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<ClinicProvider>.value(
+          value: fakeProvider,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AccordionDispatchSection(
+                appointment: testAppt,
+                isInChamber: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      fakeProvider.sessionController.add(ChamberSession(
+        doctorId: 'doc-1',
+        date: testAppt.scheduledDate,
+        status: 'ready_for_next',
+      ));
+      await tester.pump();
+
+      expect(find.text('SEND IN TO DOCTOR'), findsOneWidget);
+      expect(find.textContaining('is READY for next patient!'), findsOneWidget);
+
+      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      expect(button.onPressed, isNotNull);
+
+      await tester.tap(find.text('SEND IN TO DOCTOR'));
+      await tester.pump();
+
+      expect(fakeProvider.calledToken, isTrue);
+    });
+  });
+}
+
+class _TestClinicProvider extends ChangeNotifier implements ClinicProvider {
+  final StreamController<ChamberSession> sessionController =
+      StreamController<ChamberSession>.broadcast();
+  bool calledToken = false;
+
+  @override
+  Stream<ChamberSession> streamChamberSession(String doctorId, DateTime date) {
+    return sessionController.stream;
+  }
+
+  @override
+  Future<void> callTokenIntoChamber({
+    required String doctorId,
+    required DateTime date,
+    required Appointment appointment,
+  }) async {
+    calledToken = true;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

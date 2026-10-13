@@ -44,32 +44,58 @@ class AccordionDispatchSection extends StatelessWidget {
             activeApptId.isNotEmpty &&
             activeApptId != appointment.id;
 
-        String buttonLabel = 'SEND IN TO DOCTOR';
-        Color buttonBg = const Color(0xFF0F766E); // Teal 700
-        IconData buttonIcon = Icons.login_rounded;
+        String buttonLabel;
+        IconData buttonIcon;
+        VoidCallback? onDispatch;
 
-        if (isDoctorReady) {
-          buttonLabel = 'SEND IN (Doctor is Ready)';
-          buttonBg = const Color(0xFF15803D); // Green 700
-          buttonIcon = Icons.check_circle_outline_rounded;
-        } else if (isDoctorOnBreak) {
-          buttonLabel = 'Doctor on Break • Send In Anyway';
-          buttonBg = const Color(0xFFB45309); // Amber 700
-          buttonIcon = Icons.coffee_rounded;
-        } else if (isAnotherPatientInChamber) {
-          buttonLabel = 'SEND IN (Token #$activeQueueNum Inside)';
-          buttonBg = const Color(0xFFD97706); // Amber 600
-          buttonIcon = Icons.swap_horiz_rounded;
-        } else if (isThisInChamber) {
+        if (isThisInChamber) {
           buttonLabel = 'Already in Chamber';
-          buttonBg = const Color(0xFF059669);
           buttonIcon = Icons.meeting_room_rounded;
+          onDispatch = null;
+        } else if (isAnotherPatientInChamber) {
+          buttonLabel = 'Chamber Occupied (Token #$activeQueueNum Inside)';
+          buttonIcon = Icons.lock_clock_rounded;
+          onDispatch = null;
+        } else if (isDoctorOnBreak) {
+          buttonLabel = 'Doctor on Breather (Waiting for Doctor)';
+          buttonIcon = Icons.coffee_rounded;
+          onDispatch = null;
+        } else if (isDoctorReady) {
+          buttonLabel = 'SEND IN TO DOCTOR';
+          buttonIcon = Icons.check_circle_outline_rounded;
+          onDispatch = () async {
+            final clinic = Provider.of<ClinicProvider>(
+              context,
+              listen: false,
+            );
+            await clinic.callTokenIntoChamber(
+              doctorId: appointment.doctorId,
+              date: appointment.scheduledDate,
+              appointment: appointment,
+            );
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Dispatched Token #${appointment.queueNumber} (${appointment.patientName}) to ${AppFormatters.doctorTitle(appointment.doctorName)}',
+                  ),
+                  backgroundColor: const Color(0xFF15803D),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
+          };
+        } else {
+          // Doctor is idle, has not clicked "Ready for First Patient"
+          buttonLabel = 'Waiting for Doctor to Signal Ready';
+          buttonIcon = Icons.hourglass_top_rounded;
+          onDispatch = null;
         }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (isDoctorReady)
+            if (isThisInChamber)
               Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.symmetric(
@@ -84,50 +110,18 @@ class AccordionDispatchSection extends StatelessWidget {
                 child: Row(
                   children: [
                     const Icon(
-                      Icons.check_circle_rounded,
+                      Icons.meeting_room_rounded,
                       size: 14,
                       color: Color(0xFF15803D),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        '${AppFormatters.doctorTitle(appointment.doctorName)} is READY for next patient!',
+                        'Token #${appointment.queueNumber} is currently in chamber with ${AppFormatters.doctorTitle(appointment.doctorName)}.',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF15803D),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else if (isDoctorOnBreak)
-              Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.coffee_rounded,
-                      size: 14,
-                      color: Color(0xFFB45309),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        '${AppFormatters.doctorTitle(appointment.doctorName)} is taking a breather. Verify patient presence before dispatching.',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFFB45309),
                         ),
                       ),
                     ),
@@ -166,11 +160,112 @@ class AccordionDispatchSection extends StatelessWidget {
                     ),
                   ],
                 ),
+              )
+            else if (isDoctorOnBreak)
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.coffee_rounded,
+                      size: 14,
+                      color: Color(0xFFB45309),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '${AppFormatters.doctorTitle(appointment.doctorName)} is taking a breather. Reception queue is held until doctor clicks \'NEXT PATIENT\'.',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFFB45309),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (isDoctorReady)
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFF86EFAC)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      size: 14,
+                      color: Color(0xFF15803D),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '${AppFormatters.doctorTitle(appointment.doctorName)} is READY for next patient!',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF15803D),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.hourglass_top_rounded,
+                      size: 14,
+                      color: Color(0xFF475569),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '${AppFormatters.doctorTitle(appointment.doctorName)} has not signaled ready yet. Chamber is idle.',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF475569),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             FilledButton.icon(
               style: FilledButton.styleFrom(
-                backgroundColor: buttonBg,
+                backgroundColor: const Color(0xFF15803D),
                 foregroundColor: Colors.white,
+                disabledBackgroundColor: const Color(0xFFE2E8F0),
+                disabledForegroundColor: const Color(0xFF64748B),
                 padding: const EdgeInsets.symmetric(vertical: 13),
               ),
               icon: Icon(buttonIcon, size: 18),
@@ -181,103 +276,7 @@ class AccordionDispatchSection extends StatelessWidget {
                   fontSize: 13,
                 ),
               ),
-              onPressed: () async {
-                final clinic = Provider.of<ClinicProvider>(
-                  context,
-                  listen: false,
-                );
-
-                // Guard 1: Another patient is already in chamber
-                if (isAnotherPatientInChamber) {
-                  final proceed = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Row(
-                        children: [
-                          Icon(
-                            Icons.swap_horiz_rounded,
-                            color: Color(0xFFD97706),
-                          ),
-                          SizedBox(width: 8),
-                          Text('Chamber Currently Occupied'),
-                        ],
-                      ),
-                      content: Text(
-                        '${AppFormatters.doctorTitle(appointment.doctorName)} is currently consulting '
-                        'Token #$activeQueueNum ($activePatName).\n\n'
-                        'Admitting Token #${appointment.queueNumber} (${appointment.patientName}) '
-                        'will replace the active patient in chamber. Send inside anyway?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Wait'),
-                        ),
-                        FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFD97706),
-                          ),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Send Inside Anyway'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (proceed != true) return;
-                } else if (isDoctorOnBreak) {
-                  // Guard 2: Doctor taking a breather
-                  final proceed = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: Row(
-                        children: [
-                          Icon(
-                            Icons.coffee_rounded,
-                            color: Colors.amber.shade800,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text('Doctor Taking Breather'),
-                        ],
-                      ),
-                      content: Text(
-                        '${AppFormatters.doctorTitle(appointment.doctorName)} is taking a breather and hasn\'t clicked \'NEXT PATIENT\' yet.\n\n'
-                        'Send Token #${appointment.queueNumber} (${appointment.patientName}) inside anyway?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: const Text('Wait for Doctor'),
-                        ),
-                        FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFFB45309),
-                          ),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: const Text('Send Inside Anyway'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (proceed != true) return;
-                }
-
-                await clinic.callTokenIntoChamber(
-                  doctorId: appointment.doctorId,
-                  date: appointment.scheduledDate,
-                  appointment: appointment,
-                );
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Dispatched Token #${appointment.queueNumber} (${appointment.patientName}) to ${AppFormatters.doctorTitle(appointment.doctorName)}',
-                      ),
-                      backgroundColor: Colors.teal.shade800,
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                }
-              },
+              onPressed: onDispatch,
             ),
           ],
         );

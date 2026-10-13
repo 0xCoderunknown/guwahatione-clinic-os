@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.25.0] — 13-10-2026
+
+### Enforce Doctor-Paced Chamber Handshake Protocol (Invariant #7)
+- **Strict Reception Dispatch Guarding (`lib/widgets/dashboard/dashboard_queue_card.dart`):**
+  - Eliminated premature unilateral patient calling (`Call In`) when doctor is in `idle` or taking a breather (`consultation_ended`).
+  - Rendered explicit, descriptive non-interactive badges when doctor is not ready: `Waiting for Doctor` (idle), `On Breather` (consultation concluded), `Doctor Busy (#N)` (consulting another patient), and `In Chamber` (currently inside).
+  - Restricted the green `Send In` action button strictly to when the doctor has explicitly signaled `ready_for_next` (`isDoctorReady == true`).
+- **Reception Accordion Dispatch Enforcement (`lib/widgets/queue/accordion_dispatch_section.dart`):**
+  - Replaced unguarded dispatch and override buttons with locked states during doctor idle, breather, or active consultation.
+  - Added descriptive status banner and disabled button (`Waiting for Doctor to Signal Ready`) when chamber is idle.
+  - Replaced break override with strict breather queue holding indicator (`Doctor on Breather (Waiting for Doctor)`).
+- **Automated Handshake Testing (`test/chamber_handshake_test.dart`):**
+  - Added unit and widget test suite covering `AccordionDispatchSection` across all chamber lifecycle states (`idle`, `consultation_ended`, `ready_for_next`), verifying dispatch button locking and readiness activation.
+
+---
+
 ## [1.24.0] — 13-10-2026
 
 ### Queue Legibility Enhancements & Mobile Responsive Consultation Layout

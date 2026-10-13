@@ -430,20 +430,166 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
           final session = chamberSnap.data;
           final isDoctorReady = session?.isReadyForNext ?? false;
           final isDoctorOnBreak = session?.isConsultationEnded ?? false;
+          final activeApptId = session?.activeAppointmentId;
+          final activeQueueNum = session?.activeQueueNumber;
+          final isThisInChamber = activeApptId == appt.id;
+          final isAnotherPatientInChamber =
+              activeApptId != null &&
+              activeApptId.isNotEmpty &&
+              activeApptId != appt.id;
 
-          final btnBg = isDoctorReady
-              ? const Color(0xFF15803D)
-              : (isDoctorOnBreak
-                  ? const Color(0xFFB45309)
-                  : Colors.teal.shade700);
+          if (isThisInChamber) {
+            return Tooltip(
+              message:
+                  'Token #${appt.queueNumber} is currently in chamber with ${AppFormatters.doctorTitle(appt.doctorName)}',
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF86EFAC)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.meeting_room_rounded,
+                      size: 14,
+                      color: Color(0xFF15803D),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'In Chamber',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
 
-          final btnLabel = isDoctorReady
-              ? 'Send In'
-              : (isDoctorOnBreak ? 'On Break' : 'Call In');
+          if (isAnotherPatientInChamber) {
+            return Tooltip(
+              message:
+                  '${AppFormatters.doctorTitle(appt.doctorName)} is currently consulting Token #$activeQueueNum',
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.lock_clock_rounded,
+                      size: 14,
+                      color: Colors.blueGrey.shade700,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Doctor Busy (#$activeQueueNum)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blueGrey.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
 
+          if (isDoctorOnBreak) {
+            return Tooltip(
+              message:
+                  '${AppFormatters.doctorTitle(appt.doctorName)} is taking a breather. Waiting for doctor to call next patient.',
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.coffee_rounded,
+                      size: 14,
+                      color: Color(0xFFB45309),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'On Breather',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFB45309),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          if (!isDoctorReady) {
+            return Tooltip(
+              message:
+                  '${AppFormatters.doctorTitle(appt.doctorName)} has not signaled ready yet. Chamber is idle.',
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.hourglass_top_rounded,
+                      size: 14,
+                      color: Colors.blueGrey.shade600,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Waiting for Doctor',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blueGrey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          // ONLY reached when isDoctorReady == true (Doctor clicked "READY FOR FIRST PATIENT" / "NEXT PATIENT")
           return FilledButton.icon(
             style: FilledButton.styleFrom(
-              backgroundColor: btnBg,
+              backgroundColor: const Color(0xFF15803D),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(
                 horizontal: 14,
@@ -453,58 +599,18 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            icon: Icon(
-              isDoctorReady
-                  ? Icons.login_rounded
-                  : (isDoctorOnBreak
-                      ? Icons.coffee_rounded
-                      : Icons.record_voice_over_rounded),
+            icon: const Icon(
+              Icons.login_rounded,
               size: 16,
             ),
-            label: Text(
-              btnLabel,
-              style: const TextStyle(
+            label: const Text(
+              'Send In',
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
               ),
             ),
             onPressed: () async {
-              if (isDoctorOnBreak) {
-                final proceed = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Row(
-                      children: [
-                        Icon(
-                          Icons.coffee_rounded,
-                          color: Colors.amber.shade800,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text('Doctor Taking Breather'),
-                      ],
-                    ),
-                    content: Text(
-                      '${AppFormatters.doctorTitle(appt.doctorName)} is taking a breather and hasn\'t clicked \'NEXT PATIENT\' yet.\n\n'
-                      'Send Token #${appt.queueNumber} (${appt.patientName}) inside anyway?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('Wait for Doctor'),
-                      ),
-                      FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFB45309),
-                        ),
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('Send Inside Anyway'),
-                      ),
-                    ],
-                  ),
-                );
-                if (proceed != true) return;
-              }
-
               await widget.provider.callTokenIntoChamber(
                 doctorId: appt.doctorId,
                 date: appt.scheduledDate,
@@ -514,9 +620,9 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      'Admitted Token #${appt.queueNumber} (${appt.patientName}) to ${AppFormatters.doctorTitle(appt.doctorName)} chamber',
+                      'Dispatched Token #${appt.queueNumber} (${appt.patientName}) to ${AppFormatters.doctorTitle(appt.doctorName)} chamber',
                     ),
-                    backgroundColor: Colors.teal.shade800,
+                    backgroundColor: const Color(0xFF15803D),
                     duration: const Duration(seconds: 3),
                   ),
                 );
