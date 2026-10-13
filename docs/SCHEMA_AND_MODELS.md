@@ -15,6 +15,7 @@
 | `counters` | `queue_{doctorId}_{yyyy-MM-dd}` | Atomic sequence counter for daily queue token numbering. |
 | `consultations` | Auto-generated UID | Append-only clinical encounter records across 5 steps. |
 | `medicines` | Deterministic `med_*` or auto UID | Master clinic medicine formulary catalogue. |
+| `appointment_events` | Auto-generated UID | Immutable forensic audit ledger tracking all appointment lifecycle shifts. |
 
 ---
 
@@ -241,6 +242,26 @@
 | `lastCompletedQueueNumber` | `int?` | No | Most recently concluded token number. |
 | `lastCompletedPatientName` | `String?` | No | Name of most recently concluded patient. |
 | `updatedAt` | `FieldValue` | Yes | Server timestamp of state transition. |
+
+---
+
+## 📜 8. `appointment_events` Collection (Forensic Audit Trail)
+
+- **Document ID:** Auto-generated UID.
+- **Rule:** **STRICTLY APPEND-ONLY.** Never updated, mutated, or deleted (`allow update, delete: if false;`).
+
+### Fields
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | `String` | Yes | Unique event ID. |
+| `appointmentId` | `String` | Yes | Associated appointment document ID. |
+| `eventType` | `String` (Enum) | Yes | `'created'`, `'checkedIn'`, `'admitted'`, `'completed'`, `'markedAbsent'`, or `'statusUpdated'`. |
+| `visitStatus` | `String` (Enum) | Yes | Resulting operational state (`'booked'`, `'waitingInLobby'`, `'inConsultation'`, `'completed'`, `'cancelled'`). |
+| `amountCollected` | `int?` | No | Realized rupee collection associated with the state transition. |
+| `paymentType` | `String?` | No | Payment method recorded (`'paidCash'`, `'paidUpi'`, etc.). |
+| `actorRole` | `String` | Yes | Role executing the mutation (`'receptionist'`, `'doctor'`, `'owner'`). |
+| `timestamp` | `Timestamp` | Yes | Immutable event occurrence timestamp. |
+| `note` | `String?` | No | Operational audit note (e.g. `'Patient checked into lobby desk'`). |
 
 ---
 

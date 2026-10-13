@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.19.0] — 13-10-2026
+
+### Security Hardening & Regulatory Compliance
+- **Cryptographic Credential Hashing (`lib/providers/auth_provider.dart`):**
+  - Integrated `crypto: ^3.0.7` and implemented domain-salted SHA-256 PIN hashing (`AuthProvider.hashPin`).
+  - Purged plaintext access credentials from persistent storage (`SharedPreferences`): only cryptographic hashes (`auth_owner_master_pin_hash`, `auth_receptionist_pin_hash`) are persisted on disk.
+  - Implemented automatic legacy migration on `initSession`: existing plaintext credentials from earlier versions are automatically hashed and permanently purged from device storage.
+  - Enhanced direct login helpers (`loginAsOwner`, `loginAsReceptionist`, `loginAsDoctor`) and chamber verification to evaluate strictly via SHA-256 hash matching.
+- **Healthcare Data Privacy & Regulatory Compliance (`docs/COMPLIANCE_AND_PRIVACY.md`):**
+  - Authored authoritative compliance blueprint aligned with the Indian Digital Personal Data Protection (DPDP) Act 2023, ABDM Health Data Management Policy, and NMC regulations.
+  - Formulated 3-tier Role-Based Access Control (RBAC) matrix separating clinical findings (physicians) from queue dispatch (reception) and financial ledgers (owner).
+  - Codified statutory 3-year minimum clinical record retention and verbal consent walk-in protocols.
+- **Automated Test Fortification (`test/auth_provider_test.dart`):**
+  - Added unit tests for deterministic SHA-256 hashing and automatic legacy plaintext PIN migration and disk purging, bringing test suite to 155 tests.
+
+---
+
+## [1.18.0] — 13-10-2026
+
+### Phase 2: Atomic Concurrency Locks & Forensic Audit Trail
+- **Atomic Booking Concurrency Lock (0% DB Race Conditions):**
+  - Implemented transactional reservation locks at `counters/lock_{doctorId}_{yyyy-MM-dd}_{phone}_{normalizedName}` inside `BookingService.bookAppointment`.
+  - Guarantees race-proof duplicate prevention at the database boundary: simultaneous multi-desk submissions for the same patient/doctor/day trigger typed `DuplicateBookingException` on conflicting clients via Firestore OCC, while family members sharing a phone number remain explicitly preserved.
+- **Append-Only Forensic Operational Audit Ledger (`appointment_events`):**
+  - Created immutable `AppointmentEvent` model and `appointment_events` collection tracking every operational state shift (`created`, `checkedIn`, `admitted`, `completed`, `markedAbsent`, `statusUpdated`).
+  - Integrated audit event generation across all `BookingService` state mutations and `ConsultationService.saveConsultation`.
+  - Added strict database rule in `firestore.rules` locking `appointment_events` with `allow update, delete: if false;` to guarantee forensic immutability.
+- **Test Suite Fortification (`test/booking_concurrency_and_audit_test.dart`):**
+  - Added 5 new unit tests covering deterministic lock path generation, family exception preservation, `DuplicateBookingException` semantics, and `AppointmentEvent` serialization across all 6 lifecycle events, expanding the automated test suite to 153 tests.
+
+---
+
+## [1.17.0] — 13-10-2026
+
+### Security & Data Model Hardening
+- **Authoritative Backend Security Rules (`firestore.rules` & `firebase.json`):**
+  - Authored comprehensive production Firestore security rules enforcing **Invariant #1 (Zero Deletions)** with `allow delete: if false;` across `appointments`, `consultations`, `patients`, and `counters`.
+  - Enforced **Invariant #2 (Append-Only Consultations)** with `allow update, delete: if false;` on the `consultations` collection, locking historical encounters from post-facto tampering.
+  - Hardened document creation schema checks and locked immutable appointment attributes (`queueNumber`, `doctorId`, `scheduledDate`).
+  - Wired `firestore.rules` directly into `firebase.json`.
+- **Single Source of Truth & State Reconciliation (`lib/models/appointment.dart`):**
+  - Reconciled dual-source-of-truth drift between `status` (`AppointmentStatus`) and `visitStatus` (`VisitStatus`).
+  - Hardened `Appointment.fromJson` to automatically reconcile terminal states (`completed`, `cancelled/absent`), eliminating in-memory state drift from un-synchronized legacy writes.
+  - Fixed `ConsultationService.saveConsultation` (`lib/services/consultation_service.dart`) to atomically update both `'status'` and `'visitStatus'` to `completed` in Firestore completion batches.
+- **Automated Test Suite Expansion (`test/patient_review_and_models_test.dart`):**
+  - Added unit tests for model state auto-reconciliation and synchronized JSON serialization, bringing the test suite to 148 passing tests.
+
+---
+
 ## [1.16.9] — 12-10-2026
 
 ### Audited & Synchronized

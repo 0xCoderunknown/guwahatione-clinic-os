@@ -14,7 +14,7 @@ These are the only files / values humans are expected to edit directly:
 static const int defaultConsultationFee = 500; // ← Change the consultation fee here
 
 static const List<String> blockedDates = [
-  '2026-10-02', // ← Add/remove clinic holiday dates (YYYY-MM-DD)
+  '2026-10-02', // ← Add/remove clinic holiday dates (ISO-8601 storage key; formatted as DD-MM-YYYY in UI)
 ];
 ```
 
@@ -42,7 +42,7 @@ When making code changes:
 2. Format changed Dart files with `dart format <paths>`. Avoid formatting the entire repository until the existing formatting baseline is clean.
 3. Add a concise entry under `[Unreleased]` in `CHANGELOG.md` for user-visible or behavioral changes.
 4. Keep models free of UI dependencies. Some current models use Firestore `Timestamp` for serialization; do not change that boundary without updating the schema and service contracts.
-5. Keep Firestore access in `FirebaseService` / sub-services and delegate business policy to domain engines.
+5. Keep Firestore access in modular services (`lib/services/`) and delegate business policy to pure domain engines (`lib/core/engines/`).
 6. Do not add dev-session markers (`// NEW:`, `// <---`) or uppercase section labels (`// HEADER ROW`) without a clear need.
 7. `AppConstants.defaultConsultationFee` is the fallback fee source; doctor-specific fees take precedence.
 8. **Mandatory Indian Date Format (`DD-MM-YYYY`):** All human-facing UI text, printed prescriptions, reports, changelogs, and markdown documentation must strictly use Indian formatting (`DD-MM-YYYY` or `DD-MM-YY`). Never present `YYYY-MM-DD` or `MM/DD/YYYY` to users or in documentation. Note: `AppConstants.blockedDates` uses ISO strings internally solely for dictionary lookup matching.
@@ -52,7 +52,7 @@ When making code changes:
 ```
 core/         ← pure Dart domain engines (math, eligibility, algorithms), zero Flutter UI
 models/       ← pure data schemas & serialization
-services/     ← all Firestore logic lives here (FirebaseService facade + modular sub-services)
+services/     ← all Firestore logic lives here (modular services: BookingService, ConsultationService, etc.)
 providers/    ← state management (ChangeNotifier), coordinates streams & delegates to engines
 screens/      ← Flutter screen coordinators
 widgets/      ← modularized Flutter presentation components

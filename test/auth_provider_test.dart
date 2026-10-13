@@ -244,5 +244,44 @@ void main() {
       expect(auth.currentRole, isNull);
       expect(auth.currentDoctor, isNull);
     });
+
+    test('AuthProvider.hashPin produces deterministic SHA-256 hashes', () {
+      final hash1 = AuthProvider.hashPin('849201');
+      final hash2 = AuthProvider.hashPin(' 849201 ');
+      final hashOther = AuthProvider.hashPin('0000');
+
+      expect(hash1, equals(hash2));
+      expect(hash1.length, 64); // SHA-256 hex string length
+      expect(hash1, isNot(equals(hashOther)));
+      expect(hash1, isNot(contains('849201'))); // Non-reversible
+    });
+
+    test('initSession migrates legacy plaintext PINs to SHA-256 hashes and purges plaintext', () async {
+      SharedPreferences.setMockInitialValues({
+        'auth_owner_master_pin': '999999',
+        'auth_receptionist_pin': '8888',
+      });
+
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // Legacy plaintext keys must be purged from disk
+      expect(prefs.containsKey('auth_owner_master_pin'), isFalse);
+      expect(prefs.containsKey('auth_receptionist_pin'), isFalse);
+
+      // New hash keys must be stored on disk
+      expect(prefs.getString('auth_owner_master_pin_hash'), AuthProvider.hashPin('999999'));
+      expect(prefs.getString('auth_receptionist_pin_hash'), AuthProvider.hashPin('8888'));
+
+      // New hashes authenticate successfully
+      final authResult = await auth.authenticateWithPin(
+        pin: '999999',
+        doctors: sampleDoctors,
+      );
+      expect(authResult.isSuccess, isTrue);
+      expect(authResult.role, UserRole.owner);
+    });
   });
 }

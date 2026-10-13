@@ -10,6 +10,7 @@ abstract class FirestorePaths {
   static const String consultations = 'consultations';
   static const String medicines = 'medicines';
   static const String doctors = 'doctors';
+  static const String appointmentEvents = 'appointment_events';
 
   // Document Path Builders
   static String patientDoc(String phone) => phone;
@@ -21,6 +22,12 @@ abstract class FirestorePaths {
   static String medicineDoc(String id) => id;
 
   static String doctorDoc(String id) => id;
+
+  static String appointmentEventDoc(String id) => id;
+
+  /// Normalizes patient name for composite keys (lowercase, whitespace condensed).
+  static String normalizePatientName(String name) =>
+      name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '_');
 
   /// Formats date into standard YYYY-MM-DD key.
   static String dateKey(DateTime date) =>
@@ -35,4 +42,14 @@ abstract class FirestorePaths {
   /// `counters/chamber_{doctorId}_{yyyy-MM-dd}`
   static String chamberSyncDoc(String doctorId, DateTime date) =>
       'chamber_${doctorId}_${dateKey(date)}';
+
+  /// Per-doctor, per-day, per-patient atomic booking reservation lock ID:
+  /// `counters/lock_{doctorId}_{yyyy-MM-dd}_{phone}_{normalizedName}`
+  static String bookingLock(
+    String doctorId,
+    DateTime date,
+    String phone,
+    String patientName,
+  ) =>
+      'lock_${doctorId}_${dateKey(date)}_${phone.trim()}_${normalizePatientName(patientName)}';
 }

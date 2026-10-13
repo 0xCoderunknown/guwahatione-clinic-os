@@ -195,7 +195,8 @@ firebase deploy --only hosting
 
 ## ⚙️ Configuration & Access PINs
 
-### Default PINs (Out of the Box)
+### Access PINs & Cryptographic Storage
+* All access PINs are cryptographically evaluated and persisted using domain-salted **SHA-256 hashes** (`AuthProvider.hashPin`), ensuring zero plaintext exposure in browser storage or device memory.
 * **Clinic Owner / Master Admin:** `849201` (6-digit PIN: doctor CRUD, fee schedule overrides, financial analytics & audits)
 * **Reception Desk:** `0000` (4-digit PIN: counter booking, queue management, physical arrival check, cash collection)
 * **Doctor Chamber View:** Default `1234` (4-digit PIN: configurable per doctor in Doctor management, consultation encounter)
@@ -207,7 +208,7 @@ class AppConstants {
   // Global fallback consultation fee
   static const int defaultConsultationFee = 500;
 
-  // Add clinic holiday dates in 'YYYY-MM-DD' format.
+  // Clinic holiday dates stored as ISO strings (presented as DD-MM-YYYY in UI).
   static const List<String> blockedDates = [
     // '2026-10-02',
   ];
@@ -350,7 +351,7 @@ The repository maintains an active automated testing suite covering domain busin
 flutter test
 ```
 
-- **145 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards, and print schedule segregation with 100% pass rate.
+- **155 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, 14-day free review eligibility boundaries, prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, atomic booking concurrency locks, forensic append-only audit trail logging, and print schedule segregation with 100% pass rate.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---

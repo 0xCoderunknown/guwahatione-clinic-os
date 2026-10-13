@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,17 +34,32 @@ class AuthResult {
 class AuthProvider with ChangeNotifier {
   static const String _prefKeyRole = 'auth_role';
   static const String _prefKeyDoctorId = 'auth_doctor_id';
-  static const String _prefKeyOwnerMasterPin = 'auth_owner_master_pin';
-  static const String _prefKeyReceptionistPin = 'auth_receptionist_pin';
+  static const String _prefKeyOwnerMasterPinHash = 'auth_owner_master_pin_hash';
+  static const String _prefKeyReceptionistPinHash = 'auth_receptionist_pin_hash';
+
+  // Legacy plaintext keys purged on session initialization
+  static const String _legacyPrefKeyOwnerMasterPin = 'auth_owner_master_pin';
+  static const String _legacyPrefKeyReceptionistPin = 'auth_receptionist_pin';
 
   static const String defaultReceptionistPin = '0000';
   static const String defaultOwnerMasterPin = '849201';
+
+  /// Cryptographic SHA-256 hash with domain salt to prevent plaintext exposure in storage.
+  static String hashPin(String pin) {
+    final bytes = utf8.encode('guwahatione_clinic_salt_v1:${pin.trim()}');
+    return sha256.convert(bytes).toString();
+  }
+
+  static final String _defaultReceptionistPinHash = hashPin(defaultReceptionistPin);
+  static final String _defaultOwnerMasterPinHash = hashPin(defaultOwnerMasterPin);
 
   UserRole? _currentRole;
   Doctor? _currentDoctor;
   bool _isInitialized = false;
   String _receptionistPin = defaultReceptionistPin;
   String _ownerMasterPin = defaultOwnerMasterPin;
+  String _receptionistPinHash = _defaultReceptionistPinHash;
+  String _ownerMasterPinHash = _defaultOwnerMasterPinHash;
 
   UserRole? get currentRole => _currentRole;
 
@@ -58,17 +75,40 @@ class AuthProvider with ChangeNotifier {
 
   bool get isInitialized => _isInitialized;
 
+  String get receptionistPinHash => _receptionistPinHash;
+
+  String get ownerMasterPinHash => _ownerMasterPinHash;
+
   String get receptionistPin => _receptionistPin;
 
   String get ownerMasterPin => _ownerMasterPin;
 
+  bool get isCustomOwnerPinSet => _ownerMasterPinHash != _defaultOwnerMasterPinHash;
+
+  bool get isCustomReceptionistPinSet =>
+      _receptionistPinHash != _defaultReceptionistPinHash;
 
   Future<void> initSession(List<Doctor> availableDoctors) async {
     final prefs = await SharedPreferences.getInstance();
-    _receptionistPin =
-        prefs.getString(_prefKeyReceptionistPin) ?? defaultReceptionistPin;
-    _ownerMasterPin =
-        prefs.getString(_prefKeyOwnerMasterPin) ?? defaultOwnerMasterPin;
+
+    // 1. Transparent migration: migrate legacy plaintext PINs to SHA-256 hashes and purge plaintext
+    final legacyRecPin = prefs.getString(_legacyPrefKeyReceptionistPin);
+    if (legacyRecPin != null) {
+      await prefs.setString(_prefKeyReceptionistPinHash, hashPin(legacyRecPin));
+      await prefs.remove(_legacyPrefKeyReceptionistPin);
+    }
+
+    final legacyOwnerPin = prefs.getString(_legacyPrefKeyOwnerMasterPin);
+    if (legacyOwnerPin != null) {
+      await prefs.setString(_prefKeyOwnerMasterPinHash, hashPin(legacyOwnerPin));
+      await prefs.remove(_legacyPrefKeyOwnerMasterPin);
+    }
+
+    _receptionistPinHash =
+        prefs.getString(_prefKeyReceptionistPinHash) ?? _defaultReceptionistPinHash;
+    _ownerMasterPinHash =
+        prefs.getString(_prefKeyOwnerMasterPinHash) ?? _defaultOwnerMasterPinHash;
+
     final savedRole = prefs.getString(_prefKeyRole);
     final savedDoctorId = prefs.getString(_prefKeyDoctorId);
 
@@ -96,19 +136,20 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Unified PIN evaluation without manual role selectors:
-  /// - 6-digit Master PIN -> UserRole.owner
-  /// - 4-digit Reception PIN ('0000') -> UserRole.receptionist
-  /// - 4-digit Doctor Chamber PIN -> UserRole.doctor
+  /// Unified PIN evaluation using SHA-256 hash comparisons:
+  /// - 6-digit Master PIN hash -> UserRole.owner
+  /// - 4-digit Reception PIN hash -> UserRole.receptionist
+  /// - 4-digit Doctor Chamber PIN hash -> UserRole.doctor
   Future<AuthResult> authenticateWithPin({
     required String pin,
     required List<Doctor> doctors,
   }) async {
     final cleanPin = pin.trim();
+    final inputHash = hashPin(cleanPin);
     final prefs = await SharedPreferences.getInstance();
 
-    // 1. Check 6-digit Owner Master PIN
-    if (cleanPin.length == 6 && cleanPin == _ownerMasterPin) {
+    // 1. Check 6-digit Owner Master PIN via cryptographic hash
+    if (cleanPin.length == 6 && inputHash == _ownerMasterPinHash) {
       _currentRole = UserRole.owner;
       _currentDoctor = null;
       await prefs.setString(_prefKeyRole, UserRole.owner.name);
@@ -117,8 +158,8 @@ class AuthProvider with ChangeNotifier {
       return AuthResult.success(UserRole.owner);
     }
 
-    // 2. Check 4-digit Receptionist PIN
-    if (cleanPin == _receptionistPin || cleanPin == '0000') {
+    // 2. Check 4-digit Receptionist PIN via cryptographic hash
+    if (inputHash == _receptionistPinHash || inputHash == _defaultReceptionistPinHash) {
       _currentRole = UserRole.receptionist;
       _currentDoctor = null;
       await prefs.setString(_prefKeyRole, UserRole.receptionist.name);
@@ -127,9 +168,9 @@ class AuthProvider with ChangeNotifier {
       return AuthResult.success(UserRole.receptionist);
     }
 
-    // 3. Check Doctor Chamber PINs
+    // 3. Check Doctor Chamber PINs via cryptographic hash
     final matchedDoctors =
-        doctors.where((d) => d.pin.trim() == cleanPin).toList();
+        doctors.where((d) => hashPin(d.pin) == inputHash).toList();
     if (matchedDoctors.length == 1) {
       final doc = matchedDoctors.first;
       _currentRole = UserRole.doctor;
@@ -158,13 +199,9 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> loginAsOwner(String pin) async {
-    final cleanPin = pin.trim();
-    if (cleanPin == _ownerMasterPin ||
-        cleanPin == _receptionistPin ||
-        cleanPin == '0000') {
-      _currentRole = cleanPin == _ownerMasterPin
-          ? UserRole.owner
-          : UserRole.receptionist;
+    final inputHash = hashPin(pin);
+    if (inputHash == _ownerMasterPinHash) {
+      _currentRole = UserRole.owner;
       _currentDoctor = null;
 
       final prefs = await SharedPreferences.getInstance();
@@ -178,7 +215,8 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> loginAsReceptionist(String pin) async {
-    if (pin.trim() == _receptionistPin || pin.trim() == '0000') {
+    final inputHash = hashPin(pin);
+    if (inputHash == _receptionistPinHash || inputHash == _defaultReceptionistPinHash) {
       _currentRole = UserRole.receptionist;
       _currentDoctor = null;
 
@@ -193,7 +231,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> loginAsDoctor(Doctor doctor, String pin) async {
-    if (doctor.pin.trim() == pin.trim()) {
+    if (hashPin(doctor.pin) == hashPin(pin)) {
       _currentRole = UserRole.doctor;
       _currentDoctor = doctor;
 
@@ -209,18 +247,21 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> setOwnerMasterPin(String newPin) async {
     _ownerMasterPin = newPin.trim();
+    _ownerMasterPinHash = hashPin(newPin);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefKeyOwnerMasterPin, _ownerMasterPin);
+    await prefs.setString(_prefKeyOwnerMasterPinHash, _ownerMasterPinHash);
+    await prefs.remove(_legacyPrefKeyOwnerMasterPin);
     notifyListeners();
   }
 
   Future<void> setReceptionistPin(String newPin) async {
     _receptionistPin = newPin.trim();
+    _receptionistPinHash = hashPin(newPin);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefKeyReceptionistPin, _receptionistPin);
+    await prefs.setString(_prefKeyReceptionistPinHash, _receptionistPinHash);
+    await prefs.remove(_legacyPrefKeyReceptionistPin);
     notifyListeners();
   }
-
 
   Future<void> logout() async {
     _currentRole = null;

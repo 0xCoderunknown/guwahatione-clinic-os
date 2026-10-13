@@ -46,6 +46,65 @@ void main() {
       expect(fromJson.scheduledDate, now);
     });
 
+    test('Appointment.fromJson reconciles stale visitStatus when status is completed', () {
+      final rawMap = {
+        'id': 'appt-drift-test',
+        'patientPhone': '9876543210',
+        'patientName': 'Stale Patient',
+        'status': 'completed',
+        'visitStatus': 'inConsultation', // Stale un-updated field
+        'paymentType': 'paidCash',
+        'amountCollected': 500,
+        'queueNumber': 5,
+        'scheduledDate': DateTime(2026, 10, 5),
+        'doctorId': 'doc-1',
+        'doctorName': 'Dr. Baruah',
+      };
+
+      final appt = Appointment.fromJson(rawMap);
+      expect(appt.visitStatus, VisitStatus.completed);
+      expect(appt.status, AppointmentStatus.completed);
+    });
+
+    test('Appointment.fromJson reconciles stale visitStatus when status is absent', () {
+      final rawMap = {
+        'id': 'appt-drift-absent',
+        'patientPhone': '9876543210',
+        'patientName': 'No-Show Patient',
+        'status': 'absent',
+        'visitStatus': 'waitingInLobby', // Stale field
+        'paymentType': 'paidCash',
+        'amountCollected': 0,
+        'queueNumber': 6,
+        'scheduledDate': DateTime(2026, 10, 5),
+        'doctorId': 'doc-1',
+        'doctorName': 'Dr. Baruah',
+      };
+
+      final appt = Appointment.fromJson(rawMap);
+      expect(appt.visitStatus, VisitStatus.cancelled);
+      expect(appt.status, AppointmentStatus.absent);
+    });
+
+    test('Appointment.toJson emits synchronized status and visitStatus', () {
+      final appt = Appointment(
+        id: 'appt-sync',
+        patientPhone: '9876543210',
+        patientName: 'Sync Patient',
+        visitStatus: VisitStatus.completed,
+        paymentType: PaymentType.paidCash,
+        amountCollected: 500,
+        queueNumber: 7,
+        scheduledDate: DateTime(2026, 10, 5),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Baruah',
+      );
+
+      final json = appt.toJson();
+      expect(json['visitStatus'], 'completed');
+      expect(json['status'], 'completed');
+    });
+
     test('Doctor model includes PIN, consultation fee, and medicalRegNumber', () {
       final doctor = Doctor(
         id: 'doc-1',

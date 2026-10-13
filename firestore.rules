@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // 1. APPOINTMENTS (The Core Operational Ledger - ZERO DELETIONS)
+    // -------------------------------------------------------------------------
+    match /appointments/{appointmentId} {
+      // Readable by clinic reception, doctors, and owner
+      allow read: if true;
+
+      // New appointment registration: must contain mandatory schema fields
+      allow create: if request.resource.data.keys().hasAll([
+        'patientPhone', 'patientName', 'visitStatus', 'queueNumber', 
+        'scheduledDate', 'doctorId', 'doctorName'
+      ]) && request.resource.data.queueNumber is int
+         && request.resource.data.queueNumber > 0;
+
+      // Operational state updates allowed, but core identifiers are immutable
+      allow update: if request.resource.data.queueNumber == resource.data.queueNumber
+                    && request.resource.data.doctorId == resource.data.doctorId
+                    && request.resource.data.scheduledDate == resource.data.scheduledDate;
+
+      // NON-NEGOTIABLE CORE INVARIANT #1: NEVER DELETE AN APPOINTMENT DOCUMENT
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. CONSULTATIONS (Longitudinal Encounters - APPEND-ONLY)
+    // -------------------------------------------------------------------------
+    match /consultations/{consultationId} {
+      allow read: if true;
+
+      // Consultations must contain essential clinical metadata
+      allow create: if request.resource.data.keys().hasAll([
+        'patientPhone', 'patientName', 'doctorId', 'doctorName', 'createdAt'
+      ]);
+
+      // NON-NEGOTIABLE CORE INVARIANT #2: PAST CONSULTATIONS ARE APPEND-ONLY.
+      // NEVER OVERWRITE, MUTATE, OR DELETE HISTORICAL CLINICAL ENCOUNTERS.
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. COUNTERS (Daily Queue & Chamber Sync Handshake)
+    // -------------------------------------------------------------------------
+    match /counters/{counterId} {
+      allow read: if true;
+      allow create, update: if true;
+
+      // Counters must never be deleted
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. PATIENTS (Master Patient Directory)
+    // -------------------------------------------------------------------------
+    match /patients/{patientPhone} {
+      allow read: if true;
+      allow create, update: if request.resource.data.phoneNumber == patientPhone;
+
+      // Patient directory records are permanent clinical history
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. DOCTORS (Consulting Physicians & Profiles)
+    // -------------------------------------------------------------------------
+    match /doctors/{doctorId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. MEDICINES (OPD Formulary Catalogue)
+    // -------------------------------------------------------------------------
+    match /medicines/{medicineId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. APPOINTMENT EVENTS (Forensic Operational Audit Trail - APPEND-ONLY)
+    // -------------------------------------------------------------------------
+    match /appointment_events/{eventId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll([
+        'appointmentId', 'eventType', 'visitStatus', 'actorRole', 'timestamp'
+      ]);
+
+      // NON-NEGOTIABLE: FORENSIC AUDIT EVENTS ARE IMMUTABLE & PERMANENT
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

@@ -243,6 +243,14 @@ class Appointment {
       }
     }
 
+    // Single source of truth reconciliation: ensure terminal status states never desync
+    final st = json['status'];
+    if (st == 'completed' && visitStatus != VisitStatus.completed) {
+      visitStatus = VisitStatus.completed;
+    } else if (st == 'absent' && visitStatus != VisitStatus.cancelled) {
+      visitStatus = VisitStatus.cancelled;
+    }
+
     PaymentType paymentType;
     if (json['paymentType'] != null) {
       final pStr = json['paymentType'] as String;
