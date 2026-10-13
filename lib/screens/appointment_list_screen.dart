@@ -6,6 +6,7 @@ import '../models/appointment.dart';
 import '../models/chamber_session.dart';
 import '../providers/clinic_provider.dart';
 import '../services/booking_service.dart';
+import '../services/sound_service.dart';
 import '../widgets/widgets.dart';
 
 /// Reception desk screen for managing, dispatching, and tracking the live patient queue.
@@ -72,6 +73,26 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                         _expandedAppointmentId = null;
                       });
                     },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Consumer<SoundService>(
+                  builder: (_, sound, _) => Tooltip(
+                    message: sound.isMuted
+                        ? 'Lobby Chime Muted (Click to Unmute)'
+                        : 'Lobby Chime Active (Click to Mute)',
+                    child: IconButton(
+                      icon: Icon(
+                        sound.isMuted
+                            ? Icons.volume_off_rounded
+                            : Icons.volume_up_rounded,
+                        color: sound.isMuted
+                            ? Colors.grey.shade500
+                            : Colors.teal.shade700,
+                        size: 20,
+                      ),
+                      onPressed: () => sound.toggleMute(),
+                    ),
                   ),
                 ),
               ],

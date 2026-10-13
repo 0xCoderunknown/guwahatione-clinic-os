@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.29.0] — 13-10-2026
+
+### P10: Multi-Chamber Queue Sound Announcer & Vocal Token Calling
+- **Native Browser Audio Synthesis (`web/index.html` & `lib/utils/platform_sound_web.dart`):**
+  - Synthesized dual-tone clinic airport chime (587.33 Hz [D5] $\to$ 880 Hz [A5]) via Web Audio API oscillators directly in memory. Zero external audio asset dependencies or network delay.
+  - Coupled with browser Speech Synthesis API to announce: *"Token [number], please proceed to [Doctor Name]"* (accented for English-IN).
+  - Provided safe no-op stubs (`lib/utils/platform_sound_stub.dart`) for desktop, Android, and test VM execution without platform crashes.
+- **Sound Service & Mute Management (`lib/services/sound_service.dart`):**
+  - Built `SoundService` with persistent mute preference via `SharedPreferences` (`sound_announcer_muted`).
+  - Implemented deduplication guard (`lastAnnouncedKey`) to prevent double-announcing tokens during rapid UI rebuilds.
+- **Queue Dispatch Auto-Trigger (`lib/providers/clinic_provider.dart`):**
+  - Integrated `SoundService.instance.announceToken` into `ClinicProvider.callTokenIntoChamber`, triggering vocal and chime announcements on receptionist `[SEND IN]` action.
+- **Reception & Owner Shell Sound Controls (`lib/screens/owner_shell.dart` & `lib/screens/appointment_list_screen.dart`):**
+  - Added 1-click interactive audio toggle pills (`[🔊 Chime On]` / `[🔇 Muted]`) to top AppBars in `OwnerShell` and queue navigation bars in `AppointmentListScreen`.
+- **Automated Verification Suite (`test/sound_service_test.dart`):**
+  - Fortified test suite with 5 unit and widget tests covering mute toggles, deduplication, vocal triggers, and UI state reactivity.
+  - Full suite verified: 184 of 184 tests passing (`flutter test`).
+  - Zero static analysis issues (`flutter analyze`).
+
+---
+
 ## [1.28.0] — 13-10-2026
 
 ### P9: Prescription Template Presets & Fast OPD Prescribing Pipeline

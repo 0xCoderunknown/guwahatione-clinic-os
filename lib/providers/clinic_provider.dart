@@ -20,6 +20,7 @@ import '../services/consultation_service.dart';
 import '../services/doctor_service.dart';
 import '../services/offline_queue_cache_service.dart';
 import '../services/patient_service.dart';
+import '../services/sound_service.dart';
 
 class ClinicProvider with ChangeNotifier {
   final BookingService _bookingService;
@@ -493,6 +494,11 @@ class ClinicProvider with ChangeNotifier {
         date: date,
         appointment: appointment,
         forceOverride: forceOverride,
+      );
+      SoundService.instance.announceToken(
+        tokenNumber: appointment.queueNumber,
+        doctorName: appointment.doctorName,
+        callKey: '${doctorId}_${appointment.id}',
       );
     } catch (e) {
       debugPrint('Error calling token into chamber: $e');

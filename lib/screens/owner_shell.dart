@@ -10,6 +10,7 @@ import 'dashboard_screen.dart';
 import 'doctor_list_screen.dart';
 import 'medicine_catalogue_screen.dart';
 import 'statistics_screen.dart';
+import '../services/sound_service.dart';
 
 class OwnerShell extends StatefulWidget {
   const OwnerShell({super.key});
@@ -330,6 +331,61 @@ class _OwnerShellState extends State<OwnerShell> {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+
+                    // Lobby Sound Announcer Toggle
+                    Consumer<SoundService>(
+                      builder: (_, sound, _) => Tooltip(
+                        message: sound.isMuted
+                            ? 'Lobby Announcer Muted (Click to Unmute)'
+                            : 'Lobby Announcer Active (Click to Mute)',
+                        child: InkWell(
+                          onTap: () => sound.toggleMute(),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: sound.isMuted
+                                  ? Colors.grey.shade100
+                                  : Colors.teal.shade50,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: sound.isMuted
+                                    ? Colors.grey.shade300
+                                    : Colors.teal.shade300,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  sound.isMuted
+                                      ? Icons.volume_off_rounded
+                                      : Icons.volume_up_rounded,
+                                  size: 15,
+                                  color: sound.isMuted
+                                      ? Colors.grey.shade600
+                                      : Colors.teal.shade800,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  sound.isMuted ? 'Muted' : 'Chime On',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: sound.isMuted
+                                        ? Colors.grey.shade700
+                                        : Colors.teal.shade900,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),

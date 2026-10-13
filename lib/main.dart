@@ -8,10 +8,12 @@ import 'providers/clinic_provider.dart';
 import 'screens/doctor_chamber_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/owner_shell.dart';
+import 'services/sound_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await SoundService.instance.init();
 
   runApp(const ClinicApp());
 }
@@ -25,6 +27,7 @@ class ClinicApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => ClinicProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider.value(value: SoundService.instance),
       ],
       child: MaterialApp(
         title: 'GuwahatiOne Clinic OS',
