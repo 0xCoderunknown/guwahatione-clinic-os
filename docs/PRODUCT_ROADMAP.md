@@ -55,17 +55,52 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 | **Phase 2: Atomic Locks & Forensic Audit Trail** | Atomic booking reservation locks (`counters/lock_*`) in Firestore transaction eliminating multi-desk race conditions, immutable append-only `appointment_events` collection logging every lifecycle shift, and expanded test suite to 153 automated tests. | 🟢 Shipped & Verified (`v1.18.0`) |
 | **Cryptographic Credential Hashing & Compliance Matrix** | Domain-salted SHA-256 PIN hashing in `AuthProvider` purging plaintext credentials from storage, DPDP Act & ABDM healthcare compliance matrix, and expanded test suite to 155 automated tests. | 🟢 Shipped & Verified (`v1.19.0`) |
 | **Doctor-Configurable Free Review Policy (0–30 Days)** | Added configurable `freeReviewDays` on `Doctor` model (`0` to `30` days, default: `14`), owner configuration UI with preset choice chips, roster visibility badges, dynamic review eligibility engine evaluation, warning dialogs, and expanded test suite to 157 automated tests. | 🟢 Shipped & Verified (`v1.20.0`) |
+| **Mobile Responsive Doctor Chamber & Roster Tokens** | Responsive `LayoutBuilder` for `ChamberControlBanner`, adaptive 2-row `ChamberTokenCard` layout, and wrapping `ChamberQueueHeader` preventing horizontal `RenderFlex` overflows on mobile viewports (<650px); expanded test suite to 160 automated tests. | 🟢 Shipped & Verified (`v1.21.0`) |
+| **Strict 1:1 Paid-to-Review Cycle Enforcement** | Enforced strictly 1 free review per paid consultation within the doctor's configured `freeReviewDays` window; subsequent visits require paid consultation; prevents infinite review chaining; expanded test suite to 163 automated tests. | 🟢 Implemented & Verified |
 
 ---
 
 ## 🎯 3. Active Priority Backlog (Next Horizon)
 
-All primary operational priorities (P1 through P8) have been successfully implemented and verified across 157 automated tests. Future enhancements are proposed based on operational feedback from reception counters and consulting physicians.
+All primary operational priorities (P1 through P8) and review cycle enforcement have been successfully implemented and verified across 163 automated tests. Future enhancements and architectural debates are prioritized below:
 
 | Priority | Proposed Feature | Problem Solved | Acceptance Criteria |
 |---|---|---|---|
 | **P9** | **Prescription Template Presets** | Visiting doctors prescribe repetitive sets of medicines for common OPD conditions (e.g. URI, Acute Gastritis). | 1-tap favorite prescription template loader in Step 4 prescribing pipeline. |
 | **P10** | **Multi-Chamber Queue Sound Announcer** | Counter receptionist wants audible token chime (e.g. "Token 5, please proceed to Chamber 1") for waiting lobby. | Web audio chime synthesized on chamber call-in trigger. |
+| **P11** | **Prepaid Carry-Over & Doctor No-Show / Refund Protocol (RFC)** | Patient paid online/cash but didn't attend, OR consulting doctor canceled/absent. Current ledger has no formal carry-forward or refund state. | Formalized refund ledger (`PaymentType.refunded` / `refundAmount`) updating daily cash/UPI totals, or explicit carry-over token revalidation without double charging. |
+
+---
+
+## ⚖️ 4. Architectural RFCs & Active PM Debates
+
+The following clinical, financial, and operational dilemmas are under active product deliberation before code implementation:
+
+### 📋 RFC-1: Strict 1-Time Free Review Cycle Model
+- **Clinical Intent:** In Indian OPD practice, a "Free Review" exists exclusively to review lab reports, radiology, or drug tolerance resulting directly from an initial paid consultation. It is **never** an open-ended pass for unlimited free consultations.
+- **The Current Code Vulnerability:**
+  - `PatientReviewEligibility.calculate` sorts past visits and inspects only the *immediate preceding visit* (`pastVisitsWithDoctor.first`).
+  - If a patient visits on Day 1 (Paid), Day 5 (Free Review #1), Day 8 (Free Review #2), and Day 12 (Free Review #3), the current engine sees each visit as $\le 14$ days from the last and marks every single one as eligible for a free review!
+- **Core Requirements to Debate:**
+  1. **Strict 1:1 Relationship:** Each paid encounter (`paidCash`, `paidUpi`, `postPay` with collection) unlocks exactly **one (1)** free review token within the doctor's configured `freeReviewDays` window.
+  2. **Doctor-Paced Opt-In:** Free reviews only apply if the doctor has configured `freeReviewDays > 0`. If `freeReviewDays == 0`, free reviews are disabled completely.
+  3. **Consumption & Reset:** Once a free review is completed (`visitStatus == completed` with `PaymentType.freeReview`), that entitlement is permanently marked **consumed**. The next visit must be a paid visit, which subsequently unlocks a brand-new review cycle.
+
+### 💰 RFC-2: Prepaid Token Carry-Forward vs. Doctor No-Show Refund
+- **Scenario A: Patient Paid in Advance but Did Not Attend (Patient No-Show)**
+  - *Context:* Patient paid ₹500 via online UPI or advance counter payment, but could not make it to the clinic.
+  - *Dilemma:* Yesterday's token is closed as `absent`. If they arrive the next day:
+    - *Option 1 (Carry-Forward Token):* Reception selects "Revalidate Yesterday's Paid Token", generating today's token linked to yesterday's payment reference with ₹0 fresh collection.
+    - *Option 2 (Refund & Re-collect):* Yesterday's token is marked `refunded`, and today's token collects fresh payment.
+    - *Option 3 (Time-Bound Expiry):* Clinic policy forfeits the consultation fee if not rescheduled before the doctor's shift concludes.
+- **Scenario B: Doctor Did Not Show Up (Doctor Absence / Emergency Cancellation) After Patient Paid**
+  - *Context:* Patient physically checked in or paid online, but the consulting physician had an emergency or failed to conduct the OPD session.
+  - *Inviolable Rule:* **The patient MUST be refunded, and this financial reversal MUST be accurately reflected in the clinic register.**
+  - *Audit & Ledger Impact:*
+    - In accordance with the **Zero Deletions Invariant**, the appointment document cannot be deleted from Firestore.
+    - Its status must transition to a dedicated state (e.g., `AppointmentStatus.absent` or `VisitStatus.cancelled` with `refundStatus: 'refunded'`).
+    - The daily revenue calculation ([RevenueEngine](../lib/core/engines/revenue_engine.dart)) and end-of-day cash handover ([CashHandoverEngine](../lib/core/engines/cash_handover_engine.dart)) must deduct the refunded amount so the counter register matches physical cash in the drawer and doctor payouts are zeroed.
+    - If paid via UPI, a digital refund transaction ID must be captured for forensic audit.
 
 ---
 

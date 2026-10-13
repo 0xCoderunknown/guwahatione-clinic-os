@@ -437,5 +437,143 @@ void main() {
       expect(expired30.daysSinceLastVisit, 35);
       expect(expired30.message, contains('30 days have passed'));
     });
+
+    test('Strict 1:1 cycle: single free review allowed per paid visit; second review is consumed', () {
+      // Patient had a paid visit on Oct 5 (15 days ago), and used a Free Review on Oct 10 (10 days ago).
+      // On Oct 14 (within 14 days of paid visit Oct 5), trying to book another Free Review should be REJECTED.
+      final appts = [
+        Appointment(
+          id: 'appt-paid-1',
+          patientPhone: '9876543210',
+          patientName: 'Test Patient',
+          status: AppointmentStatus.completed,
+          paymentType: PaymentType.paidCash,
+          amountCollected: 500,
+          queueNumber: 1,
+          scheduledDate: DateTime(2026, 10, 5),
+          doctorId: doc1,
+          doctorName: 'Dr. Baruah',
+        ),
+        Appointment(
+          id: 'appt-review-1',
+          patientPhone: '9876543210',
+          patientName: 'Test Patient',
+          status: AppointmentStatus.completed,
+          paymentType: PaymentType.freeReview,
+          amountCollected: 0,
+          queueNumber: 2,
+          scheduledDate: DateTime(2026, 10, 10),
+          doctorId: doc1,
+          doctorName: 'Dr. Baruah',
+        ),
+      ];
+
+      final eligibility = PatientReviewEligibility.calculate(
+        appointments: appts,
+        doctorId: doc1,
+        targetDate: DateTime(2026, 10, 14), // 9 days after Oct 5
+        doctorName: 'Dr. Baruah',
+        allowedReviewDays: 14,
+      );
+
+      // Must be flagged as already consumed
+      expect(eligibility.hasVisitedDoctorEarlier, isTrue);
+      expect(eligibility.isReviewAlreadyConsumed, isTrue);
+      expect(eligibility.isWithinReviewPeriod, isFalse);
+      expect(eligibility.message, contains('Free review already used'));
+
+      // AppointmentEngine must suggest paidCash, not freeReview
+      final suggestedPayment = AppointmentEngine.suggestPaymentType(
+        patientHistory: appts,
+        doctorId: doc1,
+        targetDate: DateTime(2026, 10, 14),
+        freeReviewDays: 14,
+      );
+      expect(suggestedPayment, PaymentType.paidCash);
+    });
+
+    test('Subsequent paid consultation resets and unlocks a fresh single free review', () {
+      final appts = [
+        Appointment(
+          id: 'appt-paid-1',
+          patientPhone: '9876543210',
+          patientName: 'Test Patient',
+          status: AppointmentStatus.completed,
+          paymentType: PaymentType.paidCash,
+          amountCollected: 500,
+          queueNumber: 1,
+          scheduledDate: DateTime(2026, 10, 1),
+          doctorId: doc1,
+          doctorName: 'Dr. Baruah',
+        ),
+        Appointment(
+          id: 'appt-review-1',
+          patientPhone: '9876543210',
+          patientName: 'Test Patient',
+          status: AppointmentStatus.completed,
+          paymentType: PaymentType.freeReview,
+          amountCollected: 0,
+          queueNumber: 2,
+          scheduledDate: DateTime(2026, 10, 5),
+          doctorId: doc1,
+          doctorName: 'Dr. Baruah',
+        ),
+        Appointment(
+          id: 'appt-paid-2',
+          patientPhone: '9876543210',
+          patientName: 'Test Patient',
+          status: AppointmentStatus.completed,
+          paymentType: PaymentType.paidUpi,
+          amountCollected: 500,
+          queueNumber: 3,
+          scheduledDate: DateTime(2026, 10, 12), // Fresh paid consultation!
+          doctorId: doc1,
+          doctorName: 'Dr. Baruah',
+        ),
+      ];
+
+      final eligibility = PatientReviewEligibility.calculate(
+        appointments: appts,
+        doctorId: doc1,
+        targetDate: DateTime(2026, 10, 16), // 4 days after Oct 12
+        doctorName: 'Dr. Baruah',
+        allowedReviewDays: 14,
+      );
+
+      // New review cycle is unlocked by appt-paid-2
+      expect(eligibility.hasVisitedDoctorEarlier, isTrue);
+      expect(eligibility.isReviewAlreadyConsumed, isFalse);
+      expect(eligibility.isWithinReviewPeriod, isTrue);
+      expect(eligibility.daysSinceLastVisit, 4);
+      expect(eligibility.message, contains('Eligible for 14-day Free Review'));
+    });
+
+    test('Unpaid or non-fee visit (unpaid phone booking) does not unlock free review', () {
+      final appts = [
+        Appointment(
+          id: 'appt-unpaid-1',
+          patientPhone: '9876543210',
+          patientName: 'Test Patient',
+          status: AppointmentStatus.completed,
+          paymentType: PaymentType.unpaid,
+          amountCollected: 0,
+          queueNumber: 1,
+          scheduledDate: DateTime(2026, 10, 15),
+          doctorId: doc1,
+          doctorName: 'Dr. Baruah',
+        ),
+      ];
+
+      final eligibility = PatientReviewEligibility.calculate(
+        appointments: appts,
+        doctorId: doc1,
+        targetDate: today,
+        doctorName: 'Dr. Baruah',
+        allowedReviewDays: 14,
+      );
+
+      expect(eligibility.hasVisitedDoctorEarlier, isFalse);
+      expect(eligibility.isWithinReviewPeriod, isFalse);
+    });
   });
 }

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.22.0] — 13-10-2026
+
+### Strict 1:1 Paid-to-Review Cycle Enforcement & Roadmap RFC Expansion
+- **Single Free Review Enforcement (`lib/models/patient_review_eligibility.dart`):**
+  - Updated `PatientReviewEligibility.calculate` to anchor to the most recent paid visit (`latestPaidVisit`), scanning all interim visits for previous free review consumption.
+  - Prevents infinite free review chaining by setting `isReviewAlreadyConsumed: true` and `isWithinReviewPeriod: false` once a free review has been completed within the cycle.
+  - Formats date string in user alert with strict Indian format (`DD-MM-YYYY`).
+- **Booking Modal Guardrail (`lib/widgets/booking/add_appointment_dialog.dart`):**
+  - Displays amber warning banner when free review entitlement is consumed, and automatically resets payment selection to `paidCash` / doctor consultation fee.
+- **Cycle Reset on Fresh Consultation:**
+  - Verified that a subsequent paid visit restarts a brand-new single free review cycle.
+- **Product Roadmap & Architectural RFCs (`docs/PRODUCT_ROADMAP.md`):**
+  - Shipped and verified 1:1 Free Review enforcement in roadmap registry.
+  - Documented active PM debate for Prepaid Carry-Over & Doctor Absence Refund protocol (RFC-2) for zero-deletion financial reconciliation.
+- **Automated Test Coverage:**
+  - Added 3 comprehensive unit test suites in `test/patient_review_and_models_test.dart`, expanding passing suite to 163 automated tests.
+
+---
+
 ## [1.21.0] — 13-10-2026
 
 ### Mobile Responsive Doctor Chamber Layout & Roster Hardening

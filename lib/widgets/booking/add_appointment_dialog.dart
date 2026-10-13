@@ -536,6 +536,18 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
           _amountController.text =
               "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
         }
+      } else if (eligibility.isReviewAlreadyConsumed) {
+        final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
+        _historyColor = Colors.orange.shade100;
+        _historyInfo =
+            "Existing Patient • Paid visit on $dateStr\n⚠️ Free review already used for this consultation (1 review allowed per paid visit)";
+        if (_selectedPayment == PaymentType.freeReview) {
+          _selectedPayment = _selectedVisitStatus == VisitStatus.booked
+              ? PaymentType.unpaid
+              : PaymentType.paidCash;
+          _amountController.text =
+              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
+        }
       } else if (eligibility.allowedReviewDays == 0) {
         final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
         _historyColor = Colors.orange.shade100;
