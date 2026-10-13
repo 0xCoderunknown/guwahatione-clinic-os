@@ -32,6 +32,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   String? _activeCallingApptId;
   String? _lastHandledCallingAppointmentId;
   bool _isAutoNavigating = false;
+  bool _isConsultationOpen = false;
   List<Appointment> _latestAppointments = [];
 
   String _chamberStatus = 'idle';
@@ -94,7 +95,8 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
               session.activeAppointmentId != null &&
               session.activeAppointmentId!.isNotEmpty &&
               session.activeAppointmentId != _lastHandledCallingAppointmentId &&
-              !_isAutoNavigating) {
+              !_isAutoNavigating &&
+              !_isConsultationOpen) {
             _lastHandledCallingAppointmentId = session.activeAppointmentId!;
             _autoOpenConsultationForId(session.activeAppointmentId!);
           }
@@ -258,15 +260,22 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
       return;
     }
 
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (ctx) => ConsultationEncounterScreen(
-          appointment: appt,
-          doctor: widget.doctor,
+    if (_isConsultationOpen) return;
+    _isConsultationOpen = true;
+
+    try {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (ctx) => ConsultationEncounterScreen(
+            appointment: appt,
+            doctor: widget.doctor,
+          ),
         ),
-      ),
-    );
+      );
+    } finally {
+      _isConsultationOpen = false;
+    }
   }
 
   @override
@@ -313,8 +322,12 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
           // 1. AppointmentStatus.pending
           // 2. VisitStatus.waitingInLobby
           // 3. PaymentType != PaymentType.unpaid
-          // Strictly disabled on past dates and when active consultation is underway.
-          final doorEligibleTokens = (!_isToday || _chamberStatus == 'in_consultation')
+          // Strictly disabled on past dates and whenever chamber is already occupied or calling a patient.
+          final isChamberOccupied = _chamberStatus == 'in_consultation' ||
+              _chamberStatus == 'calling' ||
+              (_activeCallingApptId != null && _activeCallingApptId!.isNotEmpty);
+
+          final doorEligibleTokens = (!_isToday || isChamberOccupied)
               ? <Appointment>[]
               : appointments
                   .where((a) =>

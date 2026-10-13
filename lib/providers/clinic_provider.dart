@@ -474,17 +474,23 @@ class ClinicProvider with ChangeNotifier {
     required String doctorId,
     required DateTime date,
     required Appointment appointment,
+    bool forceOverride = false,
   }) async {
     try {
       await _chamberService.callTokenIntoChamber(
         doctorId: doctorId,
         date: date,
         appointment: appointment,
+        forceOverride: forceOverride,
       );
     } catch (e) {
       debugPrint('Error calling token into chamber: $e');
       rethrow;
     }
+  }
+
+  Stream<Map<String, ChamberSession>> streamAllChamberSessions(DateTime date) {
+    return _chamberService.streamAllChamberSessions(date);
   }
 
   Future<void> notifyConsultationEnded({

@@ -162,6 +162,7 @@ abstract class AppointmentEngine {
     required List<Appointment> appointments,
     String? activeAppointmentId,
     int? activeQueueNumber,
+    Set<String>? activeAppointmentIds,
   }) {
     final List<Appointment> completed = [];
     final List<Appointment> waiting = [];
@@ -181,7 +182,9 @@ abstract class AppointmentEngine {
                 a.id == activeAppointmentId) ||
             (activeAppointmentId == null &&
                 activeQueueNumber != null &&
-                a.queueNumber == activeQueueNumber);
+                a.queueNumber == activeQueueNumber) ||
+            (activeAppointmentIds != null &&
+                activeAppointmentIds.contains(a.id));
 
         if (matchesActive && inChamber == null) {
           inChamber = a;

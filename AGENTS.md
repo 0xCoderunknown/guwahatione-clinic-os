@@ -68,6 +68,13 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
     - If backward compatibility happens naturally without extra code or compromises, that is fine; if not, breaking clean is explicitly encouraged.
     - **MANDATORY:** Whenever a breaking change is introduced (schema mutation, model property shift, API signature rewrite), you MUST explicitly inform the Product Manager.
 
+11. **Single-Occupant Chamber Integrity & Collision Lock (Atomic Occupancy):**
+    - A consultation chamber is strictly single-occupant. At any given moment, exactly **zero or one** patient can be inside or actively called into a doctor's chamber.
+    - **Zero Pre-emption:** An active patient ($T_N$) undergoing consultation or being called can **never** be superseded or displaced by another token ($T_{N+1}$) from reception queue cards, accordion panels, or doctor door overrides.
+    - `ChamberService.callTokenIntoChamber` must atomically guard against overwriting an active session without explicit override.
+    - Doctor chamber workspace must lock consultation navigation (`_isConsultationOpen`) to prevent duplicate encounter modals from stacking or discarding the active encounter screen.
+    - Emergency door admission lists (`ChamberDoorOverrideBar`) and reception dispatch actions (`AccordionDispatchSection`, `DashboardQueueCard`) must be strictly locked whenever a chamber is occupied.
+
 ---
 
 ## 🏗️ 2. Architectural & Technical Stack Rules
@@ -105,6 +112,14 @@ You are being managed by a strict Product Manager. Follow this exact workflow:
   - Code compiles cleanly with `flutter analyze` (Zero errors, zero warnings).
   - All automated unit tests pass with `flutter test` (sub-second execution across pure domain engines and models).
   - No broken imports or deprecated Flutter APIs introduced.
+
+### Step 4: Code Review Guardrails for Chamber & Encounter Integrity
+When reviewing or authoring any code that touches queue, chamber, or encounters, you MUST verify:
+1. **Zero Pre-emption:** Can token $T_{N+1}$ displace token $T_N$? (Must be impossible in UI, service, and Firestore transaction).
+2. **Atomic Occupancy:** Does `callTokenIntoChamber` verify that the chamber is empty before assigning a new token?
+3. **Modal Lock:** Does the chamber screen protect against concurrent or re-entrant navigation (`_isConsultationOpen`)?
+4. **Door Override Lockout:** Are direct doctor door admissions disabled when a patient is already in the chamber or being called?
+5. **Multi-Doctor Queue Partitioning:** When viewing all doctors, are in-chamber patients across all practitioners segregated from lobby waiting lists?
 
 ---
 
@@ -144,5 +159,8 @@ docs/
 - ❌ **Using non-Indian date formats (e.g. `YYYY-MM-DD` or `MM/DD/YYYY`) in UI, printed prescriptions, changelogs, release notes, or any markdown documentation.** (Must strictly use `DD-MM-YYYY` or `DD-MM-YY`).
 - ❌ **Bypassing 3-tier role authorization or exposing owner settings (doctor CRUD, fee configuration) to reception or chamber PIN sessions.**
 - ❌ **Forcing patient chamber admission during an active consultation or doctor breather (`consultation_ended`) without explicit `ready_for_next` handshake.**
+- ❌ **Allowing chamber collisions or pre-empting an active token in chamber.** (Never allow Token $N+1$ to be called or admitted into a chamber that is actively `calling` or `in_consultation` with Token $N$).
+- ❌ **Stacking duplicate or secondary consultation encounter screens over an in-progress consultation.**
 - ❌ **Allowing live admissions, ready signals, or chamber operations on past historical dates.** (Must switch to immutable read-only mode).
 - ❌ **Exposing remote reservations (`VisitStatus.booked`) or uncollected dues (`PaymentType.unpaid`) in emergency door self-call lists.** (Strictly capped to top 1–2 verified lobby-checked-in patients).
+

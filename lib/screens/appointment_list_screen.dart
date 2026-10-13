@@ -192,13 +192,27 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                   );
                 }
 
-                // Fallback when viewing "All Doctors" across multiple practitioners
-                final queueView =
-                    AppointmentEngine.partitionQueueForReception(
-                  appointments: filtered,
-                );
+                // Streaming all chamber sessions across multiple practitioners when viewing "All Doctors"
+                return StreamBuilder<Map<String, ChamberSession>>(
+                  stream:
+                      clinicProvider.streamAllChamberSessions(_selectedDate),
+                  builder: (context, allSessionsSnap) {
+                    final sessions = allSessionsSnap.data ?? {};
+                    final activeIds = sessions.values
+                        .map((s) => s.activeAppointmentId)
+                        .where((id) => id != null && id.isNotEmpty)
+                        .cast<String>()
+                        .toSet();
 
-                return _buildQueueListView(queueView);
+                    final queueView =
+                        AppointmentEngine.partitionQueueForReception(
+                      appointments: filtered,
+                      activeAppointmentIds: activeIds,
+                    );
+
+                    return _buildQueueListView(queueView);
+                  },
+                );
               },
             ),
           ),

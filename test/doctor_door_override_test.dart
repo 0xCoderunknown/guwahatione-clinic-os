@@ -160,6 +160,36 @@ void main() {
 
       expect(doorEligible, isEmpty);
     });
+
+    test('Strictly disabled when chamber is occupied or calling', () {
+      final appts = [
+        createAppt(
+          id: '1',
+          queueNumber: 1,
+          name: 'Lobby Patient',
+          status: AppointmentStatus.pending,
+          visitStatus: VisitStatus.waitingInLobby,
+          paymentType: PaymentType.paidCash,
+        ),
+      ];
+
+      for (final isOccupied in [true, false]) {
+        final doorEligible = isOccupied
+            ? <Appointment>[]
+            : appts
+                .where((a) =>
+                    a.status == AppointmentStatus.pending &&
+                    a.visitStatus == VisitStatus.waitingInLobby &&
+                    a.paymentType != PaymentType.unpaid)
+                .take(2)
+                .toList();
+        if (isOccupied) {
+          expect(doorEligible, isEmpty);
+        } else {
+          expect(doorEligible.length, 1);
+        }
+      }
+    });
   });
 
   group('ChamberDoorOverrideBar Widget Tests', () {

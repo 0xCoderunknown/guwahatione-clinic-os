@@ -15,13 +15,35 @@ class ChamberService {
       _firestore.collection(FirestorePaths.counters);
 
   /// Broadcasts token calling event to doctor chamber screen.
+  /// Strictly rejects if chamber is already occupied by another active patient.
   Future<void> callTokenIntoChamber({
     required String doctorId,
     required DateTime date,
     required Appointment appointment,
+    bool forceOverride = false,
   }) async {
     final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);
-    await _countersRef.doc(chamberDocId).set({
+    final docRef = _countersRef.doc(chamberDocId);
+
+    if (!forceOverride) {
+      final snap = await docRef.get();
+      if (snap.exists) {
+        final currentData = snap.data();
+        final currentActiveId = currentData?['activeAppointmentId'] as String?;
+        final currentStatus = currentData?['status'] as String?;
+        final isOccupied = currentActiveId != null &&
+            currentActiveId.isNotEmpty &&
+            currentActiveId != appointment.id &&
+            (currentStatus == 'calling' || currentStatus == 'in_consultation');
+        if (isOccupied) {
+          throw StateError(
+            'Chamber is already occupied by Token #${currentData?['activeQueueNumber']} (${currentData?['patientName']}). Conclude active consultation before admitting next patient.',
+          );
+        }
+      }
+    }
+
+    await docRef.set({
       'doctorId': doctorId,
       'date': FirestorePaths.dateKey(date),
       'activeAppointmentId': appointment.id,
@@ -48,6 +70,28 @@ class ChamberService {
         doctorId: doctorId,
         date: date,
       );
+    });
+  }
+
+  /// Streams active chamber sessions across all doctors for a given date in real-time.
+  Stream<Map<String, ChamberSession>> streamAllChamberSessions(DateTime date) {
+    return _countersRef
+        .where('date', isEqualTo: FirestorePaths.dateKey(date))
+        .snapshots()
+        .map((snapshot) {
+      final map = <String, ChamberSession>{};
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final docId = data['doctorId'] as String?;
+        if (docId != null && docId.isNotEmpty) {
+          map[docId] = ChamberSession.fromMap(
+            data,
+            doctorId: docId,
+            date: date,
+          );
+        }
+      }
+      return map;
     });
   }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:appointment_app/core/engines/appointment_engine.dart';
 import 'package:appointment_app/models/models.dart';
 import 'package:appointment_app/providers/clinic_provider.dart';
 import 'package:appointment_app/widgets/widgets.dart';
@@ -431,6 +432,58 @@ void main() {
 
       expect(fakeProvider.calledToken, isTrue);
     });
+
+    testWidgets('Active consultation state locks SEND IN TO DOCTOR button with chamber occupied notice', (tester) async {
+      final fakeProvider = _TestClinicProvider();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<ClinicProvider>.value(
+          value: fakeProvider,
+          child: MaterialApp(
+            home: Scaffold(
+              body: AccordionDispatchSection(
+                appointment: testAppt,
+                isInChamber: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      fakeProvider.sessionController.add(ChamberSession(
+        doctorId: 'doc-1',
+        date: testAppt.scheduledDate,
+        status: 'in_consultation',
+        activeAppointmentId: 'other-appt',
+        activeQueueNumber: 1,
+        patientName: 'Occupant Patient',
+      ));
+      await tester.pump();
+
+      expect(find.text('Chamber Occupied (Token #1 Inside)'), findsOneWidget);
+      expect(find.textContaining('currently consulting'), findsOneWidget);
+
+      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      expect(button.onPressed, isNull);
+    });
+
+    test('AppointmentEngine.partitionQueueForReception segregates active in-chamber appointments even if status is pending', () {
+      final appt1 = testAppt.copyWith(id: 'appt-1', queueNumber: 1, visitStatus: VisitStatus.waitingInLobby);
+      final appt2 = testAppt.copyWith(id: 'appt-2', queueNumber: 2, visitStatus: VisitStatus.waitingInLobby);
+      final appt3 = testAppt.copyWith(id: 'appt-3', queueNumber: 3, visitStatus: VisitStatus.booked);
+
+      final partitioned = AppointmentEngine.partitionQueueForReception(
+        appointments: [appt1, appt2, appt3],
+        activeAppointmentIds: {'appt-1'},
+      );
+
+      expect(partitioned.inChamber, isNotNull);
+      expect(partitioned.inChamber!.id, 'appt-1');
+      expect(partitioned.waiting.length, 1);
+      expect(partitioned.waiting.first.id, 'appt-2');
+      expect(partitioned.booked.length, 1);
+      expect(partitioned.booked.first.id, 'appt-3');
+    });
   });
 }
 
@@ -449,6 +502,7 @@ class _TestClinicProvider extends ChangeNotifier implements ClinicProvider {
     required String doctorId,
     required DateTime date,
     required Appointment appointment,
+    bool forceOverride = false,
   }) async {
     calledToken = true;
   }

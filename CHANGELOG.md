@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.26.0] — 13-10-2026
+
+### Single-Occupant Chamber Integrity & AI Code Review Guardrails (Invariant #11)
+- **Atomic Chamber Occupancy Guard (`lib/services/chamber_service.dart`):**
+  - Updated `callTokenIntoChamber` with atomic concurrency verification: rejects dispatch with `StateError` if the chamber already has an active occupant (`calling` or `in_consultation`) unless explicitly overridden.
+  - Added `streamAllChamberSessions(DateTime date)` to stream all active doctor chamber sessions simultaneously for aggregate views.
+- **Reception Queue Multi-Doctor Chamber Isolation (`lib/screens/appointment_list_screen.dart` & `lib/core/engines/appointment_engine.dart`):**
+  - Extended `AppointmentEngine.partitionQueueForReception` to accept `activeAppointmentIds` set.
+  - In `AppointmentListScreen`, integrated `streamAllChamberSessions` so when "All Doctors" filter is selected, in-chamber patients across all practitioners are cleanly isolated and prevented from appearing as waiting lobby tokens.
+- **Doctor Chamber Modal & Door Collision Locks (`lib/screens/doctor_chamber_screen.dart`):**
+  - Added `_isConsultationOpen` re-entrance lock to prevent duplicate consultation encounter screens from stacking or overwriting an active consultation encounter if incoming calls arrive.
+  - Suppressed emergency door admissions (`ChamberDoorOverrideBar`) whenever chamber is in `calling`, `in_consultation`, or has an active occupant.
+- **Codified AI Rules & Guardrails (`AGENTS.md` & `.agents/rules/clinic_os_rules.md`):**
+  - Formulated **Invariant #11 (Single-Occupant Chamber Integrity & Collision Lock)**.
+  - Added **Step 4: Code Review Guardrails for Chamber & Encounter Integrity** to standard operating protocol.
+  - Added strict Codebase Red Lines banning token pre-emption and duplicate consultation screen stacking.
+- **Automated Verification Suite (`test/chamber_handshake_test.dart` & `test/doctor_door_override_test.dart`):**
+  - Added tests for in-consultation dispatch locking, `activeAppointmentIds` partition segregation, and occupied chamber door override suppression (172 passing tests).
+
+---
+
 ## [1.25.0] — 13-10-2026
 
 ### Enforce Doctor-Paced Chamber Handshake Protocol (Invariant #7)
