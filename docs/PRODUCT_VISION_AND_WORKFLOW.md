@@ -53,33 +53,19 @@ GuwahatiOne Clinic OS is built to focus on one primary role:
    10. Body is blank and organized into 3 fast, sequential sections:
 ```
 
-### Step-by-Step Chamber Flow:
+### Canonical 5-Step Clinical Encounter Pipeline:
 
-### Section A: Clinical Examination & Findings ("Add Findings")
-- The doctor clicks **"Add Findings"** to open a rapid entry block.
-- **Vitals & Clinical Data:** BP (Systolic/Diastolic), Random Blood Sugar (RBS), Pulse, Weight, Temperature, Chief Complaints, and Provisional Diagnosis.
-- When finished, the doctor clicks **"Close Findings"**. The section minimizes into a concise summary badge, keeping the screen clean and uncluttered.
+> ⚠️ **Note (Updated):** The original 3-section prototype description ("Section A: Findings", "Section B: Medications", "Section C: Tests") was superseded when the encounter was promoted to the formal 5-step pipeline in `v1.6.0`. The canonical encounter structure is defined in **AGENTS.md Invariant #3** and implemented in `lib/screens/consultation_encounter_screen.dart`.
 
-### Section B: Medication Prescribing ("Add Medicine")
-- The doctor clicks **"Add Medicine"**, revealing a focused, empty search bar.
-- **Autocomplete & Search:**
-  - Typing `Tel` immediately lists matches: *Telma 40*, *Telmisartan 40mg*, *Telmisartan 40mg + Amlodipine 5mg*, *Telmisartan 40mg + Metoprolol 25mg*.
-  - Even if the full brand name is typed, selecting it locks in the verified catalogue entry.
-- **Pre-filled Clinical Defaults:**
-  - Common outpatient medications follow standard regimens.
-  - As soon as *Telma 40* is selected, the system automatically reveals and pre-fills:
-    - **Dosage / Frequency:** `1 tablet - Morning (After food) [1-0-0]`
-    - **Duration:** `30 Days` (or chronic `To be continued`)
-  - **Regimen Adjustment:** Prescription defaults populate automatically; doctors adjust fields only when deviating from standard regimens.
-- When prescribing is complete, the doctor clicks **"Close Medicine"**.
-
-### Section C: Diagnostic Investigations ("Tests Section")
-- Allows the doctor to:
-  - **Order New Tests:** E.g., CBC, Fasting Blood Sugar, Lipid Profile, Thyroid Panel, ECG.
-  - **Record External Findings:** If the patient brought test reports from an outside diagnostic center, the doctor can quickly document key baseline values.
+- **Step 1 — Patient Header & Allergies Alert Banner:** Displays patient demographics, longitudinal history button, and critical allergy alert chips.
+- **Step 2 — Vitals & Clinical Examination:** Rapid inline entry of BP, RBS, Pulse, Weight, Temperature, SpO₂, Chief Complaints, and Provisional Diagnosis. Collapsible into a compact summary badge strip after entry.
+- **Step 3 — Diagnostic Investigations Review:** Review of past lab reports brought by the patient with recorded values and dates.
+- **Step 4 — Medication Reconciliation & Prescribing:** Inline search-and-add with `START` / `CONTINUE` / `STOP` reconciliation states and pre-filled clinical defaults. Collapsible into a compact prescription summary strip.
+- **Step 5 — Diagnostic Orders & Follow-Up Advice:** New test orders, lifestyle/diet advice, and recommended follow-up interval.
 
 ### Completion & Output:
 - 1-click **"Complete & Print"** outputs a standardized, high-contrast monochrome prescription (A4 or A5) designed to fit clinic letterheads without wasting ink or paper.
+
 
 ---
 
@@ -123,7 +109,7 @@ OPD physicians in India have distinct prescribing habits based on training and s
 | **Generic / Composition Centric** | Thinks pharmacologically in active chemical salts (*Telmisartan 40mg*, *Paracetamol 650mg*, *Pantoprazole 40mg*). | Autocomplete highlights salt composition and provides one-tap chips for associated brand formulations. |
 | **Personal Formulary Centric** | Routinely prescribes a curated subset of 15–30 medicines. | Quick-access favorite chips appear above the search bar for zero-typing selection. |
 
-> **Architecture Principle:** The system will support a per-doctor configuration toggle (`searchMode: brandFirst | compositionFirst | favoritesFirst`) while keeping the global catalogue normalized.
+> **Architecture Principle:** The system supports a per-doctor configuration field (`searchPreference: 'brandFirst' | 'compositionFirst'`) keeping the global catalogue normalized. A `favoritesFirst` mode is under consideration as a future backlog item (**P9**+) and must be formally specced in `docs/SCHEMA_AND_MODELS.md` before implementation.
 
 ---
 

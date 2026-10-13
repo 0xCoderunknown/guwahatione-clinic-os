@@ -40,7 +40,7 @@ When making code changes:
 
 1. Run `flutter analyze` and `flutter test` — zero analyzer warnings and all automated tests passing required before committing.
 2. Format changed Dart files with `dart format <paths>`. Avoid formatting the entire repository until the existing formatting baseline is clean.
-3. Add a concise entry under `[Unreleased]` in `CHANGELOG.md` for user-visible or behavioral changes.
+3. Add a new versioned section at the top of `CHANGELOG.md` for user-visible or behavioral changes, using the actual format: `## [x.y.z] — DD-MM-YYYY` (Indian date format — never `YYYY-MM-DD`). When `CHANGELOG.md` exceeds ~40 entries, move the oldest entries to `docs/archive/CHANGELOG_ARCHIVE.md`.
 4. Keep models free of UI dependencies. Some current models use Firestore `Timestamp` for serialization; do not change that boundary without updating the schema and service contracts.
 5. Keep Firestore access in modular services (`lib/services/`) and delegate business policy to pure domain engines (`lib/core/engines/`).
 6. Do not add dev-session markers (`// NEW:`, `// <---`) or uppercase section labels (`// HEADER ROW`) without a clear need.
@@ -61,13 +61,14 @@ utils/        ← constants and platform adapters
 
 ### Planned Features & Roadmap Status
 
+For the authoritative backlog, see [`docs/PRODUCT_ROADMAP.md §3`](docs/PRODUCT_ROADMAP.md). Current active backlog:
+
 - [x] Doctor signature & medical registration stamp on printout (P5) — *Shipped v1.14.0*
 - [x] Offline queue fallback cache for transient network dropouts (P6) — *Shipped v1.15.0*
 - [x] WhatsApp prescription deep link (`wa.me`) at counter (P7) — *Shipped v1.15.0*
 - [x] Daily end-of-day financial handover reconciliation (P8) — *Shipped v1.15.0*
-- [ ] Doctor leave / blocked-dates management UI (P9)
-- [ ] Searchable longitudinal patient directory & timeline view (P10)
-- [ ] Edit doctor profile & chamber configuration UI
-- [ ] Move `blockedDates` from `AppConstants` to dynamic Firestore collection
-- [ ] Dark mode support across counter and chamber displays
+- [x] Strict 1:1 paid-to-free-review cycle enforcement — *Shipped v1.22.0*
+- [ ] Prescription Template Presets for common OPD conditions (P9)
+- [ ] Multi-Chamber Queue Sound Announcer — audible token chime (P10)
+- [ ] Prepaid Carry-Over & Doctor No-Show Refund Protocol (P11) — see RFC-2 in PRODUCT_ROADMAP.md
 

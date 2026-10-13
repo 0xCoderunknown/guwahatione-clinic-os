@@ -160,6 +160,8 @@ In your Firebase Console, the following collections are utilized:
 | `counters` | Atomic sequence counters for daily queue numbering (`queue_{doctorId}_{date}`) and real-time chamber calling sync (`chamber_{doctorId}_{date}`) |
 | `consultations` | Append-only longitudinal consultation encounters per patient |
 | `medicines` | Master clinical catalogue of chemical compositions, brands, and strengths |
+| `appointment_events` | Immutable forensic audit trail — every appointment lifecycle state shift (created, checked-in, admitted, completed, absent) |
+| `clinic_config` | Clinic-wide settings and SHA-256 hashed Owner Master PIN (`settings` document) |
 
 **Firestore Indexes Configuration**:
 Index definitions are tracked in [`firestore.indexes.json`](firestore.indexes.json) and linked via `firebase.json`:
@@ -351,7 +353,7 @@ The repository maintains an active automated testing suite covering domain busin
 flutter test
 ```
 
-- **157 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, doctor-configurable free review eligibility terms (0 to 30 days), prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, atomic booking concurrency locks, forensic append-only audit trail logging, and print schedule segregation with 100% pass rate.
+- **172 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, doctor-configurable free review eligibility terms (0 to 30 days), prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, atomic booking concurrency locks, forensic append-only audit trail logging, chamber collision locks & single-occupant integrity, and print schedule segregation with 100% pass rate.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---

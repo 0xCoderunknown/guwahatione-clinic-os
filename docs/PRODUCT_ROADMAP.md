@@ -76,12 +76,13 @@ All primary operational priorities (P1 through P8) and review cycle enforcement 
 
 The following clinical, financial, and operational dilemmas are under active product deliberation before code implementation:
 
-### 📋 RFC-1: Strict 1-Time Free Review Cycle Model
+### 📋 RFC-1: Strict 1-Time Free Review Cycle Model — ✅ Resolved in `v1.22.0`
+> **Status:** Implemented and verified. See `CHANGELOG.md [1.22.0]` and `lib/models/patient_review_eligibility.dart`. Preserved below for historical context — do **not** treat as an open bug or active debate.
 - **Clinical Intent:** In Indian OPD practice, a "Free Review" exists exclusively to review lab reports, radiology, or drug tolerance resulting directly from an initial paid consultation. It is **never** an open-ended pass for unlimited free consultations.
-- **The Current Code Vulnerability:**
-  - `PatientReviewEligibility.calculate` sorts past visits and inspects only the *immediate preceding visit* (`pastVisitsWithDoctor.first`).
-  - If a patient visits on Day 1 (Paid), Day 5 (Free Review #1), Day 8 (Free Review #2), and Day 12 (Free Review #3), the current engine sees each visit as $\le 14$ days from the last and marks every single one as eligible for a free review!
-- **Core Requirements to Debate:**
+- **~~The Current Code Vulnerability~~ (Resolved in v1.22.0):**
+  - ~~`PatientReviewEligibility.calculate` sorts past visits and inspects only the *immediate preceding visit* (`pastVisitsWithDoctor.first`).~~
+  - ~~If a patient visits on Day 1 (Paid), Day 5 (Free Review #1), Day 8 (Free Review #2), and Day 12 (Free Review #3), the current engine sees each visit as $\le 14$ days from the last and marks every single one as eligible for a free review!~~
+- **Implemented Solution:**
   1. **Strict 1:1 Relationship:** Each paid encounter (`paidCash`, `paidUpi`, `postPay` with collection) unlocks exactly **one (1)** free review token within the doctor's configured `freeReviewDays` window.
   2. **Doctor-Paced Opt-In:** Free reviews only apply if the doctor has configured `freeReviewDays > 0`. If `freeReviewDays == 0`, free reviews are disabled completely.
   3. **Consumption & Reset:** Once a free review is completed (`visitStatus == completed` with `PaymentType.freeReview`), that entitlement is permanently marked **consumed**. The next visit must be a paid visit, which subsequently unlocks a brand-new review cycle.

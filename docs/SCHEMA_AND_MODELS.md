@@ -91,21 +91,20 @@
 | `currentNumber` | `int` | Current highest issued queue number for the day. |
 
 ### B. Chamber Calling Session
-- **Document ID:** `chamber_{doctorId}_{yyyy-MM-dd}`
+- **Document ID:** `chamber_{doctorId}_{yyyy-MM-dd}` (stored inside `counters` collection via `FirestorePaths.chamberSyncDoc`)
 - **Purpose:** Real-time sync document listened to by Doctor Chamber Screen for automatic encounter loading when reception calls a token.
+- **Model:** `ChamberSession` (`lib/models/chamber_session.dart`). Zero SDK leaks to UI presentation layer.
 
-| Field | Type | Description |
-|---|---|---|
-| `activeAppointmentId` | `String?` | Appointment ID currently called into the chamber. |
-| `activeQueueNumber` | `int?` | Token number currently called into the chamber. |
-| `patientName` | `String?` | Name of the patient called. |
-| `patientPhone` | `String?` | Phone of the patient called. |
-| `lastCompletedQueueNumber` | `int?` | Token number of consultation that just concluded. |
-| `lastCompletedPatientName` | `String?` | Name of patient whose consultation just concluded. |
-| `calledAt` | `Timestamp?` | Timestamp when reception clicked Call In. |
-| `readyAt` | `Timestamp?` | Timestamp when doctor clicked "NEXT PATIENT". |
-| `endedAt` | `Timestamp?` | Timestamp when doctor clicked "CONSULTATION END". |
-| `status` | `String` | `'idle'`, `'consultation_ended'`, `'ready_for_next'`, `'calling'`, or `'in_consultation'`. |
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `doctorId` | `String` | Yes | Doctor identifier. Deserialized by `ChamberSession.fromMap`. |
+| `status` | `String` | Yes | `'idle'`, `'ready_for_next'`, `'calling'`, `'in_consultation'`, `'consultation_ended'`. |
+| `activeAppointmentId` | `String?` | No | Appointment ID currently called into the chamber. |
+| `activeQueueNumber` | `int?` | No | Token number currently called into the chamber. |
+| `patientName` | `String?` | No | Name of the patient called or consulting. |
+| `patientPhone` | `String?` | No | Contact number of the patient called or consulting. |
+| `lastCompletedQueueNumber` | `int?` | No | Token number of consultation that just concluded. |
+| `lastCompletedPatientName` | `String?` | No | Name of patient whose consultation just concluded. |
 
 ---
 
@@ -225,27 +224,6 @@
 
 ---
 
-## 🚪 8. `chamber_sessions` Collection (Real-Time Chamber Handshake)
-
-- **Document ID:** `chamber_{doctorId}_{yyyy-MM-dd}`
-- **Purpose:** Real-time state coordination between Reception desk dispatch and Doctor consultation chamber.
-- **Model:** `ChamberSession` (`lib/models/chamber_session.dart`). Zero SDK leaks to UI presentation layer.
-
-### Fields
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `doctorId` | `String` | Yes | Doctor identifier. |
-| `status` | `String` | Yes | `'idle'`, `'ready_for_next'`, `'calling'`, `'in_consultation'`, `'consultation_ended'`. |
-| `activeAppointmentId` | `String?` | No | Currently called or active appointment ID inside chamber. |
-| `activeQueueNumber` | `int?` | No | Currently called or active queue token number. |
-| `patientName` | `String?` | No | Patient currently called or consulting. |
-| `patientPhone` | `String?` | No | Contact number of active patient. |
-| `lastCompletedQueueNumber` | `int?` | No | Most recently concluded token number. |
-| `lastCompletedPatientName` | `String?` | No | Name of most recently concluded patient. |
-| `updatedAt` | `FieldValue` | Yes | Server timestamp of state transition. |
-
----
-
 ## 📜 8. `appointment_events` Collection (Forensic Audit Trail)
 
 - **Document ID:** Auto-generated UID.
@@ -264,7 +242,6 @@
 | `timestamp` | `Timestamp` | Yes | Immutable event occurrence timestamp. |
 | `note` | `String?` | No | Operational audit note (e.g. `'Patient checked into lobby desk'`). |
 
----
 
 ## 🔒 9. Composite Invariants & Business Logic Contracts
 

@@ -3,6 +3,15 @@
 Historical release notes for GuwahatiOne Clinic OS prior to v1.15.0.  
 For active and recent release notes, see the root [CHANGELOG.md](../../CHANGELOG.md).
 
+> ⚠️ **Note for AI Agents & Developers:** Some widget and file names referenced in entries below were **renamed or merged** during the v1.16.5 architectural consolidation. Notably:
+> - `lib/widgets/common/doctor_form.dart` → merged into `lib/screens/add_doctor_screen.dart`
+> - `PrintClinicalSnapshot` → merged into `PrintHeaderAndDemographics`
+> - `DoctorRosterCard` → merged into `DoctorListScreen`
+> - `DoctorStatisticsCard` → merged into `StatisticsScreen`
+> - `VitalsInputGrid` → merged into `VitalsAndExamSection`
+>
+> See `CHANGELOG.md [1.16.5]` for the complete list of retired files. Do **not** create or restore these files.
+
 ---
 
 ## [1.14.0] — 11-10-2026
