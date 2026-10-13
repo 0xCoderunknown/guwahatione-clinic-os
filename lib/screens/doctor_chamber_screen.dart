@@ -55,8 +55,10 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   }
 
   bool get _isToday => DateUtils.isSameDay(_selectedDate, DateTime.now());
+
   bool get _isPastDate =>
       _selectedDate.isBefore(DateUtils.dateOnly(DateTime.now()));
+
   String get _queueHeaderTitle =>
       _isPastDate ? "Past Session Roster" : "Today's Patient Queue";
 
@@ -83,8 +85,9 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
 
           setState(() {
             _chamberStatus = session.status;
-            _activeCallingApptId =
-                session.hasActivePatient ? session.activeAppointmentId : null;
+            _activeCallingApptId = session.hasActivePatient
+                ? session.activeAppointmentId
+                : null;
             _activeQueueNumber = session.activeQueueNumber;
             _activePatientName = session.patientName;
             _lastCompletedQueueNumber = session.lastCompletedQueueNumber;
@@ -323,19 +326,23 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
           // 2. VisitStatus.waitingInLobby
           // 3. PaymentType != PaymentType.unpaid
           // Strictly disabled on past dates and whenever chamber is already occupied or calling a patient.
-          final isChamberOccupied = _chamberStatus == 'in_consultation' ||
+          final isChamberOccupied =
+              _chamberStatus == 'in_consultation' ||
               _chamberStatus == 'calling' ||
-              (_activeCallingApptId != null && _activeCallingApptId!.isNotEmpty);
+              (_activeCallingApptId != null &&
+                  _activeCallingApptId!.isNotEmpty);
 
           final doorEligibleTokens = (!_isToday || isChamberOccupied)
               ? <Appointment>[]
               : appointments
-                  .where((a) =>
-                      a.status == AppointmentStatus.pending &&
-                      a.visitStatus == VisitStatus.waitingInLobby &&
-                      a.paymentType != PaymentType.unpaid)
-                  .take(2)
-                  .toList();
+                    .where(
+                      (a) =>
+                          a.status == AppointmentStatus.pending &&
+                          a.visitStatus == VisitStatus.waitingInLobby &&
+                          a.paymentType != PaymentType.unpaid,
+                    )
+                    .take(2)
+                    .toList();
 
           return RefreshIndicator(
             onRefresh: () async => setState(() {}),

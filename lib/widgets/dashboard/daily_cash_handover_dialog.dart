@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/engines/engines.dart';
 import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
@@ -20,20 +21,14 @@ class DailyCashHandoverDialog extends StatefulWidget {
   }
 
   @override
-  State<DailyCashHandoverDialog> createState() => _DailyCashHandoverDialogState();
+  State<DailyCashHandoverDialog> createState() =>
+      _DailyCashHandoverDialogState();
 }
 
 class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
   // Common Indian Currency Denominations
   final List<int> _denominations = const [500, 200, 100, 50, 20, 10];
-  final Map<int, int> _counts = {
-    500: 0,
-    200: 0,
-    100: 0,
-    50: 0,
-    20: 0,
-    10: 0,
-  };
+  final Map<int, int> _counts = {500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0};
 
   late final Map<int, TextEditingController> _controllers;
 
@@ -41,8 +36,7 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
   void initState() {
     super.initState();
     _controllers = {
-      for (final d in _denominations)
-        d: TextEditingController(text: '0'),
+      for (final d in _denominations) d: TextEditingController(text: '0'),
     };
   }
 
@@ -69,7 +63,9 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
       date: now,
     );
 
-    final physicalTotal = CashHandoverEngine.calculateDenominationTotal(_counts);
+    final physicalTotal = CashHandoverEngine.calculateDenominationTotal(
+      _counts,
+    );
     final discrepancy = CashHandoverEngine.calculateDiscrepancy(
       physicalCounted: physicalTotal,
       expectedCash: summary.totalRealizedCash,
@@ -142,7 +138,9 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                       children: [
                         _buildSummaryCard(
                           title: 'Expected Cash',
-                          value: AppFormatters.currency(summary.totalRealizedCash),
+                          value: AppFormatters.currency(
+                            summary.totalRealizedCash,
+                          ),
                           color: const Color(0xFF047857),
                           bgColor: const Color(0xFFECFDF5),
                           icon: Icons.payments_rounded,
@@ -158,7 +156,8 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                         const SizedBox(width: 12),
                         _buildSummaryCard(
                           title: 'Paid / Free',
-                          value: '${summary.totalPaidCount} / ${summary.totalFreeReviewCount + summary.totalFreeFamilyCount}',
+                          value:
+                              '${summary.totalPaidCount} / ${summary.totalFreeReviewCount + summary.totalFreeFamilyCount}',
                           color: const Color(0xFF6B21A8),
                           bgColor: const Color(0xFFFAF5FF),
                           icon: Icons.pie_chart_rounded,
@@ -193,7 +192,9 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                             )
                           : Table(
                               border: TableBorder.symmetric(
-                                inside: const BorderSide(color: Color(0xFFF1F5F9)),
+                                inside: const BorderSide(
+                                  color: Color(0xFFF1F5F9),
+                                ),
                               ),
                               columnWidths: const {
                                 0: FlexColumnWidth(3),
@@ -221,9 +222,13 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                                       _buildTd(row.doctorName, isBold: true),
                                       _buildTd('${row.completedCount}'),
                                       _buildTd('${row.paidCount}'),
-                                      _buildTd('${row.freeReviewCount + row.freeFamilyCount}'),
                                       _buildTd(
-                                        AppFormatters.currency(row.cashCollected),
+                                        '${row.freeReviewCount + row.freeFamilyCount}',
+                                      ),
+                                      _buildTd(
+                                        AppFormatters.currency(
+                                          row.cashCollected,
+                                        ),
                                         isBold: true,
                                         color: const Color(0xFF047857),
                                       ),
@@ -249,7 +254,10 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                         ),
                         TextButton.icon(
                           icon: const Icon(Icons.refresh_rounded, size: 16),
-                          label: const Text('Reset Counts', style: TextStyle(fontSize: 12)),
+                          label: const Text(
+                            'Reset Counts',
+                            style: TextStyle(fontSize: 12),
+                          ),
                           onPressed: () {
                             setState(() {
                               for (final d in _denominations) {
@@ -283,10 +291,14 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                                     children: [
                                       Container(
                                         width: 54,
-                                        padding: const EdgeInsets.symmetric(vertical: 6),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 6,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFE2E8F0),
-                                          borderRadius: BorderRadius.circular(6),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                         ),
                                         child: Text(
                                           '₹$denom',
@@ -298,7 +310,10 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      const Text('×', style: TextStyle(color: Colors.grey)),
+                                      const Text(
+                                        '×',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: SizedBox(
@@ -312,7 +327,8 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                                               border: OutlineInputBorder(),
                                               isDense: true,
                                             ),
-                                            onChanged: (val) => _onCountChanged(denom, val),
+                                            onChanged: (val) =>
+                                                _onCountChanged(denom, val),
                                           ),
                                         ),
                                       ),
@@ -335,7 +351,10 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                                   children: [
                                     const Text(
                                       'Counted Physical Total:',
-                                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
                                     ),
                                     Text(
                                       AppFormatters.currency(physicalTotal),
@@ -376,7 +395,10 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF0F172A),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                     ),
                     icon: const Icon(Icons.print_rounded, size: 18),
                     label: const Text('Print Handover Slip'),
@@ -385,7 +407,10 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                   FilledButton(
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFF0F172A),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
                     ),
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Close'),
@@ -460,7 +485,11 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_circle_rounded, color: Color(0xFF15803D), size: 18),
+            Icon(
+              Icons.check_circle_rounded,
+              color: Color(0xFF15803D),
+              size: 18,
+            ),
             SizedBox(width: 6),
             Text(
               '₹0 Difference • Balanced',
@@ -476,8 +505,12 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
     }
 
     final isShortage = discrepancy < 0;
-    final color = isShortage ? const Color(0xFFB91C1C) : const Color(0xFFD97706);
-    final bgColor = isShortage ? const Color(0xFFFEE2E2) : const Color(0xFFFEF3C7);
+    final color = isShortage
+        ? const Color(0xFFB91C1C)
+        : const Color(0xFFD97706);
+    final bgColor = isShortage
+        ? const Color(0xFFFEE2E2)
+        : const Color(0xFFFEF3C7);
     final text = isShortage
         ? 'Shortage: -${AppFormatters.currency(discrepancy.abs())}'
         : 'Surplus: +${AppFormatters.currency(discrepancy)}';
@@ -493,7 +526,9 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            isShortage ? Icons.warning_amber_rounded : Icons.info_outline_rounded,
+            isShortage
+                ? Icons.warning_amber_rounded
+                : Icons.info_outline_rounded,
             color: color,
             size: 18,
           ),

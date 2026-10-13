@@ -69,5 +69,6 @@ class TemplateApplicationResult {
   });
 
   bool get hasSkipped => skippedDuplicates.isNotEmpty;
+
   bool get hasAdded => addedItems.isNotEmpty;
 }

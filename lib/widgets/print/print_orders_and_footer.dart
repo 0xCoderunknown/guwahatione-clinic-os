@@ -122,7 +122,8 @@ class PrintOrdersAndFooter extends StatelessWidget {
                     fontSize: 12,
                   ),
                 ),
-                if ((doctorRegNumber != null && doctorRegNumber!.trim().isNotEmpty) ||
+                if ((doctorRegNumber != null &&
+                        doctorRegNumber!.trim().isNotEmpty) ||
                     (consultation.doctorRegNumber != null &&
                         consultation.doctorRegNumber!.trim().isNotEmpty)) ...[
                   const SizedBox(height: 1),

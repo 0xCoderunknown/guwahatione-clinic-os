@@ -11,7 +11,8 @@ class Doctor {
   final int consultationFee; // Default consultation fee in INR
   final int freeReviewDays; // Free review policy window in days (0 to 30; 0 = no free review)
   final String searchPreference; // 'brandFirst' | 'compositionFirst'
-  final String? medicalRegNumber; // State Medical Council / NMC Reg No. (e.g. 'AMC-24891')
+  final String?
+  medicalRegNumber; // State Medical Council / NMC Reg No. (e.g. 'AMC-24891')
 
   Doctor({
     required this.id,
@@ -51,12 +52,15 @@ class Doctor {
       phone: json['phone'] as String? ?? '',
       availableDays: List<String>.from(json['availableDays'] ?? []),
       blockedDates:
-          (json['blockedDates'] as List<dynamic>?)?.map((d) {
-            if (d is Timestamp) return d.toDate();
-            if (d is DateTime) return d;
-            if (d is String) return DateTime.tryParse(d);
-            return null;
-          }).whereType<DateTime>().toList() ??
+          (json['blockedDates'] as List<dynamic>?)
+              ?.map((d) {
+                if (d is Timestamp) return d.toDate();
+                if (d is DateTime) return d;
+                if (d is String) return DateTime.tryParse(d);
+                return null;
+              })
+              .whereType<DateTime>()
+              .toList() ??
           [],
       pin: json['pin'] as String? ?? '1234',
       consultationFee: (json['consultationFee'] as num?)?.toInt() ?? 500,
@@ -94,4 +98,3 @@ class Doctor {
     );
   }
 }
-

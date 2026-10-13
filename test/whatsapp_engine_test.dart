@@ -1,14 +1,23 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/core/engines/whatsapp_engine.dart';
 import 'package:appointment_app/models/models.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('WhatsAppEngine Tests (P7)', () {
     test('normalizeIndianPhone handles multiple common phone formats', () {
       expect(WhatsAppEngine.normalizeIndianPhone('9876543210'), '919876543210');
-      expect(WhatsAppEngine.normalizeIndianPhone('+91 98765 43210'), '919876543210');
-      expect(WhatsAppEngine.normalizeIndianPhone('09876543210'), '919876543210');
-      expect(WhatsAppEngine.normalizeIndianPhone('919876543210'), '919876543210');
+      expect(
+        WhatsAppEngine.normalizeIndianPhone('+91 98765 43210'),
+        '919876543210',
+      );
+      expect(
+        WhatsAppEngine.normalizeIndianPhone('09876543210'),
+        '919876543210',
+      );
+      expect(
+        WhatsAppEngine.normalizeIndianPhone('919876543210'),
+        '919876543210',
+      );
     });
 
     test('formatPrescriptionMessage strictly enforces Indian date format and full clinical summary', () {
@@ -100,7 +109,10 @@ void main() {
 
       // Verify Advice & Free Review window
       expect(msg, contains('Low sodium diet'));
-      expect(msg, contains('Within 14 days qualifies for Free Follow-Up Review'));
+      expect(
+        msg,
+        contains('Within 14 days qualifies for Free Follow-Up Review'),
+      );
     });
 
     test('buildDeepLink creates valid wa.me link with URL-encoded text', () {

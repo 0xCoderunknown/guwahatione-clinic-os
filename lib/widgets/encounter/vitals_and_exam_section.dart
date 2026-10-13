@@ -39,7 +39,9 @@ class VitalsAndExamSection extends StatelessWidget {
                 size: 18,
               ),
               label: Text(
-                form.isFindingsExpanded ? 'Close Findings' : 'Add / Edit Findings',
+                form.isFindingsExpanded
+                    ? 'Close Findings'
+                    : 'Add / Edit Findings',
               ),
               onPressed: () {
                 form.isFindingsExpanded = !form.isFindingsExpanded;

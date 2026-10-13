@@ -37,11 +37,14 @@ class ChamberMetricsGrid extends StatelessWidget {
   }) {
     final kpis = RevenueEngine.calculateChamberKpis(appointments);
 
-    final absentCount = appointments.where((a) =>
-        a.status == AppointmentStatus.absent ||
-        a.visitStatus == VisitStatus.cancelled ||
-        (isPastDate && a.visitStatus != VisitStatus.completed)
-    ).length;
+    final absentCount = appointments
+        .where(
+          (a) =>
+              a.status == AppointmentStatus.absent ||
+              a.visitStatus == VisitStatus.cancelled ||
+              (isPastDate && a.visitStatus != VisitStatus.completed),
+        )
+        .length;
 
     final waitingCount = isPastDate ? 0 : kpis.waitingCount;
 
@@ -65,7 +68,9 @@ class ChamberMetricsGrid extends StatelessWidget {
       ChamberMetricTile(
         title: "Total Tokens",
         value: "$totalBooked",
-        subtitle: isPastDate ? "Shift completed" : "$waitingCount still in queue",
+        subtitle: isPastDate
+            ? "Shift completed"
+            : "$waitingCount still in queue",
         icon: Icons.confirmation_number_outlined,
         color: Colors.blue,
       ),

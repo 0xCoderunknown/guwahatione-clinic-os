@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../models/medicine.dart';
 import '../../../core/engines/engines.dart';
+import '../../../models/medicine.dart';
 import '../encounter_form_state.dart';
 
 /// Form banner displaying the staged medication with prefilled OPD defaults and quick dosage controls.

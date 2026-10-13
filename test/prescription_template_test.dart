@@ -1,53 +1,67 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/core/engines/medicine_engine.dart';
 import 'package:appointment_app/models/prescription_item.dart';
 import 'package:appointment_app/models/prescription_template.dart';
 import 'package:appointment_app/widgets/encounter/encounter_form_state.dart';
 import 'package:appointment_app/widgets/encounter/rx/rx_template_presets_bar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('PrescriptionTemplate Domain & MedicineEngine Tests', () {
-    test('Default templates list is populated with standard clinical presets', () {
-      final templates = MedicineEngine.getDefaultPrescriptionTemplates();
-      expect(templates.isNotEmpty, isTrue);
-      expect(templates.length, greaterThanOrEqualTo(5));
+    test(
+      'Default templates list is populated with standard clinical presets',
+      () {
+        final templates = MedicineEngine.getDefaultPrescriptionTemplates();
+        expect(templates.isNotEmpty, isTrue);
+        expect(templates.length, greaterThanOrEqualTo(5));
 
-      final uri = templates.firstWhere((t) => t.id == 'tmpl_uri_flu');
-      expect(uri.name, 'URI / Pharyngitis');
-      expect(uri.emoji, '🤧');
-      expect(uri.items.length, greaterThanOrEqualTo(3));
-      expect(uri.items.any((i) => i.medicineName.contains('Dolo')), isTrue);
-      expect(uri.items.any((i) => i.medicineName.contains('Levocet')), isTrue);
+        final uri = templates.firstWhere((t) => t.id == 'tmpl_uri_flu');
+        expect(uri.name, 'URI / Pharyngitis');
+        expect(uri.emoji, '🤧');
+        expect(uri.items.length, greaterThanOrEqualTo(3));
+        expect(uri.items.any((i) => i.medicineName.contains('Dolo')), isTrue);
+        expect(
+          uri.items.any((i) => i.medicineName.contains('Levocet')),
+          isTrue,
+        );
 
-      final gastritis = templates.firstWhere((t) => t.id == 'tmpl_acute_gastritis');
-      expect(gastritis.name, 'Acute Gastritis');
-      expect(gastritis.emoji, '🔥');
-      expect(gastritis.items.any((i) => i.medicineName.contains('Pan 40')), isTrue);
-    });
+        final gastritis = templates.firstWhere(
+          (t) => t.id == 'tmpl_acute_gastritis',
+        );
+        expect(gastritis.name, 'Acute Gastritis');
+        expect(gastritis.emoji, '🔥');
+        expect(
+          gastritis.items.any((i) => i.medicineName.contains('Pan 40')),
+          isTrue,
+        );
+      },
+    );
 
-    test('toPrescriptionItem maps fields cleanly and marks action as start', () {
-      const item = PrescriptionTemplateItem(
-        medicineName: 'Azithral 500',
-        composition: 'Azithromycin 500mg',
-        dosage: '1 Tablet',
-        frequency: '1-0-0 (OD)',
-        timing: 'After Food',
-        durationDays: 3,
-        instructions: 'Take at the same hour daily',
-      );
+    test(
+      'toPrescriptionItem maps fields cleanly and marks action as start',
+      () {
+        const item = PrescriptionTemplateItem(
+          medicineName: 'Azithral 500',
+          composition: 'Azithromycin 500mg',
+          dosage: '1 Tablet',
+          frequency: '1-0-0 (OD)',
+          timing: 'After Food',
+          durationDays: 3,
+          instructions: 'Take at the same hour daily',
+        );
 
-      final rx = item.toPrescriptionItem(id: 'rx_test_1');
-      expect(rx.id, 'rx_test_1');
-      expect(rx.action, MedicationAction.start);
-      expect(rx.medicineName, 'Azithral 500');
-      expect(rx.composition, 'Azithromycin 500mg');
-      expect(rx.dosage, '1 Tablet');
-      expect(rx.frequency, '1-0-0 (OD)');
-      expect(rx.timing, 'After Food');
-      expect(rx.durationDays, 3);
-      expect(rx.instructions, 'Take at the same hour daily');
-    });
+        final rx = item.toPrescriptionItem(id: 'rx_test_1');
+        expect(rx.id, 'rx_test_1');
+        expect(rx.action, MedicationAction.start);
+        expect(rx.medicineName, 'Azithral 500');
+        expect(rx.composition, 'Azithromycin 500mg');
+        expect(rx.dosage, '1 Tablet');
+        expect(rx.frequency, '1-0-0 (OD)');
+        expect(rx.timing, 'After Food');
+        expect(rx.durationDays, 3);
+        expect(rx.instructions, 'Take at the same hour daily');
+      },
+    );
 
     test('evaluateTemplateApplication adds all items when encounter has no active meds', () {
       final templates = MedicineEngine.getDefaultPrescriptionTemplates();
@@ -97,42 +111,53 @@ void main() {
       expect(result.skippedDuplicates.first.medicineName, 'Dolo 650');
       // Added other items from fever template (Pan 40, Limcee 500)
       expect(result.addedItems.length, fever.items.length - 1);
-      expect(result.addedItems.any((i) => i.medicineName == 'Dolo 650'), isFalse);
+      expect(
+        result.addedItems.any((i) => i.medicineName == 'Dolo 650'),
+        isFalse,
+      );
       expect(result.addedItems.any((i) => i.medicineName == 'Pan 40'), isTrue);
     });
 
-    test('evaluateTemplateApplication skips duplicate by composition match', () {
-      final templates = MedicineEngine.getDefaultPrescriptionTemplates();
-      final uri = templates.firstWhere((t) => t.id == 'tmpl_uri_flu');
+    test(
+      'evaluateTemplateApplication skips duplicate by composition match',
+      () {
+        final templates = MedicineEngine.getDefaultPrescriptionTemplates();
+        final uri = templates.firstWhere((t) => t.id == 'tmpl_uri_flu');
 
-      // Patient is taking generic Paracetamol 650mg under a different brand name (Calpol 650)
-      final existing = [
-        const PrescriptionItem(
-          id: 'existing_calpol',
-          action: MedicationAction.start,
-          medicineName: 'Calpol 650',
-          composition: 'Paracetamol 650mg',
-          dosage: '1 Tablet',
-          frequency: '1-0-1 (BD)',
-          timing: 'After Food',
-        ),
-      ];
+        // Patient is taking generic Paracetamol 650mg under a different brand name (Calpol 650)
+        final existing = [
+          const PrescriptionItem(
+            id: 'existing_calpol',
+            action: MedicationAction.start,
+            medicineName: 'Calpol 650',
+            composition: 'Paracetamol 650mg',
+            dosage: '1 Tablet',
+            frequency: '1-0-1 (BD)',
+            timing: 'After Food',
+          ),
+        ];
 
-      var counter = 0;
-      final result = MedicineEngine.evaluateTemplateApplication(
-        template: uri,
-        existingItems: existing,
-        uuidGenerator: () => 'uuid_${++counter}',
-      );
+        var counter = 0;
+        final result = MedicineEngine.evaluateTemplateApplication(
+          template: uri,
+          existingItems: existing,
+          uuidGenerator: () => 'uuid_${++counter}',
+        );
 
-      expect(result.hasSkipped, isTrue);
-      // Dolo 650 in URI template should be skipped because composition 'Paracetamol 650mg' is matched
-      expect(
-        result.skippedDuplicates.any((d) => d.composition.contains('Paracetamol 650mg')),
-        isTrue,
-      );
-      expect(result.addedItems.any((i) => i.medicineName == 'Dolo 650'), isFalse);
-    });
+        expect(result.hasSkipped, isTrue);
+        // Dolo 650 in URI template should be skipped because composition 'Paracetamol 650mg' is matched
+        expect(
+          result.skippedDuplicates.any(
+            (d) => d.composition.contains('Paracetamol 650mg'),
+          ),
+          isTrue,
+        );
+        expect(
+          result.addedItems.any((i) => i.medicineName == 'Dolo 650'),
+          isFalse,
+        );
+      },
+    );
 
     test('evaluateTemplateApplication does not treat STOPPED medication as duplicate', () {
       final templates = MedicineEngine.getDefaultPrescriptionTemplates();
@@ -161,7 +186,10 @@ void main() {
 
       // Stopped medication does not block template prescribing
       expect(result.hasSkipped, isFalse);
-      expect(result.addedItems.any((i) => i.medicineName == 'Dolo 650'), isTrue);
+      expect(
+        result.addedItems.any((i) => i.medicineName == 'Dolo 650'),
+        isTrue,
+      );
     });
   });
 
@@ -169,7 +197,9 @@ void main() {
     test('applyPrescriptionTemplate appends to newPrescriptions correctly', () {
       final form = EncounterFormState();
       final templates = MedicineEngine.getDefaultPrescriptionTemplates();
-      final gastritis = templates.firstWhere((t) => t.id == 'tmpl_acute_gastritis');
+      final gastritis = templates.firstWhere(
+        (t) => t.id == 'tmpl_acute_gastritis',
+      );
 
       var counter = 0;
       final result = form.applyPrescriptionTemplate(
@@ -190,53 +220,60 @@ void main() {
       expect(secondResult.hasAdded, isFalse);
       expect(secondResult.hasSkipped, isTrue);
       expect(secondResult.skippedDuplicates.length, gastritis.items.length);
-      expect(form.newPrescriptions.length, gastritis.items.length); // Unchanged count
+      expect(
+        form.newPrescriptions.length,
+        gastritis.items.length,
+      ); // Unchanged count
 
       form.dispose();
     });
   });
 
   group('RxTemplatePresetsBar Widget Tests', () {
-    testWidgets('renders all template preset chips and triggers addition on tap', (
-      tester,
-    ) async {
-      final form = EncounterFormState();
-      var idCounter = 0;
-      var updated = false;
+    testWidgets(
+      'renders all template preset chips and triggers addition on tap',
+      (tester) async {
+        final form = EncounterFormState();
+        var idCounter = 0;
+        var updated = false;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RxTemplatePresetsBar(
-              form: form,
-              uuidGenerator: () => 'chip_id_${++idCounter}',
-              onUpdate: () {
-                updated = true;
-              },
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: RxTemplatePresetsBar(
+                form: form,
+                uuidGenerator: () => 'chip_id_${++idCounter}',
+                onUpdate: () {
+                  updated = true;
+                },
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('1-Tap OPD Presets'), findsOneWidget);
-      expect(find.text('URI / Pharyngitis'), findsOneWidget);
-      expect(find.text('Viral Fever / SOS'), findsOneWidget);
+        expect(find.text('1-Tap OPD Presets'), findsOneWidget);
+        expect(find.text('URI / Pharyngitis'), findsOneWidget);
+        expect(find.text('Viral Fever / SOS'), findsOneWidget);
 
-      // Tap on URI / Pharyngitis
-      await tester.tap(find.text('URI / Pharyngitis'));
-      await tester.pump();
+        // Tap on URI / Pharyngitis
+        await tester.tap(find.text('URI / Pharyngitis'));
+        await tester.pump();
 
-      expect(updated, isTrue);
-      expect(form.newPrescriptions.isNotEmpty, isTrue);
-      expect(
-        form.newPrescriptions.any((i) => i.medicineName.contains('Dolo')),
-        isTrue,
-      );
+        expect(updated, isTrue);
+        expect(form.newPrescriptions.isNotEmpty, isTrue);
+        expect(
+          form.newPrescriptions.any((i) => i.medicineName.contains('Dolo')),
+          isTrue,
+        );
 
-      // Check SnackBar feedback
-      expect(find.textContaining('Applied "URI / Pharyngitis"'), findsOneWidget);
+        // Check SnackBar feedback
+        expect(
+          find.textContaining('Applied "URI / Pharyngitis"'),
+          findsOneWidget,
+        );
 
-      form.dispose();
-    });
+        form.dispose();
+      },
+    );
   });
 }

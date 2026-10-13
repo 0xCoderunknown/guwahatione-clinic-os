@@ -109,10 +109,14 @@ class _DashboardHeaderBarState extends State<DashboardHeaderBar> {
               const Spacer(),
               // End-of-Day Cash Handover Button
               InkWell(
-                onTap: () => DailyCashHandoverDialog.show(context, widget.provider),
+                onTap: () =>
+                    DailyCashHandoverDialog.show(context, widget.provider),
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF0FDF4),
                     borderRadius: BorderRadius.circular(8),
@@ -121,7 +125,11 @@ class _DashboardHeaderBarState extends State<DashboardHeaderBar> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.receipt_long_rounded, size: 14, color: Color(0xFF15803D)),
+                      Icon(
+                        Icons.receipt_long_rounded,
+                        size: 14,
+                        color: Color(0xFF15803D),
+                      ),
                       SizedBox(width: 5),
                       Text(
                         'Cash Handover',
@@ -182,12 +190,8 @@ class _DashboardHeaderBarState extends State<DashboardHeaderBar> {
               isDense: true,
               filled: true,
               fillColor: const Color(0xFFF8FAFC),
-              hintText:
-                  'Instant Queue Search: Type 10-digit phone, patient name, or token #...',
-              hintStyle: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade500,
-              ),
+              hintText: 'Instant Queue Search: Type 10-digit phone, patient name, or token #...',
+              hintStyle: TextStyle(fontSize: 12, color: Colors.grey.shade500),
               prefixIcon: const Icon(
                 Icons.search_rounded,
                 size: 18,

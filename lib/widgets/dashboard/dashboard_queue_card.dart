@@ -397,26 +397,15 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
         style: FilledButton.styleFrom(
           backgroundColor: const Color(0xFF0F766E),
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 9,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         icon: const Icon(Icons.how_to_reg_rounded, size: 16),
         label: const Text(
           'Check In',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
         ),
-        onPressed: () => QuickCheckInDialog.show(
-          context,
-          appointment: appt,
-        ),
+        onPressed: () => QuickCheckInDialog.show(context, appointment: appt),
       );
     }
 
@@ -591,24 +580,15 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF15803D),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 9,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            icon: const Icon(
-              Icons.login_rounded,
-              size: 16,
-            ),
+            icon: const Icon(Icons.login_rounded, size: 16),
             label: const Text(
               'Send In',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
             ),
             onPressed: () async {
               await widget.provider.callTokenIntoChamber(
@@ -633,10 +613,6 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
       );
     }
 
-    return AppointmentStatusChip(
-      status: appt.status,
-      isCompact: true,
-    );
+    return AppointmentStatusChip(status: appt.status, isCompact: true);
   }
 }
-

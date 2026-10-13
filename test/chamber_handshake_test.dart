@@ -1,90 +1,97 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 import 'package:appointment_app/core/engines/appointment_engine.dart';
 import 'package:appointment_app/models/models.dart';
 import 'package:appointment_app/providers/clinic_provider.dart';
 import 'package:appointment_app/widgets/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   group('Doctor-Reception Chamber Handshake Protocol Widget Tests', () {
-    testWidgets('ChamberControlBanner renders consultation_ended state with NEXT PATIENT button',
-        (tester) async {
-      bool nextPatientPressed = false;
+    testWidgets(
+      'ChamberControlBanner renders consultation_ended state with NEXT PATIENT button',
+      (tester) async {
+        bool nextPatientPressed = false;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChamberControlBanner(
-              status: 'consultation_ended',
-              lastCompletedQueueNumber: 12,
-              lastCompletedPatientName: 'Rahul Sharma',
-              onNextPatient: () => nextPatientPressed = true,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ChamberControlBanner(
+                status: 'consultation_ended',
+                lastCompletedQueueNumber: 12,
+                lastCompletedPatientName: 'Rahul Sharma',
+                onNextPatient: () => nextPatientPressed = true,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Consultation Ended: Token #12'), findsOneWidget);
-      expect(find.text('(Rahul Sharma)'), findsOneWidget);
-      expect(find.text('NEXT PATIENT'), findsOneWidget);
+        expect(find.text('Consultation Ended: Token #12'), findsOneWidget);
+        expect(find.text('(Rahul Sharma)'), findsOneWidget);
+        expect(find.text('NEXT PATIENT'), findsOneWidget);
 
-      await tester.tap(find.text('NEXT PATIENT'));
-      await tester.pump();
+        await tester.tap(find.text('NEXT PATIENT'));
+        await tester.pump();
 
-      expect(nextPatientPressed, isTrue);
-    });
+        expect(nextPatientPressed, isTrue);
+      },
+    );
 
-    testWidgets('ChamberControlBanner renders ready_for_next state with signal sent badge',
-        (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChamberControlBanner(
-              status: 'ready_for_next',
-              onNextPatient: () {},
+    testWidgets(
+      'ChamberControlBanner renders ready_for_next state with signal sent badge',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ChamberControlBanner(
+                status: 'ready_for_next',
+                onNextPatient: () {},
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Chamber Ready for Next Patient'), findsOneWidget);
-      expect(find.text('SIGNAL SENT'), findsOneWidget);
-      expect(find.text('Re-Signal Reception'), findsOneWidget);
-    });
+        expect(find.text('Chamber Ready for Next Patient'), findsOneWidget);
+        expect(find.text('SIGNAL SENT'), findsOneWidget);
+        expect(find.text('Re-Signal Reception'), findsOneWidget);
+      },
+    );
 
-    testWidgets('ChamberControlBanner renders calling state with incoming patient details',
-        (tester) async {
-      bool openFilePressed = false;
+    testWidgets(
+      'ChamberControlBanner renders calling state with incoming patient details',
+      (tester) async {
+        bool openFilePressed = false;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChamberControlBanner(
-              status: 'calling',
-              activeQueueNumber: 14,
-              activePatientName: 'Amit Roy',
-              onNextPatient: () {},
-              onOpenActivePatient: () => openFilePressed = true,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ChamberControlBanner(
+                status: 'calling',
+                activeQueueNumber: 14,
+                activePatientName: 'Amit Roy',
+                onNextPatient: () {},
+                onOpenActivePatient: () => openFilePressed = true,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Incoming: Token #14'), findsOneWidget);
-      expect(find.text('(Amit Roy)'), findsOneWidget);
-      expect(find.text('Open Clinical File'), findsOneWidget);
+        expect(find.text('Incoming: Token #14'), findsOneWidget);
+        expect(find.text('(Amit Roy)'), findsOneWidget);
+        expect(find.text('Open Clinical File'), findsOneWidget);
 
-      await tester.tap(find.text('Open Clinical File'));
-      await tester.pump();
+        await tester.tap(find.text('Open Clinical File'));
+        await tester.pump();
 
-      expect(openFilePressed, isTrue);
-    });
+        expect(openFilePressed, isTrue);
+      },
+    );
 
-    testWidgets('ChamberControlBanner renders idle state with start action',
-        (tester) async {
+    testWidgets('ChamberControlBanner renders idle state with start action', (
+      tester,
+    ) async {
       bool readyFirstPressed = false;
 
       await tester.pumpWidget(
@@ -107,37 +114,39 @@ void main() {
       expect(readyFirstPressed, isTrue);
     });
 
-    testWidgets('ChamberControlBanner renders responsive stacked layout on mobile (width < 600)',
-        (tester) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
+    testWidgets(
+      'ChamberControlBanner renders responsive stacked layout on mobile (width < 600)',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
 
-      bool readyFirstPressed = false;
+        bool readyFirstPressed = false;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChamberControlBanner(
-              status: 'idle',
-              onNextPatient: () => readyFirstPressed = true,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ChamberControlBanner(
+                status: 'idle',
+                onNextPatient: () => readyFirstPressed = true,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('OPD Chamber Open'), findsOneWidget);
-      expect(find.text('READY FOR FIRST PATIENT'), findsOneWidget);
+        expect(find.text('OPD Chamber Open'), findsOneWidget);
+        expect(find.text('READY FOR FIRST PATIENT'), findsOneWidget);
 
-      // Verify that in compact mode, Column structure is used so button does not squish text
-      final filledButton = find.byType(FilledButton);
-      expect(filledButton, findsOneWidget);
+        // Verify that in compact mode, Column structure is used so button does not squish text
+        final filledButton = find.byType(FilledButton);
+        expect(filledButton, findsOneWidget);
 
-      await tester.tap(filledButton);
-      await tester.pump();
+        await tester.tap(filledButton);
+        await tester.pump();
 
-      expect(readyFirstPressed, isTrue);
-    });
+        expect(readyFirstPressed, isTrue);
+      },
+    );
   });
 
   group('Reception-Only Patient Admission Enforcement on ChamberTokenCard', () {
@@ -154,95 +163,101 @@ void main() {
       doctorName: 'Dr. Sharma',
     );
 
-    testWidgets('Pending token without isCallingNow displays Waiting Reception Call and prevents consult',
-        (tester) async {
-      bool consultPressed = false;
+    testWidgets(
+      'Pending token without isCallingNow displays Waiting Reception Call and prevents consult',
+      (tester) async {
+        bool consultPressed = false;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChamberTokenCard(
-              appointment: pendingAppt,
-              isCallingNow: false,
-              onConsult: () => consultPressed = true,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ChamberTokenCard(
+                appointment: pendingAppt,
+                isCallingNow: false,
+                onConsult: () => consultPressed = true,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Must show waiting badge
-      expect(find.text('Waiting Reception Call'), findsOneWidget);
-      // Must NOT show consult or admitted button
-      expect(find.text('Enter Consultation'), findsNothing);
-      expect(find.text('Consult'), findsNothing);
+        // Must show waiting badge
+        expect(find.text('Waiting Reception Call'), findsOneWidget);
+        // Must NOT show consult or admitted button
+        expect(find.text('Enter Consultation'), findsNothing);
+        expect(find.text('Consult'), findsNothing);
 
-      // Tapping the card must NOT invoke consult callback
-      await tester.tap(find.byType(ChamberTokenCard));
-      await tester.pump();
+        // Tapping the card must NOT invoke consult callback
+        await tester.tap(find.byType(ChamberTokenCard));
+        await tester.pump();
 
-      expect(consultPressed, isFalse);
-    });
+        expect(consultPressed, isFalse);
+      },
+    );
 
-    testWidgets('Pending token WITH isCallingNow displays Enter Consultation button and invokes onConsult',
-        (tester) async {
-      bool consultPressed = false;
+    testWidgets(
+      'Pending token WITH isCallingNow displays Enter Consultation button and invokes onConsult',
+      (tester) async {
+        bool consultPressed = false;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChamberTokenCard(
-              appointment: pendingAppt,
-              isCallingNow: true,
-              onConsult: () => consultPressed = true,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ChamberTokenCard(
+                appointment: pendingAppt,
+                isCallingNow: true,
+                onConsult: () => consultPressed = true,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Enter Consultation'), findsOneWidget);
+        expect(find.text('Enter Consultation'), findsOneWidget);
 
-      await tester.tap(find.text('Enter Consultation'));
-      await tester.pump();
+        await tester.tap(find.text('Enter Consultation'));
+        await tester.pump();
 
-      expect(consultPressed, isTrue);
-    });
+        expect(consultPressed, isTrue);
+      },
+    );
 
-    testWidgets('Completed token displays Record button and allows reviewing Rx',
-        (tester) async {
-      bool recordPressed = false;
+    testWidgets(
+      'Completed token displays Record button and allows reviewing Rx',
+      (tester) async {
+        bool recordPressed = false;
 
-      final completedAppt = Appointment(
-        id: 'appt-12',
-        patientPhone: '9876543210',
-        patientName: 'Rahul Sharma',
-        status: AppointmentStatus.completed,
-        paymentType: PaymentType.paidCash,
-        amountCollected: 500,
-        queueNumber: 12,
-        scheduledDate: DateTime(2026, 10, 10),
-        doctorId: 'doc-1',
-        doctorName: 'Dr. Sharma',
-      );
+        final completedAppt = Appointment(
+          id: 'appt-12',
+          patientPhone: '9876543210',
+          patientName: 'Rahul Sharma',
+          status: AppointmentStatus.completed,
+          paymentType: PaymentType.paidCash,
+          amountCollected: 500,
+          queueNumber: 12,
+          scheduledDate: DateTime(2026, 10, 10),
+          doctorId: 'doc-1',
+          doctorName: 'Dr. Sharma',
+        );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChamberTokenCard(
-              appointment: completedAppt,
-              isCallingNow: false,
-              onConsult: () => recordPressed = true,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ChamberTokenCard(
+                appointment: completedAppt,
+                isCallingNow: false,
+                onConsult: () => recordPressed = true,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Record'), findsOneWidget);
+        expect(find.text('Record'), findsOneWidget);
 
-      await tester.tap(find.text('Record'));
-      await tester.pump();
+        await tester.tap(find.text('Record'));
+        await tester.pump();
 
-      expect(recordPressed, isTrue);
-    });
+        expect(recordPressed, isTrue);
+      },
+    );
   });
 
   group('ChamberSession Domain Model Tests', () {
@@ -337,7 +352,9 @@ void main() {
       doctorName: 'Dr. Sharma',
     );
 
-    testWidgets('Idle chamber locks dispatch button with waiting indicator', (tester) async {
+    testWidgets('Idle chamber locks dispatch button with waiting indicator', (
+      tester,
+    ) async {
       final fakeProvider = _TestClinicProvider();
 
       await tester.pumpWidget(
@@ -354,7 +371,9 @@ void main() {
         ),
       );
 
-      fakeProvider.sessionController.add(ChamberSession.empty('doc-1', testAppt.scheduledDate));
+      fakeProvider.sessionController.add(
+        ChamberSession.empty('doc-1', testAppt.scheduledDate),
+      );
       await tester.pump();
 
       expect(find.text('Waiting for Doctor to Signal Ready'), findsOneWidget);
@@ -364,7 +383,9 @@ void main() {
       expect(button.onPressed, isNull);
     });
 
-    testWidgets('Breather state locks dispatch button with holding message', (tester) async {
+    testWidgets('Breather state locks dispatch button with holding message', (
+      tester,
+    ) async {
       final fakeProvider = _TestClinicProvider();
 
       await tester.pumpWidget(
@@ -381,23 +402,30 @@ void main() {
         ),
       );
 
-      fakeProvider.sessionController.add(ChamberSession(
-        doctorId: 'doc-1',
-        date: testAppt.scheduledDate,
-        status: 'consultation_ended',
-        lastCompletedQueueNumber: 2,
-        lastCompletedPatientName: 'Previous',
-      ));
+      fakeProvider.sessionController.add(
+        ChamberSession(
+          doctorId: 'doc-1',
+          date: testAppt.scheduledDate,
+          status: 'consultation_ended',
+          lastCompletedQueueNumber: 2,
+          lastCompletedPatientName: 'Previous',
+        ),
+      );
       await tester.pump();
 
-      expect(find.text('Doctor on Breather (Waiting for Doctor)'), findsOneWidget);
+      expect(
+        find.text('Doctor on Breather (Waiting for Doctor)'),
+        findsOneWidget,
+      );
       expect(find.textContaining('taking a breather'), findsOneWidget);
 
       final button = tester.widget<FilledButton>(find.byType(FilledButton));
       expect(button.onPressed, isNull);
     });
 
-    testWidgets('Ready for next state enables SEND IN TO DOCTOR button', (tester) async {
+    testWidgets('Ready for next state enables SEND IN TO DOCTOR button', (
+      tester,
+    ) async {
       final fakeProvider = _TestClinicProvider();
 
       await tester.pumpWidget(
@@ -414,11 +442,13 @@ void main() {
         ),
       );
 
-      fakeProvider.sessionController.add(ChamberSession(
-        doctorId: 'doc-1',
-        date: testAppt.scheduledDate,
-        status: 'ready_for_next',
-      ));
+      fakeProvider.sessionController.add(
+        ChamberSession(
+          doctorId: 'doc-1',
+          date: testAppt.scheduledDate,
+          status: 'ready_for_next',
+        ),
+      );
       await tester.pump();
 
       expect(find.text('SEND IN TO DOCTOR'), findsOneWidget);
@@ -433,44 +463,61 @@ void main() {
       expect(fakeProvider.calledToken, isTrue);
     });
 
-    testWidgets('Active consultation state locks SEND IN TO DOCTOR button with chamber occupied notice', (tester) async {
-      final fakeProvider = _TestClinicProvider();
+    testWidgets(
+      'Active consultation state locks SEND IN TO DOCTOR button with chamber occupied notice',
+      (tester) async {
+        final fakeProvider = _TestClinicProvider();
 
-      await tester.pumpWidget(
-        ChangeNotifierProvider<ClinicProvider>.value(
-          value: fakeProvider,
-          child: MaterialApp(
-            home: Scaffold(
-              body: AccordionDispatchSection(
-                appointment: testAppt,
-                isInChamber: false,
+        await tester.pumpWidget(
+          ChangeNotifierProvider<ClinicProvider>.value(
+            value: fakeProvider,
+            child: MaterialApp(
+              home: Scaffold(
+                body: AccordionDispatchSection(
+                  appointment: testAppt,
+                  isInChamber: false,
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      fakeProvider.sessionController.add(ChamberSession(
-        doctorId: 'doc-1',
-        date: testAppt.scheduledDate,
-        status: 'in_consultation',
-        activeAppointmentId: 'other-appt',
-        activeQueueNumber: 1,
-        patientName: 'Occupant Patient',
-      ));
-      await tester.pump();
+        fakeProvider.sessionController.add(
+          ChamberSession(
+            doctorId: 'doc-1',
+            date: testAppt.scheduledDate,
+            status: 'in_consultation',
+            activeAppointmentId: 'other-appt',
+            activeQueueNumber: 1,
+            patientName: 'Occupant Patient',
+          ),
+        );
+        await tester.pump();
 
-      expect(find.text('Chamber Occupied (Token #1 Inside)'), findsOneWidget);
-      expect(find.textContaining('currently consulting'), findsOneWidget);
+        expect(find.text('Chamber Occupied (Token #1 Inside)'), findsOneWidget);
+        expect(find.textContaining('currently consulting'), findsOneWidget);
 
-      final button = tester.widget<FilledButton>(find.byType(FilledButton));
-      expect(button.onPressed, isNull);
-    });
+        final button = tester.widget<FilledButton>(find.byType(FilledButton));
+        expect(button.onPressed, isNull);
+      },
+    );
 
     test('AppointmentEngine.partitionQueueForReception segregates active in-chamber appointments even if status is pending', () {
-      final appt1 = testAppt.copyWith(id: 'appt-1', queueNumber: 1, visitStatus: VisitStatus.waitingInLobby);
-      final appt2 = testAppt.copyWith(id: 'appt-2', queueNumber: 2, visitStatus: VisitStatus.waitingInLobby);
-      final appt3 = testAppt.copyWith(id: 'appt-3', queueNumber: 3, visitStatus: VisitStatus.booked);
+      final appt1 = testAppt.copyWith(
+        id: 'appt-1',
+        queueNumber: 1,
+        visitStatus: VisitStatus.waitingInLobby,
+      );
+      final appt2 = testAppt.copyWith(
+        id: 'appt-2',
+        queueNumber: 2,
+        visitStatus: VisitStatus.waitingInLobby,
+      );
+      final appt3 = testAppt.copyWith(
+        id: 'appt-3',
+        queueNumber: 3,
+        visitStatus: VisitStatus.booked,
+      );
 
       final partitioned = AppointmentEngine.partitionQueueForReception(
         appointments: [appt1, appt2, appt3],

@@ -61,8 +61,9 @@ class CatalogueHeaderAndStats extends StatelessWidget {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment:
-            centerText ? CrossAxisAlignment.center : CrossAxisAlignment.center,
+        crossAxisAlignment: centerText
+            ? CrossAxisAlignment.center
+            : CrossAxisAlignment.center,
         children: [
           Text(
             "$totalProducts",
@@ -90,8 +91,9 @@ class CatalogueHeaderAndStats extends StatelessWidget {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment:
-            centerText ? CrossAxisAlignment.center : CrossAxisAlignment.center,
+        crossAxisAlignment: centerText
+            ? CrossAxisAlignment.center
+            : CrossAxisAlignment.center,
         children: [
           Text(
             "$totalMolecules",

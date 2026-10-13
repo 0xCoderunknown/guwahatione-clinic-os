@@ -8,6 +8,7 @@ import 'firestore_paths.dart';
 /// Exception thrown when an atomic duplicate booking is detected at the transaction boundary.
 class DuplicateBookingException implements Exception {
   final String message;
+
   const DuplicateBookingException(this.message);
 
   @override
@@ -63,7 +64,8 @@ class BookingService {
     final eventRef = _eventsRef.doc();
     var queueNumber = 1;
 
-    final effectiveCheckedInAt = checkedInAt ??
+    final effectiveCheckedInAt =
+        checkedInAt ??
         (visitStatus == VisitStatus.waitingInLobby ? DateTime.now() : null);
 
     await _firestore.runTransaction((transaction) async {
@@ -202,12 +204,13 @@ class BookingService {
     int? collectedAmount,
     PaymentType? paymentType,
   }) async {
-    final effectiveVisitStatus = visitStatus ??
+    final effectiveVisitStatus =
+        visitStatus ??
         (status == AppointmentStatus.completed
             ? VisitStatus.completed
             : (status == AppointmentStatus.absent
-                ? VisitStatus.cancelled
-                : VisitStatus.waitingInLobby));
+                  ? VisitStatus.cancelled
+                  : VisitStatus.waitingInLobby));
 
     final Map<String, dynamic> data = {
       'status': status.name,
@@ -229,8 +232,8 @@ class BookingService {
     final eventType = status == AppointmentStatus.absent
         ? AppointmentEventType.markedAbsent
         : (status == AppointmentStatus.completed
-            ? AppointmentEventType.completed
-            : AppointmentEventType.statusUpdated);
+              ? AppointmentEventType.completed
+              : AppointmentEventType.statusUpdated);
 
     final event = AppointmentEvent(
       id: eventDoc.id,
@@ -316,8 +319,10 @@ class BookingService {
     final start = DateTime(date.year, date.month, date.day);
     final end = start.add(const Duration(days: 1));
 
-    var queryRef =
-        _appointmentsRef.where('patientPhone', isEqualTo: phone.trim());
+    var queryRef = _appointmentsRef.where(
+      'patientPhone',
+      isEqualTo: phone.trim(),
+    );
     if (doctorId != null && doctorId.isNotEmpty) {
       queryRef = queryRef.where('doctorId', isEqualTo: doctorId);
     }

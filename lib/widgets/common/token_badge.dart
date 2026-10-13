@@ -44,7 +44,9 @@ class TokenBadge extends StatelessWidget {
     }
 
     final hasTag = doctorTag != null && doctorTag!.trim().isNotEmpty;
-    final text = hasTag ? '#$queueNumber • ${doctorTag!.trim()}' : '#$queueNumber';
+    final text = hasTag
+        ? '#$queueNumber • ${doctorTag!.trim()}'
+        : '#$queueNumber';
     final fontSize = hasTag ? (size * 0.36) : (size * 0.42);
 
     final content = Text(

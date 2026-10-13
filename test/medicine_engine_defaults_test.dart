@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/core/engines/medicine_engine.dart';
 import 'package:appointment_app/models/medicine.dart';
 import 'package:appointment_app/models/prescription_item.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('MedicineEngine - Clinical Defaults Regimen Tests', () {
@@ -42,21 +42,24 @@ void main() {
       expect(defaults.instructions, contains('morning breakfast'));
     });
 
-    test('Antihypertensives auto-resolve to Morning After Food and 30 Days', () {
-      final telma = Medicine(
-        id: 'telma_40',
-        productName: 'Telma 40',
-        composition: 'Telmisartan',
-        strength: '40 mg',
-        form: 'Tablet',
-      );
+    test(
+      'Antihypertensives auto-resolve to Morning After Food and 30 Days',
+      () {
+        final telma = Medicine(
+          id: 'telma_40',
+          productName: 'Telma 40',
+          composition: 'Telmisartan',
+          strength: '40 mg',
+          form: 'Tablet',
+        );
 
-      final defaults = MedicineEngine.getDefaultsForMedicine(telma);
-      expect(defaults.dosage, '1 Tablet');
-      expect(defaults.frequency, '1-0-0 (OD)');
-      expect(defaults.timing, 'After Food (Morning)');
-      expect(defaults.durationDays, 30);
-    });
+        final defaults = MedicineEngine.getDefaultsForMedicine(telma);
+        expect(defaults.dosage, '1 Tablet');
+        expect(defaults.frequency, '1-0-0 (OD)');
+        expect(defaults.timing, 'After Food (Morning)');
+        expect(defaults.durationDays, 30);
+      },
+    );
 
     test('Statins auto-resolve to Bedtime / HS and After Dinner', () {
       final atorva = Medicine(
@@ -141,104 +144,116 @@ void main() {
         strength: '1%',
         form: 'Ointment',
       );
-      expect(MedicineEngine.getDefaultsForMedicine(gel).dosage, 'Apply thin layer');
+      expect(
+        MedicineEngine.getDefaultsForMedicine(gel).dosage,
+        'Apply thin layer',
+      );
     });
   });
 
   group('MedicineEngine - Prescription Segregation Tests', () {
-    test('segregatePrescriptions correctly partitions active vs stopped items', () {
-      final items = [
-        PrescriptionItem(
+    test(
+      'segregatePrescriptions correctly partitions active vs stopped items',
+      () {
+        final items = [
+          PrescriptionItem(
+            id: '1',
+            action: MedicationAction.start,
+            medicineName: 'Med A',
+            composition: 'Comp A',
+            dosage: '1 Tab',
+            frequency: '1-0-1',
+            timing: 'After Food',
+          ),
+          PrescriptionItem(
+            id: '2',
+            action: MedicationAction.continueAction,
+            medicineName: 'Med B',
+            composition: 'Comp B',
+            dosage: '1 Tab',
+            frequency: '1-0-0',
+            timing: 'After Food',
+          ),
+          PrescriptionItem(
+            id: '3',
+            action: MedicationAction.stop,
+            medicineName: 'Med C',
+            composition: 'Comp C',
+            dosage: '1 Tab',
+            frequency: '1-0-0',
+            timing: 'After Food',
+            stopReason: 'Allergic reaction / Urticaria',
+          ),
+        ];
+
+        final partition = MedicineEngine.segregatePrescriptions(items);
+        expect(partition.activeMeds.length, 2);
+        expect(partition.startedMeds.length, 1);
+        expect(partition.continuedMeds.length, 1);
+        expect(partition.stoppedMeds.length, 1);
+        expect(partition.hasActive, isTrue);
+        expect(partition.hasStopped, isTrue);
+        expect(partition.stoppedMeds.first.stopReason, contains('Allergic'));
+      },
+    );
+  });
+
+  group(
+    'MedicineEngine - Catalogue Filter and Unique Molecule Count Tests',
+    () {
+      final catalog = [
+        Medicine(
           id: '1',
-          action: MedicationAction.start,
-          medicineName: 'Med A',
-          composition: 'Comp A',
-          dosage: '1 Tab',
-          frequency: '1-0-1',
-          timing: 'After Food',
+          productName: 'Dolo 650',
+          composition: 'Paracetamol',
+          strength: '650 mg',
+          form: 'Tablet',
         ),
-        PrescriptionItem(
+        Medicine(
           id: '2',
-          action: MedicationAction.continueAction,
-          medicineName: 'Med B',
-          composition: 'Comp B',
-          dosage: '1 Tab',
-          frequency: '1-0-0',
-          timing: 'After Food',
+          productName: 'Calpol 650',
+          composition: 'Paracetamol',
+          strength: '650 mg',
+          form: 'Tablet',
         ),
-        PrescriptionItem(
+        Medicine(
           id: '3',
-          action: MedicationAction.stop,
-          medicineName: 'Med C',
-          composition: 'Comp C',
-          dosage: '1 Tab',
-          frequency: '1-0-0',
-          timing: 'After Food',
-          stopReason: 'Allergic reaction / Urticaria',
+          productName: 'Pan 40',
+          composition: 'Pantoprazole',
+          strength: '40 mg',
+          form: 'Tablet',
+        ),
+        Medicine(
+          id: '4',
+          productName: 'Mucolite Syrup',
+          composition: 'Ambroxol',
+          strength: '30 mg/5ml',
+          form: 'Syrup',
         ),
       ];
 
-      final partition = MedicineEngine.segregatePrescriptions(items);
-      expect(partition.activeMeds.length, 2);
-      expect(partition.startedMeds.length, 1);
-      expect(partition.continuedMeds.length, 1);
-      expect(partition.stoppedMeds.length, 1);
-      expect(partition.hasActive, isTrue);
-      expect(partition.hasStopped, isTrue);
-      expect(partition.stoppedMeds.first.stopReason, contains('Allergic'));
-    });
-  });
+      test('countUniqueMolecules correctly deduplicates by composition', () {
+        expect(
+          MedicineEngine.countUniqueMolecules(catalog),
+          3,
+        ); // Paracetamol, Pantoprazole, Ambroxol
+      });
 
-  group('MedicineEngine - Catalogue Filter and Unique Molecule Count Tests', () {
-    final catalog = [
-      Medicine(
-        id: '1',
-        productName: 'Dolo 650',
-        composition: 'Paracetamol',
-        strength: '650 mg',
-        form: 'Tablet',
-      ),
-      Medicine(
-        id: '2',
-        productName: 'Calpol 650',
-        composition: 'Paracetamol',
-        strength: '650 mg',
-        form: 'Tablet',
-      ),
-      Medicine(
-        id: '3',
-        productName: 'Pan 40',
-        composition: 'Pantoprazole',
-        strength: '40 mg',
-        form: 'Tablet',
-      ),
-      Medicine(
-        id: '4',
-        productName: 'Mucolite Syrup',
-        composition: 'Ambroxol',
-        strength: '30 mg/5ml',
-        form: 'Syrup',
-      ),
-    ];
+      test('filterAndSortCatalogue filters by text query and dosage form', () {
+        final syrupOnly = MedicineEngine.filterAndSortCatalogue(
+          catalog: catalog,
+          query: '',
+          formFilter: 'Syrup',
+        );
+        expect(syrupOnly.length, 1);
+        expect(syrupOnly.first.productName, 'Mucolite Syrup');
 
-    test('countUniqueMolecules correctly deduplicates by composition', () {
-      expect(MedicineEngine.countUniqueMolecules(catalog), 3); // Paracetamol, Pantoprazole, Ambroxol
-    });
-
-    test('filterAndSortCatalogue filters by text query and dosage form', () {
-      final syrupOnly = MedicineEngine.filterAndSortCatalogue(
-        catalog: catalog,
-        query: '',
-        formFilter: 'Syrup',
-      );
-      expect(syrupOnly.length, 1);
-      expect(syrupOnly.first.productName, 'Mucolite Syrup');
-
-      final paracetamolOnly = MedicineEngine.filterAndSortCatalogue(
-        catalog: catalog,
-        query: 'paracetamol',
-      );
-      expect(paracetamolOnly.length, 2);
-    });
-  });
+        final paracetamolOnly = MedicineEngine.filterAndSortCatalogue(
+          catalog: catalog,
+          query: 'paracetamol',
+        );
+        expect(paracetamolOnly.length, 2);
+      });
+    },
+  );
 }

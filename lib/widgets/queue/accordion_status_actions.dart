@@ -90,16 +90,10 @@ class AccordionStatusActions extends StatelessWidget {
             child: OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF16A34A),
-                side: const BorderSide(
-                  color: Color(0xFF16A34A),
-                  width: 1.2,
-                ),
+                side: const BorderSide(color: Color(0xFF16A34A), width: 1.2),
                 padding: const EdgeInsets.symmetric(vertical: 10),
               ),
-              icon: const Icon(
-                Icons.chat_bubble_outline_rounded,
-                size: 18,
-              ),
+              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
               label: const Text(
                 'Send WhatsApp Digital Prescription',
                 style: TextStyle(fontWeight: FontWeight.bold),

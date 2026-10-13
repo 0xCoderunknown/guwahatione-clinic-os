@@ -24,11 +24,10 @@ class AccordionDispatchSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<ChamberSession>(
-      stream: Provider.of<ClinicProvider>(context, listen: false)
-          .streamChamberSession(
-            appointment.doctorId,
-            appointment.scheduledDate,
-          ),
+      stream: Provider.of<ClinicProvider>(
+        context,
+        listen: false,
+      ).streamChamberSession(appointment.doctorId, appointment.scheduledDate),
       builder: (context, chamberSnap) {
         final session = chamberSnap.data;
         final isDoctorReady = session?.isReadyForNext ?? false;
@@ -37,8 +36,7 @@ class AccordionDispatchSection extends StatelessWidget {
         final activeQueueNum = session?.activeQueueNumber;
         final activePatName = session?.patientName ?? 'Patient';
 
-        final isThisInChamber =
-            isInChamber || (activeApptId == appointment.id);
+        final isThisInChamber = isInChamber || (activeApptId == appointment.id);
         final isAnotherPatientInChamber =
             activeApptId != null &&
             activeApptId.isNotEmpty &&
@@ -64,10 +62,7 @@ class AccordionDispatchSection extends StatelessWidget {
           buttonLabel = 'SEND IN TO DOCTOR';
           buttonIcon = Icons.check_circle_outline_rounded;
           onDispatch = () async {
-            final clinic = Provider.of<ClinicProvider>(
-              context,
-              listen: false,
-            );
+            final clinic = Provider.of<ClinicProvider>(context, listen: false);
             await clinic.callTokenIntoChamber(
               doctorId: appointment.doctorId,
               date: appointment.scheduledDate,

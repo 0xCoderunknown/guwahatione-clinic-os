@@ -505,9 +505,7 @@ class ConsultationBottomDock extends StatelessWidget {
                             size: 18,
                           ),
                     label: Text(
-                      isSaving
-                          ? 'Saving...'
-                          : 'End Consultation & Sign',
+                      isSaving ? 'Saving...' : 'End Consultation & Sign',
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       style: const TextStyle(

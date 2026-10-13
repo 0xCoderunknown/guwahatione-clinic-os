@@ -13,10 +13,7 @@ import '../../utils/formatters.dart';
 class QuickCheckInDialog extends StatefulWidget {
   final Appointment appointment;
 
-  const QuickCheckInDialog({
-    super.key,
-    required this.appointment,
-  });
+  const QuickCheckInDialog({super.key, required this.appointment});
 
   static Future<bool?> show(
     BuildContext context, {
@@ -43,7 +40,11 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
     super.initState();
     final provider = Provider.of<ClinicProvider>(context, listen: false);
     final doctor = provider.getDoctorById(widget.appointment.doctorId);
-    _defaultFee = doctor?.consultationFee ?? (widget.appointment.amountCollected > 0 ? widget.appointment.amountCollected : 500);
+    _defaultFee =
+        doctor?.consultationFee ??
+        (widget.appointment.amountCollected > 0
+            ? widget.appointment.amountCollected
+            : 500);
     _customAmountController = TextEditingController(text: '$_defaultFee');
   }
 
@@ -71,7 +72,11 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -103,24 +108,33 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final parsedFee = int.tryParse(_customAmountController.text.trim()) ?? _defaultFee;
-    final isFreeReviewEligible = widget.appointment.paymentType == PaymentType.freeReview;
-    final isFreeFamily = widget.appointment.paymentType == PaymentType.freeFamily;
+    final parsedFee =
+        int.tryParse(_customAmountController.text.trim()) ?? _defaultFee;
+    final isFreeReviewEligible =
+        widget.appointment.paymentType == PaymentType.freeReview;
+    final isFreeFamily =
+        widget.appointment.paymentType == PaymentType.freeFamily;
 
     return CallbackShortcuts(
       bindings: {
-        const SingleActivator(LogicalKeyboardKey.digit1): () => _processCheckIn(PaymentType.paidCash, parsedFee),
-        const SingleActivator(LogicalKeyboardKey.digit2): () => _processCheckIn(PaymentType.paidUpi, parsedFee),
-        const SingleActivator(LogicalKeyboardKey.digit3): () => _processCheckIn(PaymentType.postPay, 0),
+        const SingleActivator(LogicalKeyboardKey.digit1): () =>
+            _processCheckIn(PaymentType.paidCash, parsedFee),
+        const SingleActivator(LogicalKeyboardKey.digit2): () =>
+            _processCheckIn(PaymentType.paidUpi, parsedFee),
+        const SingleActivator(LogicalKeyboardKey.digit3): () =>
+            _processCheckIn(PaymentType.postPay, 0),
         const SingleActivator(LogicalKeyboardKey.digit4): () {
           if (isFreeReviewEligible) _processCheckIn(PaymentType.freeReview, 0);
         },
-        const SingleActivator(LogicalKeyboardKey.digit5): () => _processCheckIn(PaymentType.freeFamily, 0),
+        const SingleActivator(LogicalKeyboardKey.digit5): () =>
+            _processCheckIn(PaymentType.freeFamily, 0),
       },
       child: Focus(
         autofocus: true,
         child: AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
           contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           title: Row(
@@ -170,7 +184,10 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(10),
@@ -181,7 +198,10 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                     children: [
                       Text(
                         'Assigned: ${AppFormatters.doctorTitle(widget.appointment.doctorName)}',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       Text(
                         'Standard Fee: ₹$_defaultFee',
@@ -282,7 +302,9 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
           ),
           actions: [
             TextButton(
-              onPressed: _isLoading ? null : () => Navigator.pop(context, false),
+              onPressed: _isLoading
+                  ? null
+                  : () => Navigator.pop(context, false),
               child: const Text('Cancel'),
             ),
           ],

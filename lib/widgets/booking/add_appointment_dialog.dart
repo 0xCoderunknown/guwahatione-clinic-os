@@ -283,8 +283,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     onDoctorChanged: (val) {
                       setState(() {
                         _selectedDoctor = val;
-                        if (_selectedPayment.isPaid &&
-                            val != null) {
+                        if (_selectedPayment.isPaid && val != null) {
                           _amountController.text = "${val.consultationFee}";
                         }
                       });

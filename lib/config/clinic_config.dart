@@ -1,5 +1,5 @@
 /// Per-client deployment configuration placeholder for GuwahatiOne Clinic OS.
-/// 
+///
 /// When deploying for a specific clinic / doctor chamber client, adjust these
 /// settings to customize branding, operational defaults, and feature toggles.
 class ClinicConfig {

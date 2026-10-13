@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/appointment.dart';
 import 'firestore_paths.dart';
 
@@ -11,8 +13,11 @@ class OfflineQueueCacheService {
   static const String _prefix = 'offline_queue_';
   static const String _timePrefix = 'offline_queue_time_';
 
-  static String _queueKey(DateTime date) => '$_prefix${FirestorePaths.dateKey(date)}';
-  static String _timeKey(DateTime date) => '$_timePrefix${FirestorePaths.dateKey(date)}';
+  static String _queueKey(DateTime date) =>
+      '$_prefix${FirestorePaths.dateKey(date)}';
+
+  static String _timeKey(DateTime date) =>
+      '$_timePrefix${FirestorePaths.dateKey(date)}';
 
   /// Saves the daily appointment queue to local storage.
   static Future<void> saveQueue(

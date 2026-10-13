@@ -39,21 +39,21 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
     final doctors = clinicProvider.doctors;
 
     // If only 1 doctor exists in clinic, automatically select that doctor for live chamber sync
-    final effectiveDoctorId = _selectedDoctorId ??
-        (doctors.length == 1 ? doctors.first.id : null);
+    final effectiveDoctorId =
+        _selectedDoctorId ?? (doctors.length == 1 ? doctors.first.id : null);
 
     return Scaffold(
       appBar: showAppBar
-          ? AppBar(
-              title: const Text('Appointments & Live Queue'),
-              elevation: 0,
-            )
+          ? AppBar(title: const Text('Appointments & Live Queue'), elevation: 0)
           : null,
       body: Column(
         children: [
           // Top Navigation & Filter Bar
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14.0,
+              vertical: 8.0,
+            ),
             color: Colors.grey.shade100,
             child: Row(
               children: [
@@ -164,8 +164,8 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                 final filtered = _selectedDoctorId == null
                     ? allAppointments
                     : allAppointments
-                        .where((a) => a.doctorId == _selectedDoctorId)
-                        .toList();
+                          .where((a) => a.doctorId == _selectedDoctorId)
+                          .toList();
 
                 if (filtered.isEmpty) {
                   return Center(
@@ -203,10 +203,10 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
 
                       final queueView =
                           AppointmentEngine.partitionQueueForReception(
-                        appointments: filtered,
-                        activeAppointmentId: session?.activeAppointmentId,
-                        activeQueueNumber: session?.activeQueueNumber,
-                      );
+                            appointments: filtered,
+                            activeAppointmentId: session?.activeAppointmentId,
+                            activeQueueNumber: session?.activeQueueNumber,
+                          );
 
                       return _buildQueueListView(queueView);
                     },
@@ -215,8 +215,9 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
 
                 // Streaming all chamber sessions across multiple practitioners when viewing "All Doctors"
                 return StreamBuilder<Map<String, ChamberSession>>(
-                  stream:
-                      clinicProvider.streamAllChamberSessions(_selectedDate),
+                  stream: clinicProvider.streamAllChamberSessions(
+                    _selectedDate,
+                  ),
                   builder: (context, allSessionsSnap) {
                     final sessions = allSessionsSnap.data ?? {};
                     final activeIds = sessions.values
@@ -227,9 +228,9 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
 
                     final queueView =
                         AppointmentEngine.partitionQueueForReception(
-                      appointments: filtered,
-                      activeAppointmentIds: activeIds,
-                    );
+                          appointments: filtered,
+                          activeAppointmentIds: activeIds,
+                        );
 
                     return _buildQueueListView(queueView);
                   },
@@ -264,8 +265,9 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
             showDoctorTag: _selectedDoctorId == null,
             onExpansionChanged: (expanded) {
               setState(() {
-                _expandedAppointmentId =
-                    expanded ? queueView.inChamber!.id : null;
+                _expandedAppointmentId = expanded
+                    ? queueView.inChamber!.id
+                    : null;
               });
             },
           ),
@@ -406,10 +408,7 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                 Text(
                   '${queueView.completed.length} patient${queueView.completed.length == 1 ? '' : 's'} were consulted. All records are archived in the top accordion.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.green.shade800,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.green.shade800),
                 ),
               ],
             ),

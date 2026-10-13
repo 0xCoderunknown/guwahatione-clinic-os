@@ -94,7 +94,9 @@ class BookingEligibilityBanner extends StatelessWidget {
                 color: isZeroPolicy ? Colors.red.shade50 : Colors.amber.shade50,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: isZeroPolicy ? Colors.red.shade200 : Colors.amber.shade300,
+                  color: isZeroPolicy
+                      ? Colors.red.shade200
+                      : Colors.amber.shade300,
                 ),
               ),
               child: Column(
@@ -125,8 +127,9 @@ class BookingEligibilityBanner extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  isZeroPolicy ? Colors.red.shade700 : Colors.amber.shade800,
+              backgroundColor: isZeroPolicy
+                  ? Colors.red.shade700
+                  : Colors.amber.shade800,
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(ctx, true),

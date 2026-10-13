@@ -1,7 +1,7 @@
+import 'package:appointment_app/services/sound_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:appointment_app/services/sound_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -122,7 +122,9 @@ void main() {
   });
 
   group('SoundService Widget Integration Tests', () {
-    testWidgets('ListenableBuilder reflects mute state toggles', (tester) async {
+    testWidgets('ListenableBuilder reflects mute state toggles', (
+      tester,
+    ) async {
       final service = SoundService.create(initialMuted: false);
 
       await tester.pumpWidget(

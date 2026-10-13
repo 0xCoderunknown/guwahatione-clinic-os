@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/core/engines/engines.dart';
 import 'package:appointment_app/models/appointment.dart';
 import 'package:appointment_app/models/doctor.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AppointmentEngine - Dynamic Estimated Consultation Window Tests', () {
@@ -117,23 +117,32 @@ void main() {
       expect(estimate.relativeSummary, contains('~20 min wait (2 ahead)'));
     });
 
-    test('Considers future chamber start time when doctor is not yet sitting', () {
-      final queue = createMockQueue();
-      final currentTime = DateTime(2026, 10, 11, 16, 0); // 4:00 PM
-      final scheduledStart = DateTime(2026, 10, 11, 17, 0); // Doctor arrives at 5:00 PM
+    test(
+      'Considers future chamber start time when doctor is not yet sitting',
+      () {
+        final queue = createMockQueue();
+        final currentTime = DateTime(2026, 10, 11, 16, 0); // 4:00 PM
+        final scheduledStart = DateTime(
+          2026,
+          10,
+          11,
+          17,
+          0,
+        ); // Doctor arrives at 5:00 PM
 
-      final estimate = AppointmentEngine.calculateEstimatedWindow(
-        doctorAppointments: queue,
-        targetQueueNumber: 3,
-        currentTime: currentTime,
-        chamberStartTime: scheduledStart,
-        averageMinutesPerPatient: 10,
-      );
+        final estimate = AppointmentEngine.calculateEstimatedWindow(
+          doctorAppointments: queue,
+          targetQueueNumber: 3,
+          currentTime: currentTime,
+          chamberStartTime: scheduledStart,
+          averageMinutesPerPatient: 10,
+        );
 
-      expect(estimate.patientsAhead, 1);
-      // Calculated from scheduledStart (5:00 PM + 10 mins = 5:10 PM)
-      expect(estimate.estimatedStart, DateTime(2026, 10, 11, 17, 10));
-    });
+        expect(estimate.patientsAhead, 1);
+        // Calculated from scheduledStart (5:00 PM + 10 mins = 5:10 PM)
+        expect(estimate.estimatedStart, DateTime(2026, 10, 11, 17, 10));
+      },
+    );
   });
 
   group('AppointmentEngine - partitionQueueForReception Tests', () {
@@ -183,86 +192,95 @@ void main() {
       expect(view.isBypassed('appt_15'), isFalse);
     });
 
-    test('When VIP is admitted out of order, earlier waiting tokens are bypassed', () {
-      final appts = [
-        createAppt('appt_12', 12, AppointmentStatus.pending),
-        createAppt('appt_13', 13, AppointmentStatus.pending),
-        createAppt('appt_14', 14, AppointmentStatus.pending),
-        createAppt('appt_15', 15, AppointmentStatus.pending),
-      ];
+    test(
+      'When VIP is admitted out of order, earlier waiting tokens are bypassed',
+      () {
+        final appts = [
+          createAppt('appt_12', 12, AppointmentStatus.pending),
+          createAppt('appt_13', 13, AppointmentStatus.pending),
+          createAppt('appt_14', 14, AppointmentStatus.pending),
+          createAppt('appt_15', 15, AppointmentStatus.pending),
+        ];
 
-      // VIP Token 15 admitted directly
-      final view = AppointmentEngine.partitionQueueForReception(
-        appointments: appts,
-        activeAppointmentId: 'appt_15',
-        activeQueueNumber: 15,
-      );
-
-      expect(view.inChamber?.id, 'appt_15');
-      expect(view.waiting.map((a) => a.queueNumber).toList(), [12, 13, 14]);
-
-      // All 12, 13, 14 are bypassed
-      expect(view.isBypassed('appt_12'), isTrue);
-      expect(view.isBypassed('appt_13'), isTrue);
-      expect(view.isBypassed('appt_14'), isTrue);
-    });
-
-    test('When doctor is idle (no inChamber), no tokens are flagged as bypassed', () {
-      final appts = [
-        createAppt('appt_12', 12, AppointmentStatus.pending),
-        createAppt('appt_13', 13, AppointmentStatus.pending),
-      ];
-
-      final view = AppointmentEngine.partitionQueueForReception(
-        appointments: appts,
-      );
-
-      expect(view.inChamber, isNull);
-      expect(view.waiting.length, 2);
-      expect(view.isBypassed('appt_12'), isFalse);
-      expect(view.isBypassed('appt_13'), isFalse);
-    });
-
-    test('countDoctorAppointments accurately tallies appointments per doctor', () {
-      final appts = [
-        createAppt('appt_1', 1, AppointmentStatus.pending),
-        createAppt('appt_2', 2, AppointmentStatus.pending),
-        Appointment(
-          id: 'appt_3',
-          patientPhone: '9864033333',
-          patientName: 'Patient Three',
-          doctorId: 'doc_2',
-          doctorName: 'Dr. Other',
-          scheduledDate: DateTime(2026, 10, 11),
-          amountCollected: 500,
-          paymentType: PaymentType.paidCash,
-          status: AppointmentStatus.pending,
-          queueNumber: 1,
-        ),
-      ];
-
-      expect(
-        AppointmentEngine.countDoctorAppointments(
+        // VIP Token 15 admitted directly
+        final view = AppointmentEngine.partitionQueueForReception(
           appointments: appts,
-          doctorId: 'doc_1',
-        ),
-        2,
-      );
-      expect(
-        AppointmentEngine.countDoctorAppointments(
+          activeAppointmentId: 'appt_15',
+          activeQueueNumber: 15,
+        );
+
+        expect(view.inChamber?.id, 'appt_15');
+        expect(view.waiting.map((a) => a.queueNumber).toList(), [12, 13, 14]);
+
+        // All 12, 13, 14 are bypassed
+        expect(view.isBypassed('appt_12'), isTrue);
+        expect(view.isBypassed('appt_13'), isTrue);
+        expect(view.isBypassed('appt_14'), isTrue);
+      },
+    );
+
+    test(
+      'When doctor is idle (no inChamber), no tokens are flagged as bypassed',
+      () {
+        final appts = [
+          createAppt('appt_12', 12, AppointmentStatus.pending),
+          createAppt('appt_13', 13, AppointmentStatus.pending),
+        ];
+
+        final view = AppointmentEngine.partitionQueueForReception(
           appointments: appts,
-          doctorId: 'doc_2',
-        ),
-        1,
-      );
-      expect(
-        AppointmentEngine.countDoctorAppointments(
-          appointments: appts,
-          doctorId: 'doc_999',
-        ),
-        0,
-      );
-    });
+        );
+
+        expect(view.inChamber, isNull);
+        expect(view.waiting.length, 2);
+        expect(view.isBypassed('appt_12'), isFalse);
+        expect(view.isBypassed('appt_13'), isFalse);
+      },
+    );
+
+    test(
+      'countDoctorAppointments accurately tallies appointments per doctor',
+      () {
+        final appts = [
+          createAppt('appt_1', 1, AppointmentStatus.pending),
+          createAppt('appt_2', 2, AppointmentStatus.pending),
+          Appointment(
+            id: 'appt_3',
+            patientPhone: '9864033333',
+            patientName: 'Patient Three',
+            doctorId: 'doc_2',
+            doctorName: 'Dr. Other',
+            scheduledDate: DateTime(2026, 10, 11),
+            amountCollected: 500,
+            paymentType: PaymentType.paidCash,
+            status: AppointmentStatus.pending,
+            queueNumber: 1,
+          ),
+        ];
+
+        expect(
+          AppointmentEngine.countDoctorAppointments(
+            appointments: appts,
+            doctorId: 'doc_1',
+          ),
+          2,
+        );
+        expect(
+          AppointmentEngine.countDoctorAppointments(
+            appointments: appts,
+            doctorId: 'doc_2',
+          ),
+          1,
+        );
+        expect(
+          AppointmentEngine.countDoctorAppointments(
+            appointments: appts,
+            doctorId: 'doc_999',
+          ),
+          0,
+        );
+      },
+    );
   });
 
   group('AppointmentEngine - Duplicate Booking Prevention Tests', () {
@@ -284,7 +302,8 @@ void main() {
       Appointment(
         id: 'appt_2',
         patientPhone: '9876543210',
-        patientName: 'Anita Das', // Family member sharing same phone
+        patientName: 'Anita Das',
+        // Family member sharing same phone
         doctorId: 'doc_1',
         doctorName: 'Dr. Baruah',
         scheduledDate: DateTime(2026, 10, 15, 10, 15),
@@ -302,35 +321,43 @@ void main() {
         scheduledDate: DateTime(2026, 10, 15, 10, 30),
         amountCollected: 0,
         paymentType: PaymentType.paidCash,
-        status: AppointmentStatus.absent, // Absent slot
+        status: AppointmentStatus.absent,
+        // Absent slot
         queueNumber: 3,
       ),
     ];
 
-    test('findDuplicateBooking detects exact same patient on same date and doctor', () {
-      final duplicate = AppointmentEngine.findDuplicateBooking(
-        appointments: existingAppts,
-        doctorId: 'doc_1',
-        patientName: '  ramesh das  ', // case & whitespace insensitive
-        patientPhone: '9876543210',
-        targetDate: targetDate,
-      );
+    test(
+      'findDuplicateBooking detects exact same patient on same date and doctor',
+      () {
+        final duplicate = AppointmentEngine.findDuplicateBooking(
+          appointments: existingAppts,
+          doctorId: 'doc_1',
+          patientName: '  ramesh das  ',
+          // case & whitespace insensitive
+          patientPhone: '9876543210',
+          targetDate: targetDate,
+        );
 
-      expect(duplicate, isNotNull);
-      expect(duplicate?.id, 'appt_1');
-    });
+        expect(duplicate, isNotNull);
+        expect(duplicate?.id, 'appt_1');
+      },
+    );
 
-    test('Family member sharing same phone number is NOT blocked as duplicate', () {
-      final duplicate = AppointmentEngine.findDuplicateBooking(
-        appointments: existingAppts,
-        doctorId: 'doc_1',
-        patientName: 'Baby of Ramesh Das',
-        patientPhone: '9876543210',
-        targetDate: targetDate,
-      );
+    test(
+      'Family member sharing same phone number is NOT blocked as duplicate',
+      () {
+        final duplicate = AppointmentEngine.findDuplicateBooking(
+          appointments: existingAppts,
+          doctorId: 'doc_1',
+          patientName: 'Baby of Ramesh Das',
+          patientPhone: '9876543210',
+          targetDate: targetDate,
+        );
 
-      expect(duplicate, isNull);
-    });
+        expect(duplicate, isNull);
+      },
+    );
 
     test('Absent appointment slot does NOT block re-booking on same date', () {
       final duplicate = AppointmentEngine.findDuplicateBooking(
@@ -488,4 +515,3 @@ void main() {
     });
   });
 }
-

@@ -1,33 +1,35 @@
-
-import 'package:flutter_test/flutter_test.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:appointment_app/models/models.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Patient Model Clinical Tests', () {
-    test('Serializes and deserializes patient with all clinical attributes', () {
-      final patient = Patient(
-        id: '9876543210',
-        name: 'Jane Doe',
-        age: 34,
-        gender: 'Female',
-        allergies: ['Penicillin', 'Sulfa'],
-        lastVisitDate: DateTime(2026, 10, 5),
-        phoneNumber: '9876543210',
-      );
+    test(
+      'Serializes and deserializes patient with all clinical attributes',
+      () {
+        final patient = Patient(
+          id: '9876543210',
+          name: 'Jane Doe',
+          age: 34,
+          gender: 'Female',
+          allergies: ['Penicillin', 'Sulfa'],
+          lastVisitDate: DateTime(2026, 10, 5),
+          phoneNumber: '9876543210',
+        );
 
-      final json = patient.toJson();
-      expect(json['gender'], 'Female');
-      expect(json['allergies'], ['Penicillin', 'Sulfa']);
+        final json = patient.toJson();
+        expect(json['gender'], 'Female');
+        expect(json['allergies'], ['Penicillin', 'Sulfa']);
 
-      final fromJson = Patient.fromJson(json);
-      expect(fromJson.id, '9876543210');
-      expect(fromJson.name, 'Jane Doe');
-      expect(fromJson.age, 34);
-      expect(fromJson.gender, 'Female');
-      expect(fromJson.allergies, ['Penicillin', 'Sulfa']);
-      expect(fromJson.phoneNumber, '9876543210');
-    });
+        final fromJson = Patient.fromJson(json);
+        expect(fromJson.id, '9876543210');
+        expect(fromJson.name, 'Jane Doe');
+        expect(fromJson.age, 34);
+        expect(fromJson.gender, 'Female');
+        expect(fromJson.allergies, ['Penicillin', 'Sulfa']);
+        expect(fromJson.phoneNumber, '9876543210');
+      },
+    );
   });
 
   group('Vitals Model Tests', () {
@@ -151,7 +153,10 @@ void main() {
       expect(stoppedItem.action, MedicationAction.stop);
       expect(stoppedItem.action.code, 'STOP');
       expect(stoppedItem.isActive, isFalse);
-      expect(stoppedItem.stopReason, 'Switched to Telmisartan due to pedal edema');
+      expect(
+        stoppedItem.stopReason,
+        'Switched to Telmisartan due to pedal edema',
+      );
     });
 
     test('Fallback unlistedName for outside medications', () {
@@ -213,7 +218,10 @@ void main() {
         vitals: const Vitals(systolicBp: 130, diastolicBp: 80, pulseRate: 72),
         chiefComplaints: ['Headache for 3 days', 'Routine follow-up'],
         clinicalExamination: 'Chest clear, No peripheral edema',
-        provisionalDiagnosis: ['Essential Hypertension (Controlled)', 'Type 2 Diabetes'],
+        provisionalDiagnosis: [
+          'Essential Hypertension (Controlled)',
+          'Type 2 Diabetes',
+        ],
         reviewedInvestigations: [
           DiagnosticInvestigationReview(
             id: 'rev-1',
@@ -261,7 +269,10 @@ void main() {
       expect(consultation.continuedPrescriptions.length, 1);
       expect(consultation.startedPrescriptions.length, 1);
       expect(consultation.stoppedPrescriptions.length, 1);
-      expect(consultation.stoppedPrescriptions.first.medicineName, 'Amlodipine 5mg');
+      expect(
+        consultation.stoppedPrescriptions.first.medicineName,
+        'Amlodipine 5mg',
+      );
 
       // Test JSON round-trip with Firestore Timestamps
       final json = consultation.toJson();
@@ -354,7 +365,10 @@ void main() {
         doctorId: 'doc-1',
         doctorName: 'Dr. Baruah',
         createdAt: DateTime(2026, 10, 1),
-        provisionalDiagnosis: ['Type 2 Diabetes', 'Hypertension (Switched ARB)'],
+        provisionalDiagnosis: [
+          'Type 2 Diabetes',
+          'Hypertension (Switched ARB)',
+        ],
         prescriptionItems: [
           reconciledMetformin,
           reconciledAmlodipine,
@@ -379,7 +393,10 @@ void main() {
 
       expect(visit2.stoppedPrescriptions.length, 1);
       expect(visit2.stoppedPrescriptions.first.medicineName, 'Amlodipine 5mg');
-      expect(visit2.stoppedPrescriptions.first.stopReason, 'Pedal edema observed');
+      expect(
+        visit2.stoppedPrescriptions.first.stopReason,
+        'Pedal edema observed',
+      );
     });
   });
 }

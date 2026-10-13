@@ -1,16 +1,17 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
+import '../services/sound_service.dart';
 import '../widgets/widgets.dart';
 import 'appointment_list_screen.dart';
 import 'dashboard_screen.dart';
 import 'doctor_list_screen.dart';
 import 'medicine_catalogue_screen.dart';
 import 'statistics_screen.dart';
-import '../services/sound_service.dart';
 
 class OwnerShell extends StatefulWidget {
   const OwnerShell({super.key});
@@ -144,12 +145,7 @@ class _OwnerShellState extends State<OwnerShell> {
               pages,
               desktopDestinations,
             )
-          : _buildMobileShell(
-              context,
-              safeIndex,
-              pages,
-              mobileDestinations,
-            ),
+          : _buildMobileShell(context, safeIndex, pages, mobileDestinations),
     );
   }
 
@@ -187,7 +183,9 @@ class _OwnerShellState extends State<OwnerShell> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isOwner ? Colors.amber.shade50 : Colors.teal.shade50,
+                      color: isOwner
+                          ? Colors.amber.shade50
+                          : Colors.teal.shade50,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -216,8 +214,12 @@ class _OwnerShellState extends State<OwnerShell> {
                           isOwner ? '👑 Clinic Owner' : 'Reception Desk',
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: isOwner ? FontWeight.bold : FontWeight.normal,
-                            color: isOwner ? Colors.amber.shade900 : Colors.grey,
+                            fontWeight: isOwner
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isOwner
+                                ? Colors.amber.shade900
+                                : Colors.grey,
                           ),
                         ),
                       ],

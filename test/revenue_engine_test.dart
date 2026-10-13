@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/core/engines/revenue_engine.dart';
 import 'package:appointment_app/models/appointment.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('RevenueEngine - Realized Revenue Calculation Tests', () {
@@ -8,36 +8,39 @@ void main() {
       expect(RevenueEngine.calculateRealizedRevenue([]), 0);
     });
 
-    test('Pending and absent appointments strictly do not generate revenue', () {
-      final appts = [
-        Appointment(
-          id: '1',
-          patientPhone: '9876543210',
-          patientName: 'Pending Patient',
-          status: AppointmentStatus.pending,
-          paymentType: PaymentType.paidCash,
-          amountCollected: 500,
-          queueNumber: 1,
-          scheduledDate: DateTime(2026, 10, 11),
-          doctorId: 'doc-1',
-          doctorName: 'Dr. Baruah',
-        ),
-        Appointment(
-          id: '2',
-          patientPhone: '9876543211',
-          patientName: 'Absent Patient',
-          status: AppointmentStatus.absent,
-          paymentType: PaymentType.paidCash,
-          amountCollected: 0,
-          queueNumber: 2,
-          scheduledDate: DateTime(2026, 10, 11),
-          doctorId: 'doc-1',
-          doctorName: 'Dr. Baruah',
-        ),
-      ];
+    test(
+      'Pending and absent appointments strictly do not generate revenue',
+      () {
+        final appts = [
+          Appointment(
+            id: '1',
+            patientPhone: '9876543210',
+            patientName: 'Pending Patient',
+            status: AppointmentStatus.pending,
+            paymentType: PaymentType.paidCash,
+            amountCollected: 500,
+            queueNumber: 1,
+            scheduledDate: DateTime(2026, 10, 11),
+            doctorId: 'doc-1',
+            doctorName: 'Dr. Baruah',
+          ),
+          Appointment(
+            id: '2',
+            patientPhone: '9876543211',
+            patientName: 'Absent Patient',
+            status: AppointmentStatus.absent,
+            paymentType: PaymentType.paidCash,
+            amountCollected: 0,
+            queueNumber: 2,
+            scheduledDate: DateTime(2026, 10, 11),
+            doctorId: 'doc-1',
+            doctorName: 'Dr. Baruah',
+          ),
+        ];
 
-      expect(RevenueEngine.calculateRealizedRevenue(appts), 0);
-    });
+        expect(RevenueEngine.calculateRealizedRevenue(appts), 0);
+      },
+    );
 
     test('Completed appointments correctly sum realized revenue', () {
       final appts = [
@@ -268,78 +271,81 @@ void main() {
       expect(RevenueEngine.calculateDoctorAnalytics([]), isEmpty);
     });
 
-    test('Groups multi-doctor appointments and calculates individual analytics', () {
-      final appts = [
-        Appointment(
-          id: '1',
-          patientPhone: '9876543210',
-          patientName: 'P1',
-          status: AppointmentStatus.completed,
-          paymentType: PaymentType.paidCash,
-          amountCollected: 500,
-          queueNumber: 1,
-          scheduledDate: DateTime(2026, 10, 11),
-          doctorId: 'doc-1',
-          doctorName: 'Dr. Baruah',
-        ),
-        Appointment(
-          id: '2',
-          patientPhone: '9876543211',
-          patientName: 'P2',
-          status: AppointmentStatus.pending,
-          paymentType: PaymentType.paidCash,
-          amountCollected: 500,
-          queueNumber: 2,
-          scheduledDate: DateTime(2026, 10, 11),
-          doctorId: 'doc-1',
-          doctorName: 'Dr. Baruah',
-        ),
-        Appointment(
-          id: '3',
-          patientPhone: '9876543212',
-          patientName: 'P3',
-          status: AppointmentStatus.completed,
-          paymentType: PaymentType.paidCash,
-          amountCollected: 700,
-          queueNumber: 1,
-          scheduledDate: DateTime(2026, 10, 11),
-          doctorId: 'doc-2',
-          doctorName: 'Dr. Sharma',
-        ),
-        Appointment(
-          id: '4',
-          patientPhone: '9876543213',
-          patientName: 'P4',
-          status: AppointmentStatus.completed,
-          paymentType: PaymentType.freeReview,
-          amountCollected: 0,
-          queueNumber: 2,
-          scheduledDate: DateTime(2026, 10, 11),
-          doctorId: 'doc-2',
-          doctorName: 'Dr. Sharma',
-        ),
-      ];
+    test(
+      'Groups multi-doctor appointments and calculates individual analytics',
+      () {
+        final appts = [
+          Appointment(
+            id: '1',
+            patientPhone: '9876543210',
+            patientName: 'P1',
+            status: AppointmentStatus.completed,
+            paymentType: PaymentType.paidCash,
+            amountCollected: 500,
+            queueNumber: 1,
+            scheduledDate: DateTime(2026, 10, 11),
+            doctorId: 'doc-1',
+            doctorName: 'Dr. Baruah',
+          ),
+          Appointment(
+            id: '2',
+            patientPhone: '9876543211',
+            patientName: 'P2',
+            status: AppointmentStatus.pending,
+            paymentType: PaymentType.paidCash,
+            amountCollected: 500,
+            queueNumber: 2,
+            scheduledDate: DateTime(2026, 10, 11),
+            doctorId: 'doc-1',
+            doctorName: 'Dr. Baruah',
+          ),
+          Appointment(
+            id: '3',
+            patientPhone: '9876543212',
+            patientName: 'P3',
+            status: AppointmentStatus.completed,
+            paymentType: PaymentType.paidCash,
+            amountCollected: 700,
+            queueNumber: 1,
+            scheduledDate: DateTime(2026, 10, 11),
+            doctorId: 'doc-2',
+            doctorName: 'Dr. Sharma',
+          ),
+          Appointment(
+            id: '4',
+            patientPhone: '9876543213',
+            patientName: 'P4',
+            status: AppointmentStatus.completed,
+            paymentType: PaymentType.freeReview,
+            amountCollected: 0,
+            queueNumber: 2,
+            scheduledDate: DateTime(2026, 10, 11),
+            doctorId: 'doc-2',
+            doctorName: 'Dr. Sharma',
+          ),
+        ];
 
-      final analytics = RevenueEngine.calculateDoctorAnalytics(appts);
-      expect(analytics.length, 2);
+        final analytics = RevenueEngine.calculateDoctorAnalytics(appts);
+        expect(analytics.length, 2);
 
-      final doc1 = analytics.firstWhere((d) => d.doctorId == 'doc-1');
-      expect(doc1.doctorName, 'Dr. Baruah');
-      expect(doc1.totalPatients, 2);
-      expect(doc1.completed, 1);
-      expect(doc1.pending, 1);
-      expect(doc1.absent, 0);
-      expect(doc1.free, 0);
-      expect(doc1.realizedRevenue, 500);
+        final doc1 = analytics.firstWhere((d) => d.doctorId == 'doc-1');
+        expect(doc1.doctorName, 'Dr. Baruah');
+        expect(doc1.totalPatients, 2);
+        expect(doc1.completed, 1);
+        expect(doc1.pending, 1);
+        expect(doc1.absent, 0);
+        expect(doc1.free, 0);
+        expect(doc1.realizedRevenue, 500);
 
-      final doc2 = analytics.firstWhere((d) => d.doctorId == 'doc-2');
-      expect(doc2.doctorName, 'Dr. Sharma');
-      expect(doc2.totalPatients, 2);
-      expect(doc2.completed, 2);
-      expect(doc2.pending, 0);
-      expect(doc2.absent, 0);
-      expect(doc2.free, 1);
-      expect(doc2.realizedRevenue, 700);
-    });
+        final doc2 = analytics.firstWhere((d) => d.doctorId == 'doc-2');
+        expect(doc2.doctorName, 'Dr. Sharma');
+        expect(doc2.totalPatients, 2);
+        expect(doc2.completed, 2);
+        expect(doc2.pending, 0);
+        expect(doc2.absent, 0);
+        expect(doc2.free, 1);
+        expect(doc2.realizedRevenue, 700);
+      },
+    );
   });
 }

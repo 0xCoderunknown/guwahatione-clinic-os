@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/core/engines/engines.dart';
 import 'package:appointment_app/models/models.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Appointment & Doctor Model Serialization Audit Tests', () {
@@ -24,28 +24,31 @@ void main() {
       expect(appt.queueNumber, 1);
     });
 
-    test('Appointment serializes and deserializes with Firestore Timestamp', () {
-      final now = DateTime(2026, 10, 5, 10, 0);
-      final original = Appointment(
-        id: 'appt-timestamp',
-        patientPhone: '9876543210',
-        patientName: 'Native Patient',
-        status: AppointmentStatus.absent,
-        paymentType: PaymentType.paidCash,
-        amountCollected: 0,
-        queueNumber: 4,
-        scheduledDate: now,
-        doctorId: 'doc-1',
-        doctorName: 'Dr. Baruah',
-      );
+    test(
+      'Appointment serializes and deserializes with Firestore Timestamp',
+      () {
+        final now = DateTime(2026, 10, 5, 10, 0);
+        final original = Appointment(
+          id: 'appt-timestamp',
+          patientPhone: '9876543210',
+          patientName: 'Native Patient',
+          status: AppointmentStatus.absent,
+          paymentType: PaymentType.paidCash,
+          amountCollected: 0,
+          queueNumber: 4,
+          scheduledDate: now,
+          doctorId: 'doc-1',
+          doctorName: 'Dr. Baruah',
+        );
 
-      final json = original.toJson();
-      final fromJson = Appointment.fromJson(json);
+        final json = original.toJson();
+        final fromJson = Appointment.fromJson(json);
 
-      expect(fromJson.status, AppointmentStatus.absent);
-      expect(fromJson.status.displayName, 'Absent');
-      expect(fromJson.scheduledDate, now);
-    });
+        expect(fromJson.status, AppointmentStatus.absent);
+        expect(fromJson.status.displayName, 'Absent');
+        expect(fromJson.scheduledDate, now);
+      },
+    );
 
     test('Appointment.fromJson reconciles stale visitStatus when status is completed', () {
       final rawMap = {
@@ -67,25 +70,28 @@ void main() {
       expect(appt.status, AppointmentStatus.completed);
     });
 
-    test('Appointment.fromJson reconciles stale visitStatus when status is absent', () {
-      final rawMap = {
-        'id': 'appt-drift-absent',
-        'patientPhone': '9876543210',
-        'patientName': 'No-Show Patient',
-        'status': 'absent',
-        'visitStatus': 'waitingInLobby', // Stale field
-        'paymentType': 'paidCash',
-        'amountCollected': 0,
-        'queueNumber': 6,
-        'scheduledDate': DateTime(2026, 10, 5),
-        'doctorId': 'doc-1',
-        'doctorName': 'Dr. Baruah',
-      };
+    test(
+      'Appointment.fromJson reconciles stale visitStatus when status is absent',
+      () {
+        final rawMap = {
+          'id': 'appt-drift-absent',
+          'patientPhone': '9876543210',
+          'patientName': 'No-Show Patient',
+          'status': 'absent',
+          'visitStatus': 'waitingInLobby', // Stale field
+          'paymentType': 'paidCash',
+          'amountCollected': 0,
+          'queueNumber': 6,
+          'scheduledDate': DateTime(2026, 10, 5),
+          'doctorId': 'doc-1',
+          'doctorName': 'Dr. Baruah',
+        };
 
-      final appt = Appointment.fromJson(rawMap);
-      expect(appt.visitStatus, VisitStatus.cancelled);
-      expect(appt.status, AppointmentStatus.absent);
-    });
+        final appt = Appointment.fromJson(rawMap);
+        expect(appt.visitStatus, VisitStatus.cancelled);
+        expect(appt.status, AppointmentStatus.absent);
+      },
+    );
 
     test('Appointment.toJson emits synchronized status and visitStatus', () {
       final appt = Appointment(
@@ -199,8 +205,10 @@ void main() {
           paymentType: PaymentType.paidCash,
           amountCollected: 500,
           queueNumber: 1,
-          scheduledDate: DateTime(2026, 10, 15), // 5 days ago
-          doctorId: doc2, // Different doctor!
+          scheduledDate: DateTime(2026, 10, 15),
+          // 5 days ago
+          doctorId: doc2,
+          // Different doctor!
           doctorName: 'Dr. Sharma',
         ),
       ];
@@ -226,7 +234,8 @@ void main() {
           paymentType: PaymentType.paidCash,
           amountCollected: 500,
           queueNumber: 1,
-          scheduledDate: DateTime(2026, 10, 10), // 10 days ago
+          scheduledDate: DateTime(2026, 10, 10),
+          // 10 days ago
           doctorId: doc1,
           doctorName: 'Dr. Baruah',
         ),
@@ -244,33 +253,37 @@ void main() {
       expect(eligibility.daysSinceLastVisit, 10);
     });
 
-    test('Patient who visited exactly 14 days ago is eligible (boundary test)', () {
-      final appts = [
-        Appointment(
-          id: 'appt-1',
-          patientPhone: '9876543210',
-          patientName: 'Test Patient',
-          status: AppointmentStatus.completed,
-          paymentType: PaymentType.paidCash,
-          amountCollected: 500,
-          queueNumber: 1,
-          scheduledDate: DateTime(2026, 10, 6), // exactly 14 days before Oct 20
+    test(
+      'Patient who visited exactly 14 days ago is eligible (boundary test)',
+      () {
+        final appts = [
+          Appointment(
+            id: 'appt-1',
+            patientPhone: '9876543210',
+            patientName: 'Test Patient',
+            status: AppointmentStatus.completed,
+            paymentType: PaymentType.paidCash,
+            amountCollected: 500,
+            queueNumber: 1,
+            scheduledDate: DateTime(2026, 10, 6),
+            // exactly 14 days before Oct 20
+            doctorId: doc1,
+            doctorName: 'Dr. Baruah',
+          ),
+        ];
+
+        final eligibility = PatientReviewEligibility.calculate(
+          appointments: appts,
           doctorId: doc1,
+          targetDate: today,
           doctorName: 'Dr. Baruah',
-        ),
-      ];
+        );
 
-      final eligibility = PatientReviewEligibility.calculate(
-        appointments: appts,
-        doctorId: doc1,
-        targetDate: today,
-        doctorName: 'Dr. Baruah',
-      );
-
-      expect(eligibility.hasVisitedDoctorEarlier, isTrue);
-      expect(eligibility.isWithinReviewPeriod, isTrue);
-      expect(eligibility.daysSinceLastVisit, 14);
-    });
+        expect(eligibility.hasVisitedDoctorEarlier, isTrue);
+        expect(eligibility.isWithinReviewPeriod, isTrue);
+        expect(eligibility.daysSinceLastVisit, 14);
+      },
+    );
 
     test('Patient who visited 15 days ago has hasVisitedDoctorEarlier=true but isWithinReviewPeriod=false (triggers warning, not disabled)', () {
       final appts = [
@@ -282,7 +295,8 @@ void main() {
           paymentType: PaymentType.paidCash,
           amountCollected: 500,
           queueNumber: 1,
-          scheduledDate: DateTime(2026, 10, 5), // 15 days before Oct 20
+          scheduledDate: DateTime(2026, 10, 5),
+          // 15 days before Oct 20
           doctorId: doc1,
           doctorName: 'Dr. Baruah',
         ),
@@ -339,7 +353,8 @@ void main() {
           paymentType: PaymentType.paidCash,
           amountCollected: 1000,
           queueNumber: 1,
-          scheduledDate: DateTime(2026, 10, 18), // 2 days ago
+          scheduledDate: DateTime(2026, 10, 18),
+          // 2 days ago
           doctorId: doc1,
           doctorName: 'Dr. Baruah',
         ),
@@ -377,7 +392,8 @@ void main() {
           paymentType: PaymentType.paidCash,
           amountCollected: 800,
           queueNumber: 1,
-          scheduledDate: DateTime(2026, 9, 25), // 25 days before Oct 20
+          scheduledDate: DateTime(2026, 9, 25),
+          // 25 days before Oct 20
           doctorId: doc1,
           doctorName: 'Dr. Baruah',
         ),
@@ -416,7 +432,8 @@ void main() {
           paymentType: PaymentType.paidCash,
           amountCollected: 800,
           queueNumber: 1,
-          scheduledDate: DateTime(2026, 9, 15), // 35 days before Oct 20
+          scheduledDate: DateTime(2026, 9, 15),
+          // 35 days before Oct 20
           doctorId: doc1,
           doctorName: 'Dr. Baruah',
         ),
@@ -470,7 +487,8 @@ void main() {
       final eligibility = PatientReviewEligibility.calculate(
         appointments: appts,
         doctorId: doc1,
-        targetDate: DateTime(2026, 10, 14), // 9 days after Oct 5
+        targetDate: DateTime(2026, 10, 14),
+        // 9 days after Oct 5
         doctorName: 'Dr. Baruah',
         allowedReviewDays: 14,
       );
@@ -525,7 +543,8 @@ void main() {
           paymentType: PaymentType.paidUpi,
           amountCollected: 500,
           queueNumber: 3,
-          scheduledDate: DateTime(2026, 10, 12), // Fresh paid consultation!
+          scheduledDate: DateTime(2026, 10, 12),
+          // Fresh paid consultation!
           doctorId: doc1,
           doctorName: 'Dr. Baruah',
         ),
@@ -534,7 +553,8 @@ void main() {
       final eligibility = PatientReviewEligibility.calculate(
         appointments: appts,
         doctorId: doc1,
-        targetDate: DateTime(2026, 10, 16), // 4 days after Oct 12
+        targetDate: DateTime(2026, 10, 16),
+        // 4 days after Oct 12
         doctorName: 'Dr. Baruah',
         allowedReviewDays: 14,
       );

@@ -22,7 +22,9 @@ class DoctorListScreen extends StatelessWidget {
       appBar: showAppBar
           ? AppBar(
               title: Text(
-                isOwner ? 'Doctors & Chamber PINs' : 'Doctor Rosters & Schedules',
+                isOwner
+                    ? 'Doctors & Chamber PINs'
+                    : 'Doctor Rosters & Schedules',
               ),
             )
           : null,
@@ -104,9 +106,7 @@ class DoctorRosterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
@@ -138,10 +138,7 @@ class DoctorRosterCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${AppFormatters.specialty(doctor.specialty)} • Fee: ₹${doctor.consultationFee}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade700,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
                   ),
                   const SizedBox(height: 6),
                   Wrap(
@@ -156,9 +153,7 @@ class DoctorRosterCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Colors.amber.shade50,
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: Colors.amber.shade300,
-                            ),
+                            border: Border.all(color: Colors.amber.shade300),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -190,9 +185,7 @@ class DoctorRosterCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Colors.teal.shade50,
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                              color: Colors.teal.shade200,
-                            ),
+                            border: Border.all(color: Colors.teal.shade200),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,

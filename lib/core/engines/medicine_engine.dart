@@ -411,13 +411,15 @@ abstract class MedicineEngine {
   }) {
     final cleanQuery = query.trim().toLowerCase();
     final filtered = catalog.where((m) {
-      final matchesQuery = cleanQuery.isEmpty ||
+      final matchesQuery =
+          cleanQuery.isEmpty ||
           m.productName.toLowerCase().contains(cleanQuery) ||
           m.composition.toLowerCase().contains(cleanQuery) ||
           m.strength.toLowerCase().contains(cleanQuery);
 
       final matchesForm =
-          formFilter == 'All' || m.form.toLowerCase() == formFilter.toLowerCase();
+          formFilter == 'All' ||
+          m.form.toLowerCase() == formFilter.toLowerCase();
 
       return matchesQuery && matchesForm;
     }).toList();
@@ -665,4 +667,3 @@ abstract class MedicineEngine {
     return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
   }
 }
-

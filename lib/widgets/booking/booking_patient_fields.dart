@@ -60,8 +60,9 @@ class BookingPatientFields extends StatelessWidget {
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(10),
                 ],
-                validator: (val) =>
-                    (val == null || val.length < 10) ? 'Enter valid 10-digit phone' : null,
+                validator: (val) => (val == null || val.length < 10)
+                    ? 'Enter valid 10-digit phone'
+                    : null,
                 onChanged: onPhoneChanged,
                 onFieldSubmitted: (_) => nameFocusNode.requestFocus(),
               ),
@@ -89,8 +90,9 @@ class BookingPatientFields extends StatelessWidget {
             border: OutlineInputBorder(),
             prefixIcon: Icon(Icons.person_outline),
           ),
-          validator: (val) =>
-              (val == null || val.trim().isEmpty) ? 'Patient name is required' : null,
+          validator: (val) => (val == null || val.trim().isEmpty)
+              ? 'Patient name is required'
+              : null,
           onFieldSubmitted: (_) => ageFocusNode.requestFocus(),
         ),
         const SizedBox(height: 14),
@@ -231,13 +233,11 @@ class _KeyboardGenderSelectorState extends State<KeyboardGenderSelector> {
             height: 56,
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color:
-                  hasFocus ? Colors.teal.withValues(alpha: 0.04) : Colors.white,
+              color: hasFocus
+                  ? Colors.teal.withValues(alpha: 0.04)
+                  : Colors.white,
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(
-                color: borderColor,
-                width: borderWidth,
-              ),
+              border: Border.all(color: borderColor, width: borderWidth),
             ),
             child: Row(
               children: _options.map((option) {
@@ -245,8 +245,8 @@ class _KeyboardGenderSelectorState extends State<KeyboardGenderSelector> {
                 final shortcut = option == 'Male'
                     ? 'M'
                     : option == 'Female'
-                        ? 'F'
-                        : 'O';
+                    ? 'F'
+                    : 'O';
 
                 return Expanded(
                   child: Padding(
@@ -271,8 +271,9 @@ class _KeyboardGenderSelectorState extends State<KeyboardGenderSelector> {
                           text: TextSpan(
                             style: TextStyle(
                               fontSize: 12.5,
-                              fontWeight:
-                                  isSelected ? FontWeight.bold : FontWeight.w500,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
                               color: isSelected
                                   ? Colors.white
                                   : Colors.grey.shade800,

@@ -13,7 +13,7 @@ class SoundService extends ChangeNotifier {
 
   // Test-friendly constructor
   SoundService.create({bool initialMuted = false, this.chimeTrigger})
-      : _isMuted = initialMuted;
+    : _isMuted = initialMuted;
 
   void Function({int? tokenNumber, String? doctorName})? chimeTrigger;
 
@@ -22,7 +22,9 @@ class SoundService extends ChangeNotifier {
   String? _lastAnnouncedKey;
 
   bool get isMuted => _isMuted;
+
   bool get isInitialized => _isInitialized;
+
   String? get lastAnnouncedKey => _lastAnnouncedKey;
 
   /// Loads mute preference from SharedPreferences.

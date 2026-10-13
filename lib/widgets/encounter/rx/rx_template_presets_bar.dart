@@ -78,7 +78,8 @@ class RxTemplatePresetsBar extends StatelessWidget {
                         color: Color(0xFF0F172A),
                       ),
                     ),
-                    backgroundColor: const Color(0xFFF0FDFA), // teal-50
+                    backgroundColor: const Color(0xFFF0FDFA),
+                    // teal-50
                     side: const BorderSide(
                       color: Color(0xFF99F6E4), // teal-200
                       width: 1,
@@ -113,9 +114,12 @@ class RxTemplatePresetsBar extends StatelessWidget {
     Color bg = const Color(0xFF0F766E); // teal-700
 
     if (result.addedItems.isNotEmpty && result.skippedDuplicates.isEmpty) {
-      msg = 'Applied "${result.templateName}" (+${result.addedItems.length} meds)';
-    } else if (result.addedItems.isNotEmpty && result.skippedDuplicates.isNotEmpty) {
-      msg = 'Applied "${result.templateName}" (+${result.addedItems.length} meds, ${result.skippedDuplicates.length} duplicate skipped)';
+      msg =
+          'Applied "${result.templateName}" (+${result.addedItems.length} meds)';
+    } else if (result.addedItems.isNotEmpty &&
+        result.skippedDuplicates.isNotEmpty) {
+      msg =
+          'Applied "${result.templateName}" (+${result.addedItems.length} meds, ${result.skippedDuplicates.length} duplicate skipped)';
     } else {
       msg = 'All medications from "${result.templateName}" are already active';
       bg = Colors.amber.shade900;

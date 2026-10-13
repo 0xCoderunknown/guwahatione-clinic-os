@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/core/engines/engines.dart';
 import 'package:appointment_app/models/appointment.dart';
 import 'package:appointment_app/models/doctor.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('OPD Asynchronous Payment & Check-In Workflow Tests', () {
@@ -106,44 +106,50 @@ void main() {
           .toList();
 
       expect(chamberTokens.length, 2);
-      expect(chamberTokens.any((a) => a.visitStatus == VisitStatus.booked), isFalse);
+      expect(
+        chamberTokens.any((a) => a.visitStatus == VisitStatus.booked),
+        isFalse,
+      );
     });
 
-    test('Chamber KPIs count only lobby-checked-in patients in waiting count', () {
-      final today = DateTime(2026, 10, 12);
+    test(
+      'Chamber KPIs count only lobby-checked-in patients in waiting count',
+      () {
+        final today = DateTime(2026, 10, 12);
 
-      final appointments = [
-        Appointment(
-          id: 'appt-1',
-          patientPhone: '9876500001',
-          patientName: 'In-Lobby Patient',
-          visitStatus: VisitStatus.waitingInLobby,
-          paymentType: PaymentType.paidCash,
-          amountCollected: 500,
-          queueNumber: 1,
-          scheduledDate: today,
-          doctorId: sampleDoctor.id,
-          doctorName: sampleDoctor.name,
-        ),
-        Appointment(
-          id: 'appt-2',
-          patientPhone: '9876500002',
-          patientName: 'Phone Booking Unarrived',
-          visitStatus: VisitStatus.booked,
-          paymentType: PaymentType.unpaid,
-          amountCollected: 0,
-          queueNumber: 2,
-          scheduledDate: today,
-          doctorId: sampleDoctor.id,
-          doctorName: sampleDoctor.name,
-        ),
-      ];
+        final appointments = [
+          Appointment(
+            id: 'appt-1',
+            patientPhone: '9876500001',
+            patientName: 'In-Lobby Patient',
+            visitStatus: VisitStatus.waitingInLobby,
+            paymentType: PaymentType.paidCash,
+            amountCollected: 500,
+            queueNumber: 1,
+            scheduledDate: today,
+            doctorId: sampleDoctor.id,
+            doctorName: sampleDoctor.name,
+          ),
+          Appointment(
+            id: 'appt-2',
+            patientPhone: '9876500002',
+            patientName: 'Phone Booking Unarrived',
+            visitStatus: VisitStatus.booked,
+            paymentType: PaymentType.unpaid,
+            amountCollected: 0,
+            queueNumber: 2,
+            scheduledDate: today,
+            doctorId: sampleDoctor.id,
+            doctorName: sampleDoctor.name,
+          ),
+        ];
 
-      final kpis = RevenueEngine.calculateChamberKpis(appointments);
-      // Total booked tokens is 2, but waiting in chamber is strictly 1 (the one in lobby)
-      expect(kpis.totalBooked, 2);
-      expect(kpis.waitingCount, 1);
-    });
+        final kpis = RevenueEngine.calculateChamberKpis(appointments);
+        // Total booked tokens is 2, but waiting in chamber is strictly 1 (the one in lobby)
+        expect(kpis.totalBooked, 2);
+        expect(kpis.waitingCount, 1);
+      },
+    );
 
     test('1-Tap Desk Reconciliation transitions booked token to waitingInLobby with payment', () {
       final today = DateTime(2026, 10, 12);

@@ -164,7 +164,8 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
               } catch (e) {
                 if (context.mounted) {
                   final errString = e.toString();
-                  final isPermission = errString.contains('Permission Denied') ||
+                  final isPermission =
+                      errString.contains('Permission Denied') ||
                       errString.contains('Only clinic administrators');
 
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -191,7 +192,9 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
                               isPermission
                                   ? 'Admin Access Required: Only clinic administrators (owner) can delete catalogue medicines.'
                                   : 'Could not delete medicine: ${errString.replaceFirst("Exception: ", "")}',
-                              style: const TextStyle(fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
@@ -249,7 +252,8 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
     } catch (e) {
       if (context.mounted) {
         final errString = e.toString();
-        final isPermission = errString.contains('Permission Denied') ||
+        final isPermission =
+            errString.contains('Permission Denied') ||
             errString.contains('Only clinic administrators');
 
         ScaffoldMessenger.of(context).showSnackBar(

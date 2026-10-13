@@ -82,10 +82,7 @@ class ChamberControlBanner extends StatelessWidget {
                 lastCompletedPatientName!.isNotEmpty)
               Text(
                 '($lastCompletedPatientName)',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.amber.shade900,
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.amber.shade900),
               ),
           ],
         ),
@@ -104,9 +101,7 @@ class ChamberControlBanner extends StatelessWidget {
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
       icon: isBusy
           ? const SizedBox(
@@ -158,10 +153,7 @@ class ChamberControlBanner extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: buttonWidget,
-                ),
+                SizedBox(width: double.infinity, child: buttonWidget),
               ],
             )
           : Row(
@@ -209,10 +201,7 @@ class ChamberControlBanner extends StatelessWidget {
             Badge(
               label: Text(
                 'SIGNAL SENT',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
               ),
               backgroundColor: Color(0xFF15803D),
             ),
@@ -233,10 +222,7 @@ class ChamberControlBanner extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       ),
       icon: const Icon(Icons.refresh_rounded, size: 16),
-      label: const Text(
-        'Re-Signal Reception',
-        style: TextStyle(fontSize: 12),
-      ),
+      label: const Text('Re-Signal Reception', style: TextStyle(fontSize: 12)),
       onPressed: onNextPatient,
     );
 
@@ -269,10 +255,7 @@ class ChamberControlBanner extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: buttonWidget,
-                ),
+                SizedBox(width: double.infinity, child: buttonWidget),
               ],
             )
           : Row(
@@ -340,10 +323,7 @@ class ChamberControlBanner extends StatelessWidget {
         ? FilledButton.icon(
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF2563EB),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             icon: const Icon(Icons.file_open_rounded, size: 18),
             label: const Text(
@@ -384,10 +364,7 @@ class ChamberControlBanner extends StatelessWidget {
                 ),
                 if (buttonWidget != null) ...[
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: buttonWidget,
-                  ),
+                  SizedBox(width: double.infinity, child: buttonWidget),
                 ],
               ],
             )
@@ -517,10 +494,7 @@ class ChamberControlBanner extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: buttonWidget,
-                ),
+                SizedBox(width: double.infinity, child: buttonWidget),
               ],
             )
           : Row(

@@ -116,20 +116,13 @@ class ChamberQueueHeader extends StatelessWidget {
         if (isCompact) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              titleRow,
-              const SizedBox(height: 6),
-              statusIndicator,
-            ],
+            children: [titleRow, const SizedBox(height: 6), statusIndicator],
           );
         }
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            titleRow,
-            statusIndicator,
-          ],
+          children: [titleRow, statusIndicator],
         );
       },
     );

@@ -135,8 +135,8 @@ class DoctorDailyBreakdownTable extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
-                                      color: appt.paymentType ==
-                                              PaymentType.unpaid
+                                      color:
+                                          appt.paymentType == PaymentType.unpaid
                                           ? Colors.red
                                           : Colors.orange.shade800,
                                     ),

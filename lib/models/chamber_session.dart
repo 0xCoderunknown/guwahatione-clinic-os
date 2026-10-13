@@ -58,17 +58,21 @@ class ChamberSession {
       activeQueueNumber: (data['activeQueueNumber'] as num?)?.toInt(),
       patientName: data['patientName'] as String?,
       patientPhone: data['patientPhone'] as String?,
-      lastCompletedQueueNumber:
-          (data['lastCompletedQueueNumber'] as num?)?.toInt(),
+      lastCompletedQueueNumber: (data['lastCompletedQueueNumber'] as num?)
+          ?.toInt(),
       lastCompletedPatientName: data['lastCompletedPatientName'] as String?,
     );
   }
 
   // Typed status indicator getters
   bool get isReadyForNext => status == 'ready_for_next';
+
   bool get isConsultationEnded => status == 'consultation_ended';
+
   bool get isCalling => status == 'calling';
+
   bool get isInConsultation => status == 'in_consultation';
+
   bool get isIdle => status == 'idle' || status.isEmpty;
 
   /// True if a patient is currently active (calling or in consultation).

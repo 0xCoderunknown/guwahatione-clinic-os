@@ -77,7 +77,8 @@ class BookingPaymentSection extends StatelessWidget {
           items: PaymentType.values.map((type) {
             String label;
             bool enabled = true;
-            final fee = selectedDoctor?.consultationFee ??
+            final fee =
+                selectedDoctor?.consultationFee ??
                 AppConstants.defaultConsultationFee;
             switch (type) {
               case PaymentType.paidCash:

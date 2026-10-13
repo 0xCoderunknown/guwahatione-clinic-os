@@ -57,7 +57,8 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
       _selectedPaymentType = widget.appointment.paymentType;
     }
 
-    if (widget.isExpanded != null && widget.isExpanded != oldWidget.isExpanded) {
+    if (widget.isExpanded != null &&
+        widget.isExpanded != oldWidget.isExpanded) {
       if (widget.isExpanded! && !_tileController.isExpanded) {
         _tileController.expand();
       } else if (!widget.isExpanded! && _tileController.isExpanded) {

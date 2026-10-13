@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/models/models.dart';
 import 'package:appointment_app/services/booking_service.dart';
 import 'package:appointment_app/services/firestore_paths.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Atomic Booking Locks & Forensic Audit Trail Tests (Phase 2)', () {
@@ -24,36 +24,42 @@ void main() {
       expect(lockKey1, equals(lockKey2));
     });
 
-    test('FirestorePaths.bookingLock allows family members under same phone', () {
-      final date = DateTime(2026, 10, 13);
-      final parentLock = FirestorePaths.bookingLock(
-        'doc-1',
-        date,
-        '9876543210',
-        'Sunita Das',
-      );
-      final childLock = FirestorePaths.bookingLock(
-        'doc-1',
-        date,
-        '9876543210',
-        'Aarav Das',
-      );
+    test(
+      'FirestorePaths.bookingLock allows family members under same phone',
+      () {
+        final date = DateTime(2026, 10, 13);
+        final parentLock = FirestorePaths.bookingLock(
+          'doc-1',
+          date,
+          '9876543210',
+          'Sunita Das',
+        );
+        final childLock = FirestorePaths.bookingLock(
+          'doc-1',
+          date,
+          '9876543210',
+          'Aarav Das',
+        );
 
-      expect(parentLock, isNot(equals(childLock)));
-      expect(parentLock, 'lock_doc-1_2026-10-13_9876543210_sunita_das');
-      expect(childLock, 'lock_doc-1_2026-10-13_9876543210_aarav_das');
-    });
+        expect(parentLock, isNot(equals(childLock)));
+        expect(parentLock, 'lock_doc-1_2026-10-13_9876543210_sunita_das');
+        expect(childLock, 'lock_doc-1_2026-10-13_9876543210_aarav_das');
+      },
+    );
 
-    test('DuplicateBookingException formats clean descriptive error message', () {
-      final ex = DuplicateBookingException(
-        'Patient Rahul Sharma already has an active booking with this doctor today.',
-      );
-      expect(
-        ex.toString(),
-        'Patient Rahul Sharma already has an active booking with this doctor today.',
-      );
-      expect(ex, isA<Exception>());
-    });
+    test(
+      'DuplicateBookingException formats clean descriptive error message',
+      () {
+        final ex = DuplicateBookingException(
+          'Patient Rahul Sharma already has an active booking with this doctor today.',
+        );
+        expect(
+          ex.toString(),
+          'Patient Rahul Sharma already has an active booking with this doctor today.',
+        );
+        expect(ex, isA<Exception>());
+      },
+    );
 
     test('AppointmentEvent serializes and deserializes accurately', () {
       final now = DateTime(2026, 10, 13, 10, 30);

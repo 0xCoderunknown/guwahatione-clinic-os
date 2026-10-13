@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/core/engines/engines.dart';
 import 'package:appointment_app/models/models.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('CashHandoverEngine - Daily Cash Handover Tests (P8)', () {
@@ -155,14 +155,18 @@ void main() {
       // Doctor breakdown
       expect(summary.doctorBreakdown.length, 2);
 
-      final doc1 = summary.doctorBreakdown.firstWhere((d) => d.doctorId == 'doc-1');
+      final doc1 = summary.doctorBreakdown.firstWhere(
+        (d) => d.doctorId == 'doc-1',
+      );
       expect(doc1.doctorName, 'Dr. A. Sharma');
       expect(doc1.completedCount, 2);
       expect(doc1.paidCount, 1);
       expect(doc1.freeReviewCount, 1);
       expect(doc1.cashCollected, 500);
 
-      final doc2 = summary.doctorBreakdown.firstWhere((d) => d.doctorId == 'doc-2');
+      final doc2 = summary.doctorBreakdown.firstWhere(
+        (d) => d.doctorId == 'doc-2',
+      );
       expect(doc2.doctorName, 'Dr. B. Das');
       expect(doc2.completedCount, 3);
       expect(doc2.paidCount, 2);
@@ -170,29 +174,50 @@ void main() {
       expect(doc2.cashCollected, 1200);
     });
 
-    test('calculateDenominationTotal sums Indian currency notes accurately', () {
-      final counts = {
-        500: 4,  // 2000
-        200: 5,  // 1000
-        100: 10, // 1000
-        50: 2,   // 100
-        20: 5,   // 100
-        10: 10,  // 100
-      };
+    test(
+      'calculateDenominationTotal sums Indian currency notes accurately',
+      () {
+        final counts = {
+          500: 4, // 2000
+          200: 5, // 1000
+          100: 10, // 1000
+          50: 2, // 100
+          20: 5, // 100
+          10: 10, // 100
+        };
 
-      final total = CashHandoverEngine.calculateDenominationTotal(counts);
-      expect(total, 4300);
-    });
+        final total = CashHandoverEngine.calculateDenominationTotal(counts);
+        expect(total, 4300);
+      },
+    );
 
     test('calculateDiscrepancy correctly identifies balance, shortage, and surplus', () {
       // Balanced
-      expect(CashHandoverEngine.calculateDiscrepancy(physicalCounted: 3500, expectedCash: 3500), 0);
+      expect(
+        CashHandoverEngine.calculateDiscrepancy(
+          physicalCounted: 3500,
+          expectedCash: 3500,
+        ),
+        0,
+      );
 
       // Shortage
-      expect(CashHandoverEngine.calculateDiscrepancy(physicalCounted: 3300, expectedCash: 3500), -200);
+      expect(
+        CashHandoverEngine.calculateDiscrepancy(
+          physicalCounted: 3300,
+          expectedCash: 3500,
+        ),
+        -200,
+      );
 
       // Surplus
-      expect(CashHandoverEngine.calculateDiscrepancy(physicalCounted: 3700, expectedCash: 3500), 200);
+      expect(
+        CashHandoverEngine.calculateDiscrepancy(
+          physicalCounted: 3700,
+          expectedCash: 3500,
+        ),
+        200,
+      );
     });
   });
 }

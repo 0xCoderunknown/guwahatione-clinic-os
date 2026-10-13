@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/engines/engines.dart';
 import '../../models/consultation.dart';
 import '../../models/diagnostic_investigation.dart';
 import '../../models/medicine.dart';
@@ -7,7 +8,6 @@ import '../../models/prescription_item.dart';
 import '../../models/prescription_template.dart';
 import '../../models/vitals.dart';
 import '../../providers/clinic_provider.dart';
-import '../../core/engines/engines.dart';
 
 /// Encapsulates all state, controllers, and mutation logic for a clinical consultation encounter.
 class EncounterFormState {

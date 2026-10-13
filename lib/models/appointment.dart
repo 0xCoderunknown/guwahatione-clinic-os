@@ -18,9 +18,9 @@ enum AppointmentStatus {
 }
 
 enum VisitStatus {
-  booked,          // Reserved over phone / advance, not yet at desk
-  waitingInLobby,  // Physically checked in at desk, ready for chamber
-  inConsultation,  // Currently with doctor
+  booked, // Reserved over phone / advance, not yet at desk
+  waitingInLobby, // Physically checked in at desk, ready for chamber
+  inConsultation, // Currently with doctor
   completed,
   cancelled;
 
@@ -50,8 +50,8 @@ enum PaymentType {
   paidUpi,
   freeReview, // 14-day statutory return
   freeFamily, // Discretionary doctor/clinic waiver (MUST NOT be overridden)
-  postPay,    // Pay on exit / post-consultation
-  unpaid;     // Booked over phone, not yet collected
+  postPay, // Pay on exit / post-consultation
+  unpaid; // Booked over phone, not yet collected
 
   String get displayName {
     switch (this) {
@@ -116,7 +116,8 @@ class Appointment {
     required this.doctorId,
     required this.doctorName,
     this.checkedInAt,
-  }) : visitStatus = visitStatus ??
+  }) : visitStatus =
+           visitStatus ??
            (status != null
                ? _visitStatusFromAppointmentStatus(status)
                : VisitStatus.waitingInLobby);
@@ -150,7 +151,8 @@ class Appointment {
       id: id ?? this.id,
       patientPhone: patientPhone ?? this.patientPhone,
       patientName: patientName ?? this.patientName,
-      visitStatus: visitStatus ??
+      visitStatus:
+          visitStatus ??
           (status != null
               ? _visitStatusFromAppointmentStatus(status)
               : this.visitStatus),

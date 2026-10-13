@@ -62,8 +62,11 @@ class AppFormatters {
     if (name == null || name.trim().isEmpty) return 'Doctor';
     final clean = name.trim();
     var stripped = clean;
-    while (stripped.toLowerCase().startsWith('dr.') || stripped.toLowerCase().startsWith('dr ')) {
-      stripped = stripped.replaceFirst(RegExp(r'^dr\.?\s*', caseSensitive: false), '').trim();
+    while (stripped.toLowerCase().startsWith('dr.') ||
+        stripped.toLowerCase().startsWith('dr ')) {
+      stripped = stripped
+          .replaceFirst(RegExp(r'^dr\.?\s*', caseSensitive: false), '')
+          .trim();
     }
     return 'Dr. $stripped';
   }
@@ -72,7 +75,10 @@ class AppFormatters {
   static String specialty(String? specialty) {
     if (specialty == null || specialty.trim().isEmpty) return 'General';
     var clean = specialty.trim();
-    clean = clean.replaceAll(RegExp(r'paedetric', caseSensitive: false), 'Paediatric');
+    clean = clean.replaceAll(
+      RegExp(r'paedetric', caseSensitive: false),
+      'Paediatric',
+    );
     return clean;
   }
 
@@ -96,4 +102,3 @@ class AppFormatters {
     return '$first$last';
   }
 }
-

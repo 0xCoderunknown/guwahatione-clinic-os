@@ -1,13 +1,12 @@
-
+import 'package:appointment_app/core/engines/engines.dart';
+import 'package:appointment_app/models/medicine.dart';
+import 'package:appointment_app/models/prescription_item.dart';
+import 'package:appointment_app/models/user_role.dart';
+import 'package:appointment_app/screens/login_screen.dart';
+import 'package:appointment_app/utils/default_medicines.dart';
+import 'package:appointment_app/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:appointment_app/models/medicine.dart';
-import 'package:appointment_app/widgets/widgets.dart';
-import 'package:appointment_app/screens/login_screen.dart';
-import 'package:appointment_app/models/user_role.dart';
-import 'package:appointment_app/models/prescription_item.dart';
-import 'package:appointment_app/core/engines/engines.dart';
-import 'package:appointment_app/utils/default_medicines.dart';
 
 void main() {
   group('Composition-First Medicine Search Scorer Tests', () {
@@ -78,7 +77,9 @@ void main() {
       expect(topResult.score, 100);
 
       // Associated clinic brands grouped underneath
-      final brandNames = topResult.associatedBrands.map((b) => b.productName).toList();
+      final brandNames = topResult.associatedBrands
+          .map((b) => b.productName)
+          .toList();
       expect(brandNames, containsAll(['Azee 500', 'Azithral 500']));
       expect(brandNames.length, 2);
     });
@@ -205,7 +206,10 @@ void main() {
       final antihtnDefaults = MedicineEngine.getDefaultsForMedicine(antihtn);
       expect(antihtnDefaults.frequency, '1-0-0 (OD)');
       expect(antihtnDefaults.timing, 'After Food (Morning)');
-      expect(antihtnDefaults.durationDays, 30); // 30-day routine OPD refill cycle
+      expect(
+        antihtnDefaults.durationDays,
+        30,
+      ); // 30-day routine OPD refill cycle
 
       // Explicit catalogue override with indefinite chronic duration (null)
       const chronicMed = Medicine(
@@ -239,11 +243,13 @@ void main() {
 
       expect(
         () => attemptAddAsDoctor(),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'message',
-          contains('Permission Denied'),
-        )),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('Permission Denied'),
+          ),
+        ),
       );
     });
 
@@ -264,8 +270,16 @@ void main() {
       final names = <String>{};
 
       for (final med in defaultEssentialMedicines) {
-        expect(ids.contains(med.id), isFalse, reason: 'Duplicate ID: ${med.id}');
-        expect(names.contains(med.productName), isFalse, reason: 'Duplicate Name: ${med.productName}');
+        expect(
+          ids.contains(med.id),
+          isFalse,
+          reason: 'Duplicate ID: ${med.id}',
+        );
+        expect(
+          names.contains(med.productName),
+          isFalse,
+          reason: 'Duplicate Name: ${med.productName}',
+        );
         ids.add(med.id);
         names.add(med.productName);
 
@@ -279,18 +293,44 @@ void main() {
 
     test('Catalogue deduplication logic correctly isolates duplicate entries', () {
       final sampleWithDuplicates = [
-        {'id': 'doc-1', 'productName': 'Dolo 650', 'composition': 'Paracetamol', 'strength': '650 mg'},
-        {'id': 'doc-2', 'productName': 'Dolo 650', 'composition': 'Paracetamol', 'strength': '650 mg'}, // duplicate
-        {'id': 'doc-3', 'productName': 'dolo 650', 'composition': 'paracetamol', 'strength': '650 mg'}, // case-insensitive duplicate
-        {'id': 'doc-4', 'productName': 'Pan 40', 'composition': 'Pantoprazole', 'strength': '40 mg'},
-        {'id': 'doc-5', 'productName': 'Pan 40', 'composition': 'Pantoprazole', 'strength': '40 mg'}, // duplicate
+        {
+          'id': 'doc-1',
+          'productName': 'Dolo 650',
+          'composition': 'Paracetamol',
+          'strength': '650 mg',
+        },
+        {
+          'id': 'doc-2',
+          'productName': 'Dolo 650',
+          'composition': 'Paracetamol',
+          'strength': '650 mg',
+        }, // duplicate
+        {
+          'id': 'doc-3',
+          'productName': 'dolo 650',
+          'composition': 'paracetamol',
+          'strength': '650 mg',
+        }, // case-insensitive duplicate
+        {
+          'id': 'doc-4',
+          'productName': 'Pan 40',
+          'composition': 'Pantoprazole',
+          'strength': '40 mg',
+        },
+        {
+          'id': 'doc-5',
+          'productName': 'Pan 40',
+          'composition': 'Pantoprazole',
+          'strength': '40 mg',
+        }, // duplicate
       ];
 
       final seen = <String, String>{};
       final duplicateDocIds = <String>[];
 
       for (final item in sampleWithDuplicates) {
-        final key = '${item['productName']!.trim().toLowerCase()}|${item['composition']!.trim().toLowerCase()}|${item['strength']!.trim().toLowerCase()}';
+        final key =
+            '${item['productName']!.trim().toLowerCase()}|${item['composition']!.trim().toLowerCase()}|${item['strength']!.trim().toLowerCase()}';
         if (seen.containsKey(key)) {
           duplicateDocIds.add(item['id']!);
         } else {
@@ -305,101 +345,113 @@ void main() {
   });
 
   group('Catalogue Header & Reception Auth Responsive Widget Tests', () {
-    testWidgets('CatalogueHeaderAndStats renders cleanly without overflow on mobile (390px)', (tester) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
+    testWidgets(
+      'CatalogueHeaderAndStats renders cleanly without overflow on mobile (390px)',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: CatalogueHeaderAndStats(
-              totalProducts: 42,
-              totalMolecules: 28,
-              onCleanDuplicates: () {},
-              onAddProduct: () {},
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Master Medicine Catalogue'), findsOneWidget);
-      expect(find.text('42'), findsOneWidget);
-      expect(find.text('28'), findsOneWidget);
-      expect(find.text('Clean Duplicates'), findsOneWidget);
-      expect(find.text('Add Product'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('CatalogueHeaderAndStats renders cleanly on wide desktop (1200px)', (tester) async {
-      tester.view.physicalSize = const Size(1200, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: CatalogueHeaderAndStats(
-              totalProducts: 100,
-              totalMolecules: 65,
-              onCleanDuplicates: () {},
-              onAddProduct: () {},
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Master Medicine Catalogue'), findsOneWidget);
-      expect(find.text('100'), findsOneWidget);
-      expect(find.text('65'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('CatalogueSearchToolbar adapts to mobile width without overflow', (tester) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      final controller = TextEditingController();
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: CatalogueSearchToolbar(
-              searchController: controller,
-              selectedFormFilter: 'All',
-              formOptions: const ['All', 'Tablet', 'Syrup'],
-              onFormFilterChanged: (_) {},
-              onSearchChanged: (_) {},
-              onClearSearch: () {},
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Dosage Form'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('ReceptionLoginForm renders testing credentials for Reception (0000) and Admin (849201)', (tester) async {
-      final pinCtrl = TextEditingController();
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              height: 275,
-              child: ReceptionLoginForm(
-                pinController: pinCtrl,
-                isLoading: false,
-                onLogin: () {},
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CatalogueHeaderAndStats(
+                totalProducts: 42,
+                totalMolecules: 28,
+                onCleanDuplicates: () {},
+                onAddProduct: () {},
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.textContaining('849201'), findsWidgets);
-      expect(find.textContaining('0000'), findsWidgets);
-      expect(tester.takeException(), isNull);
-    });
+        expect(find.text('Master Medicine Catalogue'), findsOneWidget);
+        expect(find.text('42'), findsOneWidget);
+        expect(find.text('28'), findsOneWidget);
+        expect(find.text('Clean Duplicates'), findsOneWidget);
+        expect(find.text('Add Product'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'CatalogueHeaderAndStats renders cleanly on wide desktop (1200px)',
+      (tester) async {
+        tester.view.physicalSize = const Size(1200, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CatalogueHeaderAndStats(
+                totalProducts: 100,
+                totalMolecules: 65,
+                onCleanDuplicates: () {},
+                onAddProduct: () {},
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Master Medicine Catalogue'), findsOneWidget);
+        expect(find.text('100'), findsOneWidget);
+        expect(find.text('65'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'CatalogueSearchToolbar adapts to mobile width without overflow',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        final controller = TextEditingController();
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: CatalogueSearchToolbar(
+                searchController: controller,
+                selectedFormFilter: 'All',
+                formOptions: const ['All', 'Tablet', 'Syrup'],
+                onFormFilterChanged: (_) {},
+                onSearchChanged: (_) {},
+                onClearSearch: () {},
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('Dosage Form'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'ReceptionLoginForm renders testing credentials for Reception (0000) and Admin (849201)',
+      (tester) async {
+        final pinCtrl = TextEditingController();
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                height: 275,
+                child: ReceptionLoginForm(
+                  pinController: pinCtrl,
+                  isLoading: false,
+                  onLogin: () {},
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.textContaining('849201'), findsWidgets);
+        expect(find.textContaining('0000'), findsWidgets);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

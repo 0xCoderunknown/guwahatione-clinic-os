@@ -31,7 +31,8 @@ class ChamberService {
         final currentData = snap.data();
         final currentActiveId = currentData?['activeAppointmentId'] as String?;
         final currentStatus = currentData?['status'] as String?;
-        final isOccupied = currentActiveId != null &&
+        final isOccupied =
+            currentActiveId != null &&
             currentActiveId.isNotEmpty &&
             currentActiveId != appointment.id &&
             (currentStatus == 'calling' || currentStatus == 'in_consultation');
@@ -56,10 +57,7 @@ class ChamberService {
   }
 
   /// Streams active chamber session for a given doctor and date as a strongly typed domain model.
-  Stream<ChamberSession> streamChamberSession(
-    String doctorId,
-    DateTime date,
-  ) {
+  Stream<ChamberSession> streamChamberSession(String doctorId, DateTime date) {
     final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);
     return _countersRef.doc(chamberDocId).snapshots().map((snapshot) {
       if (!snapshot.exists) {
@@ -79,20 +77,20 @@ class ChamberService {
         .where('date', isEqualTo: FirestorePaths.dateKey(date))
         .snapshots()
         .map((snapshot) {
-      final map = <String, ChamberSession>{};
-      for (final doc in snapshot.docs) {
-        final data = doc.data();
-        final docId = data['doctorId'] as String?;
-        if (docId != null && docId.isNotEmpty) {
-          map[docId] = ChamberSession.fromMap(
-            data,
-            doctorId: docId,
-            date: date,
-          );
-        }
-      }
-      return map;
-    });
+          final map = <String, ChamberSession>{};
+          for (final doc in snapshot.docs) {
+            final data = doc.data();
+            final docId = data['doctorId'] as String?;
+            if (docId != null && docId.isNotEmpty) {
+              map[docId] = ChamberSession.fromMap(
+                data,
+                doctorId: docId,
+                date: date,
+              );
+            }
+          }
+          return map;
+        });
   }
 
   /// Broadcasts consultation ended event from doctor to reception desk.

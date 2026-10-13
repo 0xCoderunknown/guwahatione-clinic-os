@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:appointment_app/models/appointment.dart';
 import 'package:appointment_app/services/offline_queue_cache_service.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -78,26 +78,41 @@ void main() {
       // Verify timestamp
       final ts = await OfflineQueueCacheService.getCacheTimestamp(testDate);
       expect(ts, isNotNull);
-      expect(ts!.isBefore(DateTime.now().add(const Duration(seconds: 1))), isTrue);
+      expect(
+        ts!.isBefore(DateTime.now().add(const Duration(seconds: 1))),
+        isTrue,
+      );
     });
 
-    test('clearCache successfully removes cached appointments and timestamp', () async {
-      await OfflineQueueCacheService.saveQueue(testDate, sampleAppointments);
-      expect(await OfflineQueueCacheService.getCachedQueue(testDate), isNotNull);
+    test(
+      'clearCache successfully removes cached appointments and timestamp',
+      () async {
+        await OfflineQueueCacheService.saveQueue(testDate, sampleAppointments);
+        expect(
+          await OfflineQueueCacheService.getCachedQueue(testDate),
+          isNotNull,
+        );
 
-      await OfflineQueueCacheService.clearCache(testDate);
-      expect(await OfflineQueueCacheService.getCachedQueue(testDate), isNull);
-      expect(await OfflineQueueCacheService.getCacheTimestamp(testDate), isNull);
-    });
+        await OfflineQueueCacheService.clearCache(testDate);
+        expect(await OfflineQueueCacheService.getCachedQueue(testDate), isNull);
+        expect(
+          await OfflineQueueCacheService.getCacheTimestamp(testDate),
+          isNull,
+        );
+      },
+    );
 
-    test('getCachedQueue handles corrupted JSON gracefully by returning null', () async {
-      SharedPreferences.setMockInitialValues({
-        'offline_queue_2026-10-12': '{corrupted_not_a_valid_json_list',
-      });
+    test(
+      'getCachedQueue handles corrupted JSON gracefully by returning null',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'offline_queue_2026-10-12': '{corrupted_not_a_valid_json_list',
+        });
 
-      final cached = await OfflineQueueCacheService.getCachedQueue(testDate);
-      expect(cached, isNull);
-    });
+        final cached = await OfflineQueueCacheService.getCachedQueue(testDate);
+        expect(cached, isNull);
+      },
+    );
 
     test('Appointment.toCacheMap produces valid json-serializable map', () {
       final appt = sampleAppointments.first;

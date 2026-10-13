@@ -35,7 +35,8 @@ class Patient {
   }
 
   factory Patient.fromJson(Map<String, dynamic> json) {
-    final phone = json['phoneNumber'] as String? ??
+    final phone =
+        json['phoneNumber'] as String? ??
         json['phone'] as String? ??
         json['patientPhone'] as String? ??
         json['id'] as String? ??
@@ -55,15 +56,16 @@ class Patient {
     final normalizedGender = (rawGender.toLowerCase() == 'female')
         ? 'Female'
         : (rawGender.toLowerCase() == 'other')
-            ? 'Other'
-            : 'Male';
+        ? 'Other'
+        : 'Male';
 
     return Patient(
       id: json['id'] as String? ?? (phone.isNotEmpty ? phone : 'unknown'),
       name: json['name'] as String? ?? 'Unknown Patient',
       age: (json['age'] as num?)?.toInt() ?? 0,
       gender: normalizedGender,
-      allergies: (json['allergies'] as List<dynamic>?)
+      allergies:
+          (json['allergies'] as List<dynamic>?)
               ?.map((e) => e.toString().trim())
               .where((e) => e.isNotEmpty)
               .toSet()

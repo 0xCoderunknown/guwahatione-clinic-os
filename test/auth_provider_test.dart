@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:appointment_app/models/models.dart';
 import 'package:appointment_app/providers/auth_provider.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -41,17 +41,20 @@ void main() {
       ),
     ];
 
-    test('Initializes with default clinic PINs and unauthenticated state', () async {
-      final auth = AuthProvider();
-      await auth.initSession(sampleDoctors);
+    test(
+      'Initializes with default clinic PINs and unauthenticated state',
+      () async {
+        final auth = AuthProvider();
+        await auth.initSession(sampleDoctors);
 
-      expect(auth.isInitialized, isTrue);
-      expect(auth.isAuthenticated, isFalse);
-      expect(auth.currentRole, isNull);
-      expect(auth.currentDoctor, isNull);
-      expect(auth.receptionistPin, '0000');
-      expect(auth.ownerMasterPin, '849201');
-    });
+        expect(auth.isInitialized, isTrue);
+        expect(auth.isAuthenticated, isFalse);
+        expect(auth.currentRole, isNull);
+        expect(auth.currentDoctor, isNull);
+        expect(auth.receptionistPin, '0000');
+        expect(auth.ownerMasterPin, '849201');
+      },
+    );
 
     test('6-digit Owner Master PIN authenticates as UserRole.owner', () async {
       final auth = AuthProvider();
@@ -71,22 +74,25 @@ void main() {
       expect(auth.currentDoctor, isNull);
     });
 
-    test('4-digit Receptionist PIN (0000) authenticates as UserRole.receptionist', () async {
-      final auth = AuthProvider();
-      await auth.initSession(sampleDoctors);
+    test(
+      '4-digit Receptionist PIN (0000) authenticates as UserRole.receptionist',
+      () async {
+        final auth = AuthProvider();
+        await auth.initSession(sampleDoctors);
 
-      final result = await auth.authenticateWithPin(
-        pin: '0000',
-        doctors: sampleDoctors,
-      );
+        final result = await auth.authenticateWithPin(
+          pin: '0000',
+          doctors: sampleDoctors,
+        );
 
-      expect(result.isSuccess, isTrue);
-      expect(result.role, UserRole.receptionist);
-      expect(auth.isAuthenticated, isTrue);
-      expect(auth.isReceptionist, isTrue);
-      expect(auth.isOwner, isFalse);
-      expect(auth.currentDoctor, isNull);
-    });
+        expect(result.isSuccess, isTrue);
+        expect(result.role, UserRole.receptionist);
+        expect(auth.isAuthenticated, isTrue);
+        expect(auth.isReceptionist, isTrue);
+        expect(auth.isOwner, isFalse);
+        expect(auth.currentDoctor, isNull);
+      },
+    );
 
     test('Doctor chamber PIN resolves specific doctor profile', () async {
       final auth = AuthProvider();
@@ -107,20 +113,26 @@ void main() {
       expect(auth.currentDoctor?.id, 'doc-1');
     });
 
-    test('Duplicate doctor PIN yields multipleDoctors result without auto-login', () async {
-      final auth = AuthProvider();
-      await auth.initSession(sampleDoctors);
+    test(
+      'Duplicate doctor PIN yields multipleDoctors result without auto-login',
+      () async {
+        final auth = AuthProvider();
+        await auth.initSession(sampleDoctors);
 
-      final result = await auth.authenticateWithPin(
-        pin: '2222',
-        doctors: sampleDoctors,
-      );
+        final result = await auth.authenticateWithPin(
+          pin: '2222',
+          doctors: sampleDoctors,
+        );
 
-      expect(result.isSuccess, isFalse);
-      expect(result.matchingDoctors.length, 2);
-      expect(result.matchingDoctors.map((d) => d.id), containsAll(['doc-2', 'doc-3']));
-      expect(auth.isAuthenticated, isFalse);
-    });
+        expect(result.isSuccess, isFalse);
+        expect(result.matchingDoctors.length, 2);
+        expect(
+          result.matchingDoctors.map((d) => d.id),
+          containsAll(['doc-2', 'doc-3']),
+        );
+        expect(auth.isAuthenticated, isFalse);
+      },
+    );
 
     test('Invalid PIN fails with descriptive error message', () async {
       final auth = AuthProvider();
@@ -140,10 +152,7 @@ void main() {
       final auth = AuthProvider();
       await auth.initSession(sampleDoctors);
 
-      await auth.authenticateWithPin(
-        pin: '849201',
-        doctors: sampleDoctors,
-      );
+      await auth.authenticateWithPin(pin: '849201', doctors: sampleDoctors);
       expect(auth.isOwner, isTrue);
 
       await auth.stepDownToReception();
@@ -152,26 +161,29 @@ void main() {
       expect(auth.currentDoctor, isNull);
     });
 
-    test('Direct login helpers (loginAsOwner, loginAsReceptionist, loginAsDoctor)', () async {
-      final auth = AuthProvider();
-      await auth.initSession(sampleDoctors);
+    test(
+      'Direct login helpers (loginAsOwner, loginAsReceptionist, loginAsDoctor)',
+      () async {
+        final auth = AuthProvider();
+        await auth.initSession(sampleDoctors);
 
-      // loginAsOwner
-      expect(await auth.loginAsOwner('849201'), isTrue);
-      expect(auth.isOwner, isTrue);
+        // loginAsOwner
+        expect(await auth.loginAsOwner('849201'), isTrue);
+        expect(auth.isOwner, isTrue);
 
-      // loginAsReceptionist
-      expect(await auth.loginAsReceptionist('0000'), isTrue);
-      expect(auth.isReceptionist, isTrue);
+        // loginAsReceptionist
+        expect(await auth.loginAsReceptionist('0000'), isTrue);
+        expect(auth.isReceptionist, isTrue);
 
-      // loginAsDoctor
-      expect(await auth.loginAsDoctor(sampleDoctors[0], '1111'), isTrue);
-      expect(auth.isDoctor, isTrue);
-      expect(auth.currentDoctor?.id, 'doc-1');
+        // loginAsDoctor
+        expect(await auth.loginAsDoctor(sampleDoctors[0], '1111'), isTrue);
+        expect(auth.isDoctor, isTrue);
+        expect(auth.currentDoctor?.id, 'doc-1');
 
-      // loginAsDoctor wrong pin
-      expect(await auth.loginAsDoctor(sampleDoctors[0], '9999'), isFalse);
-    });
+        // loginAsDoctor wrong pin
+        expect(await auth.loginAsDoctor(sampleDoctors[0], '9999'), isFalse);
+      },
+    );
 
     test('Custom PIN updates persist and take immediate effect', () async {
       final auth = AuthProvider();
@@ -201,10 +213,7 @@ void main() {
       final auth = AuthProvider();
       await auth.initSession(sampleDoctors);
 
-      await auth.authenticateWithPin(
-        pin: '1111',
-        doctors: sampleDoctors,
-      );
+      await auth.authenticateWithPin(pin: '1111', doctors: sampleDoctors);
       expect(auth.isAuthenticated, isTrue);
 
       await auth.logout();
@@ -217,33 +226,39 @@ void main() {
       expect(prefs.getString('auth_doctor_id'), isNull);
     });
 
-    test('initSession successfully restores persisted doctor session', () async {
-      SharedPreferences.setMockInitialValues({
-        'auth_role': 'doctor',
-        'auth_doctor_id': 'doc-1',
-      });
+    test(
+      'initSession successfully restores persisted doctor session',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'auth_role': 'doctor',
+          'auth_doctor_id': 'doc-1',
+        });
 
-      final auth = AuthProvider();
-      await auth.initSession(sampleDoctors);
+        final auth = AuthProvider();
+        await auth.initSession(sampleDoctors);
 
-      expect(auth.isAuthenticated, isTrue);
-      expect(auth.isDoctor, isTrue);
-      expect(auth.currentDoctor?.id, 'doc-1');
-    });
+        expect(auth.isAuthenticated, isTrue);
+        expect(auth.isDoctor, isTrue);
+        expect(auth.currentDoctor?.id, 'doc-1');
+      },
+    );
 
-    test('initSession cleans up session if persisted doctor was removed', () async {
-      SharedPreferences.setMockInitialValues({
-        'auth_role': 'doctor',
-        'auth_doctor_id': 'doc-nonexistent',
-      });
+    test(
+      'initSession cleans up session if persisted doctor was removed',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'auth_role': 'doctor',
+          'auth_doctor_id': 'doc-nonexistent',
+        });
 
-      final auth = AuthProvider();
-      await auth.initSession(sampleDoctors);
+        final auth = AuthProvider();
+        await auth.initSession(sampleDoctors);
 
-      expect(auth.isAuthenticated, isFalse);
-      expect(auth.currentRole, isNull);
-      expect(auth.currentDoctor, isNull);
-    });
+        expect(auth.isAuthenticated, isFalse);
+        expect(auth.currentRole, isNull);
+        expect(auth.currentDoctor, isNull);
+      },
+    );
 
     test('AuthProvider.hashPin produces deterministic SHA-256 hashes', () {
       final hash1 = AuthProvider.hashPin('849201');
@@ -272,8 +287,14 @@ void main() {
       expect(prefs.containsKey('auth_receptionist_pin'), isFalse);
 
       // New hash keys must be stored on disk
-      expect(prefs.getString('auth_owner_master_pin_hash'), AuthProvider.hashPin('999999'));
-      expect(prefs.getString('auth_receptionist_pin_hash'), AuthProvider.hashPin('8888'));
+      expect(
+        prefs.getString('auth_owner_master_pin_hash'),
+        AuthProvider.hashPin('999999'),
+      );
+      expect(
+        prefs.getString('auth_receptionist_pin_hash'),
+        AuthProvider.hashPin('8888'),
+      );
 
       // New hashes authenticate successfully
       final authResult = await auth.authenticateWithPin(
@@ -327,23 +348,26 @@ void main() {
       expect(auth.isOwner, isTrue);
     });
 
-    test('initSession sanitizes stale owner pin hash if legacy 0000 was stored', () async {
-      SharedPreferences.setMockInitialValues({
-        'auth_owner_master_pin_hash': AuthProvider.hashPin('0000'),
-      });
+    test(
+      'initSession sanitizes stale owner pin hash if legacy 0000 was stored',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'auth_owner_master_pin_hash': AuthProvider.hashPin('0000'),
+        });
 
-      final auth = AuthProvider();
-      await auth.initSession(sampleDoctors);
+        final auth = AuthProvider();
+        await auth.initSession(sampleDoctors);
 
-      // Sanitized: 849201 works cleanly
-      expect(await auth.loginAsOwner('849201'), isTrue);
-      expect(auth.isOwner, isTrue);
+        // Sanitized: 849201 works cleanly
+        expect(await auth.loginAsOwner('849201'), isTrue);
+        expect(auth.isOwner, isTrue);
 
-      // 0000 does not log in as owner
-      await auth.logout();
-      expect(await auth.loginAsOwner('0000'), isFalse);
-      // But 0000 logs in as receptionist
-      expect(await auth.loginAsReceptionist('0000'), isTrue);
-    });
+        // 0000 does not log in as owner
+        await auth.logout();
+        expect(await auth.loginAsOwner('0000'), isFalse);
+        // But 0000 logs in as receptionist
+        expect(await auth.loginAsReceptionist('0000'), isTrue);
+      },
+    );
   });
 }

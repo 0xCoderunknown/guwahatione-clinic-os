@@ -37,7 +37,9 @@ class WhatsAppEngine {
     final dateStr = AppFormatters.date(consultation.createdAt);
     final tokenPart = queueNumber != null ? ' | Token: #$queueNumber' : '';
     buffer.writeln('🗓️ Date: $dateStr$tokenPart');
-    buffer.writeln('👤 Patient: ${consultation.patientName} (${consultation.patientAge}y, ${consultation.patientGender})');
+    buffer.writeln(
+      '👤 Patient: ${consultation.patientName} (${consultation.patientAge}y, ${consultation.patientGender})',
+    );
     buffer.writeln('📞 Contact: ${consultation.patientPhone}');
     buffer.writeln('👨‍⚕️ Doctor: ${consultation.doctorName}');
     if (consultation.doctorRegNumber != null &&
@@ -54,7 +56,9 @@ class WhatsAppEngine {
       if (v.spO2 != null) vitalsParts.add('SpO2: ${v.spO2}%');
       if (v.temperature != null) vitalsParts.add('Temp: ${v.temperature}°F');
       if (v.weightKg != null) vitalsParts.add('Wt: ${v.weightKg} kg');
-      if (v.bloodSugar != null) vitalsParts.add('Blood Sugar: ${v.bloodSugar} mg/dL');
+      if (v.bloodSugar != null) {
+        vitalsParts.add('Blood Sugar: ${v.bloodSugar} mg/dL');
+      }
 
       if (vitalsParts.isNotEmpty) {
         buffer.writeln();
@@ -65,14 +69,18 @@ class WhatsAppEngine {
     // 4. Provisional Diagnosis
     if (consultation.provisionalDiagnosis.isNotEmpty) {
       buffer.writeln();
-      buffer.writeln('🔬 *Diagnosis:* ${consultation.provisionalDiagnosis.join(', ')}');
+      buffer.writeln(
+        '🔬 *Diagnosis:* ${consultation.provisionalDiagnosis.join(', ')}',
+      );
     }
 
     // 5. Prescribed Medications (START & CONTINUE)
     final activeMeds = consultation.prescriptionItems
-        .where((item) =>
-            item.action == MedicationAction.start ||
-            item.action == MedicationAction.continueAction)
+        .where(
+          (item) =>
+              item.action == MedicationAction.start ||
+              item.action == MedicationAction.continueAction,
+        )
         .toList();
 
     if (activeMeds.isNotEmpty) {
@@ -88,7 +96,9 @@ class WhatsAppEngine {
             : ' • Chronic/Ongoing';
 
         buffer.writeln('${i + 1}. *${med.medicineName}*$actionTag');
-        buffer.writeln('   ${med.dosage} (${med.frequency}) • ${med.timing}$durationPart');
+        buffer.writeln(
+          '   ${med.dosage} (${med.frequency}) • ${med.timing}$durationPart',
+        );
         if (med.instructions != null && med.instructions!.trim().isNotEmpty) {
           buffer.writeln('   _Note: ${med.instructions!.trim()}_');
         }
@@ -103,7 +113,8 @@ class WhatsAppEngine {
       buffer.writeln();
       buffer.writeln('⚠️ *Discontinued Medications (STOP):*');
       for (final med in stoppedMeds) {
-        final reason = med.stopReason != null && med.stopReason!.trim().isNotEmpty
+        final reason =
+            med.stopReason != null && med.stopReason!.trim().isNotEmpty
             ? ' (${med.stopReason!.trim()})'
             : '';
         buffer.writeln('• ~${med.medicineName}~$reason');
@@ -137,7 +148,9 @@ class WhatsAppEngine {
 
     // 9. Footer
     buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    buffer.writeln('📌 _Please follow doctor instructions carefully. For emergencies, contact the clinic._');
+    buffer.writeln(
+      '📌 _Please follow doctor instructions carefully. For emergencies, contact the clinic._',
+    );
 
     return buffer.toString();
   }

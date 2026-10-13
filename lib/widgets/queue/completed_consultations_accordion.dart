@@ -43,7 +43,8 @@ class _CompletedConsultationsAccordionState
         borderRadius: BorderRadius.circular(10),
         side: BorderSide(color: Colors.green.shade200),
       ),
-      color: const Color(0xFFF0FDF4), // Emerald 50
+      color: const Color(0xFFF0FDF4),
+      // Emerald 50
       child: Theme(
         // Remove default border lines in ExpansionTile
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -100,10 +101,7 @@ class _CompletedConsultationsAccordionState
             _isExpanded
                 ? 'Tap to collapse completed list'
                 : 'Tap to view $count finished consult${count == 1 ? '' : 's'}',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.green.shade700,
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.green.shade700),
           ),
           children: [
             Container(
@@ -119,10 +117,8 @@ class _CompletedConsultationsAccordionState
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: widget.completedAppointments.length,
-                separatorBuilder: (context, index) => const Divider(
-                  height: 1,
-                  color: Color(0xFFE2E8F0),
-                ),
+                separatorBuilder: (context, index) =>
+                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
                 itemBuilder: (context, index) {
                   final appt = widget.completedAppointments[index];
                   return Padding(

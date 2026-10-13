@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/models/appointment.dart';
 import 'package:appointment_app/widgets/chamber/chamber_door_override_bar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Doctor Chamber Emergency Door Override Derivation Tests', () {
@@ -51,10 +51,12 @@ void main() {
       ];
 
       final doorEligible = appts
-          .where((a) =>
-              a.status == AppointmentStatus.pending &&
-              a.visitStatus == VisitStatus.waitingInLobby &&
-              a.paymentType != PaymentType.unpaid)
+          .where(
+            (a) =>
+                a.status == AppointmentStatus.pending &&
+                a.visitStatus == VisitStatus.waitingInLobby &&
+                a.paymentType != PaymentType.unpaid,
+          )
           .take(2)
           .toList();
 
@@ -92,10 +94,12 @@ void main() {
       ];
 
       final doorEligible = appts
-          .where((a) =>
-              a.status == AppointmentStatus.pending &&
-              a.visitStatus == VisitStatus.waitingInLobby &&
-              a.paymentType != PaymentType.unpaid)
+          .where(
+            (a) =>
+                a.status == AppointmentStatus.pending &&
+                a.visitStatus == VisitStatus.waitingInLobby &&
+                a.paymentType != PaymentType.unpaid,
+          )
           .take(2)
           .toList();
 
@@ -118,10 +122,12 @@ void main() {
       );
 
       final doorEligible = appts
-          .where((a) =>
-              a.status == AppointmentStatus.pending &&
-              a.visitStatus == VisitStatus.waitingInLobby &&
-              a.paymentType != PaymentType.unpaid)
+          .where(
+            (a) =>
+                a.status == AppointmentStatus.pending &&
+                a.visitStatus == VisitStatus.waitingInLobby &&
+                a.paymentType != PaymentType.unpaid,
+          )
           .take(2)
           .toList();
 
@@ -151,10 +157,12 @@ void main() {
       ];
 
       final doorEligible = appts
-          .where((a) =>
-              a.status == AppointmentStatus.pending &&
-              a.visitStatus == VisitStatus.waitingInLobby &&
-              a.paymentType != PaymentType.unpaid)
+          .where(
+            (a) =>
+                a.status == AppointmentStatus.pending &&
+                a.visitStatus == VisitStatus.waitingInLobby &&
+                a.paymentType != PaymentType.unpaid,
+          )
           .take(2)
           .toList();
 
@@ -177,12 +185,14 @@ void main() {
         final doorEligible = isOccupied
             ? <Appointment>[]
             : appts
-                .where((a) =>
-                    a.status == AppointmentStatus.pending &&
-                    a.visitStatus == VisitStatus.waitingInLobby &&
-                    a.paymentType != PaymentType.unpaid)
-                .take(2)
-                .toList();
+                  .where(
+                    (a) =>
+                        a.status == AppointmentStatus.pending &&
+                        a.visitStatus == VisitStatus.waitingInLobby &&
+                        a.paymentType != PaymentType.unpaid,
+                  )
+                  .take(2)
+                  .toList();
         if (isOccupied) {
           expect(doorEligible, isEmpty);
         } else {
@@ -223,66 +233,75 @@ void main() {
       doctorName: 'Dr. Test',
     );
 
-    testWidgets('Renders nothing (SizedBox.shrink) when eligible tokens list is empty',
-        (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChamberDoorOverrideBar(
-              eligibleTokens: const [],
-              onAdmit: (_) {},
+    testWidgets(
+      'Renders nothing (SizedBox.shrink) when eligible tokens list is empty',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ChamberDoorOverrideBar(
+                eligibleTokens: const [],
+                onAdmit: (_) {},
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.byType(ChamberDoorOverrideBar), findsOneWidget);
-      expect(find.text('Next at Door (Lobby Checked-In)'), findsNothing);
-      expect(find.text('Emergency Self-Call'), findsNothing);
-    });
+        expect(find.byType(ChamberDoorOverrideBar), findsOneWidget);
+        expect(find.text('Next at Door (Lobby Checked-In)'), findsNothing);
+        expect(find.text('Emergency Self-Call'), findsNothing);
+      },
+    );
 
-    testWidgets('Renders emergency self-call runway with eligible tokens and confirmation dialog',
-        (tester) async {
-      Appointment? admittedAppt;
+    testWidgets(
+      'Renders emergency self-call runway with eligible tokens and confirmation dialog',
+      (tester) async {
+        Appointment? admittedAppt;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChamberDoorOverrideBar(
-              eligibleTokens: [appt1, appt2],
-              onAdmit: (appt) => admittedAppt = appt,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ChamberDoorOverrideBar(
+                eligibleTokens: [appt1, appt2],
+                onAdmit: (appt) => admittedAppt = appt,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      // Verify header and badge
-      expect(find.text('Next at Door (Lobby Checked-In)'), findsOneWidget);
-      expect(find.text('Emergency Self-Call'), findsOneWidget);
+        // Verify header and badge
+        expect(find.text('Next at Door (Lobby Checked-In)'), findsOneWidget);
+        expect(find.text('Emergency Self-Call'), findsOneWidget);
 
-      // Verify token items
-      expect(find.text('Priya Das'), findsOneWidget);
-      expect(find.text('Rahul Sharma'), findsOneWidget);
-      expect(find.text('Paid (Cash)'), findsOneWidget);
-      expect(find.text('Free (Review)'), findsOneWidget);
+        // Verify token items
+        expect(find.text('Priya Das'), findsOneWidget);
+        expect(find.text('Rahul Sharma'), findsOneWidget);
+        expect(find.text('Paid (Cash)'), findsOneWidget);
+        expect(find.text('Free (Review)'), findsOneWidget);
 
-      // Tap Admit on first token
-      final admitButtons = find.text('Admit');
-      expect(admitButtons, findsNWidgets(2));
-      await tester.tap(admitButtons.first);
-      await tester.pumpAndSettle();
+        // Tap Admit on first token
+        final admitButtons = find.text('Admit');
+        expect(admitButtons, findsNWidgets(2));
+        await tester.tap(admitButtons.first);
+        await tester.pumpAndSettle();
 
-      // Confirmation dialog should be displayed
-      expect(find.text('Emergency Door Admission'), findsOneWidget);
-      expect(find.textContaining('Admit Token #4 (Priya Das) directly into chamber?'), findsOneWidget);
+        // Confirmation dialog should be displayed
+        expect(find.text('Emergency Door Admission'), findsOneWidget);
+        expect(
+          find.textContaining(
+            'Admit Token #4 (Priya Das) directly into chamber?',
+          ),
+          findsOneWidget,
+        );
 
-      // Confirm admission
-      await tester.tap(find.text('Admit Now'));
-      await tester.pumpAndSettle();
+        // Confirm admission
+        await tester.tap(find.text('Admit Now'));
+        await tester.pumpAndSettle();
 
-      expect(admittedAppt, isNotNull);
-      expect(admittedAppt!.id, 'appt-1');
-      expect(admittedAppt!.patientName, 'Priya Das');
-    });
+        expect(admittedAppt, isNotNull);
+        expect(admittedAppt!.id, 'appt-1');
+        expect(admittedAppt!.patientName, 'Priya Das');
+      },
+    );
   });
 }

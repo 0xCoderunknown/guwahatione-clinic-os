@@ -92,28 +92,19 @@ class ChamberTokenCard extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: Colors.teal.shade700,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               visualDensity: VisualDensity.compact,
             ),
             icon: const Icon(Icons.login_rounded, size: 16),
             label: const Text(
               'Enter Consultation',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
             onPressed: onConsult,
           );
         } else if (!isPastDate) {
           actionWidget = Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(8),
@@ -141,10 +132,7 @@ class ChamberTokenCard extends StatelessWidget {
           );
         } else {
           actionWidget = Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(8),
@@ -174,10 +162,7 @@ class ChamberTokenCard extends StatelessWidget {
       } else {
         actionWidget = OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             visualDensity: VisualDensity.compact,
           ),
           icon: const Icon(Icons.description_outlined, size: 14),
@@ -296,7 +281,9 @@ class ChamberTokenCard extends StatelessWidget {
                           : const Color(0xFFE2E8F0)),
                 width: isCallingNow
                     ? 2.5
-                    : (appointment.status == AppointmentStatus.pending ? 1.5 : 1),
+                    : (appointment.status == AppointmentStatus.pending
+                          ? 1.5
+                          : 1),
               ),
               boxShadow: [
                 BoxShadow(

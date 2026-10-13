@@ -24,9 +24,7 @@ class CatalogueSearchToolbar extends StatelessWidget {
     return TextField(
       controller: searchController,
       decoration: InputDecoration(
-        hintText: isMobile
-            ? 'Search molecule or brand...'
-            : 'Search by chemical molecule (e.g. Paracetamol) or trade brand (e.g. Dolo 650)...',
+        hintText: isMobile ? 'Search molecule or brand...' : 'Search by chemical molecule (e.g. Paracetamol) or trade brand (e.g. Dolo 650)...',
         prefixIcon: const Icon(Icons.search),
         suffixIcon: searchController.text.isNotEmpty
             ? IconButton(
@@ -93,15 +91,9 @@ class CatalogueSearchToolbar extends StatelessWidget {
 
         return Row(
           children: [
-            Expanded(
-              flex: 3,
-              child: _buildSearchField(isMobile: false),
-            ),
+            Expanded(flex: 3, child: _buildSearchField(isMobile: false)),
             const SizedBox(width: 12),
-            Expanded(
-              flex: 1,
-              child: _buildDropdownField(),
-            ),
+            Expanded(flex: 1, child: _buildDropdownField()),
           ],
         );
       },

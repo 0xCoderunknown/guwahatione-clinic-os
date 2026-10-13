@@ -17,9 +17,7 @@ class AddDoctorScreen extends StatelessWidget {
     final isEditing = doctor != null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Edit Doctor' : 'Add Doctor'),
-      ),
+      appBar: AppBar(title: Text(isEditing ? 'Edit Doctor' : 'Add Doctor')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: DoctorForm(
@@ -37,11 +35,7 @@ class DoctorForm extends StatefulWidget {
   final Doctor? doctor;
   final VoidCallback onSaved;
 
-  const DoctorForm({
-    super.key,
-    this.doctor,
-    required this.onSaved,
-  });
+  const DoctorForm({super.key, this.doctor, required this.onSaved});
 
   @override
   State<DoctorForm> createState() => _DoctorFormState();
@@ -201,35 +195,45 @@ class _DoctorFormState extends State<DoctorForm> {
                 label: const Text('None (0d)'),
                 selected: _reviewDaysController.text.trim() == '0',
                 onSelected: (selected) {
-                  if (selected) setState(() => _reviewDaysController.text = '0');
+                  if (selected) {
+                    setState(() => _reviewDaysController.text = '0');
+                  }
                 },
               ),
               ChoiceChip(
                 label: const Text('7 Days'),
                 selected: _reviewDaysController.text.trim() == '7',
                 onSelected: (selected) {
-                  if (selected) setState(() => _reviewDaysController.text = '7');
+                  if (selected) {
+                    setState(() => _reviewDaysController.text = '7');
+                  }
                 },
               ),
               ChoiceChip(
                 label: const Text('14 Days (Default)'),
                 selected: _reviewDaysController.text.trim() == '14',
                 onSelected: (selected) {
-                  if (selected) setState(() => _reviewDaysController.text = '14');
+                  if (selected) {
+                    setState(() => _reviewDaysController.text = '14');
+                  }
                 },
               ),
               ChoiceChip(
                 label: const Text('21 Days'),
                 selected: _reviewDaysController.text.trim() == '21',
                 onSelected: (selected) {
-                  if (selected) setState(() => _reviewDaysController.text = '21');
+                  if (selected) {
+                    setState(() => _reviewDaysController.text = '21');
+                  }
                 },
               ),
               ChoiceChip(
                 label: const Text('30 Days'),
                 selected: _reviewDaysController.text.trim() == '30',
                 onSelected: (selected) {
-                  if (selected) setState(() => _reviewDaysController.text = '30');
+                  if (selected) {
+                    setState(() => _reviewDaysController.text = '30');
+                  }
                 },
               ),
             ],
@@ -307,10 +311,7 @@ class _DoctorFormState extends State<DoctorForm> {
         context,
         listen: false,
       );
-      final authProvider = Provider.of<AuthProvider>(
-        context,
-        listen: false,
-      );
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
       if (widget.doctor != null) {
         final updatedDoctor = widget.doctor!.copyWith(
@@ -355,9 +356,8 @@ class _DoctorFormState extends State<DoctorForm> {
       widget.onSaved();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

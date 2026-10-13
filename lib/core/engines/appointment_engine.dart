@@ -102,7 +102,8 @@ abstract class AppointmentEngine {
       targetDate: targetDate,
       freeReviewDays: freeReviewDays,
     );
-    if (eligibility.hasVisitedDoctorEarlier && eligibility.isWithinReviewPeriod) {
+    if (eligibility.hasVisitedDoctorEarlier &&
+        eligibility.isWithinReviewPeriod) {
       return PaymentType.freeReview;
     }
     return PaymentType.paidCash;
@@ -178,8 +179,8 @@ abstract class AppointmentEngine {
       } else if (a.visitStatus == VisitStatus.booked) {
         booked.add(a);
       } else {
-        final matchesActive = (activeAppointmentId != null &&
-                a.id == activeAppointmentId) ||
+        final matchesActive =
+            (activeAppointmentId != null && a.id == activeAppointmentId) ||
             (activeAppointmentId == null &&
                 activeQueueNumber != null &&
                 a.queueNumber == activeQueueNumber) ||

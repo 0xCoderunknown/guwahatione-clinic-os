@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,7 +36,8 @@ class AuthProvider with ChangeNotifier {
   static const String _prefKeyRole = 'auth_role';
   static const String _prefKeyDoctorId = 'auth_doctor_id';
   static const String _prefKeyOwnerMasterPinHash = 'auth_owner_master_pin_hash';
-  static const String _prefKeyReceptionistPinHash = 'auth_receptionist_pin_hash';
+  static const String _prefKeyReceptionistPinHash =
+      'auth_receptionist_pin_hash';
 
   // Legacy plaintext keys purged on session initialization
   static const String _legacyPrefKeyOwnerMasterPin = 'auth_owner_master_pin';
@@ -50,8 +52,12 @@ class AuthProvider with ChangeNotifier {
     return sha256.convert(bytes).toString();
   }
 
-  static final String _defaultReceptionistPinHash = hashPin(defaultReceptionistPin);
-  static final String _defaultOwnerMasterPinHash = hashPin(defaultOwnerMasterPin);
+  static final String _defaultReceptionistPinHash = hashPin(
+    defaultReceptionistPin,
+  );
+  static final String _defaultOwnerMasterPinHash = hashPin(
+    defaultOwnerMasterPin,
+  );
 
   UserRole? _currentRole;
   Doctor? _currentDoctor;
@@ -83,7 +89,8 @@ class AuthProvider with ChangeNotifier {
 
   String get ownerMasterPin => _ownerMasterPin;
 
-  bool get isCustomOwnerPinSet => _ownerMasterPinHash != _defaultOwnerMasterPinHash;
+  bool get isCustomOwnerPinSet =>
+      _ownerMasterPinHash != _defaultOwnerMasterPinHash;
 
   bool get isCustomReceptionistPinSet =>
       _receptionistPinHash != _defaultReceptionistPinHash;
@@ -100,19 +107,27 @@ class AuthProvider with ChangeNotifier {
 
     final legacyOwnerPin = prefs.getString(_legacyPrefKeyOwnerMasterPin);
     if (legacyOwnerPin != null) {
-      await prefs.setString(_prefKeyOwnerMasterPinHash, hashPin(legacyOwnerPin));
+      await prefs.setString(
+        _prefKeyOwnerMasterPinHash,
+        hashPin(legacyOwnerPin),
+      );
       await prefs.remove(_legacyPrefKeyOwnerMasterPin);
     }
 
     _receptionistPinHash =
-        prefs.getString(_prefKeyReceptionistPinHash) ?? _defaultReceptionistPinHash;
+        prefs.getString(_prefKeyReceptionistPinHash) ??
+        _defaultReceptionistPinHash;
     _ownerMasterPinHash =
-        prefs.getString(_prefKeyOwnerMasterPinHash) ?? _defaultOwnerMasterPinHash;
+        prefs.getString(_prefKeyOwnerMasterPinHash) ??
+        _defaultOwnerMasterPinHash;
 
     // Sanitize in case legacy migration saved receptionist pin hash (0000) as owner hash
     if (_ownerMasterPinHash == _defaultReceptionistPinHash) {
       _ownerMasterPinHash = _defaultOwnerMasterPinHash;
-      await prefs.setString(_prefKeyOwnerMasterPinHash, _defaultOwnerMasterPinHash);
+      await prefs.setString(
+        _prefKeyOwnerMasterPinHash,
+        _defaultOwnerMasterPinHash,
+      );
     }
 
     final savedRole = prefs.getString(_prefKeyRole);
@@ -167,7 +182,8 @@ class AuthProvider with ChangeNotifier {
     }
 
     // 2. Check 4-digit Receptionist PIN via cryptographic hash
-    if (inputHash == _receptionistPinHash || inputHash == _defaultReceptionistPinHash) {
+    if (inputHash == _receptionistPinHash ||
+        inputHash == _defaultReceptionistPinHash) {
       _currentRole = UserRole.receptionist;
       _currentDoctor = null;
       await prefs.setString(_prefKeyRole, UserRole.receptionist.name);
@@ -177,8 +193,9 @@ class AuthProvider with ChangeNotifier {
     }
 
     // 3. Check Doctor Chamber PINs via cryptographic hash
-    final matchedDoctors =
-        doctors.where((d) => hashPin(d.pin) == inputHash).toList();
+    final matchedDoctors = doctors
+        .where((d) => hashPin(d.pin) == inputHash)
+        .toList();
     if (matchedDoctors.length == 1) {
       final doc = matchedDoctors.first;
       _currentRole = UserRole.doctor;
@@ -225,7 +242,8 @@ class AuthProvider with ChangeNotifier {
 
   Future<bool> loginAsReceptionist(String pin) async {
     final inputHash = hashPin(pin);
-    if (inputHash == _receptionistPinHash || inputHash == _defaultReceptionistPinHash) {
+    if (inputHash == _receptionistPinHash ||
+        inputHash == _defaultReceptionistPinHash) {
       _currentRole = UserRole.receptionist;
       _currentDoctor = null;
 

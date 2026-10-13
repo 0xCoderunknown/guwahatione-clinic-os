@@ -23,4 +23,3 @@ class UserSession {
     doctor: null,
   );
 }
-

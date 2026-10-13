@@ -150,8 +150,7 @@ abstract class RevenueEngine {
         case AppointmentStatus.completed:
           attended++;
           if (a.paymentType.isPaid ||
-              (a.paymentType == PaymentType.postPay &&
-                  a.amountCollected > 0)) {
+              (a.paymentType == PaymentType.postPay && a.amountCollected > 0)) {
             paid++;
             totalDoctorFees += a.amountCollected;
           } else {

@@ -64,8 +64,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 }
 
                 final appointments = snapshot.data!;
-                final doctorStats =
-                    RevenueEngine.calculateDoctorAnalytics(appointments);
+                final doctorStats = RevenueEngine.calculateDoctorAnalytics(
+                  appointments,
+                );
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -119,11 +120,7 @@ class DoctorStatisticsCard extends StatelessWidget {
   final DoctorAnalyticsSummary stats;
   final VoidCallback? onTap;
 
-  const DoctorStatisticsCard({
-    super.key,
-    required this.stats,
-    this.onTap,
-  });
+  const DoctorStatisticsCard({super.key, required this.stats, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -227,10 +224,7 @@ class _StatMetricItem extends StatelessWidget {
             color: color,
           ),
         ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
-        ),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
     );
   }

@@ -252,7 +252,9 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                               ? '▶ CALL NEXT'
                               : (isInConsultation
                                     ? 'Token #${session?.activeQueueNumber ?? '--'}'
-                                    : (patientCount == 1 ? '1 token' : '$patientCount tokens')),
+                                    : (patientCount == 1
+                                          ? '1 token'
+                                          : '$patientCount tokens')),
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.bold,

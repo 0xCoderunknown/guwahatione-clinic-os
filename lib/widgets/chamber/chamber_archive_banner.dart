@@ -9,10 +9,7 @@ import '../../utils/formatters.dart';
 class ChamberArchiveBanner extends StatelessWidget {
   final DateTime date;
 
-  const ChamberArchiveBanner({
-    super.key,
-    required this.date,
-  });
+  const ChamberArchiveBanner({super.key, required this.date});
 
   @override
   Widget build(BuildContext context) {

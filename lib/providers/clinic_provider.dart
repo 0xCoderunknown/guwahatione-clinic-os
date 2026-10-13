@@ -45,6 +45,7 @@ class ClinicProvider with ChangeNotifier {
   DateTime? _activeListeningDate;
 
   bool get isOfflineFallback => _isOfflineFallback;
+
   DateTime? get offlineCacheTimestamp => _offlineCacheTimestamp;
 
   List<Doctor> get doctors => _doctors;
@@ -75,6 +76,7 @@ class ClinicProvider with ChangeNotifier {
       .length;
 
   String _dashboardSearchQuery = '';
+
   String get dashboardSearchQuery => _dashboardSearchQuery;
 
   void setDashboardSearchQuery(String query) {
@@ -98,8 +100,9 @@ class ClinicProvider with ChangeNotifier {
       }
       if (_dashboardSearchQuery.isNotEmpty) {
         final matchesPhone = a.patientPhone.contains(_dashboardSearchQuery);
-        final matchesName =
-            a.patientName.toLowerCase().contains(_dashboardSearchQuery);
+        final matchesName = a.patientName.toLowerCase().contains(
+          _dashboardSearchQuery,
+        );
         final matchesToken = a.queueNumber.toString() == _dashboardSearchQuery;
         if (!matchesPhone && !matchesName && !matchesToken) return false;
       }
@@ -118,13 +121,13 @@ class ClinicProvider with ChangeNotifier {
     ConsultationService? consultationService,
     PatientService? patientService,
     Uuid? uuid,
-  })  : _bookingService = bookingService ?? BookingService(),
-        _doctorService = doctorService ?? DoctorService(),
-        _catalogueService = catalogueService ?? CatalogueService(),
-        _chamberService = chamberService ?? ChamberService(),
-        _consultationService = consultationService ?? ConsultationService(),
-        _patientService = patientService ?? PatientService(),
-        _uuid = uuid ?? const Uuid() {
+  }) : _bookingService = bookingService ?? BookingService(),
+       _doctorService = doctorService ?? DoctorService(),
+       _catalogueService = catalogueService ?? CatalogueService(),
+       _chamberService = chamberService ?? ChamberService(),
+       _consultationService = consultationService ?? ConsultationService(),
+       _patientService = patientService ?? PatientService(),
+       _uuid = uuid ?? const Uuid() {
     _subscribeToDoctors();
     _subscribeToMedicines();
   }
@@ -164,15 +167,19 @@ class ClinicProvider with ChangeNotifier {
             _offlineCacheTimestamp = null;
             notifyListeners();
             // Silently persist to offline local cache
-            unawaited(OfflineQueueCacheService.saveQueue(targetDate, appointments));
+            unawaited(
+              OfflineQueueCacheService.saveQueue(targetDate, appointments),
+            );
           },
           onError: (err) async {
             // Broadband dropout or Firestore error: seamlessly fallback to offline cache
-            final cached =
-                await OfflineQueueCacheService.getCachedQueue(targetDate);
+            final cached = await OfflineQueueCacheService.getCachedQueue(
+              targetDate,
+            );
             if (cached != null && cached.isNotEmpty) {
-              final ts =
-                  await OfflineQueueCacheService.getCacheTimestamp(targetDate);
+              final ts = await OfflineQueueCacheService.getCacheTimestamp(
+                targetDate,
+              );
               _todayAppointments = cached;
               _isOfflineFallback = true;
               _offlineCacheTimestamp = ts;
@@ -564,10 +571,7 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
-  Stream<ChamberSession> streamChamberSession(
-    String doctorId,
-    DateTime date,
-  ) {
+  Stream<ChamberSession> streamChamberSession(String doctorId, DateTime date) {
     return _chamberService.streamChamberSession(doctorId, date);
   }
 

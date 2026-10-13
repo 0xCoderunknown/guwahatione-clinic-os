@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/models/appointment.dart';
 import 'package:appointment_app/widgets/queue/accordion_status_actions.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AccordionStatusActions Widget Tests', () {
@@ -33,7 +33,9 @@ void main() {
       doctorName: 'Dr. Baruah',
     );
 
-    testWidgets('Triggers Mark Complete callback on button tap', (tester) async {
+    testWidgets('Triggers Mark Complete callback on button tap', (
+      tester,
+    ) async {
       AppointmentStatus? updatedStatus;
 
       await tester.pumpWidget(
@@ -57,40 +59,45 @@ void main() {
       expect(updatedStatus, AppointmentStatus.completed);
     });
 
-    testWidgets('Opens confirmation modal and triggers Mark Absent on confirm',
-        (tester) async {
-      AppointmentStatus? updatedStatus;
+    testWidgets(
+      'Opens confirmation modal and triggers Mark Absent on confirm',
+      (tester) async {
+        AppointmentStatus? updatedStatus;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AccordionStatusActions(
-              appointment: pendingAppt,
-              onUpdateStatus: (status) => updatedStatus = status,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AccordionStatusActions(
+                appointment: pendingAppt,
+                onUpdateStatus: (status) => updatedStatus = status,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.tap(find.text('Mark Absent'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Mark Absent'));
+        await tester.pumpAndSettle();
 
-      // Check modal content (ensuring Invariant #1 audit-proof message)
-      expect(find.text('Mark Patient Absent?'), findsOneWidget);
-      expect(
-        find.textContaining('The token slot will be preserved on record with ₹0 fee collected.'),
-        findsOneWidget,
-      );
+        // Check modal content (ensuring Invariant #1 audit-proof message)
+        expect(find.text('Mark Patient Absent?'), findsOneWidget);
+        expect(
+          find.textContaining(
+            'The token slot will be preserved on record with ₹0 fee collected.',
+          ),
+          findsOneWidget,
+        );
 
-      // Tap Confirm Absent
-      await tester.tap(find.text('Confirm Absent'));
-      await tester.pumpAndSettle();
+        // Tap Confirm Absent
+        await tester.tap(find.text('Confirm Absent'));
+        await tester.pumpAndSettle();
 
-      expect(updatedStatus, AppointmentStatus.absent);
-    });
+        expect(updatedStatus, AppointmentStatus.absent);
+      },
+    );
 
-    testWidgets('Canceling absent modal does not trigger status update',
-        (tester) async {
+    testWidgets('Canceling absent modal does not trigger status update', (
+      tester,
+    ) async {
       AppointmentStatus? updatedStatus;
 
       await tester.pumpWidget(
@@ -113,8 +120,9 @@ void main() {
       expect(updatedStatus, isNull);
     });
 
-    testWidgets('Renders WhatsApp button for completed appointments',
-        (tester) async {
+    testWidgets('Renders WhatsApp button for completed appointments', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
