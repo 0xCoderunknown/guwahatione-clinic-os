@@ -202,7 +202,7 @@ void main() {
         targetDate: today,
       );
 
-      expect(eligibility.isWithin14Days, isTrue);
+      expect(eligibility.isWithinReviewPeriod, isTrue);
 
       // System fee resolution ensures FREE Family waiver is strictly ₹0
       final resolvedFee = AppointmentEngine.resolveConsultationFee(

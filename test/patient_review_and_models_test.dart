@@ -186,7 +186,7 @@ void main() {
       );
 
       expect(eligibility.hasVisitedDoctorEarlier, isFalse);
-      expect(eligibility.isWithin14Days, isFalse);
+      expect(eligibility.isWithinReviewPeriod, isFalse);
     });
 
     test('Patient who visited a DIFFERENT doctor cannot get free review', () {
@@ -213,7 +213,7 @@ void main() {
       );
 
       expect(eligibility.hasVisitedDoctorEarlier, isFalse);
-      expect(eligibility.isWithin14Days, isFalse);
+      expect(eligibility.isWithinReviewPeriod, isFalse);
     });
 
     test('Patient who visited SAME doctor within 14 days is eligible', () {
@@ -240,7 +240,7 @@ void main() {
       );
 
       expect(eligibility.hasVisitedDoctorEarlier, isTrue);
-      expect(eligibility.isWithin14Days, isTrue);
+      expect(eligibility.isWithinReviewPeriod, isTrue);
       expect(eligibility.daysSinceLastVisit, 10);
     });
 
@@ -268,11 +268,11 @@ void main() {
       );
 
       expect(eligibility.hasVisitedDoctorEarlier, isTrue);
-      expect(eligibility.isWithin14Days, isTrue);
+      expect(eligibility.isWithinReviewPeriod, isTrue);
       expect(eligibility.daysSinceLastVisit, 14);
     });
 
-    test('Patient who visited 15 days ago has hasVisitedDoctorEarlier=true but isWithin14Days=false (triggers warning, not disabled)', () {
+    test('Patient who visited 15 days ago has hasVisitedDoctorEarlier=true but isWithinReviewPeriod=false (triggers warning, not disabled)', () {
       final appts = [
         Appointment(
           id: 'appt-1',
@@ -298,7 +298,7 @@ void main() {
       // Must allow UI to see they visited earlier (so option is NOT disabled),
       // but warn that 14 days has passed.
       expect(eligibility.hasVisitedDoctorEarlier, isTrue);
-      expect(eligibility.isWithin14Days, isFalse);
+      expect(eligibility.isWithinReviewPeriod, isFalse);
       expect(eligibility.daysSinceLastVisit, 15);
     });
 
@@ -326,7 +326,7 @@ void main() {
       );
 
       expect(eligibility.hasVisitedDoctorEarlier, isFalse);
-      expect(eligibility.isWithin14Days, isFalse);
+      expect(eligibility.isWithinReviewPeriod, isFalse);
     });
 
     test('Doctor with 0-day policy disallows free review even for recent returning patient', () {
@@ -356,7 +356,6 @@ void main() {
       expect(eligibility.hasVisitedDoctorEarlier, isTrue);
       expect(eligibility.allowedReviewDays, 0);
       expect(eligibility.isWithinReviewPeriod, isFalse);
-      expect(eligibility.isWithin14Days, isFalse);
       expect(eligibility.message, contains('does not offer free reviews'));
 
       final suggestedPayment = AppointmentEngine.suggestPaymentType(

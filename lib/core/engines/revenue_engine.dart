@@ -1,8 +1,4 @@
 import '../../models/models.dart';
-import 'cash_handover_engine.dart';
-
-export 'cash_handover_engine.dart'
-    show CashHandoverDoctorRow, CashHandoverSummary;
 
 /// Aggregated KPI metrics for a doctor's chamber session.
 class ChamberKpiMetrics {
@@ -242,28 +238,4 @@ abstract class RevenueEngine {
 
     return summaries;
   }
-
-  /// Delegates to [CashHandoverEngine.calculateCashHandover] for backward compatibility.
-  static CashHandoverSummary calculateCashHandover({
-    required List<Appointment> appointments,
-    required DateTime date,
-  }) =>
-      CashHandoverEngine.calculateCashHandover(
-        appointments: appointments,
-        date: date,
-      );
-
-  /// Delegates to [CashHandoverEngine.calculateDenominationTotal] for backward compatibility.
-  static int calculateDenominationTotal(Map<int, int> denominationCounts) =>
-      CashHandoverEngine.calculateDenominationTotal(denominationCounts);
-
-  /// Delegates to [CashHandoverEngine.calculateDiscrepancy] for backward compatibility.
-  static int calculateDiscrepancy({
-    required int physicalCounted,
-    required int expectedCash,
-  }) =>
-      CashHandoverEngine.calculateDiscrepancy(
-        physicalCounted: physicalCounted,
-        expectedCash: expectedCash,
-      );
 }

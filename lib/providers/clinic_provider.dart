@@ -207,7 +207,13 @@ class ClinicProvider with ChangeNotifier {
     int consultationFee = 500,
     int freeReviewDays = 14,
     String? medicalRegNumber,
+    UserRole? requestingRole,
   }) async {
+    if (requestingRole != null && !requestingRole.isOwner) {
+      throw Exception(
+        'Permission Denied: Only clinic administrators (owner) can register new doctors.',
+      );
+    }
     _setLoading(true);
     try {
       final newDoctor = Doctor(
@@ -230,7 +236,12 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updateDoctor(Doctor doctor) async {
+  Future<void> updateDoctor(Doctor doctor, {UserRole? requestingRole}) async {
+    if (requestingRole != null && !requestingRole.isOwner) {
+      throw Exception(
+        'Permission Denied: Only clinic administrators (owner) can modify doctor profiles.',
+      );
+    }
     _setLoading(true);
     try {
       await _doctorService.updateDoctor(doctor);

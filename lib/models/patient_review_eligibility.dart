@@ -30,9 +30,6 @@ class PatientReviewEligibility {
   /// True if a free review was already used for the most recent paid consultation cycle.
   final bool isReviewAlreadyConsumed;
 
-  /// Backwards-compatible alias for [isWithinReviewPeriod].
-  bool get isWithin14Days => isWithinReviewPeriod;
-
   /// Human-readable explanation of status.
   final String message;
 

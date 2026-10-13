@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.27.0] — 13-10-2026
+
+### Architectural Compliance & Invariant #10 Remediation
+- **Purged Backward-Compatibility Shims (Invariant #10):**
+  - Removed deprecated static delegation methods (`calculateCashHandover`, `calculateDenominationTotal`, `calculateDiscrepancy`) from `RevenueEngine` (`lib/core/engines/revenue_engine.dart`).
+  - Purged deprecated model alias `isWithin14Days` from `PatientReviewEligibility` (`lib/models/patient_review_eligibility.dart`).
+  - Migrated `BookingPaymentSection` (`lib/widgets/booking/booking_payment_section.dart`) and automated test suites to canonical `isWithinReviewPeriod` and dynamic `allowedReviewDays`.
+- **Fortified Security & Provider Access Boundaries:**
+  - Added strict `UserRole? requestingRole` owner authorization check on `ClinicProvider.addDoctor` and `ClinicProvider.updateDoctor` (`lib/providers/clinic_provider.dart`), achieving state-level parity with medicine catalogue controls.
+  - Bound `AuthProvider.currentRole` to doctor registration and update triggers in `AddDoctorScreen` (`lib/screens/add_doctor_screen.dart`).
+- **Synchronized Master Data Schema Specification (`docs/SCHEMA_AND_MODELS.md` §4B):**
+  - Updated Chamber Calling Session table to formally document `date` (`yyyy-MM-dd`) and operational server timestamps (`calledAt`, `readyAt`, `endedAt`, `clearedAt`).
+- **Automated Verification Suite:**
+  - 100% clean static analysis (`flutter analyze` - 0 issues).
+  - 171 automated tests passing cleanly (`flutter test`).
+
+---
+
 ## [1.26.0] — 13-10-2026
 
 ### Single-Occupant Chamber Integrity & AI Code Review Guardrails (Invariant #11)

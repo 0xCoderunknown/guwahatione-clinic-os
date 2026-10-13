@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/doctor.dart';
+import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
 import '../utils/formatters.dart';
 
@@ -306,6 +307,10 @@ class _DoctorFormState extends State<DoctorForm> {
         context,
         listen: false,
       );
+      final authProvider = Provider.of<AuthProvider>(
+        context,
+        listen: false,
+      );
 
       if (widget.doctor != null) {
         final updatedDoctor = widget.doctor!.copyWith(
@@ -318,7 +323,10 @@ class _DoctorFormState extends State<DoctorForm> {
           pin: pin.isNotEmpty ? pin : widget.doctor!.pin,
           medicalRegNumber: regNumber.isNotEmpty ? regNumber : null,
         );
-        await clinicProvider.updateDoctor(updatedDoctor);
+        await clinicProvider.updateDoctor(
+          updatedDoctor,
+          requestingRole: authProvider.currentRole,
+        );
       } else {
         await clinicProvider.addDoctor(
           _nameController.text.trim(),
@@ -329,6 +337,7 @@ class _DoctorFormState extends State<DoctorForm> {
           consultationFee: fee,
           freeReviewDays: reviewDays,
           medicalRegNumber: regNumber.isNotEmpty ? regNumber : null,
+          requestingRole: authProvider.currentRole,
         );
       }
 

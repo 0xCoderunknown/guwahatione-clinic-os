@@ -194,32 +194,5 @@ void main() {
       // Surplus
       expect(CashHandoverEngine.calculateDiscrepancy(physicalCounted: 3700, expectedCash: 3500), 200);
     });
-
-    test('RevenueEngine delegates forward seamlessly to CashHandoverEngine for backward compatibility', () {
-      final appts = [
-        Appointment(
-          id: 'a1',
-          patientPhone: '9876543210',
-          patientName: 'Paid Patient',
-          status: AppointmentStatus.completed,
-          paymentType: PaymentType.paidCash,
-          amountCollected: 500,
-          queueNumber: 1,
-          scheduledDate: today,
-          doctorId: 'doc-1',
-          doctorName: 'Dr. A. Sharma',
-        ),
-      ];
-
-      final summary = RevenueEngine.calculateCashHandover(
-        appointments: appts,
-        date: today,
-      );
-      expect(summary.totalRealizedCash, 500);
-
-      final counts = {500: 1};
-      expect(RevenueEngine.calculateDenominationTotal(counts), 500);
-      expect(RevenueEngine.calculateDiscrepancy(physicalCounted: 500, expectedCash: 500), 0);
-    });
   });
 }

@@ -99,10 +99,12 @@ class BookingPaymentSection extends StatelessWidget {
                 if (!reviewEligibility.hasVisitedDoctorEarlier) {
                   enabled = false;
                   label = 'FREE (Review) — Returning patients only';
-                } else if (reviewEligibility.isWithin14Days) {
-                  label = 'FREE (Review) — Within 14 days';
+                } else if (reviewEligibility.isWithinReviewPeriod) {
+                  label =
+                      'FREE (Review) — Within ${reviewEligibility.allowedReviewDays} days';
                 } else {
-                  label = 'FREE (Review) — ⚠️ >14 days passed';
+                  label =
+                      'FREE (Review) — ⚠️ >${reviewEligibility.allowedReviewDays} days passed';
                 }
                 break;
             }
@@ -119,10 +121,10 @@ class BookingPaymentSection extends StatelessWidget {
           onChanged: onPaymentChanged,
         ),
 
-        // Warning banner if Free Review is selected when >14 days has passed
+        // Warning banner if Free Review is selected when allowed review period has passed
         if (selectedPayment == PaymentType.freeReview &&
             reviewEligibility.hasVisitedDoctorEarlier &&
-            !reviewEligibility.isWithin14Days) ...[
+            !reviewEligibility.isWithinReviewPeriod) ...[
           const SizedBox(height: 8),
           Container(
             width: double.infinity,
@@ -142,7 +144,7 @@ class BookingPaymentSection extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Warning: 14 days have passed (${reviewEligibility.daysSinceLastVisit} days since last visit). Free review manually approved.',
+                    'Warning: ${reviewEligibility.allowedReviewDays} days have passed (${reviewEligibility.daysSinceLastVisit} days since last visit). Free review manually approved.',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
