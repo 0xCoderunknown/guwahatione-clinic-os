@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.29.1] — 14-10-2026
+
+### Architectural Compliance & Invariant #10 Debt Remediation
+- **Purged Deprecated Enum Alias `PaymentType.paid` (Invariant #10):**
+  - Removed obsolete `@Deprecated('Use paidCash or paidUpi') static const PaymentType paid` alias from `lib/models/appointment.dart`.
+  - Migrated `AddAppointmentDialog` (`lib/widgets/booking/add_appointment_dialog.dart`) lines 286 and 522 to use canonical `_selectedPayment.isPaid` and `PaymentType.paidCash`.
+  - Migrated legacy test fixtures across `test/revenue_engine_test.dart`, `test/patient_review_and_models_test.dart`, `test/appointment_engine_estimated_time_test.dart`, `test/cash_handover_engine_test.dart`, `test/chamber_handshake_test.dart`, and `test/offline_queue_cache_test.dart` to strictly canonical `PaymentType.paidCash`.
+- **Quality & Verification Gates:**
+  - 100% clean static analysis (`flutter analyze` — 0 issues).
+  - All 184 automated tests passing (`flutter test`).
+
+---
+
 ## [1.29.0] — 13-10-2026
 
 ### P10: Multi-Chamber Queue Sound Announcer & Vocal Token Calling

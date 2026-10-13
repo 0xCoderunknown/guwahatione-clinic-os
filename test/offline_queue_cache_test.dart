@@ -18,7 +18,7 @@ void main() {
         patientPhone: '9876543210',
         patientName: 'Pranab Das',
         status: AppointmentStatus.pending,
-        paymentType: PaymentType.paid,
+        paymentType: PaymentType.paidCash,
         amountCollected: 500,
         queueNumber: 1,
         scheduledDate: testDate,
@@ -61,7 +61,7 @@ void main() {
       expect(cached[0].patientName, 'Pranab Das');
       expect(cached[0].patientPhone, '9876543210');
       expect(cached[0].status, AppointmentStatus.pending);
-      expect(cached[0].paymentType, PaymentType.paid);
+      expect(cached[0].paymentType, PaymentType.paidCash);
       expect(cached[0].amountCollected, 500);
       expect(cached[0].queueNumber, 1);
       expect(cached[0].doctorId, 'doc-1');

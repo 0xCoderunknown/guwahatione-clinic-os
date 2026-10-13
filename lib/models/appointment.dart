@@ -53,9 +53,6 @@ enum PaymentType {
   postPay,    // Pay on exit / post-consultation
   unpaid;     // Booked over phone, not yet collected
 
-  @Deprecated('Use paidCash or paidUpi')
-  static const PaymentType paid = PaymentType.paidCash;
-
   String get displayName {
     switch (this) {
       case PaymentType.paidCash:

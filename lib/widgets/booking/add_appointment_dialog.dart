@@ -283,7 +283,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     onDoctorChanged: (val) {
                       setState(() {
                         _selectedDoctor = val;
-                        if (_selectedPayment == PaymentType.paid &&
+                        if (_selectedPayment.isPaid &&
                             val != null) {
                           _amountController.text = "${val.consultationFee}";
                         }
@@ -519,7 +519,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         _selectedGender = null;
         _genderHasError = false;
         _amountController.text =
-            "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paid)}";
+            "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paidCash)}";
 
         // Auto-advance focus to Patient Name on new patient record
         if (mounted) {

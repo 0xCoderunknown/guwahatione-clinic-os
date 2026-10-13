@@ -10,7 +10,7 @@ void main() {
         patientPhone: '9876543210',
         patientName: 'Test Patient',
         status: AppointmentStatus.pending,
-        paymentType: PaymentType.paid,
+        paymentType: PaymentType.paidCash,
         amountCollected: 500,
         queueNumber: 1,
         scheduledDate: DateTime(2026, 10, 5),
@@ -19,7 +19,7 @@ void main() {
       );
 
       expect(appt.status, AppointmentStatus.pending);
-      expect(appt.paymentType, PaymentType.paid);
+      expect(appt.paymentType, PaymentType.paidCash);
       expect(appt.amountCollected, 500);
       expect(appt.queueNumber, 1);
     });
@@ -31,7 +31,7 @@ void main() {
         patientPhone: '9876543210',
         patientName: 'Native Patient',
         status: AppointmentStatus.absent,
-        paymentType: PaymentType.paid,
+        paymentType: PaymentType.paidCash,
         amountCollected: 0,
         queueNumber: 4,
         scheduledDate: now,
@@ -196,7 +196,7 @@ void main() {
           patientPhone: '9876543210',
           patientName: 'Test Patient',
           status: AppointmentStatus.completed,
-          paymentType: PaymentType.paid,
+          paymentType: PaymentType.paidCash,
           amountCollected: 500,
           queueNumber: 1,
           scheduledDate: DateTime(2026, 10, 15), // 5 days ago
@@ -223,7 +223,7 @@ void main() {
           patientPhone: '9876543210',
           patientName: 'Test Patient',
           status: AppointmentStatus.completed,
-          paymentType: PaymentType.paid,
+          paymentType: PaymentType.paidCash,
           amountCollected: 500,
           queueNumber: 1,
           scheduledDate: DateTime(2026, 10, 10), // 10 days ago
@@ -251,7 +251,7 @@ void main() {
           patientPhone: '9876543210',
           patientName: 'Test Patient',
           status: AppointmentStatus.completed,
-          paymentType: PaymentType.paid,
+          paymentType: PaymentType.paidCash,
           amountCollected: 500,
           queueNumber: 1,
           scheduledDate: DateTime(2026, 10, 6), // exactly 14 days before Oct 20
@@ -279,7 +279,7 @@ void main() {
           patientPhone: '9876543210',
           patientName: 'Test Patient',
           status: AppointmentStatus.completed,
-          paymentType: PaymentType.paid,
+          paymentType: PaymentType.paidCash,
           amountCollected: 500,
           queueNumber: 1,
           scheduledDate: DateTime(2026, 10, 5), // 15 days before Oct 20
@@ -309,7 +309,7 @@ void main() {
           patientPhone: '9876543210',
           patientName: 'Test Patient',
           status: AppointmentStatus.absent,
-          paymentType: PaymentType.paid,
+          paymentType: PaymentType.paidCash,
           amountCollected: 0,
           queueNumber: 1,
           scheduledDate: DateTime(2026, 10, 15),
@@ -336,7 +336,7 @@ void main() {
           patientPhone: '9876543210',
           patientName: 'Test Patient',
           status: AppointmentStatus.completed,
-          paymentType: PaymentType.paid,
+          paymentType: PaymentType.paidCash,
           amountCollected: 1000,
           queueNumber: 1,
           scheduledDate: DateTime(2026, 10, 18), // 2 days ago
@@ -374,7 +374,7 @@ void main() {
           patientPhone: '9876543210',
           patientName: 'Test Patient',
           status: AppointmentStatus.completed,
-          paymentType: PaymentType.paid,
+          paymentType: PaymentType.paidCash,
           amountCollected: 800,
           queueNumber: 1,
           scheduledDate: DateTime(2026, 9, 25), // 25 days before Oct 20
@@ -413,7 +413,7 @@ void main() {
           patientPhone: '9876543210',
           patientName: 'Test Patient',
           status: AppointmentStatus.completed,
-          paymentType: PaymentType.paid,
+          paymentType: PaymentType.paidCash,
           amountCollected: 800,
           queueNumber: 1,
           scheduledDate: DateTime(2026, 9, 15), // 35 days before Oct 20
