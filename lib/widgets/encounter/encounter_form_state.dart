@@ -4,6 +4,7 @@ import '../../models/consultation.dart';
 import '../../models/diagnostic_investigation.dart';
 import '../../models/medicine.dart';
 import '../../models/prescription_item.dart';
+import '../../models/prescription_template.dart';
 import '../../models/vitals.dart';
 import '../../providers/clinic_provider.dart';
 import '../../core/engines/engines.dart';
@@ -244,6 +245,21 @@ class EncounterFormState {
     cancelStaging();
     medSearchController.clear();
     isSearchActive = false;
+  }
+
+  /// Evaluates and applies a clinical prescription template bundle.
+  /// Skips duplicate medications that are already active on the prescription.
+  TemplateApplicationResult applyPrescriptionTemplate({
+    required PrescriptionTemplate template,
+    required String Function() uuidGenerator,
+  }) {
+    final result = MedicineEngine.evaluateTemplateApplication(
+      template: template,
+      existingItems: allPrescriptionItems,
+      uuidGenerator: uuidGenerator,
+    );
+    newPrescriptions.addAll(result.addedItems);
+    return result;
   }
 
   // ---------------------------------------------------------------------------

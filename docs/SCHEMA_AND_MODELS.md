@@ -272,3 +272,9 @@
 - **`CashHandoverSummary`:** Aggregates realized cash, completed consultations, paid counts, and free reviews (Review & Family).
 - **`CashHandoverDoctorRow`:** Segments cash drawer receipts by doctor for closing sign-off.
 - **Denomination Math:** Evaluates note counts (`₹500`, `₹200`, `₹100`, `₹50`, `₹20`, `₹10`) against expected realized revenue to audit discrepancies.
+
+### C. Prescription Template Presets Domain Models
+- **`PrescriptionTemplateItem`:** Clinical template entry (`medicineName`, `composition`, `dosage`, `frequency`, `timing`, `durationDays`, `instructions`). Converts via `.toPrescriptionItem()` into staged `PrescriptionItem` with action `MedicationAction.start`.
+- **`PrescriptionTemplate`:** Pre-configured OPD clinical preset bundle (`id`, `name`, `description`, `emoji`, `items`).
+- **`TemplateApplicationResult`:** Forensic result returned by `MedicineEngine.evaluateTemplateApplication` (`templateName`, `addedItems`, `skippedDuplicates`). Evaluates existing active medications and safely skips duplicate brands or matching generic salts.
+

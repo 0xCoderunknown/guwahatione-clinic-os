@@ -7,6 +7,7 @@ import '../common/section_card.dart';
 import 'encounter_form_state.dart';
 import 'rx/reconciliation_item_row.dart';
 import 'rx/rx_search_results_view.dart';
+import 'rx/rx_template_presets_bar.dart';
 import 'rx/staged_medicine_form.dart';
 
 /// Step 4: Medication Reconciliation & Prescribing Section Coordinator
@@ -109,6 +110,13 @@ class RxReconciliationSection extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                 ],
+
+                RxTemplatePresetsBar(
+                  form: form,
+                  uuidGenerator: uuidGenerator,
+                  onUpdate: onUpdate,
+                ),
+                const SizedBox(height: 14),
 
                 const Text(
                   'Add Medicine (Search by Brand or Composition)',

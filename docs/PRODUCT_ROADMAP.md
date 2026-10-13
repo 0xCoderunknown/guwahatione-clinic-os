@@ -57,16 +57,16 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 | **Doctor-Configurable Free Review Policy (0–30 Days)** | Added configurable `freeReviewDays` on `Doctor` model (`0` to `30` days, default: `14`), owner configuration UI with preset choice chips, roster visibility badges, dynamic review eligibility engine evaluation, warning dialogs, and expanded test suite to 157 automated tests. | 🟢 Shipped & Verified (`v1.20.0`) |
 | **Mobile Responsive Doctor Chamber & Roster Tokens** | Responsive `LayoutBuilder` for `ChamberControlBanner`, adaptive 2-row `ChamberTokenCard` layout, and wrapping `ChamberQueueHeader` preventing horizontal `RenderFlex` overflows on mobile viewports (<650px); expanded test suite to 160 automated tests. | 🟢 Shipped & Verified (`v1.21.0`) |
 | **Strict 1:1 Paid-to-Review Cycle Enforcement** | Enforced strictly 1 free review per paid consultation within the doctor's configured `freeReviewDays` window; subsequent visits require paid consultation; prevents infinite review chaining; expanded test suite to 163 automated tests. | 🟢 Implemented & Verified |
+| **Prescription Template Presets (`P9`)** | Pre-configured clinical OPD bundles (URI/Pharyngitis, Acute Gastritis, Gastroenteritis, Viral Fever, HTN Starter) with 1-tap horizontal chip loader (`RxTemplatePresetsBar`), duplicate suppression by brand and salt composition (`evaluateTemplateApplication`), and non-destructive `START` staging; expanded test suite to 179 automated tests. | 🟢 Shipped & Verified (`v1.28.0`) |
 
 ---
 
 ## 🎯 3. Active Priority Backlog (Next Horizon)
 
-All primary operational priorities (P1 through P8) and review cycle enforcement have been successfully implemented and verified across 163 automated tests. Future enhancements and architectural debates are prioritized below:
+All primary operational priorities (P1 through P9) and review cycle enforcement have been successfully implemented and verified across 179 automated tests. Future enhancements and architectural debates are prioritized below:
 
 | Priority | Proposed Feature | Problem Solved | Acceptance Criteria |
 |---|---|---|---|
-| **P9** | **Prescription Template Presets** | Visiting doctors prescribe repetitive sets of medicines for common OPD conditions (e.g. URI, Acute Gastritis). | 1-tap favorite prescription template loader in Step 4 prescribing pipeline. |
 | **P10** | **Multi-Chamber Queue Sound Announcer** | Counter receptionist wants audible token chime (e.g. "Token 5, please proceed to Chamber 1") for waiting lobby. | Web audio chime synthesized on chamber call-in trigger. |
 | **P11** | **Prepaid Carry-Over & Doctor No-Show / Refund Protocol (RFC)** | Patient paid online/cash but didn't attend, OR consulting doctor canceled/absent. Current ledger has no formal carry-forward or refund state. | Formalized refund ledger (`PaymentType.refunded` / `refundAmount`) updating daily cash/UPI totals, or explicit carry-over token revalidation without double charging. |
 

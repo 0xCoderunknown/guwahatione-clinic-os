@@ -8,5 +8,6 @@ export 'medicine.dart';
 export 'patient.dart';
 export 'patient_review_eligibility.dart';
 export 'prescription_item.dart';
+export 'prescription_template.dart';
 export 'user_role.dart';
 export 'vitals.dart';

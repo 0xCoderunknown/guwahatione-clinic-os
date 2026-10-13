@@ -439,5 +439,230 @@ abstract class MedicineEngine {
         .toSet()
         .length;
   }
+
+  /// Canonical preset prescription templates for common OPD clinical conditions.
+  static List<PrescriptionTemplate> getDefaultPrescriptionTemplates() {
+    return const [
+      PrescriptionTemplate(
+        id: 'tmpl_uri_flu',
+        name: 'URI / Pharyngitis',
+        description: 'Dolo 650 + Azithral 500 + Levocet 5 + Pan 40',
+        emoji: '🤧',
+        items: [
+          PrescriptionTemplateItem(
+            medicineName: 'Dolo 650',
+            composition: 'Paracetamol 650mg',
+            dosage: '1 Tablet',
+            frequency: '1-0-1 (BD)',
+            timing: 'After Food',
+            durationDays: 5,
+            instructions: 'SOS for fever or throat pain',
+          ),
+          PrescriptionTemplateItem(
+            medicineName: 'Azithral 500',
+            composition: 'Azithromycin 500mg',
+            dosage: '1 Tablet',
+            frequency: '1-0-0 (OD)',
+            timing: 'After Food',
+            durationDays: 3,
+            instructions: 'Take at fixed time daily',
+          ),
+          PrescriptionTemplateItem(
+            medicineName: 'Levocet 5',
+            composition: 'Levocetirizine 5mg',
+            dosage: '1 Tablet',
+            frequency: '0-0-1 (HS)',
+            timing: 'After Food',
+            durationDays: 5,
+            instructions: 'Night at bedtime for runny nose / sneezing',
+          ),
+          PrescriptionTemplateItem(
+            medicineName: 'Pan 40',
+            composition: 'Pantoprazole 40mg',
+            dosage: '1 Tablet',
+            frequency: '1-0-0 (OD)',
+            timing: 'Before Food',
+            durationDays: 5,
+            instructions: 'Empty stomach in morning',
+          ),
+        ],
+      ),
+      PrescriptionTemplate(
+        id: 'tmpl_acute_gastritis',
+        name: 'Acute Gastritis',
+        description: 'Pan 40 + Domstal 10 + Sucrafil O Suspension',
+        emoji: '🔥',
+        items: [
+          PrescriptionTemplateItem(
+            medicineName: 'Pan 40',
+            composition: 'Pantoprazole 40mg',
+            dosage: '1 Tablet',
+            frequency: '1-0-0 (OD)',
+            timing: 'Before Food',
+            durationDays: 14,
+            instructions: 'Empty stomach 30 mins before breakfast',
+          ),
+          PrescriptionTemplateItem(
+            medicineName: 'Domstal 10',
+            composition: 'Domperidone 10mg',
+            dosage: '1 Tablet',
+            frequency: '1-0-1 (BD)',
+            timing: 'Before Food',
+            durationDays: 5,
+            instructions: 'Before meals for nausea / bloating',
+          ),
+          PrescriptionTemplateItem(
+            medicineName: 'Sucrafil O',
+            composition: 'Sucralfate 1000mg + Oxetacaine 20mg',
+            dosage: '10 ml',
+            frequency: '1-1-1 (TDS)',
+            timing: 'Before Food',
+            durationDays: 7,
+            instructions: 'Shake well, 30 min before meals',
+          ),
+        ],
+      ),
+      PrescriptionTemplate(
+        id: 'tmpl_gastroenteritis',
+        name: 'Gastroenteritis / Diarrhea',
+        description: 'O2 (Oflox-Ornidazole) + ORS + Darolac + Dolo 650 SOS',
+        emoji: '💧',
+        items: [
+          PrescriptionTemplateItem(
+            medicineName: 'O2 Tablet',
+            composition: 'Ofloxacin 200mg + Ornidazole 500mg',
+            dosage: '1 Tablet',
+            frequency: '1-0-1 (BD)',
+            timing: 'After Food',
+            durationDays: 5,
+            instructions: 'Complete full 5-day course',
+          ),
+          PrescriptionTemplateItem(
+            medicineName: 'ORS Sachet',
+            composition: 'Oral Rehydration Salts IP',
+            dosage: '1 Sachet',
+            frequency: 'SOS (As Needed)',
+            timing: 'After Food',
+            durationDays: 3,
+            instructions:
+                'Dissolve 1 packet in 1 litre drinking water, sip frequently',
+          ),
+          PrescriptionTemplateItem(
+            medicineName: 'Darolac Capsule',
+            composition: 'Lactobacillus & Probiotic Blend',
+            dosage: '1 Capsule',
+            frequency: '1-0-1 (BD)',
+            timing: 'After Food',
+            durationDays: 5,
+            instructions: 'With or after meals',
+          ),
+          PrescriptionTemplateItem(
+            medicineName: 'Dolo 650',
+            composition: 'Paracetamol 650mg',
+            dosage: '1 Tablet',
+            frequency: 'SOS (As Needed)',
+            timing: 'After Food',
+            durationDays: 3,
+            instructions: 'Only if fever or abdominal cramps occur',
+          ),
+        ],
+      ),
+      PrescriptionTemplate(
+        id: 'tmpl_fever_viral',
+        name: 'Viral Fever / SOS',
+        description: 'Dolo 650 + Pan 40 + Limcee Chewable',
+        emoji: '🌡️',
+        items: [
+          PrescriptionTemplateItem(
+            medicineName: 'Dolo 650',
+            composition: 'Paracetamol 650mg',
+            dosage: '1 Tablet',
+            frequency: '1-1-1 (TDS)',
+            timing: 'After Food',
+            durationDays: 5,
+            instructions: 'SOS for fever > 100°F or body ache; min 6 hrs gap',
+          ),
+          PrescriptionTemplateItem(
+            medicineName: 'Pan 40',
+            composition: 'Pantoprazole 40mg',
+            dosage: '1 Tablet',
+            frequency: '1-0-0 (OD)',
+            timing: 'Before Food',
+            durationDays: 5,
+            instructions: 'Morning before food',
+          ),
+          PrescriptionTemplateItem(
+            medicineName: 'Limcee 500',
+            composition: 'Vitamin C 500mg',
+            dosage: '1 Tablet',
+            frequency: '1-0-0 (OD)',
+            timing: 'After Food',
+            durationDays: 10,
+            instructions: 'Chewable tablet after food',
+          ),
+        ],
+      ),
+      PrescriptionTemplate(
+        id: 'tmpl_chronic_htn_starter',
+        name: 'HTN Chronic Starter',
+        description: 'Telma 40 (Telmisartan 40mg) chronic baseline',
+        emoji: '❤️',
+        items: [
+          PrescriptionTemplateItem(
+            medicineName: 'Telma 40',
+            composition: 'Telmisartan 40mg',
+            dosage: '1 Tablet',
+            frequency: '1-0-0 (OD)',
+            timing: 'After Food',
+            durationDays: null,
+            instructions: 'Morning after breakfast daily; monitor BP',
+          ),
+        ],
+      ),
+    ];
+  }
+
+  /// Evaluates and applies a [PrescriptionTemplate] against existing active prescription items,
+  /// skipping duplicate medications (by name or normalized composition).
+  static TemplateApplicationResult evaluateTemplateApplication({
+    required PrescriptionTemplate template,
+    required List<PrescriptionItem> existingItems,
+    required String Function() uuidGenerator,
+  }) {
+    final List<PrescriptionItem> toAdd = [];
+    final List<PrescriptionTemplateItem> skipped = [];
+
+    // Build normalized lookup keys of active existing items
+    final existingKeys = <String>{};
+    for (final item in existingItems) {
+      if (item.action != MedicationAction.stop) {
+        existingKeys.add(_normalizeMedKey(item.medicineName));
+        existingKeys.add(_normalizeMedKey(item.composition));
+      }
+    }
+
+    for (final tmplItem in template.items) {
+      final nameKey = _normalizeMedKey(tmplItem.medicineName);
+      final compKey = _normalizeMedKey(tmplItem.composition);
+
+      if (existingKeys.contains(nameKey) || existingKeys.contains(compKey)) {
+        skipped.add(tmplItem);
+      } else {
+        toAdd.add(tmplItem.toPrescriptionItem(id: uuidGenerator()));
+        existingKeys.add(nameKey);
+        existingKeys.add(compKey);
+      }
+    }
+
+    return TemplateApplicationResult(
+      templateName: template.name,
+      addedItems: toAdd,
+      skippedDuplicates: skipped,
+    );
+  }
+
+  static String _normalizeMedKey(String value) {
+    return value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+  }
 }
 

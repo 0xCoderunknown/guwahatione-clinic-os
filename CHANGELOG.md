@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.28.0] — 13-10-2026
+
+### P9: Prescription Template Presets & Fast OPD Prescribing Pipeline
+- **Pure Domain Engine Models (`lib/models/prescription_template.dart` & `lib/models/models.dart`):**
+  - Introduced `PrescriptionTemplate`, `PrescriptionTemplateItem`, and `TemplateApplicationResult`.
+  - Added clean model conversion `.toPrescriptionItem()` creating append-only staged `PrescriptionItem` entries with `MedicationAction.start`.
+- **Duplicate-Aware Regimen Evaluation (`lib/core/engines/medicine_engine.dart`):**
+  - Added `MedicineEngine.getDefaultPrescriptionTemplates()` providing standard OPD bundles:
+    - 🤧 **URI / Pharyngitis:** Dolo 650, Azithral 500, Levocet 5, Pan 40.
+    - 🔥 **Acute Gastritis:** Pan 40, Domstal 10, Sucrafil O Suspension.
+    - 💧 **Gastroenteritis / Diarrhea:** O2 Tablet, ORS Sachet, Darolac Capsule, Dolo 650 SOS.
+    - 🌡️ **Viral Fever / SOS:** Dolo 650, Pan 40, Limcee 500 Chewable.
+    - ❤️ **HTN Chronic Starter:** Telma 40 baseline.
+  - Implemented `MedicineEngine.evaluateTemplateApplication`: inspects patient's active medication list (both chronic `reconciliationItems` and staged `newPrescriptions`) to intelligently skip duplicate medications by brand name or normalized chemical salt composition without creating collisions.
+- **Encounter Form State Integration (`lib/widgets/encounter/encounter_form_state.dart`):**
+  - Added `applyPrescriptionTemplate` method to `EncounterFormState` evaluating template presets against `allPrescriptionItems` and staging additions into `newPrescriptions`.
+- **1-Tap Preset Bar Widget (`lib/widgets/encounter/rx/rx_template_presets_bar.dart`):**
+  - Created `RxTemplatePresetsBar`: horizontal scrollable chip bar rendered directly above the Step 4 medicine search bar.
+  - Interactive ActionChips with tooltips, instant 1-tap application, and contextual SnackBar alerts indicating added count and skipped duplicate counts.
+- **Encounter Integration (`lib/widgets/encounter/rx_reconciliation_section.dart`):**
+  - Mounted `RxTemplatePresetsBar` immediately above the search input field in Step 4 Prescribing & Reconciliation.
+- **Automated Verification Suite (`test/prescription_template_test.dart`):**
+  - Added 8 unit and widget tests covering default presets, model mapping, exact brand duplicate skipping, chemical composition match skipping, stopped medication non-blocking behavior, form state integration, and UI chip tap interactions.
+  - 100% test pass rate across all 179 tests (`flutter test`).
+  - 100% clean static analysis (`flutter analyze` - 0 issues).
+
+---
+
 ## [1.27.0] — 13-10-2026
 
 ### Architectural Compliance & Invariant #10 Remediation
