@@ -30,22 +30,110 @@ class ChamberControlBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (status == 'consultation_ended') {
-      return _buildConsultationEndedCard(context);
-    } else if (status == 'ready_for_next') {
-      return _buildReadyForNextCard(context);
-    } else if (status == 'calling') {
-      return _buildCallingIncomingCard(context);
-    } else if (status == 'in_consultation') {
-      return _buildInConsultationCard(context);
-    } else {
-      return _buildIdleCard(context);
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 600;
+        if (status == 'consultation_ended') {
+          return _buildConsultationEndedCard(context, isCompact);
+        } else if (status == 'ready_for_next') {
+          return _buildReadyForNextCard(context, isCompact);
+        } else if (status == 'calling') {
+          return _buildCallingIncomingCard(context, isCompact);
+        } else if (status == 'in_consultation') {
+          return _buildInConsultationCard(context, isCompact);
+        } else {
+          return _buildIdleCard(context, isCompact);
+        }
+      },
+    );
   }
 
-  Widget _buildConsultationEndedCard(BuildContext context) {
+  Widget _buildConsultationEndedCard(BuildContext context, bool isCompact) {
+    final iconWidget = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF3C7),
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFFF59E0B)),
+      ),
+      child: const Icon(
+        Icons.coffee_rounded,
+        color: Color(0xFFB45309),
+        size: 24,
+      ),
+    );
+
+    final textWidget = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 6,
+          children: [
+            Text(
+              'Consultation Ended: Token #${lastCompletedQueueNumber?.toString().padLeft(2, '0') ?? '--'}',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: Color(0xFF92400E),
+              ),
+            ),
+            if (lastCompletedPatientName != null &&
+                lastCompletedPatientName!.isNotEmpty)
+              Text(
+                '($lastCompletedPatientName)',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.amber.shade900,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Take your breather (sip water, sanitize). Reception is holding the queue until you call next.',
+          style: TextStyle(fontSize: 12, color: Color(0xFF78350F)),
+        ),
+      ],
+    );
+
+    final buttonWidget = FilledButton.icon(
+      style: FilledButton.styleFrom(
+        backgroundColor: const Color(0xFF0F766E),
+        // Teal-700
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      icon: isBusy
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Icon(Icons.arrow_forward_rounded, size: 20),
+      label: const Text(
+        'NEXT PATIENT',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+          letterSpacing: 0.5,
+        ),
+      ),
+      onPressed: isBusy ? null : onNextPatient,
+    );
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 16 : 20,
+        vertical: isCompact ? 14 : 16,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFFFFFBEB), // Soft warm amber
         borderRadius: BorderRadius.circular(14),
@@ -58,97 +146,105 @@ class ChamberControlBanner extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFF59E0B)),
-            ),
-            child: const Icon(
-              Icons.coffee_rounded,
-              color: Color(0xFFB45309),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: isCompact
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 6,
+                Row(
                   children: [
-                    Text(
-                      'Consultation Ended: Token #${lastCompletedQueueNumber?.toString().padLeft(2, '0') ?? '--'}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Color(0xFF92400E),
-                      ),
-                    ),
-                    if (lastCompletedPatientName != null &&
-                        lastCompletedPatientName!.isNotEmpty)
-                      Text(
-                        '($lastCompletedPatientName)',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.amber.shade900,
-                        ),
-                      ),
+                    iconWidget,
+                    const SizedBox(width: 12),
+                    Expanded(child: textWidget),
                   ],
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Take your breather (sip water, sanitize). Reception is holding the queue until you call next.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF78350F)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: buttonWidget,
                 ),
               ],
+            )
+          : Row(
+              children: [
+                iconWidget,
+                const SizedBox(width: 16),
+                Expanded(child: textWidget),
+                const SizedBox(width: 16),
+                buttonWidget,
+              ],
             ),
-          ),
-          const SizedBox(width: 16),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF0F766E),
-              // Teal-700
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            icon: isBusy
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.arrow_forward_rounded, size: 20),
-            label: const Text(
-              'NEXT PATIENT',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                letterSpacing: 0.5,
-              ),
-            ),
-            onPressed: isBusy ? null : onNextPatient,
-          ),
-        ],
-      ),
     );
   }
 
-  Widget _buildReadyForNextCard(BuildContext context) {
+  Widget _buildReadyForNextCard(BuildContext context, bool isCompact) {
+    final iconWidget = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFDCFCE7),
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFF22C55E)),
+      ),
+      child: const Icon(
+        Icons.sensors_rounded,
+        color: Color(0xFF15803D),
+        size: 24,
+      ),
+    );
+
+    const textWidget = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          children: [
+            Text(
+              'Chamber Ready for Next Patient',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: Color(0xFF166534),
+              ),
+            ),
+            Badge(
+              label: Text(
+                'SIGNAL SENT',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              backgroundColor: Color(0xFF15803D),
+            ),
+          ],
+        ),
+        SizedBox(height: 4),
+        Text(
+          'Reception desk notified. Receptionist is verifying physical presence outside before sending the patient in.',
+          style: TextStyle(fontSize: 12, color: Color(0xFF14532D)),
+        ),
+      ],
+    );
+
+    final buttonWidget = OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF0F766E),
+        side: const BorderSide(color: Color(0xFF0F766E)),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      ),
+      icon: const Icon(Icons.refresh_rounded, size: 16),
+      label: const Text(
+        'Re-Signal Reception',
+        style: TextStyle(fontSize: 12),
+      ),
+      onPressed: onNextPatient,
+    );
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 16 : 20,
+        vertical: isCompact ? 14 : 16,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFFF0FDF4), // Soft emerald
         borderRadius: BorderRadius.circular(14),
@@ -161,80 +257,108 @@ class ChamberControlBanner extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFDCFCE7),
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF22C55E)),
-            ),
-            child: const Icon(
-              Icons.sensors_rounded,
-              color: Color(0xFF15803D),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: isCompact
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 8,
+                Row(
                   children: [
-                    Text(
-                      'Chamber Ready for Next Patient',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Color(0xFF166534),
-                      ),
-                    ),
-                    Badge(
-                      label: Text(
-                        'SIGNAL SENT',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      backgroundColor: Color(0xFF15803D),
-                    ),
+                    iconWidget,
+                    const SizedBox(width: 12),
+                    const Expanded(child: textWidget),
                   ],
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'Reception desk notified. Receptionist is verifying physical presence outside before sending the patient in.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF14532D)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: buttonWidget,
                 ),
               ],
+            )
+          : Row(
+              children: [
+                iconWidget,
+                const SizedBox(width: 16),
+                const Expanded(child: textWidget),
+                const SizedBox(width: 16),
+                buttonWidget,
+              ],
             ),
-          ),
-          const SizedBox(width: 16),
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF0F766E),
-              side: const BorderSide(color: Color(0xFF0F766E)),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            ),
-            icon: const Icon(Icons.refresh_rounded, size: 16),
-            label: const Text(
-              'Re-Signal Reception',
-              style: TextStyle(fontSize: 12),
-            ),
-            onPressed: onNextPatient,
-          ),
-        ],
-      ),
     );
   }
 
-  Widget _buildCallingIncomingCard(BuildContext context) {
+  Widget _buildCallingIncomingCard(BuildContext context, bool isCompact) {
+    final iconWidget = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFDBEAFE),
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFF3B82F6)),
+      ),
+      child: const Icon(
+        Icons.door_front_door_rounded,
+        color: Color(0xFF1D4ED8),
+        size: 24,
+      ),
+    );
+
+    final textWidget = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 6,
+          children: [
+            Text(
+              'Incoming: Token #${activeQueueNumber?.toString().padLeft(2, '0') ?? '--'}',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: Color(0xFF1E40AF),
+              ),
+            ),
+            if (activePatientName != null && activePatientName!.isNotEmpty)
+              Text(
+                '($activePatientName)',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Admitted by Reception. Patient is entering the chamber now.',
+          style: TextStyle(fontSize: 12, color: Color(0xFF1E3A8A)),
+        ),
+      ],
+    );
+
+    final buttonWidget = onOpenActivePatient != null
+        ? FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+            ),
+            icon: const Icon(Icons.file_open_rounded, size: 18),
+            label: const Text(
+              'Open Clinical File',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            onPressed: onOpenActivePatient,
+          )
+        : null;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 16 : 20,
+        vertical: isCompact ? 14 : 16,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFFEFF6FF), // Soft Blue
         borderRadius: BorderRadius.circular(14),
@@ -247,84 +371,46 @@ class ChamberControlBanner extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFDBEAFE),
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF3B82F6)),
-            ),
-            child: const Icon(
-              Icons.door_front_door_rounded,
-              color: Color(0xFF1D4ED8),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: isCompact
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 6,
+                Row(
                   children: [
-                    Text(
-                      'Incoming: Token #${activeQueueNumber?.toString().padLeft(2, '0') ?? '--'}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Color(0xFF1E40AF),
-                      ),
-                    ),
-                    if (activePatientName != null &&
-                        activePatientName!.isNotEmpty)
-                      Text(
-                        '($activePatientName)',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E3A8A),
-                        ),
-                      ),
+                    iconWidget,
+                    const SizedBox(width: 12),
+                    Expanded(child: textWidget),
                   ],
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Admitted by Reception. Patient is entering the chamber now.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF1E3A8A)),
-                ),
+                if (buttonWidget != null) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: buttonWidget,
+                  ),
+                ],
+              ],
+            )
+          : Row(
+              children: [
+                iconWidget,
+                const SizedBox(width: 16),
+                Expanded(child: textWidget),
+                if (buttonWidget != null) ...[
+                  const SizedBox(width: 16),
+                  buttonWidget,
+                ],
               ],
             ),
-          ),
-          if (onOpenActivePatient != null) ...[
-            const SizedBox(width: 16),
-            FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-              icon: const Icon(Icons.file_open_rounded, size: 18),
-              label: const Text(
-                'Open Clinical File',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              onPressed: onOpenActivePatient,
-            ),
-          ],
-        ],
-      ),
     );
   }
 
-  Widget _buildInConsultationCard(BuildContext context) {
+  Widget _buildInConsultationCard(BuildContext context, bool isCompact) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 16 : 20,
+        vertical: 14,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(14),
@@ -353,74 +439,99 @@ class ChamberControlBanner extends StatelessWidget {
     );
   }
 
-  Widget _buildIdleCard(BuildContext context) {
+  Widget _buildIdleCard(BuildContext context, bool isCompact) {
+    final iconWidget = Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.teal.shade50,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.meeting_room_outlined,
+        color: Colors.teal.shade800,
+        size: 22,
+      ),
+    );
+
+    const textWidget = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'OPD Chamber Open',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: Color(0xFF0F172A),
+          ),
+        ),
+        SizedBox(height: 2),
+        Text(
+          'Press "Ready for Next Patient" when ready to begin taking patients.',
+          style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+        ),
+      ],
+    );
+
+    final buttonWidget = FilledButton.icon(
+      style: FilledButton.styleFrom(
+        backgroundColor: const Color(0xFF0F766E),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+      icon: isBusy
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Icon(Icons.play_arrow_rounded, size: 18),
+      label: const Text(
+        'READY FOR FIRST PATIENT',
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+      ),
+      onPressed: isBusy ? null : onNextPatient,
+    );
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 16 : 20,
+        vertical: isCompact ? 14 : 16,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.teal.shade50,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.meeting_room_outlined,
-              color: Colors.teal.shade800,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: isCompact
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'OPD Chamber Open',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Color(0xFF0F172A),
-                  ),
+                Row(
+                  children: [
+                    iconWidget,
+                    const SizedBox(width: 12),
+                    const Expanded(child: textWidget),
+                  ],
                 ),
-                SizedBox(height: 2),
-                Text(
-                  'Press "Ready for Next Patient" when ready to begin taking patients.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: buttonWidget,
                 ),
               ],
+            )
+          : Row(
+              children: [
+                iconWidget,
+                const SizedBox(width: 14),
+                const Expanded(child: textWidget),
+                const SizedBox(width: 14),
+                buttonWidget,
+              ],
             ),
-          ),
-          const SizedBox(width: 14),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF0F766E),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-            icon: isBusy
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.play_arrow_rounded, size: 18),
-            label: const Text(
-              'READY FOR FIRST PATIENT',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            onPressed: isBusy ? null : onNextPatient,
-          ),
-        ],
-      ),
     );
   }
 }

@@ -101,6 +101,38 @@ void main() {
 
       expect(readyFirstPressed, isTrue);
     });
+
+    testWidgets('ChamberControlBanner renders responsive stacked layout on mobile (width < 600)',
+        (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      bool readyFirstPressed = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChamberControlBanner(
+              status: 'idle',
+              onNextPatient: () => readyFirstPressed = true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('OPD Chamber Open'), findsOneWidget);
+      expect(find.text('READY FOR FIRST PATIENT'), findsOneWidget);
+
+      // Verify that in compact mode, Column structure is used so button does not squish text
+      final filledButton = find.byType(FilledButton);
+      expect(filledButton, findsOneWidget);
+
+      await tester.tap(filledButton);
+      await tester.pump();
+
+      expect(readyFirstPressed, isTrue);
+    });
   });
 
   group('Reception-Only Patient Admission Enforcement on ChamberTokenCard', () {

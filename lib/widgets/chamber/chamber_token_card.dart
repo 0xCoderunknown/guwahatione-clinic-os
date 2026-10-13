@@ -84,235 +84,281 @@ class ChamberTokenCard extends StatelessWidget {
         appointment.status == AppointmentStatus.completed ||
         (!isPastDate && isCallingNow);
 
-    return InkWell(
-      onTap: canEnterConsultation ? onConsult : null,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: isCallingNow ? const Color(0xFFF0FDF4) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isCallingNow
-                ? Colors.teal.shade600
-                : (appointment.status == AppointmentStatus.pending
-                      ? Colors.blue.shade200
-                      : const Color(0xFFE2E8F0)),
-            width: isCallingNow
-                ? 2.5
-                : (appointment.status == AppointmentStatus.pending ? 1.5 : 1),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isCallingNow
-                  ? Colors.teal.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.015),
-              blurRadius: isCallingNow ? 8 : 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Queue Number Avatar
-            TokenBadge(
-              queueNumber: appointment.queueNumber,
-              size: 44,
-              isCalling: isCallingNow,
-              isCompleted: appointment.status == AppointmentStatus.completed,
-              isAbsent: appointment.status == AppointmentStatus.absent,
-            ),
-            const SizedBox(width: 14),
-
-            // Patient Name & Masked Phone
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    appointment.patientName,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: appointment.status == AppointmentStatus.absent
-                          ? Colors.grey.shade500
-                          : const Color(0xFF0F172A),
-                      decoration: appointment.status == AppointmentStatus.absent
-                          ? TextDecoration.lineThrough
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    maskedPhone,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                  ),
-                ],
+    Widget? actionWidget;
+    if (appointment.status != AppointmentStatus.absent) {
+      if (appointment.status == AppointmentStatus.pending) {
+        if (!isPastDate && isCallingNow) {
+          actionWidget = FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.teal.shade700,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
               ),
-            ),
-
-            // History Quick-Access Button
-            IconButton(
-              icon: const Icon(
-                Icons.history_rounded,
-                size: 20,
-                color: Color(0xFF64748B),
-              ),
-              tooltip: 'View Longitudinal History',
               visualDensity: VisualDensity.compact,
-              onPressed:
-                  onViewHistory ??
-                  () => EncounterDialogs.showLongitudinalHistory(
-                    context,
-                    patientPhone: appointment.patientPhone,
-                  ),
             ),
-            const SizedBox(width: 8),
-
-            // Status & Fee Badge
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            icon: const Icon(Icons.login_rounded, size: 16),
+            label: const Text(
+              'Enter Consultation',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onPressed: onConsult,
+          );
+        } else if (!isPastDate) {
+          actionWidget = Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: badgeBg,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    statusTitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: badgeFg,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
+                Icon(
+                  Icons.hourglass_top_rounded,
+                  size: 13,
+                  color: Colors.grey.shade600,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(width: 4),
                 Text(
-                  paymentSubtitle,
+                  'Waiting Reception Call',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
+                    color: Colors.grey.shade700,
                     fontWeight: FontWeight.w500,
-                    color: appointment.amountCollected > 0
-                        ? const Color(0xFF15803D)
-                        : Colors.grey.shade600,
                   ),
                 ),
               ],
             ),
-
-            // 1-Click Consultation Encounter action
-            if (appointment.status != AppointmentStatus.absent) ...[
-              const SizedBox(width: 14),
-              if (appointment.status == AppointmentStatus.pending) ...[
-                if (!isPastDate && isCallingNow)
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.teal.shade700,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    icon: const Icon(Icons.login_rounded, size: 16),
-                    label: const Text(
-                      'Enter Consultation',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    onPressed: onConsult,
-                  )
-                else if (!isPastDate)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.hourglass_top_rounded,
-                          size: 13,
-                          color: Colors.grey.shade600,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Waiting Reception Call',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.event_busy_rounded,
-                          size: 13,
-                          color: Colors.grey.shade600,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Unattended',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ] else
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  icon: const Icon(Icons.description_outlined, size: 14),
-                  label: Text(
-                    isPastDate ? 'View Summary' : 'Record',
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  onPressed: onConsult,
+          );
+        } else {
+          actionWidget = Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.event_busy_rounded,
+                  size: 13,
+                  color: Colors.grey.shade600,
                 ),
-            ],
+                const SizedBox(width: 4),
+                Text(
+                  'Unattended',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+      } else {
+        actionWidget = OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 6,
+            ),
+            visualDensity: VisualDensity.compact,
+          ),
+          icon: const Icon(Icons.description_outlined, size: 14),
+          label: Text(
+            isPastDate ? 'View Summary' : 'Record',
+            style: const TextStyle(fontSize: 11),
+          ),
+          onPressed: onConsult,
+        );
+      }
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 650;
+
+        final tokenBadgeWidget = TokenBadge(
+          queueNumber: appointment.queueNumber,
+          size: isCompact ? 38 : 44,
+          isCalling: isCallingNow,
+          isCompleted: appointment.status == AppointmentStatus.completed,
+          isAbsent: appointment.status == AppointmentStatus.absent,
+        );
+
+        final patientDetailsWidget = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              appointment.patientName,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: appointment.status == AppointmentStatus.absent
+                    ? Colors.grey.shade500
+                    : const Color(0xFF0F172A),
+                decoration: appointment.status == AppointmentStatus.absent
+                    ? TextDecoration.lineThrough
+                    : null,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              maskedPhone,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+            ),
           ],
-        ),
-      ),
+        );
+
+        final historyButtonWidget = IconButton(
+          icon: const Icon(
+            Icons.history_rounded,
+            size: 20,
+            color: Color(0xFF64748B),
+          ),
+          tooltip: 'View Longitudinal History',
+          visualDensity: VisualDensity.compact,
+          onPressed:
+              onViewHistory ??
+              () => EncounterDialogs.showLongitudinalHistory(
+                context,
+                patientPhone: appointment.patientPhone,
+              ),
+        );
+
+        final statusBadgeWidget = Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isCompact ? 8 : 10,
+            vertical: isCompact ? 3 : 4,
+          ),
+          decoration: BoxDecoration(
+            color: badgeBg,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            statusTitle,
+            style: TextStyle(
+              fontSize: isCompact ? 10 : 11,
+              fontWeight: FontWeight.w700,
+              color: badgeFg,
+              letterSpacing: 0.3,
+            ),
+          ),
+        );
+
+        final paymentSubtitleWidget = Text(
+          paymentSubtitle,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: appointment.amountCollected > 0
+                ? const Color(0xFF15803D)
+                : Colors.grey.shade600,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+
+        return InkWell(
+          onTap: canEnterConsultation ? onConsult : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isCompact ? 14 : 16,
+              vertical: isCompact ? 12 : 14,
+            ),
+            decoration: BoxDecoration(
+              color: isCallingNow ? const Color(0xFFF0FDF4) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isCallingNow
+                    ? Colors.teal.shade600
+                    : (appointment.status == AppointmentStatus.pending
+                          ? Colors.blue.shade200
+                          : const Color(0xFFE2E8F0)),
+                width: isCallingNow
+                    ? 2.5
+                    : (appointment.status == AppointmentStatus.pending ? 1.5 : 1),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isCallingNow
+                      ? Colors.teal.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.015),
+                  blurRadius: isCallingNow ? 8 : 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: isCompact
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          tokenBadgeWidget,
+                          const SizedBox(width: 10),
+                          Expanded(child: patientDetailsWidget),
+                          historyButtonWidget,
+                          const SizedBox(width: 4),
+                          statusBadgeWidget,
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(child: paymentSubtitleWidget),
+                          if (actionWidget != null) ...[
+                            const SizedBox(width: 8),
+                            actionWidget,
+                          ],
+                        ],
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      tokenBadgeWidget,
+                      const SizedBox(width: 14),
+                      Expanded(child: patientDetailsWidget),
+                      historyButtonWidget,
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          statusBadgeWidget,
+                          const SizedBox(height: 4),
+                          paymentSubtitleWidget,
+                        ],
+                      ),
+                      if (actionWidget != null) ...[
+                        const SizedBox(width: 14),
+                        actionWidget,
+                      ],
+                    ],
+                  ),
+          ),
+        );
+      },
     );
   }
 

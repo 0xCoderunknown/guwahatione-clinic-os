@@ -51,24 +51,31 @@ class ChamberDoorOverrideBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
-              Icon(
-                Icons.meeting_room_outlined,
-                size: 16,
-                color: Colors.blueGrey.shade700,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.meeting_room_outlined,
+                    size: 16,
+                    color: Colors.blueGrey.shade700,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Next at Door (Lobby Checked-In)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.blueGrey.shade800,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Next at Door (Lobby Checked-In)',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.blueGrey.shade800,
-                  letterSpacing: 0.2,
-                ),
-              ),
-              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(

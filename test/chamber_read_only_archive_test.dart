@@ -167,6 +167,31 @@ void main() {
       expect(find.text('UNATTENDED / NO-SHOW'), findsNothing);
       expect(find.text('Unattended'), findsNothing);
     });
+
+    testWidgets('ChamberTokenCard renders responsive 2-row layout on mobile (width 390)',
+        (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChamberTokenCard(
+              appointment: pendingAppt,
+              isCallingNow: false,
+              isPastDate: true,
+              onConsult: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('UNATTENDED / NO-SHOW'), findsOneWidget);
+      expect(find.text('Shift Closed • Past Date'), findsOneWidget);
+      expect(find.text('Unattended'), findsOneWidget);
+      expect(find.text('Kavita Das'), findsOneWidget);
+    });
   });
 
   group('ChamberQueueHeader Audit & Dynamic Label Tests', () {
@@ -208,6 +233,28 @@ void main() {
       expect(find.text('Past Session Roster'), findsNothing);
       expect(find.text('Archived Snapshot'), findsNothing);
       expect(find.text('15 issued'), findsOneWidget);
+    });
+
+    testWidgets('ChamberQueueHeader renders without overflow on mobile (width 390)',
+        (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ChamberQueueHeader(
+              totalBooked: 24,
+              isPastDate: true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Past Session Roster'), findsOneWidget);
+      expect(find.text('Archived Snapshot'), findsOneWidget);
+      expect(find.text('24 issued'), findsOneWidget);
     });
   });
 

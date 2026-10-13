@@ -21,26 +21,34 @@ class ChamberQueueHeader extends StatelessWidget {
     final displayTitle =
         title ?? (isPastDate ? "Past Session Roster" : "Today's Patient Queue");
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 600;
+
+        final titleRow = Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          runSpacing: 4,
           children: [
-            const Icon(
-              Icons.people_alt_rounded,
-              size: 20,
-              color: Color(0xFF334155),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.people_alt_rounded,
+                  size: 20,
+                  color: Color(0xFF334155),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  displayTitle,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              displayTitle,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
@@ -49,60 +57,81 @@ class ChamberQueueHeader extends StatelessWidget {
               ),
               child: Text(
                 "$totalBooked issued",
-                style: TextStyle(
-                  fontSize: 12,
+                style: const TextStyle(
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: Colors.blue.shade700,
+                  color: Color(0xFF1D4ED8),
                 ),
               ),
             ),
           ],
-        ),
-        if (isPastDate)
-          Row(
+        );
+
+        final statusIndicator = isPastDate
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Colors.blueGrey.shade300,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    "Archived Snapshot",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.blueGrey.shade600,
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    "Live Sync",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              );
+
+        if (isCompact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: Colors.blueGrey.shade300,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                "Archived Snapshot",
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.blueGrey.shade600,
-                ),
-              ),
+              titleRow,
+              const SizedBox(height: 6),
+              statusIndicator,
             ],
-          )
-        else
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                "Live Sync",
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ),
-      ],
+          );
+        }
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            titleRow,
+            statusIndicator,
+          ],
+        );
+      },
     );
   }
 }

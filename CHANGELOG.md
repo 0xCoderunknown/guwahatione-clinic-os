@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.21.0] — 13-10-2026
+
+### Mobile Responsive Doctor Chamber Layout & Roster Hardening
+- **Chamber Control Banner Responsiveness (`lib/widgets/chamber/chamber_control_banner.dart`):**
+  - Integrated responsive `LayoutBuilder` (< 600px breakpoint) across all chamber states (`idle`, `consultation_ended`, `ready_for_next`, `calling`).
+  - Mobile layout stacks status text and icon on top and provides full-width primary action button on bottom, eliminating 2-column squishing and horizontal cramping.
+- **Roster Patient Token Cards (`lib/widgets/chamber/chamber_token_card.dart`):**
+  - Refactored token cards from a single rigid row to a responsive 2-row card layout on mobile viewports (< 650px).
+  - Row 1 displays token badge, patient name with ellipsis, masked phone, longitudinal history button, and status badge.
+  - Row 2 pairs payment subtitle with one-click action buttons (`Enter Consultation`, `Waiting Reception Call`, `Unattended`, `Record`, `View Summary`), resolving horizontal `RenderFlex` overflow errors on mobile phones.
+- **Queue & Chamber Header Wrapping (`lib/widgets/chamber/chamber_queue_header.dart` & `lib/widgets/chamber/chamber_door_override_bar.dart`):**
+  - Added responsive `LayoutBuilder` and `Wrap` in `ChamberQueueHeader` for "Past Session Roster" and "Today's Patient Queue", ensuring title, count badge, and live sync/archive indicators wrap cleanly on narrow screens.
+  - Enhanced emergency door override bar header with wrapping to prevent horizontal overflow.
+- **Automated Verification:**
+  - Expanded test suites in `test/chamber_handshake_test.dart` and `test/chamber_read_only_archive_test.dart` with dedicated mobile 390px viewport tests, passing all 160 unit and widget tests.
+
+---
+
 ## [1.20.0] — 13-10-2026
 
 ### Doctor-Configurable Free Review Policy (0 to 30 Days)
