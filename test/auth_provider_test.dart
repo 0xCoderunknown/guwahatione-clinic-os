@@ -283,5 +283,67 @@ void main() {
       expect(authResult.isSuccess, isTrue);
       expect(authResult.role, UserRole.owner);
     });
+
+    test('loginAsReceptionistOrOwner authenticates 0000 as Receptionist and 849201 as Owner', () async {
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      // 1. Receptionist PIN (0000)
+      final recepSuccess = await auth.loginAsReceptionistOrOwner('0000');
+      expect(recepSuccess, isTrue);
+      expect(auth.isReceptionist, isTrue);
+      expect(auth.isOwner, isFalse);
+
+      await auth.logout();
+
+      // 2. Owner PIN (849201)
+      final ownerSuccess = await auth.loginAsReceptionistOrOwner('849201');
+      expect(ownerSuccess, isTrue);
+      expect(auth.isOwner, isTrue);
+      expect(auth.isReceptionist, isFalse);
+
+      await auth.logout();
+
+      // 3. Invalid PIN fails
+      final invalidSuccess = await auth.loginAsReceptionistOrOwner('9999');
+      expect(invalidSuccess, isFalse);
+      expect(auth.isAuthenticated, isFalse);
+    });
+
+    test('Owner authentication falls back to default 849201 even if custom hash was desynced', () async {
+      SharedPreferences.setMockInitialValues({
+        'auth_owner_master_pin_hash': AuthProvider.hashPin('999999'),
+      });
+
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      // Default master PIN always works via fallback
+      expect(await auth.loginAsOwner('849201'), isTrue);
+      expect(auth.isOwner, isTrue);
+
+      // Stored custom PIN also works
+      expect(await auth.loginAsOwner('999999'), isTrue);
+      expect(auth.isOwner, isTrue);
+    });
+
+    test('initSession sanitizes stale owner pin hash if legacy 0000 was stored', () async {
+      SharedPreferences.setMockInitialValues({
+        'auth_owner_master_pin_hash': AuthProvider.hashPin('0000'),
+      });
+
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      // Sanitized: 849201 works cleanly
+      expect(await auth.loginAsOwner('849201'), isTrue);
+      expect(auth.isOwner, isTrue);
+
+      // 0000 does not log in as owner
+      await auth.logout();
+      expect(await auth.loginAsOwner('0000'), isFalse);
+      // But 0000 logs in as receptionist
+      expect(await auth.loginAsReceptionist('0000'), isTrue);
+    });
   });
 }

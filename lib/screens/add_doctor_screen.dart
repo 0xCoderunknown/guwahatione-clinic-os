@@ -285,6 +285,7 @@ class _DoctorFormState extends State<DoctorForm> {
   }
 
   Future<void> _saveDoctor() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedDays.isEmpty) {

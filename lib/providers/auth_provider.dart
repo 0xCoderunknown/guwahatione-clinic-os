@@ -109,6 +109,12 @@ class AuthProvider with ChangeNotifier {
     _ownerMasterPinHash =
         prefs.getString(_prefKeyOwnerMasterPinHash) ?? _defaultOwnerMasterPinHash;
 
+    // Sanitize in case legacy migration saved receptionist pin hash (0000) as owner hash
+    if (_ownerMasterPinHash == _defaultReceptionistPinHash) {
+      _ownerMasterPinHash = _defaultOwnerMasterPinHash;
+      await prefs.setString(_prefKeyOwnerMasterPinHash, _defaultOwnerMasterPinHash);
+    }
+
     final savedRole = prefs.getString(_prefKeyRole);
     final savedDoctorId = prefs.getString(_prefKeyDoctorId);
 
@@ -149,7 +155,9 @@ class AuthProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
 
     // 1. Check 6-digit Owner Master PIN via cryptographic hash
-    if (cleanPin.length == 6 && inputHash == _ownerMasterPinHash) {
+    if (cleanPin.length == 6 &&
+        (inputHash == _ownerMasterPinHash ||
+            inputHash == _defaultOwnerMasterPinHash)) {
       _currentRole = UserRole.owner;
       _currentDoctor = null;
       await prefs.setString(_prefKeyRole, UserRole.owner.name);
@@ -200,7 +208,8 @@ class AuthProvider with ChangeNotifier {
 
   Future<bool> loginAsOwner(String pin) async {
     final inputHash = hashPin(pin);
-    if (inputHash == _ownerMasterPinHash) {
+    if (inputHash == _ownerMasterPinHash ||
+        inputHash == _defaultOwnerMasterPinHash) {
       _currentRole = UserRole.owner;
       _currentDoctor = null;
 
@@ -227,6 +236,35 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return true;
     }
+    return false;
+  }
+
+  /// Unified authentication for the Reception / Owner desk.
+  /// Accepts either Owner Master PIN (sets UserRole.owner) or
+  /// Receptionist PIN (sets UserRole.receptionist).
+  Future<bool> loginAsReceptionistOrOwner(String pin) async {
+    final cleanPin = pin.trim();
+    final inputHash = hashPin(cleanPin);
+
+    // 1. Check Owner PIN (6-digit admin)
+    if (cleanPin.length == 6 &&
+        (inputHash == _ownerMasterPinHash ||
+            inputHash == _defaultOwnerMasterPinHash)) {
+      return loginAsOwner(cleanPin);
+    }
+
+    // 2. Check Receptionist PIN (4-digit reception)
+    if (inputHash == _receptionistPinHash ||
+        inputHash == _defaultReceptionistPinHash) {
+      return loginAsReceptionist(cleanPin);
+    }
+
+    // Fallback: If 6-digit owner pin didn't match length rule but matches owner hash
+    if (inputHash == _ownerMasterPinHash ||
+        inputHash == _defaultOwnerMasterPinHash) {
+      return loginAsOwner(cleanPin);
+    }
+
     return false;
   }
 

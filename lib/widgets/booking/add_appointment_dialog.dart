@@ -46,6 +46,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   Doctor? _selectedDoctor;
   bool _isNewPatient = false;
   bool _isLoading = false;
+  bool _isBooking = false;
 
   List<Appointment> _patientAppointments = [];
   Appointment? _duplicateAppointment;
@@ -157,10 +158,14 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.enter): () {
-          if (!_isLoading && _duplicateAppointment == null) _saveAppointment();
+          if (!_isLoading && !_isBooking && _duplicateAppointment == null) {
+            _saveAppointment();
+          }
         },
         const SingleActivator(LogicalKeyboardKey.numpadEnter): () {
-          if (!_isLoading && _duplicateAppointment == null) _saveAppointment();
+          if (!_isLoading && !_isBooking && _duplicateAppointment == null) {
+            _saveAppointment();
+          }
         },
       },
       child: AlertDialog(
@@ -241,7 +246,9 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     },
                     onPhoneChanged: _onPhoneChanged,
                     onSubmitted: () {
-                      if (_duplicateAppointment == null) _saveAppointment();
+                      if (!_isBooking && _duplicateAppointment == null) {
+                        _saveAppointment();
+                      }
                     },
                   ),
                   if (_historyInfo != null) ...[
@@ -280,7 +287,9 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     reviewEligibility: _reviewEligibility,
                     amountController: _amountController,
                     onSubmitted: () {
-                      if (_duplicateAppointment == null) _saveAppointment();
+                      if (!_isBooking && _duplicateAppointment == null) {
+                        _saveAppointment();
+                      }
                     },
                   ),
 
@@ -296,12 +305,12 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: _isBooking ? null : () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             focusNode: _submitFocusNode,
-            onPressed: (_isLoading || _duplicateAppointment != null)
+            onPressed: (_isLoading || _isBooking || _duplicateAppointment != null)
                 ? null
                 : _saveAppointment,
             style: ElevatedButton.styleFrom(
@@ -310,7 +319,39 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
               disabledBackgroundColor: Colors.grey.shade300,
               disabledForegroundColor: Colors.grey.shade600,
             ),
-            child: const Text('Book Appointment'),
+            child: _isBooking
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Booking Token...'),
+                    ],
+                  )
+                : _isLoading
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.teal.shade700,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('Searching Patient...'),
+                        ],
+                      )
+                    : const Text('Book Appointment'),
           ),
         ],
       ),
@@ -634,6 +675,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   }
 
   Future<void> _saveAppointment() async {
+    if (_isBooking) return;
     if (!_formKey.currentState!.validate()) return;
 
     if (_duplicateAppointment != null) {
@@ -681,6 +723,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       return;
     }
 
+    setState(() => _isBooking = true);
+
     try {
       await Provider.of<ClinicProvider>(context, listen: false).bookAppointment(
         phoneNumber: _phoneController.text.trim(),
@@ -697,6 +741,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
+      setState(() => _isBooking = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
       );

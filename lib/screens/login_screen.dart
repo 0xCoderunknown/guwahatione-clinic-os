@@ -223,6 +223,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _handleDoctorLogin() async {
+    if (_isLoading) return;
     if (_selectedDoctor == null) {
       setState(() => _errorMessage = 'Please select a doctor.');
       return;
@@ -252,9 +253,10 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _handleOwnerLogin() async {
+    if (_isLoading) return;
     final pin = _ownerPinController.text.trim();
     if (pin.isEmpty) {
-      setState(() => _errorMessage = 'Please enter Reception PIN.');
+      setState(() => _errorMessage = 'Please enter Reception or Owner PIN.');
       return;
     }
 
@@ -264,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.loginAsOwner(pin);
+    final success = await authProvider.loginAsReceptionistOrOwner(pin);
 
     if (!mounted) return;
     setState(() => _isLoading = false);

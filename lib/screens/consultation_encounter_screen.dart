@@ -139,6 +139,7 @@ class _ConsultationEncounterScreenState
   }
 
   Future<void> _completeAndSignConsultation() async {
+    if (_isSaving) return;
     setState(() => _isSaving = true);
     try {
       final clinic = Provider.of<ClinicProvider>(context, listen: false);

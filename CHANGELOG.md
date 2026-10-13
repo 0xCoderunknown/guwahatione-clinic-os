@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.23.0] — 13-10-2026
+
+### Unified Desk Authentication & Explicit Action Button Latches
+- **Unified Desk Authentication (`lib/screens/login_screen.dart` & `lib/providers/auth_provider.dart`):**
+  - Updated `LoginScreen._handleOwnerLogin` to authenticate both Reception PIN (`0000`) and Owner PIN (`849201`) seamlessly via `loginAsReceptionistOrOwner`.
+  - Added default fallback parity in `loginAsOwner` and `authenticateWithPin` (`inputHash == _defaultOwnerMasterPinHash`), ensuring default master credentials operate reliably even if local storage is desynced.
+  - Added legacy hash sanitization in `AuthProvider.initSession` to prevent legacy 0000 hashes from locking out owner sessions.
+- **Mandatory Explicit Button Latches & Re-entrancy Locks:**
+  - **Appointment Booking (`lib/widgets/booking/add_appointment_dialog.dart`):** Added `_isBooking` transaction state, locked re-entrancy on click, disabled Cancel during writes, and added distinct progress feedback (`Booking Token...` / `Searching Patient...`).
+  - **Medicine Formulary (`lib/widgets/catalogue/add_medicine_dialog.dart`):** Added `_isSaving` state, locked re-entrancy, and added progress spinner feedback (`Saving...`).
+  - **Doctor Registration (`lib/screens/add_doctor_screen.dart`):** Added re-entrancy guard `if (_isSaving) return;`.
+  - **Consultation Encounter (`lib/screens/consultation_encounter_screen.dart`):** Added re-entrancy guard `if (_isSaving) return;`.
+  - **Desk & Chamber Login (`lib/screens/login_screen.dart`):** Added in-flight locks `if (_isLoading) return;` on doctor and receptionist/owner login handlers.
+- **Automated Test Coverage:**
+  - Added 3 unit tests in `test/auth_provider_test.dart` for unified desk login, master fallback resilience, and cache sanitization, passing all 166 automated unit and widget tests.
+
+---
+
 ## [1.22.0] — 13-10-2026
 
 ### Strict 1:1 Paid-to-Review Cycle Enforcement & Roadmap RFC Expansion

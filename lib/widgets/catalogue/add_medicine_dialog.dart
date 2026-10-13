@@ -21,6 +21,7 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
   final _strengthCtrl = TextEditingController(text: '500 mg');
   final _mfgCtrl = TextEditingController();
   String _form = 'Tablet';
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -133,19 +134,37 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isSaving ? null : () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _saveMedicine,
-          child: const Text('Save to Catalogue'),
+          onPressed: _isSaving ? null : _saveMedicine,
+          child: _isSaving
+              ? const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text('Saving...'),
+                  ],
+                )
+              : const Text('Save to Catalogue'),
         ),
       ],
     );
   }
 
   Future<void> _saveMedicine() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSaving = true);
     try {
       await Provider.of<ClinicProvider>(context, listen: false).addMedicine(
         productName: _brandCtrl.text.trim(),
@@ -160,6 +179,7 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
+        setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
         );
