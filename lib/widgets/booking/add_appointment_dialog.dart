@@ -197,13 +197,22 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                       segments: const [
                         ButtonSegment<VisitStatus>(
                           value: VisitStatus.waitingInLobby,
-                          icon: Icon(Icons.person_pin_circle_outlined, size: 16),
-                          label: Text('Walk-In (Desk Check-In)', style: TextStyle(fontSize: 12)),
+                          icon: Icon(
+                            Icons.person_pin_circle_outlined,
+                            size: 16,
+                          ),
+                          label: Text(
+                            'Walk-In (Desk Check-In)',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                         ButtonSegment<VisitStatus>(
                           value: VisitStatus.booked,
                           icon: Icon(Icons.phone_in_talk_outlined, size: 16),
-                          label: Text('Phone / Advance', style: TextStyle(fontSize: 12)),
+                          label: Text(
+                            'Phone / Advance',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       ],
                       selected: {_selectedVisitStatus},
@@ -214,7 +223,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                               _selectedPayment.isPaid) {
                             _selectedPayment = PaymentType.unpaid;
                             _amountController.text = "0";
-                          } else if (_selectedVisitStatus == VisitStatus.waitingInLobby &&
+                          } else if (_selectedVisitStatus ==
+                                  VisitStatus.waitingInLobby &&
                               _selectedPayment == PaymentType.unpaid) {
                             _selectedPayment = PaymentType.paidCash;
                             _amountController.text =
@@ -273,7 +283,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     onDoctorChanged: (val) {
                       setState(() {
                         _selectedDoctor = val;
-                        if (_selectedPayment == PaymentType.paid && val != null) {
+                        if (_selectedPayment == PaymentType.paid &&
+                            val != null) {
                           _amountController.text = "${val.consultationFee}";
                         }
                       });
@@ -310,7 +321,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
           ),
           ElevatedButton(
             focusNode: _submitFocusNode,
-            onPressed: (_isLoading || _isBooking || _duplicateAppointment != null)
+            onPressed:
+                (_isLoading || _isBooking || _duplicateAppointment != null)
                 ? null
                 : _saveAppointment,
             style: ElevatedButton.styleFrom(
@@ -336,22 +348,22 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     ],
                   )
                 : _isLoading
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.teal.shade700,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text('Searching Patient...'),
-                        ],
-                      )
-                    : const Text('Book Appointment'),
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.teal.shade700,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Searching Patient...'),
+                    ],
+                  )
+                : const Text('Book Appointment'),
           ),
         ],
       ),
@@ -381,7 +393,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '⚠️ ${duplicate.patientName} already holds Token #${duplicate.queueNumber} with Dr. ${duplicate.doctorName} for today.',
+                  '⚠️ ${duplicate.patientName} already holds Token #${duplicate.queueNumber} with ${duplicate.doctorName} for today.',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -413,16 +425,20 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                   foregroundColor: const Color(0xFF92400E),
                   side: const BorderSide(color: Color(0xFFD97706)),
                   visualDensity: VisualDensity.compact,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   textStyle: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
                 ),
                 onPressed: () {
-                  final prov =
-                      Provider.of<ClinicProvider>(context, listen: false);
+                  final prov = Provider.of<ClinicProvider>(
+                    context,
+                    listen: false,
+                  );
                   prov.setDashboardSearchQuery('${duplicate.queueNumber}');
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -646,14 +662,13 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
             : 'N/A';
         final days = _reviewEligibility.daysSinceLastVisit ?? 15;
 
-        final proceed =
-            await BookingEligibilityBanner.showReviewWarningDialog(
-              context,
-              doctorName: _selectedDoctor?.name ?? 'the doctor',
-              dateStr: dateStr,
-              days: days,
-              policyDays: _selectedDoctor?.freeReviewDays ?? 14,
-            );
+        final proceed = await BookingEligibilityBanner.showReviewWarningDialog(
+          context,
+          doctorName: _selectedDoctor?.name ?? 'the doctor',
+          dateStr: dateStr,
+          days: days,
+          policyDays: _selectedDoctor?.freeReviewDays ?? 14,
+        );
         if (!proceed) {
           setState(() {
             _selectedPayment = _selectedVisitStatus == VisitStatus.booked

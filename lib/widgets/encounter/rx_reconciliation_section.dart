@@ -71,20 +71,22 @@ class RxReconciliationSection extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          TextButton.icon(
-            icon: Icon(
-              form.isMedicineExpanded ? Icons.unfold_less : Icons.unfold_more,
-              size: 18,
+          if (MediaQuery.sizeOf(context).width >= 600) ...[
+            const SizedBox(width: 8),
+            TextButton.icon(
+              icon: Icon(
+                form.isMedicineExpanded ? Icons.unfold_less : Icons.unfold_more,
+                size: 18,
+              ),
+              label: Text(
+                form.isMedicineExpanded ? 'Close Medicine' : 'Open Medicine',
+              ),
+              onPressed: () {
+                form.isMedicineExpanded = !form.isMedicineExpanded;
+                onUpdate();
+              },
             ),
-            label: Text(
-              form.isMedicineExpanded ? 'Close Medicine' : 'Open Medicine',
-            ),
-            onPressed: () {
-              form.isMedicineExpanded = !form.isMedicineExpanded;
-              onUpdate();
-            },
-          ),
+          ],
         ],
       ),
       child: form.isMedicineExpanded

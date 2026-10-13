@@ -140,18 +140,21 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                     }
 
                     return ListTile(
-                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 6,
+                      ),
                       leading: Stack(
                         children: [
                           CircleAvatar(
-                            radius: 16,
+                            radius: 18,
                             backgroundColor: Colors.indigo.shade50,
                             child: Text(
                               doc.name.isNotEmpty
                                   ? doc.name[0].toUpperCase()
                                   : 'D',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 13,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.indigo.shade800,
                               ),
@@ -162,8 +165,8 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                               right: 0,
                               bottom: 0,
                               child: Container(
-                                width: 9,
-                                height: 9,
+                                width: 10,
+                                height: 10,
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF22C55E),
                                   shape: BoxShape.circle,
@@ -184,25 +187,25 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                                fontSize: 14.5,
+                                color: Color(0xFF0F172A),
                               ),
                             ),
                           ),
-
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 1.5,
+                              horizontal: 7,
+                              vertical: 2.5,
                             ),
                             decoration: BoxDecoration(
                               color: statusBadgeBg,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               statusLabel,
                               style: TextStyle(
-                                fontSize: 9,
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.bold,
                                 color: statusBadgeFg,
                                 letterSpacing: 0.3,
@@ -211,22 +214,25 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      subtitle: Text(
-                        statusSubtitle,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: isReady
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                          color: isReady
-                              ? const Color(0xFF15803D)
-                              : Colors.grey.shade700,
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 2.0),
+                        child: Text(
+                          statusSubtitle,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: isReady
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                            color: isReady
+                                ? const Color(0xFF15803D)
+                                : Colors.grey.shade700,
+                          ),
                         ),
                       ),
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 10,
+                          vertical: 5,
                         ),
                         decoration: BoxDecoration(
                           color: isReady
@@ -234,7 +240,7 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                               : (isInConsultation
                                     ? const Color(0xFFEDE9FE)
                                     : Colors.grey.shade100),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: isReady
                                 ? const Color(0xFF86EFAC)
@@ -246,9 +252,9 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                               ? '▶ CALL NEXT'
                               : (isInConsultation
                                     ? 'Token #${session?.activeQueueNumber ?? '--'}'
-                                    : '$patientCount tokens'),
+                                    : (patientCount == 1 ? '1 token' : '$patientCount tokens')),
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.bold,
                             color: isReady
                                 ? const Color(0xFF15803D)

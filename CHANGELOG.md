@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.24.0] — 13-10-2026
+
+### Queue Legibility Enhancements & Mobile Responsive Consultation Layout
+- **Queue & Chamber Roster Display Upgrades (`lib/widgets/dashboard/`):**
+  - **`dashboard_queue_card.dart`:** Enlarged `TokenBadge` to 44px for clear reading at standing counter distances; upgraded patient name to 15px bold (`#0F172A`) and phone to 13px (`#64748B`); enlarged status and arrival estimate badges; increased action button touch targets (`Check In`, `Call In`, `Send In`) to 13px bold with 14×9px padding; fixed token count pluralization (`1 token` vs `N tokens`).
+  - **`dashboard_doctor_roster_card.dart`:** Enlarged doctor avatar to 18px and title to 14.5px bold; fixed pluralization on doctor queue badge (`1 token` vs `N tokens`).
+- **Responsive Mobile Encounter Layout (`lib/screens/consultation_encounter_screen.dart` & `lib/widgets/encounter/`):**
+  - **`ConsultationBottomDock`:** Made bottom dock responsive for mobile screens (< 550px) by transitioning to a compact `Back` button beside an `Expanded` prominent `End Consultation & Sign` button with ellipsis guard, preventing `RenderFlex` right overflow.
+  - **`SectionCard` (`lib/widgets/common/section_card.dart`):** Wrapped header title in `Flexible` with `TextOverflow.ellipsis` to prevent wide titles from pushing badges or chevrons off-screen on phones.
+  - **`VitalsAndExamSection` & `RxReconciliationSection`:** Suppressed redundant desktop toggle text buttons on mobile viewports (< 600px) and wrapped empty findings placeholder in `Expanded`.
+  - **Encounter AppBar:** Protected patient title with `Flexible` ellipsis guard for longer names on narrow phone screens.
+
+---
+
 ## [1.23.0] — 13-10-2026
 
 ### Unified Desk Authentication & Explicit Action Button Latches

@@ -69,17 +69,17 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
+                    horizontal: 10,
+                    vertical: 3,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.teal.shade50,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    '${list.length} tokens',
+                    list.length == 1 ? '1 token' : '${list.length} tokens',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: Colors.teal.shade800,
                     ),
@@ -152,7 +152,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                       label: Text(
                         'All Doctors (${widget.provider.todayAppointments.length})',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 12.5,
                           fontWeight: _selectedDoctorId == null
                               ? FontWeight.bold
                               : FontWeight.normal,
@@ -162,7 +162,6 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                           setState(() => _selectedDoctorId = null),
                       selectedColor: Colors.teal.shade100,
                       checkmarkColor: Colors.teal.shade800,
-                      visualDensity: VisualDensity.compact,
                     ),
                     const SizedBox(width: 8),
                     ...doctors.map((doc) {
@@ -178,7 +177,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                           label: Text(
                             '${doc.name} ($count)',
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 12.5,
                               fontWeight: isSelected
                                   ? FontWeight.bold
                                   : FontWeight.normal,
@@ -188,7 +187,6 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                               setState(() => _selectedDoctorId = doc.id),
                           selectedColor: Colors.teal.shade100,
                           checkmarkColor: Colors.teal.shade800,
-                          visualDensity: VisualDensity.compact,
                         ),
                       );
                     }),
@@ -254,13 +252,16 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                 );
 
                 return ListTile(
-                  dense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 8,
+                  ),
                   leading: TokenBadge(
                     queueNumber: appt.queueNumber,
                     doctorTag: _selectedDoctorId == null
                         ? AppFormatters.doctorInitials(appt.doctorName)
                         : null,
-                    size: 34,
+                    size: 44,
                     isCompleted: appt.status == AppointmentStatus.completed,
                     isAbsent: appt.status == AppointmentStatus.absent,
                   ),
@@ -270,33 +271,34 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                         appt.patientName,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '(${appt.patientPhone})',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade600,
+                          fontSize: 15,
+                          color: Color(0xFF0F172A),
                         ),
                       ),
                       const SizedBox(width: 8),
+                      Text(
+                        '(${appt.patientPhone})',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
                       if (appt.visitStatus == VisitStatus.booked)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1.5,
+                            horizontal: 8,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFEF3C7),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: const Color(0xFFF59E0B)),
                           ),
                           child: const Text(
                             'Booked (Phone)',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 11.5,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF92400E),
                             ),
@@ -305,18 +307,18 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                       else if (appt.visitStatus == VisitStatus.waitingInLobby)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1.5,
+                            horizontal: 8,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFDCFCE7),
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: const Color(0xFF86EFAC)),
                           ),
                           child: const Text(
                             'In Lobby',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 11.5,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF166534),
                             ),
@@ -324,55 +326,61 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                         ),
                     ],
                   ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        "${AppFormatters.doctorTitle(appt.doctorName)} • Fee: ${AppFormatters.currency(appt.amountCollected)} (${appt.paymentType.displayName})",
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      if (appt.status == AppointmentStatus.pending) ...[
-                        const SizedBox(height: 3),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.blue.shade200),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.schedule_rounded,
-                                size: 11,
-                                color: Colors.blue.shade700,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                estimate.relativeSummary,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue.shade900,
-                                ),
-                              ),
-                              Text(
-                                " • Est: ${estimate.formattedRange}",
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.blue.shade800,
-                                ),
-                              ),
-                            ],
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "${AppFormatters.doctorTitle(appt.doctorName)} • Fee: ${AppFormatters.currency(appt.amountCollected)} (${appt.paymentType.displayName})",
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            color: Color(0xFF475569),
                           ),
                         ),
+                        if (appt.status == AppointmentStatus.pending) ...[
+                          const SizedBox(height: 5),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.blue.shade200),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.schedule_rounded,
+                                  size: 13,
+                                  color: Colors.blue.shade700,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  estimate.relativeSummary,
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue.shade900,
+                                  ),
+                                ),
+                                Text(
+                                  " • Est: ${estimate.formattedRange}",
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: Colors.blue.shade800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                   trailing: _buildTrailingAction(appt, context),
                 );
@@ -390,16 +398,18 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
           backgroundColor: const Color(0xFF0F766E),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 6,
+            horizontal: 14,
+            vertical: 9,
           ),
-          visualDensity: VisualDensity.compact,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
-        icon: const Icon(Icons.how_to_reg_rounded, size: 14),
+        icon: const Icon(Icons.how_to_reg_rounded, size: 16),
         label: const Text(
           'Check In',
           style: TextStyle(
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -436,10 +446,12 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
               backgroundColor: btnBg,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 6,
+                horizontal: 14,
+                vertical: 9,
               ),
-              visualDensity: VisualDensity.compact,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             icon: Icon(
               isDoctorReady
@@ -447,12 +459,12 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                   : (isDoctorOnBreak
                       ? Icons.coffee_rounded
                       : Icons.record_voice_over_rounded),
-              size: 14,
+              size: 16,
             ),
             label: Text(
               btnLabel,
               style: const TextStyle(
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: FontWeight.bold,
               ),
             ),

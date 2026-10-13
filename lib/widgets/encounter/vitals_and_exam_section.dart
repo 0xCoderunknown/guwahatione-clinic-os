@@ -31,19 +31,21 @@ class VitalsAndExamSection extends StatelessWidget {
         form.isFindingsExpanded = !form.isFindingsExpanded;
         onUpdate();
       },
-      trailing: TextButton.icon(
-        icon: Icon(
-          form.isFindingsExpanded ? Icons.unfold_less : Icons.edit_note,
-          size: 18,
-        ),
-        label: Text(
-          form.isFindingsExpanded ? 'Close Findings' : 'Add / Edit Findings',
-        ),
-        onPressed: () {
-          form.isFindingsExpanded = !form.isFindingsExpanded;
-          onUpdate();
-        },
-      ),
+      trailing: MediaQuery.sizeOf(context).width < 600
+          ? null
+          : TextButton.icon(
+              icon: Icon(
+                form.isFindingsExpanded ? Icons.unfold_less : Icons.edit_note,
+                size: 18,
+              ),
+              label: Text(
+                form.isFindingsExpanded ? 'Close Findings' : 'Add / Edit Findings',
+              ),
+              onPressed: () {
+                form.isFindingsExpanded = !form.isFindingsExpanded;
+                onUpdate();
+              },
+            ),
       child: form.isFindingsExpanded
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -310,12 +312,14 @@ class VitalsAndExamSection extends StatelessWidget {
                 color: Colors.teal.shade700,
               ),
               const SizedBox(width: 8),
-              Text(
-                'No clinical findings or vitals recorded yet. Tap "Add / Edit Findings" to add.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.teal.shade700,
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Text(
+                  'No clinical findings or vitals recorded yet. Tap to add.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.teal.shade700,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
