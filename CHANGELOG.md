@@ -8,6 +8,29 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.33.4] — 15-10-2026
+
+### Autonomous AI Maintainability & Low-Token Architecture Refactoring
+- **Operational Impact:**
+  - **100% Functional & Visual Parity:** Preserved all counter booking, reception queue, doctor chamber handshake, cash handover, and patient directory workflows with zero UX divergence or regression.
+  - **Pure Domain Engine Layering:** Relocated 140 lines of clinical review eligibility calculation from data model `PatientReviewEligibility` into dedicated pure domain engine `AppointmentEngine.evaluateReviewEligibility` (`lib/core/engines/appointment_engine.dart`). `PatientReviewEligibility.calculate` delegates directly to `AppointmentEngine`, keeping full backward-compatibility across all test suites.
+  - **Decomposed Large Monolithic UI Files into Modular Sub-Widgets:**
+    - `AddAppointmentDialog` (`lib/widgets/booking/`): Reduced from 875 lines to 715 lines by extracting `BookingDateAndModeSection` and `BookingDuplicateWarningBanner` / `BookingOffDayWarningBanner`.
+    - `DashboardTodayQueueCard` (`lib/widgets/dashboard/`): Reduced from 815 lines to 578 lines by extracting `QueueChamberDispatchAction` (`lib/widgets/queue/`), eliminating ~240 lines of duplicate chamber dispatch presentation.
+    - `DailyCashHandoverDialog` (`lib/widgets/dashboard/`): Reduced from 577 lines to 395 lines by extracting `CashDenominationCounterSection`.
+    - `PatientLookupCard` (`lib/widgets/patient/`): Reduced from 656 lines to 305 lines by extracting `DoctorConsultationAccordion`.
+    - `OwnerShell` (`lib/screens/`): Reduced from 591 lines to 377 lines by extracting `OwnerShellAppBar` (`lib/widgets/common/`).
+  - **Clean Barrel Exports:** Added all new modular components to `lib/widgets/widgets.dart` for single-point import ergonomics.
+  - **AI SOP Maintenance Recipes:** Created 3 new SOP checklist recipes in `.agents/recipes/`:
+    - `add_dashboard_kpi.md`: Protocol for adding new dashboard KPI metric cards.
+    - `modify_print_layout.md`: Protocol for modifying prescription, letterhead, and slip print formats.
+    - `add_system_setting.md`: Protocol for adding feature flags and clinic system settings.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 213 unit and widget tests passing green.
+
+---
+
 ## [1.33.3] — 15-10-2026
 
 ### Idempotent Doctor Title Normalization & Doctor Form Ergonomics

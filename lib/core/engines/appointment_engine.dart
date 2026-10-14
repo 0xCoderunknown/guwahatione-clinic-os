@@ -1,5 +1,6 @@
 import '../../models/models.dart';
 import '../../utils/app_constants.dart';
+import '../../utils/formatters.dart';
 
 /// Partitioned appointment queue segments.
 class QueuePartition {
@@ -64,15 +65,14 @@ abstract class AppointmentEngine {
   /// Evaluates whether a patient is eligible for a Free Review with a specific doctor.
   ///
   /// Business Rules (Invariants):
-  /// 1. Only a patient who visited earlier can get a free review, and that too if
-  ///    they book with the SAME doctor.
-  /// 2. If booked within 14 days of the previous visit, free review is fully eligible.
-  /// Evaluates review eligibility against historical appointments for a given doctor.
-  /// 1. Only a patient who visited earlier can get a free review with the SAME doctor.
-  /// 2. If doctor policy has 0 free review days, free reviews are disabled/not offered.
-  /// 3. If within doctor's configured [freeReviewDays] (0 to 30), free review is fully eligible.
-  /// 4. If more than [freeReviewDays] have passed, free review is flagged with an advisory warning.
-  /// 5. Absent visits never qualify as prior encounters.
+  /// 1. Finds the most recent PAID visit with this doctor. Non-paid visits (unpaid,
+  ///    courtesy, absent, or prior reviews) cannot originate a free review.
+  /// 2. If doctor policy is 0 days, free reviews are disabled.
+  /// 3. If a free review has ALREADY been taken since the originating paid visit,
+  ///    the entitlement is consumed and further free reviews are disallowed.
+  /// 4. If within [freeReviewDays] of the paid visit and not yet consumed, eligible.
+  /// 5. If more than [freeReviewDays] have passed, an advisory warning is triggered.
+  /// 6. Absent visits never qualify as prior encounters.
   static PatientReviewEligibility evaluateReviewEligibility({
     required List<Appointment> patientHistory,
     required String? doctorId,
@@ -80,12 +80,135 @@ abstract class AppointmentEngine {
     String? doctorName,
     int freeReviewDays = 14,
   }) {
-    return PatientReviewEligibility.calculate(
-      appointments: patientHistory,
-      doctorId: doctorId,
-      targetDate: targetDate,
-      doctorName: doctorName,
+    if (doctorId == null || doctorId.isEmpty) {
+      return PatientReviewEligibility(
+        hasVisitedDoctorEarlier: false,
+        allowedReviewDays: freeReviewDays,
+        isWithinReviewPeriod: false,
+        isReviewAlreadyConsumed: false,
+        message: 'No doctor selected.',
+      );
+    }
+
+    final targetDay = DateTime(
+      targetDate.year,
+      targetDate.month,
+      targetDate.day,
+    );
+
+    // Filter appointments for THIS doctor scheduled strictly before targetDay,
+    // excluding absent/unattended records.
+    final pastVisitsWithDoctor = patientHistory.where((a) {
+      if (a.doctorId != doctorId) return false;
+      if (a.status == AppointmentStatus.absent) return false;
+      final aDay = DateTime(
+        a.scheduledDate.year,
+        a.scheduledDate.month,
+        a.scheduledDate.day,
+      );
+      return aDay.isBefore(targetDay);
+    }).toList();
+
+    final docLabel = doctorName != null
+        ? AppFormatters.doctorTitle(doctorName)
+        : 'this doctor';
+
+    if (pastVisitsWithDoctor.isEmpty) {
+      return PatientReviewEligibility(
+        hasVisitedDoctorEarlier: false,
+        allowedReviewDays: freeReviewDays,
+        isWithinReviewPeriod: false,
+        isReviewAlreadyConsumed: false,
+        message: 'No earlier visit with $docLabel.',
+      );
+    }
+
+    // Sort descending by scheduledDate to inspect the timeline
+    pastVisitsWithDoctor.sort(
+      (a, b) => b.scheduledDate.compareTo(a.scheduledDate),
+    );
+
+    // Find the most recent PAID consultation that originates a review cycle.
+    // (Excludes freeReview, freeFamily, unpaid, or zero-fee non-paid visits).
+    Appointment? latestPaidVisit;
+    for (final a in pastVisitsWithDoctor) {
+      if (a.paymentType.isPaid ||
+          (a.paymentType == PaymentType.postPay && a.amountCollected > 0)) {
+        latestPaidVisit = a;
+        break;
+      }
+    }
+
+    // If the patient never had a paid consultation with this doctor, no free review is unlocked.
+    if (latestPaidVisit == null) {
+      return PatientReviewEligibility(
+        hasVisitedDoctorEarlier: false,
+        allowedReviewDays: freeReviewDays,
+        isWithinReviewPeriod: false,
+        isReviewAlreadyConsumed: false,
+        message: 'No prior paid consultation with $docLabel.',
+      );
+    }
+
+    final latestPaidDay = DateTime(
+      latestPaidVisit.scheduledDate.year,
+      latestPaidVisit.scheduledDate.month,
+      latestPaidVisit.scheduledDate.day,
+    );
+
+    final daysSincePaid = targetDay.difference(latestPaidDay).inDays;
+
+    // Doctor policy check: 0 days disables free reviews completely.
+    if (freeReviewDays <= 0) {
+      return PatientReviewEligibility(
+        hasVisitedDoctorEarlier: true,
+        lastVisitDate: latestPaidVisit.scheduledDate,
+        daysSinceLastVisit: daysSincePaid,
+        allowedReviewDays: 0,
+        isWithinReviewPeriod: false,
+        isReviewAlreadyConsumed: false,
+        message: '$docLabel does not offer free reviews (0-day policy).',
+      );
+    }
+
+    // Check if the single free review entitlement has ALREADY been used
+    // for this paid consultation cycle (i.e. any visit between latestPaidDay and targetDay
+    // with paymentType == freeReview).
+    final hasAlreadyConsumedReview = pastVisitsWithDoctor.any((a) {
+      if (a.paymentType != PaymentType.freeReview) return false;
+      final aDay = DateTime(
+        a.scheduledDate.year,
+        a.scheduledDate.month,
+        a.scheduledDate.day,
+      );
+      return !aDay.isBefore(latestPaidDay);
+    });
+
+    if (hasAlreadyConsumedReview) {
+      return PatientReviewEligibility(
+        hasVisitedDoctorEarlier: true,
+        lastVisitDate: latestPaidVisit.scheduledDate,
+        daysSinceLastVisit: daysSincePaid,
+        allowedReviewDays: freeReviewDays,
+        isWithinReviewPeriod: false,
+        isReviewAlreadyConsumed: true,
+        message:
+            'Free review already used for visit on ${latestPaidVisit.scheduledDate.day.toString().padLeft(2, '0')}-${latestPaidVisit.scheduledDate.month.toString().padLeft(2, '0')}-${latestPaidVisit.scheduledDate.year} (1 review allowed per paid visit).',
+      );
+    }
+
+    final withinWindow = daysSincePaid <= freeReviewDays;
+
+    return PatientReviewEligibility(
+      hasVisitedDoctorEarlier: true,
+      lastVisitDate: latestPaidVisit.scheduledDate,
+      daysSinceLastVisit: daysSincePaid,
       allowedReviewDays: freeReviewDays,
+      isWithinReviewPeriod: withinWindow,
+      isReviewAlreadyConsumed: false,
+      message: withinWindow
+          ? 'Eligible for $freeReviewDays-day Free Review ($daysSincePaid day${daysSincePaid == 1 ? '' : 's'} ago)'
+          : '$freeReviewDays days have passed since paid visit ($daysSincePaid day${daysSincePaid == 1 ? '' : 's'} ago)',
     );
   }
 

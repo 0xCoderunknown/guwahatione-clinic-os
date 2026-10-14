@@ -11,6 +11,8 @@ import '../../models/patient_review_eligibility.dart';
 import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
 import '../print/token_receipt_dialog.dart';
+import 'booking_date_and_mode_section.dart';
+import 'booking_duplicate_warning_banner.dart';
 import 'booking_eligibility_banner.dart';
 import 'booking_patient_fields.dart';
 import 'booking_payment_section.dart';
@@ -214,60 +216,26 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // 1. Date Selector & Booking Mode
-                  ListTile(
-                    title: Text("Date: ${AppFormatters.date(_selectedDate)}"),
-                    trailing: const Icon(Icons.calendar_today),
-                    tileColor: Colors.grey.shade100,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    onTap: _pickDate,
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Booking Mode Toggle: Walk-in (Immediate Lobby) vs Phone / Advance
-                  SizedBox(
-                    width: double.infinity,
-                    child: SegmentedButton<VisitStatus>(
-                      segments: const [
-                        ButtonSegment<VisitStatus>(
-                          value: VisitStatus.waitingInLobby,
-                          icon: Icon(
-                            Icons.person_pin_circle_outlined,
-                            size: 16,
-                          ),
-                          label: Text(
-                            'Walk-In (Desk Check-In)',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                        ButtonSegment<VisitStatus>(
-                          value: VisitStatus.booked,
-                          icon: Icon(Icons.phone_in_talk_outlined, size: 16),
-                          label: Text(
-                            'Phone / Advance',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                      selected: {_selectedVisitStatus},
-                      onSelectionChanged: (newSelection) {
-                        setState(() {
-                          _selectedVisitStatus = newSelection.first;
-                          if (_selectedVisitStatus == VisitStatus.booked &&
-                              _selectedPayment.isPaid) {
-                            _selectedPayment = PaymentType.unpaid;
-                            _amountController.text = "0";
-                          } else if (_selectedVisitStatus ==
-                                  VisitStatus.waitingInLobby &&
-                              _selectedPayment == PaymentType.unpaid) {
-                            _selectedPayment = PaymentType.paidCash;
-                            _amountController.text =
-                                "${_selectedDoctor?.consultationFee ?? 500}";
-                          }
-                        });
-                      },
-                    ),
+                  BookingDateAndModeSection(
+                    selectedDate: _selectedDate,
+                    selectedVisitStatus: _selectedVisitStatus,
+                    onPickDate: _pickDate,
+                    onVisitStatusChanged: (status) {
+                      setState(() {
+                        _selectedVisitStatus = status;
+                        if (_selectedVisitStatus == VisitStatus.booked &&
+                            _selectedPayment.isPaid) {
+                          _selectedPayment = PaymentType.unpaid;
+                          _amountController.text = "0";
+                        } else if (_selectedVisitStatus ==
+                                VisitStatus.waitingInLobby &&
+                            _selectedPayment == PaymentType.unpaid) {
+                          _selectedPayment = PaymentType.paidCash;
+                          _amountController.text =
+                              "${_selectedDoctor?.consultationFee ?? 500}";
+                        }
+                      });
+                    },
                   ),
                   const SizedBox(height: 16),
 
@@ -344,13 +312,18 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                         date: _selectedDate,
                       )) ...[
                     const SizedBox(height: 12),
-                    _buildOffDayWarningBanner(_selectedDoctor!, _selectedDate),
+                    BookingOffDayWarningBanner(
+                      doctor: _selectedDoctor!,
+                      date: _selectedDate,
+                    ),
                   ],
 
                   // 4. Duplicate Booking Warning Alert Banner
                   if (_duplicateAppointment != null) ...[
                     const SizedBox(height: 14),
-                    _buildDuplicateWarningBanner(_duplicateAppointment!),
+                    BookingDuplicateWarningBanner(
+                      duplicate: _duplicateAppointment!,
+                    ),
                   ],
                 ],
               ),
@@ -407,138 +380,6 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     ],
                   )
                 : const Text('Book Appointment'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDuplicateWarningBanner(Appointment duplicate) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFEF3C7), // Warm amber background
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.warning_amber_rounded,
-                color: Color(0xFFB45309),
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '⚠️ ${duplicate.patientName} already holds Token #${duplicate.queueNumber} with ${AppFormatters.doctorTitle(duplicate.doctorName)} for today.',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF92400E),
-                    height: 1.3,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Expanded(
-                child: Text(
-                  'Modify Name if booking for a family member.',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: Color(0xFFB45309),
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.open_in_new_rounded, size: 14),
-                label: Text('View Token #${duplicate.queueNumber}'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF92400E),
-                  side: const BorderSide(color: Color(0xFFD97706)),
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-                onPressed: () {
-                  final prov = Provider.of<ClinicProvider>(
-                    context,
-                    listen: false,
-                  );
-                  prov.setDashboardSearchQuery('${duplicate.queueNumber}');
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Viewing Token #${duplicate.queueNumber} • ${duplicate.patientName}',
-                      ),
-                      duration: const Duration(seconds: 4),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOffDayWarningBanner(Doctor doctor, DateTime date) {
-    const dayNames = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    final dayName = dayNames[date.weekday - 1];
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFEF3C7), // Warm amber background
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFF59E0B), width: 1.2),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.event_busy,
-            color: Color(0xFFB45309),
-            size: 18,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '⚠️ ${AppFormatters.doctorTitle(doctor.name)} does not normally sit on ${dayName}s (Schedule: ${doctor.availableDays.join(", ")}). Booking is allowed if on special duty.',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF92400E),
-                height: 1.3,
-              ),
-            ),
           ),
         ],
       ),
