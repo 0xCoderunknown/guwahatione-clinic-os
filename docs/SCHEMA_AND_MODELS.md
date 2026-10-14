@@ -13,9 +13,8 @@
 | `doctors` | Auto-generated UID or slug | Consulting doctors, specialty, schedule, fees, and PINs. |
 | `appointments` | Auto-generated UID (UUID / Firestore ID) | Daily appointment & token ledger records. **Zero deletions.** |
 | `counters` | `queue_{doctorId}_{yyyy-MM-dd}` | Atomic sequence counter for daily queue token numbering. |
-| `consultations` | Auto-generated UID | Append-only clinical encounter records across 5 steps. |
+| `consultations` | Auto-generated UID | Append-only clinical encounter records. |
 | `medicines` | Deterministic `med_*` or auto UID | Master clinic medicine formulary catalogue. |
-| `appointment_events` | Auto-generated UID | Immutable forensic audit ledger tracking all appointment lifecycle shifts. |
 
 ---
 
@@ -229,25 +228,11 @@
 
 ---
 
-## 📜 8. `appointment_events` Collection (Forensic Audit Trail)
+## 📜 8. `appointment_events` Collection — 🗑️ Retired & Pruned (HK-2)
 
-- **Document ID:** Auto-generated UID.
-- **Rule:** **STRICTLY APPEND-ONLY.** Never updated, mutated, or deleted (`allow update, delete: if false;`).
-- **Model:** `AppointmentEvent` (`lib/models/appointment_event.dart`). Exported via `lib/models/models.dart` barrel.
-
-### Fields
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `id` | `String` | Yes | Unique event ID. |
-| `appointmentId` | `String` | Yes | Associated appointment document ID. |
-| `eventType` | `String` (Enum) | Yes | `'created'`, `'checkedIn'`, `'admitted'`, `'completed'`, `'markedAbsent'`, or `'statusUpdated'`. |
-| `visitStatus` | `String` (Enum) | Yes | Resulting operational state (`'booked'`, `'waitingInLobby'`, `'inConsultation'`, `'completed'`, `'cancelled'`). |
-| `amountCollected` | `int?` | No | Realized rupee collection associated with the state transition. |
-| `paymentType` | `String?` | No | Payment method recorded (`'paidCash'`, `'paidUpi'`, etc.). |
-| `actorRole` | `String` | Yes | Role executing the mutation (`'receptionist'`, `'doctor'`, `'owner'`). |
-| `timestamp` | `Timestamp` | Yes | Immutable event occurrence timestamp. |
-| `note` | `String?` | No | Operational audit note (e.g. `'Patient checked into lobby desk'`). |
-
+- **Status:** **RETIRED & PRUNED** in `v1.32.0` under Invariant #10 (Zero Backward-Compatibility Debt) as part of HK-2 Housekeeping.
+- **Rationale:** Write-only sub-collection with zero UI readers that unnecessarily doubled Firestore write costs.
+- **Canonical Lifecycle Auditing:** Operational and legal auditing is preserved directly on the primary `appointments` collection via permanent document retention (Invariant #1: Zero Deletions), status transitions, and native timestamps (`scheduledDate`, `checkedInAt`, `updatedAt`).
 
 ## 🔒 9. Composite Invariants & Business Logic Contracts
 

@@ -48,22 +48,21 @@ To prevent unauthorized data exposure, clinic operations are compartmentalized i
    - Legacy plaintext keys are automatically migrated to hashes and purged from storage upon session boot.
 2. **Database Engine Immutability (`firestore.rules`):**
    - **Zero Deletions:** `allow delete: if false;` is enforced at the database storage engine layer across `appointments`, `consultations`, `patients`, and `counters`.
-   - **Append-Only Encounters:** Past consultations and `appointment_events` cannot be edited or updated (`allow update: if false;`).
+   - **Append-Only Encounters:** Past consultations cannot be edited or updated (`allow update: if false;`).
 
 ---
 
-## 📜 4. Forensic Operational Audit Trail (`appointment_events`)
+## 📜 4. Forensic Operational Audit Trail & Immutability
 
-Every state mutation in the clinic is recorded in an immutable append-only audit ledger (`appointment_events`):
+Operational and regulatory auditing is anchored directly on the permanent, immutable `appointments` collection under **Invariant #1 (Zero Deletions)** and append-only `consultations`:
 
-| Lifecycle Event | Actor Role | Logged Payload |
+| Lifecycle State | Audit Mechanism | Operational Guarantee |
 |---|---|---|
-| `created` | Receptionist | Token issued, doctor assigned, fee collected, timestamp. |
-| `checkedIn` | Receptionist | Physical lobby arrival verified, payment method reconciled. |
-| `admitted` | Receptionist / Doctor | Chamber entry handshake confirmed, occupancy collision guard verified. |
-| `completed` | Doctor | Clinical prescription issued, session concluded, last visit date updated. |
-| `markedAbsent` | Receptionist / Admin | No-show recorded, token slot preserved, ₹0 fee locked. |
-| `statusUpdated` | Receptionist / Admin | Discretionary desk override with timestamped operational note. |
+| **Booked / Expected** | `appointments` document created | Atomic token allocated ($1 \dots N$), fee recorded, timestamped `scheduledDate`. |
+| **Checked-In** | Desk check-in transition | Realized payment method reconciled, physical arrival timestamped (`checkedInAt`). |
+| **In Consultation** | Chamber handshake transition | Occupancy collision lock verified, active chamber session updated. |
+| **Completed** | Append-only `consultations` record | Permanent clinical prescription doc appended, `status: completed`, `lastVisitDate` updated. |
+| **Absent / No-Show** | Status set to `absent` | Token slot preserved permanently on screen & ledger, `amountCollected: 0` locked. |
 
 ---
 

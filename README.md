@@ -162,7 +162,6 @@ In your Firebase Console, the following collections are utilized:
 | `counters` | Atomic sequence counters for daily queue numbering (`queue_{doctorId}_{date}`) and real-time chamber calling sync (`chamber_{doctorId}_{date}`) |
 | `consultations` | Append-only longitudinal consultation encounters per patient |
 | `medicines` | Master clinical catalogue of chemical compositions, brands, and strengths |
-| `appointment_events` | Immutable forensic audit trail — every appointment lifecycle state shift (created, checked-in, admitted, completed, absent) |
 | `clinic_config` | Clinic-wide settings and SHA-256 hashed Owner Master PIN (`settings` document) |
 
 **Firestore Indexes Configuration**:

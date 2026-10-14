@@ -1,135 +1,56 @@
 import 'package:appointment_app/models/models.dart';
-import 'package:appointment_app/services/booking_service.dart';
 import 'package:appointment_app/services/firestore_paths.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('Atomic Booking Locks & Forensic Audit Trail Tests (Phase 2)', () {
-    test('FirestorePaths.bookingLock produces deterministic atomic key', () {
-      final date = DateTime(2026, 10, 13);
-      final lockKey1 = FirestorePaths.bookingLock(
-        'doc-1',
-        date,
-        '9876543210',
-        'Rahul Sharma',
-      );
-      final lockKey2 = FirestorePaths.bookingLock(
-        'doc-1',
-        date,
-        ' 9876543210 ',
-        'rahul   sharma',
-      );
+  group('Atomic Counter Paths & Appointment Lifecycle Tests', () {
+    test('FirestorePaths.normalizePatientName normalizes names cleanly', () {
+      final norm1 = FirestorePaths.normalizePatientName('Rahul Sharma');
+      final norm2 = FirestorePaths.normalizePatientName(' rahul   sharma ');
 
-      expect(lockKey1, 'lock_doc-1_2026-10-13_9876543210_rahul_sharma');
-      expect(lockKey1, equals(lockKey2));
+      expect(norm1, 'rahul_sharma');
+      expect(norm1, equals(norm2));
     });
 
-    test(
-      'FirestorePaths.bookingLock allows family members under same phone',
-      () {
-        final date = DateTime(2026, 10, 13);
-        final parentLock = FirestorePaths.bookingLock(
-          'doc-1',
-          date,
-          '9876543210',
-          'Sunita Das',
-        );
-        final childLock = FirestorePaths.bookingLock(
-          'doc-1',
-          date,
-          '9876543210',
-          'Aarav Das',
-        );
+    test('FirestorePaths generates deterministic daily queue and chamber keys', () {
+      final date = DateTime(2026, 10, 13);
+      final queueKey = FirestorePaths.doctorQueueCounter('doc-1', date);
+      final chamberKey = FirestorePaths.chamberSyncDoc('doc-1', date);
 
-        expect(parentLock, isNot(equals(childLock)));
-        expect(parentLock, 'lock_doc-1_2026-10-13_9876543210_sunita_das');
-        expect(childLock, 'lock_doc-1_2026-10-13_9876543210_aarav_das');
-      },
-    );
+      expect(queueKey, 'queue_doc-1_2026-10-13');
+      expect(chamberKey, 'chamber_doc-1_2026-10-13');
+    });
 
-    test(
-      'DuplicateBookingException formats clean descriptive error message',
-      () {
-        final ex = DuplicateBookingException(
-          'Patient Rahul Sharma already has an active booking with this doctor today.',
-        );
-        expect(
-          ex.toString(),
-          'Patient Rahul Sharma already has an active booking with this doctor today.',
-        );
-        expect(ex, isA<Exception>());
-      },
-    );
-
-    test('AppointmentEvent serializes and deserializes accurately', () {
+    test('Appointment serialization preserves lifecycle timestamps and status', () {
       final now = DateTime(2026, 10, 13, 10, 30);
-      final event = AppointmentEvent(
-        id: 'evt-101',
-        appointmentId: 'appt-202',
-        eventType: AppointmentEventType.checkedIn,
+      final appt = Appointment(
+        id: 'appt-202',
+        patientPhone: '9876543210',
+        patientName: 'Rahul Sharma',
         visitStatus: VisitStatus.waitingInLobby,
-        amountCollected: 500,
         paymentType: PaymentType.paidCash,
-        actorRole: 'receptionist',
-        timestamp: now,
-        note: 'Patient checked into lobby desk',
+        amountCollected: 500,
+        queueNumber: 4,
+        scheduledDate: now,
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Bhaskar',
+        checkedInAt: now,
       );
 
-      final json = event.toJson();
-      expect(json['id'], 'evt-101');
-      expect(json['appointmentId'], 'appt-202');
-      expect(json['eventType'], 'checkedIn');
+      final json = appt.toJson();
+      expect(json['id'], 'appt-202');
+      expect(json['queueNumber'], 4);
       expect(json['visitStatus'], 'waitingInLobby');
       expect(json['amountCollected'], 500);
       expect(json['paymentType'], 'paidCash');
-      expect(json['actorRole'], 'receptionist');
 
-      final fromJson = AppointmentEvent.fromJson({
-        'id': 'evt-101',
-        'appointmentId': 'appt-202',
-        'eventType': 'checkedIn',
-        'visitStatus': 'waitingInLobby',
-        'amountCollected': 500,
-        'paymentType': 'paidCash',
-        'actorRole': 'receptionist',
-        'timestamp': now.toIso8601String(),
-        'note': 'Patient checked into lobby desk',
-      });
-
-      expect(fromJson.id, 'evt-101');
-      expect(fromJson.appointmentId, 'appt-202');
-      expect(fromJson.eventType, AppointmentEventType.checkedIn);
+      final fromJson = Appointment.fromJson(json);
+      expect(fromJson.id, 'appt-202');
+      expect(fromJson.queueNumber, 4);
       expect(fromJson.visitStatus, VisitStatus.waitingInLobby);
       expect(fromJson.amountCollected, 500);
       expect(fromJson.paymentType, PaymentType.paidCash);
-      expect(fromJson.actorRole, 'receptionist');
-      expect(fromJson.note, 'Patient checked into lobby desk');
-    });
-
-    test('AppointmentEvent handles all lifecycle transition types', () {
-      final events = [
-        AppointmentEventType.created,
-        AppointmentEventType.checkedIn,
-        AppointmentEventType.admitted,
-        AppointmentEventType.completed,
-        AppointmentEventType.markedAbsent,
-        AppointmentEventType.statusUpdated,
-      ];
-
-      for (final type in events) {
-        final event = AppointmentEvent(
-          id: 'evt-${type.name}',
-          appointmentId: 'appt-1',
-          eventType: type,
-          visitStatus: VisitStatus.waitingInLobby,
-          actorRole: 'receptionist',
-          timestamp: DateTime.now(),
-        );
-
-        final json = event.toJson();
-        final reconstituted = AppointmentEvent.fromJson(json);
-        expect(reconstituted.eventType, type);
-      }
+      expect(fromJson.checkedInAt, isNotNull);
     });
   });
 }

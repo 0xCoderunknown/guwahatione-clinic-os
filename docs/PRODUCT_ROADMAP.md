@@ -18,47 +18,21 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 
 ---
 
-## 🟢 2. Active & Verified Capabilities
+## 🟢 2. Active Domain Capability Matrix
 
-| Module | Core Features | Verification Status |
+The following capabilities are fully implemented, verified, and operational in production:
+
+| Domain Module | Core Capabilities | Operational & Invariant Guarantee |
 |---|---|---|
-| **Audit-Proof Queue Ledger** | Atomic consecutive daily tokens ($1 \dots N$). No deletions from Firestore; cancellations/no-shows preserved as `AppointmentStatus.absent` with `₹0`. | 🟢 Verified & Live |
-| **Patient Registration** | 10-digit phone lookup, age/gender, allergy alerts, doctor-configured free review eligibility auto-calculation (`freeReviewDays` 0–30). | 🟢 Verified & Live |
-| **Longitudinal Prescribing** | 5-step encounter pipeline, medication reconciliation (`START`, `CONTINUE`, `STOP`), unlisted outside medicine fallback. | 🟢 Verified & Live |
-| **Chamber Auto-Sync (`P1`)** | Real-time sync at `counters/chamber_{doctorId}_{date}`. Reception clicks "Call In" ➔ Doctor screen automatically loads patient encounter. Includes consultation collision alert banner. | 🟢 Shipped & Verified (`v1.5.0`) |
-| **Clinical Defaults (`P2`)** | `ClinicalDefaultsHelper` auto-populates standard OPD regimens (PPIs, Antihypertensives, Diabetes, Statins, Antibiotics, Liquids, Topicals) with prefilled dosage, frequency, and duration defaults. | 🟢 Shipped & Verified (`v1.5.0`) |
-| **Collapsible Encounter Sections (`P3`)** | Step 2 Findings and Step 4 Prescribing collapsible into compact summary badge strips to reduce scrolling on counter displays. | 🟢 Shipped & Verified (`v1.5.0`) |
-| **Doctor Prescribing Search Preferences (`P4`)** | Per-doctor `searchPreference` (`brandFirst` vs `compositionFirst`) with dual-mode `MedicineSearchScorer` and quick-toggle `[🏷️ Brand | 🧪 Salt]` pill on search bar. | 🟢 Shipped & Verified (`v1.5.0`) |
-| **Modular Encounter Architecture & State Encapsulation** | Deconstructed ~2,600-line monolithic encounter into reusable atomic step widgets (`lib/widgets/encounter/`), centralized `EncounterFormState`, and lightweight (<300 line) coordinator scaffold. | 🟢 Shipped & Verified (`v1.6.0`) |
-| **Comprehensive Frontend Modularization** | Modularized Dashboard, Chamber, Prescribing/Encounter, Prescription Print, Add Appointment, and Reception Queue into clean sub-packages under `lib/widgets/` with centralized barrel export. | 🟢 Shipped & Verified (`v1.7.0`) |
-| **Core Domain Engines & UI Math Decoupling** | Centralized pure Dart engines (`lib/core/engines/`) for revenue calculations, 14-day review eligibility, fee resolution, and pharmacological defaults. All `.fold()` and inline math stripped from UI widgets. Consolidated `MetricKpiCard` and unified `ClinicDateNavBar`. | 🟢 Shipped & Verified (`v1.8.0`) |
-| **Doctor-Reception 2-Way Handshake Protocol** | Synchronized 5-stage handshake: End of visit transitions to `consultation_ended` (Breather); Doctor single-tap `NEXT PATIENT` trigger (`ready_for_next`); Reception counter presence verification & admission guardrail (`calling` / `in_consultation`); Breather confirmation speed bump; Doctor emergency safety valve manual override for offline/unresponsive counters. | 🟢 Shipped & Verified (`v1.9.0`) |
-| **Indian Date Format Standardization (DD-MM-YYYY)** | Unified all UI, print previews, review eligibility warnings, and date navigation headers to Indian standard numerical date formats (`dd-MM-yyyy`, `dd-MM-yy`, and `EEEE, dd-MM-yyyy`) via centralized `AppFormatters`. | 🟢 Shipped & Verified (`v1.9.0`) |
-| **Agile Reception Queue & Discretionary Chamber Dispatch** | Top-level collapsible `CompletedConsultationsAccordion` archives finished visits; single-expansion accordion controller; high-visibility `[SEND IN]` button with chamber occupancy collision safety guard; pure domain `partitionQueueForReception` non-destructively tags bypassed/late tokens (`[BYPASSED / LATE]`) without artificial "Skip" states or database mutations, preserving receptionist operational autonomy for emergencies and VIPs. | 🟢 Shipped & Verified (`v1.10.0`) |
-| **Keyboard-First Walk-In Modal & Live Token Preview** | 100% mouse-free walk-in booking: Tab-order chaining across Phone, Name, Age, Sex, Doctor, and Payment; dedicated physical hotkeys (`M`/`F`/`O` and arrows) for Sex selection with zero accidental defaults; dynamic provisional token & estimated consultation arrival window badge calculated directly on doctor selection. | 🟢 Shipped & Verified (`v1.11.0`) |
-| **Same-Day Duplicate Booking Guard & Family Exception** | Composite key detection `(Date + DoctorId + Normalized Patient Name + Phone)` with live amber alert banner and submit lockout preventing double bookings for the same patient, while explicitly preserving family member bookings under shared phone numbers. Includes 1-tap live queue locator. | 🟢 Shipped & Verified (`v1.11.0`) |
-| **3-Tier Role Security & Master 6-Digit Owner PIN** | Receptionist (PIN `0000`), Doctor (4-digit PIN), and Clinic Owner (6-digit Master PIN in `clinic_config`) with dedicated permissions unlocking Doctor CRUD, schedule updates, consultation fee edits, and financial ledger audits. | 🟢 Shipped & Verified (`v1.11.0`) |
-| **Master Medicine Catalogue** | Chemical composition search scorer, OPD essential formulary, owner-only deduplication engine. | 🟢 Verified & Live |
-| **Prescription Printing** | Monochrome clean layout, A4 & A5 support, pre-printed clinic letterhead margin toggle, browser print via `dart:js_interop`. | 🟢 Verified & Live |
-| **Doctor Chamber Queue** | Real-time consultant token stream, doctor fee summary, patient history review. | 🟢 Verified & Live |
-| **Doctor Medical Reg & Print Footer (`P5`)** | Medical council registration number (`medicalRegNumber` / `doctorRegNumber`) in doctor profile, roster card badge, and official prescription signature footer block. | 🟢 Shipped & Verified (`v1.14.0`) |
-| **Domain Engine Test Fortification** | 100% unit test coverage across pure domain engines (`RevenueEngine`, `AppointmentEngine`, `MedicineEngine`) with 81 automated tests. | 🟢 Shipped & Verified (`v1.14.0`) |
-| **Offline Queue Fallback Cache (`P6`)** | Silent caching of daily appointments to local browser storage (`SharedPreferences`) with graceful zero-dropout fallback and amber status badge during broadband hiccups. | 🟢 Shipped & Verified (`v1.15.0`) |
-| **WhatsApp Prescription Deep Link (`P7`)** | Formatted clinical summaries via pure `WhatsAppEngine` with Indian date standard (`DD-MM-YYYY`), vitals, medication schedule, and 1-tap `wa.me` deep link delivery. | 🟢 Shipped & Verified (`v1.15.0`) |
-| **Daily Cash Handover & Note Counter (`P8`)** | End-of-day cash reconciliation modal (`DailyCashHandoverDialog`) with doctor-wise cash breakdown, interactive Indian note denomination counter, and discrepancy auditing. | 🟢 Shipped & Verified (`v1.15.0`) |
-| **Asynchronous OPD Booking & 1-Tap Desk Check-In** | Advance and phone bookings register as `VisitStatus.booked` with zero lobby clutter; physical arrival triggers 1-tap `QuickCheckInDialog` with granular payment reconciliation (`paidCash`, `paidUpi`, `postPay`, `freeReview`, `freeFamily`, `unpaid`). | 🟢 Shipped & Verified (`v1.16.0`) |
-| **Restricted Emergency Door Self-Call Runway** | `ChamberDoorOverrideBar` strictly displays only the top 1–2 physically checked-in patients (`waitingInLobby`) with amber warning modals to prevent queue chaos during receptionist breaks. | 🟢 Shipped & Verified (`v1.16.1`) |
-| **Read-Only Archive State for Historical Chamber Dates** | Selecting any date prior to today switches doctor chamber to immutable archive mode (`ChamberArchiveBanner`), suppressing all live controls, self-call bars, and admissions while allowing review of past consultation notes. | 🟢 Shipped & Verified (`v1.16.2`) |
-| **Architectural Consolidation & Layer Modernization** | Consolidated widgets from 56 to 44 (-21%), decoupled screens and providers from monolithic `FirebaseService` (now retired), hardened polymorphic model deserialization, and added models barrel export. | 🟢 Shipped & Verified (`v1.16.5`) |
-| **Pure Dart Domain Engines & Math Audit** | Architectural review and extraction of all 5 pure Dart domain engines ([RevenueEngine](../lib/core/engines/revenue_engine.dart), [AppointmentEngine](../lib/core/engines/appointment_engine.dart), [MedicineEngine](../lib/core/engines/medicine_engine.dart), [WhatsAppEngine](../lib/core/engines/whatsapp_engine.dart), [CashHandoverEngine](../lib/core/engines/cash_handover_engine.dart)), verified zero UI/Firebase leaks, synchronized canonical barrels, and fortified test suite to 145 passing tests. | 🟢 Shipped & Verified (`v1.16.8`) |
-| **Backend Security Rules & State Model Parity** | Authoritative `firestore.rules` enforcing Zero Deletions and append-only consultations at database level, unified single source of truth for appointment status, and expanded test suite to 148 automated tests. | 🟢 Shipped & Verified (`v1.17.0`) |
-| **Phase 2: Atomic Locks & Forensic Audit Trail** | Atomic booking reservation locks (`counters/lock_*`) in Firestore transaction eliminating multi-desk race conditions, immutable append-only `appointment_events` collection logging every lifecycle shift, and expanded test suite to 153 automated tests. | 🟢 Shipped & Verified (`v1.18.0`) |
-| **Cryptographic Credential Hashing & Compliance Matrix** | Domain-salted SHA-256 PIN hashing in `AuthProvider` purging plaintext credentials from storage, DPDP Act & ABDM healthcare compliance matrix, and expanded test suite to 155 automated tests. | 🟢 Shipped & Verified (`v1.19.0`) |
-| **Doctor-Configurable Free Review Policy (0–30 Days)** | Added configurable `freeReviewDays` on `Doctor` model (`0` to `30` days, default: `14`), owner configuration UI with preset choice chips, roster visibility badges, dynamic review eligibility engine evaluation, warning dialogs, and expanded test suite to 157 automated tests. | 🟢 Shipped & Verified (`v1.20.0`) |
-| **Mobile Responsive Doctor Chamber & Roster Tokens** | Responsive `LayoutBuilder` for `ChamberControlBanner`, adaptive 2-row `ChamberTokenCard` layout, and wrapping `ChamberQueueHeader` preventing horizontal `RenderFlex` overflows on mobile viewports (<650px); expanded test suite to 160 automated tests. | 🟢 Shipped & Verified (`v1.21.0`) |
-| **Strict 1:1 Paid-to-Review Cycle Enforcement** | Enforced strictly 1 free review per paid consultation within the doctor's configured `freeReviewDays` window; subsequent visits require paid consultation; prevents infinite review chaining; expanded test suite to 163 automated tests. | 🟢 Shipped & Verified (`v1.22.0`) |
-| **Prescription Template Presets (`P9`)** | Pre-configured clinical OPD bundles (URI/Pharyngitis, Acute Gastritis, Gastroenteritis, Viral Fever, HTN Starter) with 1-tap horizontal chip loader (`RxTemplatePresetsBar`), duplicate suppression by brand and salt composition (`evaluateTemplateApplication`), and non-destructive `START` staging; expanded test suite to 179 automated tests. | 🟢 Shipped & Verified (`v1.28.0`) |
-| **Multi-Chamber Queue Sound Announcer (`P10`)** | In-browser Web Audio API dual-tone chime (587.33 Hz $\to$ 880 Hz) and SpeechSynthesis token callout ("Token N, please proceed to Dr. X") on patient dispatch, persistent Mute/Unmute toggle in AppBars, deduplication guard, and zero external asset dependencies; expanded test suite to 184 automated tests. | 🟢 Shipped & Verified (`v1.29.0`) |
+| **Audit-Proof Queue & Registration Desk** | • Atomic consecutive daily tokens ($1 \dots N$ via `counters/queue_{doctorId}_{date}`).<br>• Keyboard-first walk-in booking (`F2` shortcut, Tab-order chaining, dedicated `M`/`F`/`O` sex toggles).<br>• Same-day duplicate booking guard `(Date + DoctorId + Name + Phone)` with family exception.<br>• 2-stage asynchronous OPD flow (`booked` $\to$ `QuickCheckInDialog` desk check-in $\to$ `waitingInLobby`).<br>• Offline queue fallback cache (`SharedPreferences`) during broadband hiccups. | **Zero Deletions Invariant:** Canceled or no-show tokens are permanently preserved as `AppointmentStatus.absent` with `₹0`. Zero token pre-emption or silent sequence deletion. |
+| **Doctor Chamber & Queue Handshake** | • 5-state synchronized handshake (`idle` $\to$ `ready_for_next` $\to$ `calling` $\to$ `in_consultation` $\to$ `consultation_ended`).<br>• Atomic single-occupancy chamber lock preventing concurrent admissions or token pre-emption.<br>• Discretionary reception dispatch with late/bypassed tagging (`[BYPASSED / LATE]`) and completed visits accordion.<br>• Restricted emergency door override strictly limited to top 1–2 physically present, paid lobby patients.<br>• Historical date read-only archive mode (`ChamberArchiveBanner`) with consolidated no-show state. | **Doctor-Paced Pacing:** Reception cannot force patient admission during consultations or doctor breathers without explicit `ready_for_next` signal. Historical dates are immutable. |
+| **Clinical Encounter & Prescribing** | • Append-only consultations collection preserving medical-legal longitudinal integrity.<br>• 3-state medication reconciliation (`START`, `CONTINUE`, `STOP` with stop reason).<br>• Master medicine catalogue with dual-mode brand/salt search scorer (`[🏷️ Brand \| 🧪 Salt]`) honoring doctor preferences.<br>• Pharmacological clinical defaults pre-filling dosage, frequency, and duration across OPD regimens.<br>• Prescription template presets with salt and brand deduplication. | **Longitudinal Integrity:** Previous visits are never modified. Follow-ups record explicit reconciliation states. |
+| **3-Tier Security & Financial Ledger** | • Role-guarded access: Owner (6-digit Master PIN), Doctor (4-digit PIN), Receptionist (`0000`).<br>• Owner-exclusive settings: Doctor CRUD, fee scheduling, free review window configuration, and ledger audits.<br>• Doctor-configurable free review window (0–30 days) with strict 1:1 paid-to-review cycle enforcement.<br>• Daily cash handover reconciliation modal with Indian note denomination counter. | **Role Isolation:** Reception and chamber sessions cannot modify fee schedules or doctor profiles. Zero unearned review chaining. |
+| **Communications, Print & Sound** | • High-contrast monochrome A4 & A5 prescription printing with adjustable letterhead margins and medical registration number footer.<br>• Formatted WhatsApp clinical summary deep-links (`wa.me`) with Indian date standard (`DD-MM-YYYY`).<br>• Web Audio API dual-tone chime and SpeechSynthesis multi-chamber token announcer with AppBar mute toggle. | **Monochrome & Privacy:** Zero ink/paper waste on pre-printed stationery. No patient data logged to public endpoints. |
+| **Pure Domain Engines & Test Suite** | • Pure Dart domain engines decoupled from UI ([RevenueEngine](../lib/core/engines/revenue_engine.dart), [AppointmentEngine](../lib/core/engines/appointment_engine.dart), [MedicineEngine](../lib/core/engines/medicine_engine.dart), [WhatsAppEngine](../lib/core/engines/whatsapp_engine.dart), [CashHandoverEngine](../lib/core/engines/cash_handover_engine.dart)).<br>• Comprehensive automated unit and widget test suite (184 passing tests). | **Zero Business Logic in UI:** Financial math, review eligibility, and pharmacological rules reside strictly in pure engines. |
+
+> 💡 *For granular version-by-version release history, PR commits, and detailed operational impact notes, see [CHANGELOG.md](../CHANGELOG.md) and [CHANGELOG_ARCHIVE.md](archive/CHANGELOG_ARCHIVE.md).*
+
 
 ---
 
@@ -167,19 +141,16 @@ Before sending to the browser print dialog, the doctor is shown a **lightweight 
 
 ---
 
-### ⚖️ HK-2: Over-Engineering Review — Pending PM Verdict
+### ⚖️ HK-2: Over-Engineering Review — Resolved PM Verdicts
 
-The following shipped features were flagged by the architect as disproportionate in complexity relative to the real-world threat model and operational scale of a small Indian OPD clinic. They are **not being removed immediately** — each is listed here for PM review. The verdict options are:
-- **Remove** — strip it out cleanly, no shim left behind (consistent with Zero Backward-Compat Debt invariant).
-- **Promote to 🧪** — move to the Experiment Flag Registry (Section 8) and treat as revocable, low-priority maintenance surface.
-- **Keep** — PM decides the complexity is justified and the flag is cleared.
+The following shipped features were flagged by the architect as disproportionate in complexity relative to the real-world threat model and operational scale of a small Indian OPD clinic. The PM-approved architectural verdicts are recorded below:
 
 | Feature | Why It Was Shipped | Why It May Be Overkill | Verdict |
 |---|---|---|---|
-| **SHA-256 PIN Hashing** (`AuthProvider.hashPin`, `v1.19.0`) | Compliance posture, DPDP Act framing, zero plaintext in browser storage. | The threat model doesn't justify it. Reception PIN is `0000` — publicly known by design. Doctor PINs are 4-digit numbers shared verbally. Nobody is extracting `SharedPreferences` in a clinic. The primary fraud risk is cash at the counter, not credential theft. | ⏳ Pending |
-| **Atomic Multi-Desk Booking Locks** (`counters/lock_*`, `v1.18.0`) | Eliminate race conditions when multiple reception desks book simultaneously. | Almost all Indian OPD clinics have exactly **one** reception desk. The existing Firestore transaction on the queue counter already prevents duplicate token allocation. The distributed lock layer solves a problem that doesn't exist for 95% of the user base. | ⏳ Pending |
-| **Hardcoded Prescription Template Bundles (`P9`, `v1.28.0`)** | 1-tap OPD clinical presets for common conditions (URI, Gastritis, Viral Fever, HTN Starter). | Templates are hardcoded for a generic GP. A specialist (cardiologist, ENT, dermatologist) finds them irrelevant or potentially dangerous if applied without review. A doctor whose prescribing habit deviates from the bundle even once will stop using it. The right design is **per-doctor saved templates built from actual encounters** — not hardcoded bundles. | ⏳ Pending |
-| **Forensic Audit Events Collection** (`appointment_events`, `v1.18.0`) | Immutable, append-only log of every appointment lifecycle state shift for compliance auditing. | The `appointments` collection already stores status transitions immutably. The `appointment_events` sub-collection is a second audit trail that adds a Firestore write on every state shift (created → booked → checked-in → in-consultation → completed / absent). For a small OPD clinic with no compliance team querying event logs, this is an operational overhead with no visible benefit. | ⏳ Pending |
+| **SHA-256 PIN Hashing** (`AuthProvider.hashPin`, `v1.19.0`) | Compliance posture, DPDP Act framing, zero plaintext in browser storage. | The threat model doesn't justify it for reception (`0000`), but master owner PIN and doctor PINs reside in browser storage. Lightweight, sub-millisecond, and fully automated. | ✅ **Keep** (Zero UX friction, retains compliance hygiene) |
+| **Atomic Multi-Desk Booking Locks** (`counters/lock_*`, `v1.18.0`) | Eliminate race conditions when multiple reception desks book simultaneously. | Almost all Indian OPD clinics have exactly **one** reception desk. The existing Firestore transaction on the queue counter already prevents duplicate token allocation. The distributed lock layer is redundant and adds Firestore write overhead. | 🗑️ **Removed** (Pruned under Invariant #10) |
+| **Hardcoded Prescription Template Bundles (`P9`, `v1.28.0`)** | 1-tap OPD clinical presets for common conditions (URI, Gastritis, Viral Fever, HTN Starter). | Templates are hardcoded for a generic GP. A specialist finds them irrelevant. The right design is **per-doctor saved templates built from actual encounters**. | 🧪 **Promoted to Experiment** (Revocable UI in Section 8) |
+| **Forensic Audit Events Collection** (`appointment_events`, `v1.18.0`) | Immutable, append-only log of every appointment lifecycle state shift for compliance auditing. | The `appointments` collection already stores status transitions immutably (Zero Deletions invariant). `appointment_events` is a write-only sink with zero UI consumers that doubles Firestore write costs per appointment. | 🗑️ **Removed** (Pruned under Invariant #10) |
 
 ---
 
@@ -195,7 +166,7 @@ All primary operational priorities (P1 through P10) and review cycle enforcement
 
 ---
 
-## ⚖️ 4. Architectural RFCs & Active PM Debates
+## ⚖️ 5. Architectural RFCs & Active PM Debates
 
 The following clinical, financial, and operational dilemmas are under active product deliberation before code implementation:
 
@@ -225,7 +196,7 @@ The following clinical, financial, and operational dilemmas are under active pro
 
 ---
 
-## 🗑️ 5. Scrapped & Superseded Items (Strict "Do Not Re-Implement" Log)
+## 🗑️ 6. Scrapped & Superseded Items (Strict "Do Not Re-Implement" Log)
 
 To prevent AI assistants from regressing or re-introducing discarded patterns:
 
@@ -236,18 +207,20 @@ To prevent AI assistants from regressing or re-introducing discarded patterns:
 | **Modal Prescribing Dialogs** | Prescribing was opened in fullscreen popups. | Interrupted clinical view and added 4+ clicks per drug. | Keep medication search and prefilled defaults **inline** within the encounter body. |
 | **Destructive Prescription Overwrite** | Modifying previous visit's consultation document on return visit. | Destroys medical-legal audit history. Violates longitudinal record integrity. | Consultations must remain strictly **append-only**. Follow-ups use `MedicationAction.continueAction` or `stopAction`. |
 | **Queue Item Deletion** | Deleting canceled or duplicate appointments from Firestore. | Enables financial leakage and cheating between counter and doctors. | Deletions are forbidden. Mark as `AppointmentStatus.absent` with `amountCollected: 0`. |
+| **Atomic Multi-Desk Booking Locks (`counters/lock_*`)** | Transactional distributed locks per appointment reservation. | 95%+ of clinics have 1 counter. Queue counter transaction + UI check already serialize token allocation. Adds redundant writes and orphan risks. | Do not re-add distributed lock collections or keys. Counter transaction is authoritative. |
+| **Forensic Audit Events Collection (`appointment_events`)** | Secondary append-only audit trail logging every status change. | Write-only collection with zero UI consumers. Doubles Firestore writes. Appointments collection is already immutable under Zero Deletions. | Store lifecycle timestamps directly on `Appointment` (`checkedInAt`, `completedAt`). Never re-introduce `appointment_events`. |
 
 ---
 
-## 📋 6. Operational Governance for AI Agents
+## 📋 7. Operational Governance for AI Agents
 1. Before implementing any feature, check this matrix to ensure the task aligns with Section 3 or Section 4.
-2. If an AI receives a prompt that matches an item in Section 1 or Section 5, it must **flag the conflict immediately** and adhere to the architectural guardrails.
+2. If an AI receives a prompt that matches an item in Section 1 or Section 6, it must **flag the conflict immediately** and adhere to the architectural guardrails.
 3. Only the **Product Manager** can promote items from Proposed to Active Backlog.
-4. Features marked `🧪` (see Section 7) require explicit PM sign-off before being hardened into stable, non-removable product surface. Treat them as revocable at any point.
+4. Features marked `🧪` (see Section 8) require explicit PM sign-off before being hardened into stable, non-removable product surface. Treat them as revocable at any point.
 
 ---
 
-## 🧪 7. Experiment Flag Registry
+## 🧪 8. Experiment Flag Registry
 
 Some features — shipped or planned — are inherently exploratory in nature. They solve a real problem but carry uncertainty around UX fit, data model stability, or long-term clinical value. These are formally tagged with the **🧪 EXPERIMENT** flag.
 
@@ -271,4 +244,5 @@ Some features — shipped or planned — are inherently exploratory in nature. T
 | Feature | Status | Flag Reason | Promotion Criteria |
 |---|---|---|---|
 | **Multi-Chamber Sound Announcer (P10)** | 🟢 Shipped (`v1.29.0`) | Browser SpeechSynthesis and Web Audio API reliability varies widely across clinic PC hardware, browsers, and OS audio routing. Real-world sound quality and intelligibility in a noisy OPD reception is unproven. | Validated across ≥ 3 real clinic deployments with stable chime delivery and zero browser crash reports. |
+| **Prescription Template Presets (P9)** | 🟢 Shipped (`v1.28.0`) • 🧪 Experiment | Hardcoded GP condition bundles are rigid and specialty-dependent. Serves as interim convenience until per-doctor customizable templates saved from encounters are built. | Replaced by user-saved templates feature without backward compatibility shims. |
 | **Patient Lookup / Explore Patients (P12)** | 📋 TODO | Feature scope and access model (owner-only vs. reception) is unclear. Firestore query patterns for name prefix search are unproven at scale. Direct booking shortcut may complicate walk-in modal state. | Defined UX wireframe approved by PM; Firestore `patients` index confirmed; booking integration tested end-to-end. |

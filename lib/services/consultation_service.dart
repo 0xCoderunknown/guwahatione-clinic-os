@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/appointment.dart';
-import '../models/appointment_event.dart';
 import '../models/consultation.dart';
 import '../models/prescription_item.dart';
 import 'firestore_paths.dart';
@@ -22,9 +21,6 @@ class ConsultationService {
   CollectionReference<Map<String, dynamic>> get _patientsRef =>
       _firestore.collection(FirestorePaths.patients);
 
-  CollectionReference<Map<String, dynamic>> get _eventsRef =>
-      _firestore.collection(FirestorePaths.appointmentEvents);
-
   /// Records an immutable clinical consultation encounter.
   /// Follows the strict append-only policy: each consultation is a new document.
   /// Also atomically marks appointment status as 'completed' and syncs patient lastVisitDate.
@@ -35,25 +31,13 @@ class ConsultationService {
     final consultDoc = _consultationsRef.doc(consultation.id);
     batch.set(consultDoc, consultation.toJson());
 
-    // 2. Mark appointment as completed & log audit event
+    // 2. Mark appointment as completed
     if (consultation.appointmentId.isNotEmpty) {
       final apptDoc = _appointmentsRef.doc(consultation.appointmentId);
       batch.update(apptDoc, {
         'status': AppointmentStatus.completed.name,
         'visitStatus': VisitStatus.completed.name,
       });
-
-      final eventDoc = _eventsRef.doc();
-      final event = AppointmentEvent(
-        id: eventDoc.id,
-        appointmentId: consultation.appointmentId,
-        eventType: AppointmentEventType.completed,
-        visitStatus: VisitStatus.completed,
-        actorRole: 'doctor',
-        timestamp: consultation.createdAt,
-        note: 'Consultation encounter completed by ${consultation.doctorName}',
-      );
-      batch.set(eventDoc, event.toJson());
     }
 
     // 3. Keep patient record synced (lastVisitDate stamped on consultation completion)

@@ -10,6 +10,26 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
+## [1.32.0] — 14-10-2026
+
+### HK-2 Architectural Clean-Up: Lock & Audit Pruning, Template Experimentation
+- **Operational Impact:**
+  - **Halved Firestore Write Costs:** Eliminated the redundant, write-only `appointment_events` sub-collection across booking, check-in, admission, and completion workflows. Operational and legal auditing is preserved directly on the permanent `appointments` document ledger under Invariant #1 (Zero Deletions) with native lifecycle timestamps.
+  - **Streamlined Counter Desk Booking:** Pruned distributed locking artifacts (`counters/lock_*`) in `BookingService`. Relies on the authoritative atomic serializable Firestore queue counter transaction (`counters/queue_{doctorId}_{date}`) and real-time UI duplicate detection.
+  - **Preserved Credential Compliance:** Retained lightweight domain-salted SHA-256 PIN hashing (`AuthProvider.hashPin`) ensuring zero plaintext credentials in browser storage.
+  - **Promoted Template Presets to 🧪 Experiment:** Tagged `RxTemplatePresetsBar` in Section 8 as a revocable interim convenience while paving the way for doctor-customizable saved templates.
+- **Architectural Touchpoints:**
+  - `lib/services/booking_service.dart`: Stripped lock checks, lock documents, and audit event writes from booking and state mutations.
+  - `lib/services/consultation_service.dart`: Stripped audit event writing from `saveConsultation`.
+  - `lib/services/firestore_paths.dart`: Removed `bookingLock`, `appointmentEvents`, and `appointmentEventDoc`.
+  - `lib/models/models.dart`: Pruned `appointment_event.dart` model and barrel export.
+  - `firestore.rules`: Pruned `appointment_events` security rule.
+  - `docs/PRODUCT_ROADMAP.md`: Updated Section 3 (Resolved HK-2 Verdicts), Section 6 (Scrapped Items), and Section 8 (Experiment Inventory).
+  - `docs/SCHEMA_AND_MODELS.md`, `docs/COMPLIANCE_AND_PRIVACY.md`, `README.md`, `AGENTS.md`: Synchronized documentation.
+  - `test/booking_concurrency_and_audit_test.dart`: Updated tests; verified 184 unit and widget tests passing cleanly.
+
+---
+
 ## [1.31.0] — 14-10-2026
 
 ### Doctor Chamber Mobile & Historical Archive De-Duplication

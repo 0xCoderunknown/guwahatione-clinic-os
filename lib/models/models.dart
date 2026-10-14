@@ -1,5 +1,4 @@
 export 'appointment.dart';
-export 'appointment_event.dart';
 export 'chamber_session.dart';
 export 'consultation.dart';
 export 'diagnostic_investigation.dart';

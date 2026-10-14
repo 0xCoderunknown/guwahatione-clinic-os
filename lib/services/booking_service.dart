@@ -1,19 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/appointment.dart';
-import '../models/appointment_event.dart';
 import '../models/patient.dart';
 import 'firestore_paths.dart';
-
-/// Exception thrown when an atomic duplicate booking is detected at the transaction boundary.
-class DuplicateBookingException implements Exception {
-  final String message;
-
-  const DuplicateBookingException(this.message);
-
-  @override
-  String toString() => message;
-}
 
 /// Service managing appointment bookings, atomic queue counters, and queue queries.
 class BookingService {
@@ -31,12 +20,8 @@ class BookingService {
   CollectionReference<Map<String, dynamic>> get _patientsRef =>
       _firestore.collection(FirestorePaths.patients);
 
-  CollectionReference<Map<String, dynamic>> get _eventsRef =>
-      _firestore.collection(FirestorePaths.appointmentEvents);
-
-  /// Atomically verifies booking lock, allocates the next daily queue number,
-  /// creates the appointment, upserts the patient demographic profile, and
-  /// records the initial forensic audit event in a single transaction.
+  /// Atomically allocates the next daily queue number, creates the appointment,
+  /// and upserts the patient demographic profile in a single transaction.
   Future<int> bookAppointment({
     required String appointmentId,
     required Patient patient,
@@ -51,17 +36,8 @@ class BookingService {
     final counterRef = _countersRef.doc(
       FirestorePaths.doctorQueueCounter(doctorId, scheduledDate),
     );
-    final lockRef = _countersRef.doc(
-      FirestorePaths.bookingLock(
-        doctorId,
-        scheduledDate,
-        patient.phoneNumber,
-        patient.name,
-      ),
-    );
     final appointmentRef = _appointmentsRef.doc(appointmentId);
     final patientRef = _patientsRef.doc(patient.phoneNumber);
-    final eventRef = _eventsRef.doc();
     var queueNumber = 1;
 
     final effectiveCheckedInAt =
@@ -69,15 +45,7 @@ class BookingService {
         (visitStatus == VisitStatus.waitingInLobby ? DateTime.now() : null);
 
     await _firestore.runTransaction((transaction) async {
-      // 1. Concurrency Boundary: Verify atomic duplicate lock
-      final lockSnapshot = await transaction.get(lockRef);
-      if (lockSnapshot.exists) {
-        throw DuplicateBookingException(
-          'Patient ${patient.name} already has an active booking with this doctor today.',
-        );
-      }
-
-      // 2. Read current daily queue number
+      // 1. Read current daily queue number
       final snapshot = await transaction.get(counterRef);
       queueNumber =
           ((snapshot.data()?['currentNumber'] as num?)?.toInt() ?? 0) + 1;
@@ -96,26 +64,7 @@ class BookingService {
         checkedInAt: effectiveCheckedInAt,
       );
 
-      final event = AppointmentEvent(
-        id: eventRef.id,
-        appointmentId: appointmentId,
-        eventType: AppointmentEventType.created,
-        visitStatus: visitStatus,
-        amountCollected: amountCollected,
-        paymentType: paymentType,
-        actorRole: 'receptionist',
-        timestamp: DateTime.now(),
-        note: 'Appointment booked (Token #$queueNumber)',
-      );
-
-      // 3. Commit atomic writes
-      transaction.set(lockRef, {
-        'appointmentId': appointmentId,
-        'createdAt': FieldValue.serverTimestamp(),
-        'doctorId': doctorId,
-        'patientPhone': patient.phoneNumber,
-        'patientName': patient.name,
-      });
+      // 2. Commit atomic writes
       transaction.set(counterRef, {'currentNumber': queueNumber});
       transaction.set(appointmentRef, appointment.toJson());
       transaction.set(patientRef, {
@@ -125,24 +74,20 @@ class BookingService {
         'gender': patient.gender,
         'phoneNumber': patient.phoneNumber,
       }, SetOptions(merge: true));
-      transaction.set(eventRef, event.toJson());
     });
 
     return queueNumber;
   }
 
   /// 1-tap reception check-in workflow for advance/phone bookings.
-  /// Updates visitStatus to waitingInLobby, updates payment details, timestamps checkedInAt,
-  /// and appends an immutable audit event.
+  /// Updates visitStatus to waitingInLobby, updates payment details, and timestamps checkedInAt.
   Future<void> checkInPatient({
     required String appointmentId,
     required PaymentType paymentType,
     required int amountCollected,
     DateTime? checkedInAt,
   }) async {
-    final batch = _firestore.batch();
     final apptDoc = _appointmentsRef.doc(appointmentId);
-    final eventDoc = _eventsRef.doc();
 
     final checkInTime = checkedInAt ?? DateTime.now();
     final Map<String, dynamic> data = {
@@ -152,51 +97,20 @@ class BookingService {
       'amountCollected': amountCollected,
       'checkedInAt': Timestamp.fromDate(checkInTime),
     };
-    batch.update(apptDoc, data);
-
-    final event = AppointmentEvent(
-      id: eventDoc.id,
-      appointmentId: appointmentId,
-      eventType: AppointmentEventType.checkedIn,
-      visitStatus: VisitStatus.waitingInLobby,
-      amountCollected: amountCollected,
-      paymentType: paymentType,
-      actorRole: 'receptionist',
-      timestamp: checkInTime,
-      note: 'Patient checked into lobby desk',
-    );
-    batch.set(eventDoc, event.toJson());
-
-    await batch.commit();
+    await apptDoc.update(data);
   }
 
-  /// Updates appointment visitStatus to inConsultation when entering chamber and appends audit event.
+  /// Updates appointment visitStatus to inConsultation when entering chamber.
   Future<void> admitPatientToChamber(String appointmentId) async {
-    final batch = _firestore.batch();
     final apptDoc = _appointmentsRef.doc(appointmentId);
-    final eventDoc = _eventsRef.doc();
 
-    batch.update(apptDoc, {
+    await apptDoc.update({
       'visitStatus': VisitStatus.inConsultation.name,
       'status': AppointmentStatus.pending.name,
     });
-
-    final event = AppointmentEvent(
-      id: eventDoc.id,
-      appointmentId: appointmentId,
-      eventType: AppointmentEventType.admitted,
-      visitStatus: VisitStatus.inConsultation,
-      actorRole: 'receptionist',
-      timestamp: DateTime.now(),
-      note: 'Patient admitted into doctor chamber',
-    );
-    batch.set(eventDoc, event.toJson());
-
-    await batch.commit();
   }
 
-  /// Updates status and optionally collected amount, payment type, or visitStatus,
-  /// and appends an immutable audit event.
+  /// Updates status and optionally collected amount, payment type, or visitStatus.
   Future<void> updateAppointmentStatus(
     String appointmentId,
     AppointmentStatus status, {
@@ -223,46 +137,8 @@ class BookingService {
       data['paymentType'] = paymentType.name;
     }
 
-    final batch = _firestore.batch();
     final apptDoc = _appointmentsRef.doc(appointmentId);
-    final eventDoc = _eventsRef.doc();
-
-    batch.update(apptDoc, data);
-
-    final eventType = status == AppointmentStatus.absent
-        ? AppointmentEventType.markedAbsent
-        : (status == AppointmentStatus.completed
-              ? AppointmentEventType.completed
-              : AppointmentEventType.statusUpdated);
-
-    final event = AppointmentEvent(
-      id: eventDoc.id,
-      appointmentId: appointmentId,
-      eventType: eventType,
-      visitStatus: effectiveVisitStatus,
-      amountCollected: collectedAmount,
-      paymentType: paymentType,
-      actorRole: 'receptionist',
-      timestamp: DateTime.now(),
-      note: 'Status updated to ${status.name} / ${effectiveVisitStatus.name}',
-    );
-    batch.set(eventDoc, event.toJson());
-
-    await batch.commit();
-  }
-
-  /// Streams audit trail events for a specific appointment, ordered by timestamp.
-  Stream<List<AppointmentEvent>> getAppointmentEvents(String appointmentId) {
-    return _eventsRef
-        .where('appointmentId', isEqualTo: appointmentId)
-        .snapshots()
-        .map((snapshot) {
-          final events = snapshot.docs
-              .map((doc) => AppointmentEvent.fromJson(doc.data()))
-              .toList();
-          events.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-          return events;
-        });
+    await apptDoc.update(data);
   }
 
   /// Streams appointments for a given calendar date.
