@@ -111,7 +111,8 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       statusBadgeBg = const Color(0xFFDCFCE7);
                       statusBadgeFg = const Color(0xFF15803D);
                       statusLabel = 'READY FOR NEXT';
-                      statusSubtitle = '🟢 Doctor is READY! Call next patient.';
+                      statusSubtitle =
+                          '🟢 Doctor is READY! Call next • Pace: ~8-10 min/pt';
                     } else if (isEnded) {
                       statusBadgeBg = const Color(0xFFFEF3C7);
                       statusBadgeFg = const Color(0xFFB45309);
@@ -130,13 +131,13 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       statusLabel = 'CONSULTING';
                       final activePName = session?.patientName;
                       statusSubtitle =
-                          '🩺 Consulting Token #${session?.activeQueueNumber ?? '--'}${activePName != null && activePName.isNotEmpty ? ' ($activePName)' : ''}';
+                          '🩺 Consulting Token #${session?.activeQueueNumber ?? '--'}${activePName != null && activePName.isNotEmpty ? ' ($activePName)' : ''} • Pace: ~8-10 min/pt';
                     } else {
                       statusBadgeBg = const Color(0xFFF1F5F9);
                       statusBadgeFg = const Color(0xFF64748B);
                       statusLabel = 'IDLE';
                       statusSubtitle =
-                          '${AppFormatters.specialty(doc.specialty)} • Fee: ₹${doc.consultationFee}';
+                          '${AppFormatters.specialty(doc.specialty)} • Fee: ₹${doc.consultationFee} • Pace: ~8-10 min/pt';
                     }
 
                     return ListTile(

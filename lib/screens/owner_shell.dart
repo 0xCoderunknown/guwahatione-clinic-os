@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
@@ -56,6 +57,14 @@ class _OwnerShellState extends State<OwnerShell> {
         }
       });
     }
+  }
+
+  void _openWalkInBooking(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AddAppointmentDialog(),
+    );
   }
 
   @override
@@ -134,18 +143,27 @@ class _OwnerShellState extends State<OwnerShell> {
     // Ensure selected index is within bounds when stepping down
     final safeIndex = _selectedIndex < pages.length ? _selectedIndex : 0;
 
-    return Listener(
-      onPointerDown: (_) => _resetInactivityTimer(),
-      onPointerMove: (_) => _resetInactivityTimer(),
-      child: isDesktop
-          ? _buildDesktopShell(
-              context,
-              auth,
-              safeIndex,
-              pages,
-              desktopDestinations,
-            )
-          : _buildMobileShell(context, safeIndex, pages, mobileDestinations),
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.f2): () =>
+            _openWalkInBooking(context),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Listener(
+          onPointerDown: (_) => _resetInactivityTimer(),
+          onPointerMove: (_) => _resetInactivityTimer(),
+          child: isDesktop
+              ? _buildDesktopShell(
+                  context,
+                  auth,
+                  safeIndex,
+                  pages,
+                  desktopDestinations,
+                )
+              : _buildMobileShell(context, safeIndex, pages, mobileDestinations),
+        ),
+      ),
     );
   }
 
@@ -304,39 +322,49 @@ class _OwnerShellState extends State<OwnerShell> {
                       const SizedBox(width: 14),
                     ],
 
-                    // Lobby Waiting Badge
+                    // End-of-Day Cash Handover Button
                     Consumer<ClinicProvider>(
-                      builder: (_, clinic, _) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade50,
+                      builder: (_, clinic, _) => Tooltip(
+                        message:
+                            'End-of-Day Cash Handover & Note Reconciliation',
+                        child: InkWell(
+                          onTap: () =>
+                              DailyCashHandoverDialog.show(context, clinic),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.amber.shade300),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.hourglass_top_rounded,
-                              size: 14,
-                              color: Colors.amber.shade800,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
                             ),
-                            const SizedBox(width: 5),
-                            Text(
-                              "Lobby: ${clinic.waitingCount} Waiting",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.amber.shade900,
-                              ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0FDF4),
+                              borderRadius: BorderRadius.circular(20),
+                              border:
+                                  Border.all(color: const Color(0xFF86EFAC)),
                             ),
-                          ],
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.receipt_long_rounded,
+                                  size: 14,
+                                  color: Color(0xFF15803D),
+                                ),
+                                SizedBox(width: 5),
+                                Text(
+                                  'Cash Handover',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF15803D),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 10),
 
                     // Lobby Sound Announcer Toggle
                     Consumer<SoundService>(
@@ -391,26 +419,37 @@ class _OwnerShellState extends State<OwnerShell> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 14),
 
-                    // Primary Single Walk-In Patient Entry Point
-                    FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                    // Primary Single Walk-In Patient Entry Point (Hotkey: F2)
+                    Tooltip(
+                      message: 'Register Walk-In Patient (Hotkey: F2)',
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        onPressed: () => _openWalkInBooking(context),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('Book Walk-In'),
+                            SizedBox(width: 6),
+                            Text(
+                              '(F2)',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (_) => const AddAppointmentDialog(),
-                        );
-                      },
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Book Walk-In Patient'),
                     ),
                   ],
                 ),

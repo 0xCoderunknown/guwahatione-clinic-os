@@ -10,6 +10,29 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
+## [1.30.0] — 14-10-2026
+
+### Dashboard Header Reorganization & Operational Lifecycle KPI Hierarchy
+- **Operational Impact:**
+  - **Eliminated Header Clutter:** Removed redundant "Lobby Waiting" pill and "Doctors Active" badges from top bars.
+  - **Relocated Financial Utilities:** Moved the `[ Cash Handover ]` modal button from the date sub-bar up into the primary top-right utility area alongside `[ Chime On / Muted ]`.
+  - **Keyboard-First Walk-In Booking:** Bound global hotkey `F2` to trigger `[ Book Walk-In ]` instantly without touching the mouse.
+  - **Operational Lifecycle KPI Strip:** Restructured the 4 top metrics cards to track the real-world outpatient lifecycle:
+    1. ⏳ **Waiting in Lobby** (`VisitStatus.waitingInLobby`) — Patients physically at the counter/lobby.
+    2. 📞 **Expected / Booked** (`VisitStatus.booked`) — Phone/advance reservations not yet checked in.
+    3. 🩺 **Inside Chamber** (`VisitStatus.inConsultation`) — Active patient encounters in consultation across all rooms.
+    4. 🟢 **Completed** (`VisitStatus.completed`) — Finished visits today.
+  - **Demoted Queue Pace:** Removed standalone `Queue Pace` card from top KPIs; embedded compact pace telemetry (`• Pace: ~8-10 min/pt`) directly into individual doctor cards in the Doctor Chamber Roster.
+- **Architectural Touchpoints:**
+  - `lib/providers/clinic_provider.dart`: Added typed operational lifecycle getters (`waitingInLobbyCount`, `expectedBookedCount`, `inConsultationCount`).
+  - `lib/screens/owner_shell.dart`: Added `CallbackShortcuts` binding `F2` to `_openWalkInBooking`; mounted `DailyCashHandoverDialog` button in desktop AppBar utility actions; pruned redundant lobby pill.
+  - `lib/widgets/dashboard/dashboard_header_bar.dart`: Streamlined date greeting row to focus strictly on calendar identity and instant phone/token search bar.
+  - `lib/widgets/dashboard/dashboard_kpi_strip.dart`: Wired 4 lifecycle cards with dedicated amber, blue, purple, and green themes; pruned unused imports.
+  - `lib/widgets/dashboard/dashboard_doctor_roster_card.dart`: Integrated pace subtitle into doctor chamber status rows.
+  - `test/opd_checkin_payment_workflow_test.dart`: Added unit test coverage for operational lifecycle queue partitioning (185 tests passing).
+
+---
+
 ## [1.29.1] — 14-10-2026
 
 ### Architectural Compliance & Invariant #10 Debt Remediation

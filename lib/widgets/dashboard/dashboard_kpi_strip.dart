@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../providers/clinic_provider.dart';
 import '../../screens/appointment_list_screen.dart';
-import '../../screens/doctor_list_screen.dart';
 import '../common/metric_kpi_card.dart';
 
 /// Responsive KPI Metrics Strip for Reception Dashboard.
@@ -21,11 +20,10 @@ class DashboardKpiStrip extends StatelessWidget {
     final cards = [
       DashboardKpiData(
         title: 'Waiting in Lobby',
-        value: '${provider.waitingCount}',
-        subtitle: 'Patients awaiting entry',
+        value: '${provider.waitingInLobbyCount}',
+        subtitle: 'Physically at desk / lobby',
         icon: Icons.hourglass_top_rounded,
-        color: const Color(0xFFD97706),
-        // Amber
+        color: const Color(0xFFD97706), // Amber
         bgColor: const Color(0xFFFFFBEB),
         onTap: () => Navigator.push(
           context,
@@ -33,25 +31,11 @@ class DashboardKpiStrip extends StatelessWidget {
         ),
       ),
       DashboardKpiData(
-        title: 'Completed Today',
-        value: '${provider.completedCount}',
-        subtitle: 'Finished consultations',
-        icon: Icons.check_circle_outline_rounded,
-        color: const Color(0xFF059669),
-        // Green
-        bgColor: const Color(0xFFECFDF5),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AppointmentListScreen()),
-        ),
-      ),
-      DashboardKpiData(
-        title: 'Total Registered',
-        value: '${provider.todayAppointments.length}',
-        subtitle: '${provider.absentCount} absent / no-shows',
-        icon: Icons.people_outline_rounded,
-        color: const Color(0xFF2563EB),
-        // Blue
+        title: 'Expected / Booked',
+        value: '${provider.expectedBookedCount}',
+        subtitle: 'Advance & phone reservations',
+        icon: Icons.phone_in_talk_rounded,
+        color: const Color(0xFF2563EB), // Blue
         bgColor: const Color(0xFFEFF6FF),
         onTap: () => Navigator.push(
           context,
@@ -59,16 +43,27 @@ class DashboardKpiStrip extends StatelessWidget {
         ),
       ),
       DashboardKpiData(
-        title: 'Queue Pace',
-        value: '~8-10 min',
-        subtitle: 'Est. avg time / patient',
-        icon: Icons.speed_rounded,
-        color: const Color(0xFF7C3AED),
-        // Purple
+        title: 'Inside Chamber',
+        value: '${provider.inConsultationCount}',
+        subtitle: 'In active consultation',
+        icon: Icons.meeting_room_rounded,
+        color: const Color(0xFF7C3AED), // Purple
         bgColor: const Color(0xFFF5F3FF),
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const DoctorListScreen()),
+          MaterialPageRoute(builder: (_) => const AppointmentListScreen()),
+        ),
+      ),
+      DashboardKpiData(
+        title: 'Completed',
+        value: '${provider.completedCount}',
+        subtitle: '${provider.absentCount} absent / no-shows',
+        icon: Icons.check_circle_outline_rounded,
+        color: const Color(0xFF059669), // Green
+        bgColor: const Color(0xFFECFDF5),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AppointmentListScreen()),
         ),
       ),
     ];

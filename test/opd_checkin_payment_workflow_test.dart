@@ -230,5 +230,113 @@ void main() {
       expect(PaymentType.freeReview.isFree, isTrue);
       expect(PaymentType.freeFamily.isPaid, isFalse);
     });
+
+    test('Operational lifecycle queue partition segregates lobby, booked, inConsultation, and completed', () {
+      final today = DateTime(2026, 10, 14);
+      final appointments = [
+        Appointment(
+          id: 'appt-1',
+          patientPhone: '9876500001',
+          patientName: 'Lobby Patient 1',
+          visitStatus: VisitStatus.waitingInLobby,
+          paymentType: PaymentType.paidCash,
+          amountCollected: 500,
+          queueNumber: 1,
+          scheduledDate: today,
+          doctorId: sampleDoctor.id,
+          doctorName: sampleDoctor.name,
+        ),
+        Appointment(
+          id: 'appt-2',
+          patientPhone: '9876500002',
+          patientName: 'Lobby Patient 2',
+          visitStatus: VisitStatus.waitingInLobby,
+          paymentType: PaymentType.paidUpi,
+          amountCollected: 500,
+          queueNumber: 2,
+          scheduledDate: today,
+          doctorId: sampleDoctor.id,
+          doctorName: sampleDoctor.name,
+        ),
+        Appointment(
+          id: 'appt-3',
+          patientPhone: '9876500003',
+          patientName: 'Booked Phone Patient',
+          visitStatus: VisitStatus.booked,
+          paymentType: PaymentType.unpaid,
+          amountCollected: 0,
+          queueNumber: 3,
+          scheduledDate: today,
+          doctorId: sampleDoctor.id,
+          doctorName: sampleDoctor.name,
+        ),
+        Appointment(
+          id: 'appt-4',
+          patientPhone: '9876500004',
+          patientName: 'In Chamber Patient',
+          visitStatus: VisitStatus.inConsultation,
+          paymentType: PaymentType.paidCash,
+          amountCollected: 500,
+          queueNumber: 4,
+          scheduledDate: today,
+          doctorId: sampleDoctor.id,
+          doctorName: sampleDoctor.name,
+        ),
+        Appointment(
+          id: 'appt-5',
+          patientPhone: '9876500005',
+          patientName: 'Completed Patient',
+          status: AppointmentStatus.completed,
+          visitStatus: VisitStatus.completed,
+          paymentType: PaymentType.paidCash,
+          amountCollected: 500,
+          queueNumber: 5,
+          scheduledDate: today,
+          doctorId: sampleDoctor.id,
+          doctorName: sampleDoctor.name,
+        ),
+        Appointment(
+          id: 'appt-6',
+          patientPhone: '9876500006',
+          patientName: 'Absent Patient',
+          status: AppointmentStatus.absent,
+          visitStatus: VisitStatus.cancelled,
+          paymentType: PaymentType.unpaid,
+          amountCollected: 0,
+          queueNumber: 6,
+          scheduledDate: today,
+          doctorId: sampleDoctor.id,
+          doctorName: sampleDoctor.name,
+        ),
+      ];
+
+      final waitingInLobby = appointments
+          .where((a) =>
+              a.visitStatus == VisitStatus.waitingInLobby &&
+              a.status != AppointmentStatus.absent)
+          .length;
+      final expectedBooked = appointments
+          .where((a) =>
+              a.visitStatus == VisitStatus.booked &&
+              a.status != AppointmentStatus.absent)
+          .length;
+      final inConsultation = appointments
+          .where((a) =>
+              a.visitStatus == VisitStatus.inConsultation &&
+              a.status != AppointmentStatus.absent)
+          .length;
+      final completed = appointments
+          .where((a) => a.status == AppointmentStatus.completed)
+          .length;
+      final absent = appointments
+          .where((a) => a.status == AppointmentStatus.absent)
+          .length;
+
+      expect(waitingInLobby, 2);
+      expect(expectedBooked, 1);
+      expect(inConsultation, 1);
+      expect(completed, 1);
+      expect(absent, 1);
+    });
   });
 }

@@ -137,7 +137,7 @@ lib/
 ├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
 ├── widgets/      -> Reusable UI sub-packages (booking, catalogue, chamber, common, dashboard, encounter, print, queue)
 └── utils/        -> Helpers (Default medicines, app constants, platform print, platform sound, formatters)
-test/             -> Automated test suite (184 automated unit and widget tests covering engines, flows, models, and platform services)
+test/             -> Automated test suite (185 automated unit and widget tests covering engines, flows, models, and platform services)
 docs/
 ├── SCHEMA_AND_MODELS.md  -> Master data dictionary for Firestore collections & models
 ├── PRODUCT_VISION_AND_WORKFLOW.md -> Clinical encounter blueprint & real-world OPD intent

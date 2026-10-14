@@ -67,6 +67,33 @@ class ClinicProvider with ChangeNotifier {
 
   int get waitingCount => pendingCount;
 
+  /// Count of patients physically present at the clinic desk / lobby ready for chamber.
+  int get waitingInLobbyCount => _todayAppointments
+      .where(
+        (a) =>
+            a.visitStatus == VisitStatus.waitingInLobby &&
+            a.status != AppointmentStatus.absent,
+      )
+      .length;
+
+  /// Count of phone / advance reservations expected today but not yet physically checked in.
+  int get expectedBookedCount => _todayAppointments
+      .where(
+        (a) =>
+            a.visitStatus == VisitStatus.booked &&
+            a.status != AppointmentStatus.absent,
+      )
+      .length;
+
+  /// Count of patients currently in consultation across all active doctor chambers.
+  int get inConsultationCount => _todayAppointments
+      .where(
+        (a) =>
+            a.visitStatus == VisitStatus.inConsultation &&
+            a.status != AppointmentStatus.absent,
+      )
+      .length;
+
   int get completedCount => _todayAppointments
       .where((a) => a.status == AppointmentStatus.completed)
       .length;

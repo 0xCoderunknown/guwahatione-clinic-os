@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
-import 'daily_cash_handover_dialog.dart';
 
 /// Top clinic greeting, live date bar, and instant patient phone/token search bar.
 class DashboardHeaderBar extends StatefulWidget {
@@ -105,75 +104,6 @@ class _DashboardHeaderBarState extends State<DashboardHeaderBar> {
                     style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                   ),
                 ],
-              ),
-              const Spacer(),
-              // End-of-Day Cash Handover Button
-              InkWell(
-                onTap: () =>
-                    DailyCashHandoverDialog.show(context, widget.provider),
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDF4),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF86EFAC)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.receipt_long_rounded,
-                        size: 14,
-                        color: Color(0xFF15803D),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        'Cash Handover',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF15803D),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Active Doctor Chamber count indicator
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.meeting_room_rounded,
-                      size: 13,
-                      color: Colors.teal,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      '${widget.provider.doctors.length} Doctors Active',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF334155),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ],
           ),
