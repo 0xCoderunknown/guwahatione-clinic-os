@@ -19,9 +19,21 @@ class DashboardKpiStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final cards = [
       DashboardKpiData(
-        title: 'Waiting in Lobby',
+        title: 'Total Booked',
+        value: '${provider.todayAppointments.length}',
+        subtitle: 'Advance & walk-in bookings',
+        icon: Icons.calendar_today_rounded,
+        color: const Color(0xFF2563EB), // Blue
+        bgColor: const Color(0xFFEFF6FF),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AppointmentListScreen()),
+        ),
+      ),
+      DashboardKpiData(
+        title: 'In Lobby',
         value: '${provider.waitingInLobbyCount}',
-        subtitle: 'Physically at desk / lobby',
+        subtitle: 'Physically at desk / paid',
         icon: Icons.hourglass_top_rounded,
         color: const Color(0xFFD97706), // Amber
         bgColor: const Color(0xFFFFFBEB),
@@ -31,36 +43,24 @@ class DashboardKpiStrip extends StatelessWidget {
         ),
       ),
       DashboardKpiData(
-        title: 'Upcoming bookings',
-        value: '${provider.expectedBookedCount}',
-        subtitle: 'Advance & phone reservations',
-        icon: Icons.phone_in_talk_rounded,
-        color: const Color(0xFF2563EB), // Blue
-        bgColor: const Color(0xFFEFF6FF),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AppointmentListScreen()),
-        ),
-      ),
-      DashboardKpiData(
-        title: 'Inside Chamber',
-        value: '${provider.inConsultationCount}',
-        subtitle: 'In active consultation',
-        icon: Icons.meeting_room_rounded,
-        color: const Color(0xFF7C3AED), // Purple
-        bgColor: const Color(0xFFF5F3FF),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AppointmentListScreen()),
-        ),
-      ),
-      DashboardKpiData(
         title: 'Completed',
         value: '${provider.completedCount}',
-        subtitle: '${provider.absentCount} absent / no-shows',
+        subtitle: 'Consultations finished',
         icon: Icons.check_circle_outline_rounded,
         color: const Color(0xFF059669), // Green
         bgColor: const Color(0xFFECFDF5),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AppointmentListScreen()),
+        ),
+      ),
+      DashboardKpiData(
+        title: 'No-Show',
+        value: '${provider.absentCount}',
+        subtitle: 'Absent / cancelled visits',
+        icon: Icons.person_off_outlined,
+        color: const Color(0xFF64748B), // Slate
+        bgColor: const Color(0xFFF8FAFC),
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const AppointmentListScreen()),

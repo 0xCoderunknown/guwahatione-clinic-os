@@ -242,6 +242,8 @@ class ClinicProvider with ChangeNotifier {
     int consultationFee = 500,
     int freeReviewDays = 14,
     String? medicalRegNumber,
+    String shiftTiming = '6:00 PM – 8:30 PM',
+    int dailyTokenLimit = 18,
     UserRole? requestingRole,
   }) async {
     if (requestingRole != null && !requestingRole.isOwner) {
@@ -262,6 +264,8 @@ class ClinicProvider with ChangeNotifier {
         consultationFee: consultationFee,
         freeReviewDays: freeReviewDays,
         medicalRegNumber: medicalRegNumber,
+        shiftTiming: shiftTiming,
+        dailyTokenLimit: dailyTokenLimit,
       );
       await _doctorService.addDoctor(newDoctor);
     } catch (e) {

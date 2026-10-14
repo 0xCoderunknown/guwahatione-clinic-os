@@ -411,4 +411,52 @@ abstract class AppointmentEngine {
   }) {
     return appointments.where((a) => a.doctorId == doctorId).length;
   }
+
+  /// Calculates total booked tokens count for a doctor on a target date.
+  ///
+  /// Reflects the highest issued queue token ($1 \dots N$) to maintain audit-proof
+  /// capacity tracking according to sequential queue invariants.
+  static int calculateBookedTokensCount({
+    required List<Appointment> appointments,
+    required String doctorId,
+    required DateTime targetDate,
+  }) {
+    final nextToken = calculateProvisionalNextToken(
+      appointments: appointments,
+      doctorId: doctorId,
+      targetDate: targetDate,
+    );
+    return nextToken > 1 ? nextToken - 1 : 0;
+  }
+
+  /// Evaluates the token cap alert status based on [bookedCount] and [limit].
+  ///
+  /// - [TokenCapStatus.overCap]: bookedCount > limit (e.g. 19/18)
+  /// - [TokenCapStatus.atLimit]: bookedCount == limit (e.g. 18/18)
+  /// - [TokenCapStatus.runwayAlert]: bookedCount >= limit - 2 (e.g. 16/18 or 17/18)
+  /// - [TokenCapStatus.normal]: bookedCount < limit - 2 (e.g. 12/18)
+  static TokenCapStatus evaluateTokenCapStatus({
+    required int bookedCount,
+    required int limit,
+  }) {
+    if (bookedCount > limit) return TokenCapStatus.overCap;
+    if (bookedCount == limit) return TokenCapStatus.atLimit;
+    if (bookedCount >= limit - 2) return TokenCapStatus.runwayAlert;
+    return TokenCapStatus.normal;
+  }
+}
+
+/// Operational token allocation alert statuses for doctor OPD capacity.
+enum TokenCapStatus {
+  /// Regular volume comfortably under limit (< limit - 2).
+  normal,
+
+  /// Runway warning threshold reached (limit - 2 <= booked < limit).
+  runwayAlert,
+
+  /// Capacity cap fully filled (booked == limit).
+  atLimit,
+
+  /// Over-cap booking allowed for emergency front-desk admissions (booked > limit).
+  overCap,
 }

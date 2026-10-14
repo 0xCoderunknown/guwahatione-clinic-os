@@ -151,6 +151,16 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     return '~$startStr – $endStr';
   }
 
+  int get _bookedTokensCount {
+    if (_selectedDoctor == null) return 0;
+    final provider = Provider.of<ClinicProvider>(context, listen: false);
+    return AppointmentEngine.calculateBookedTokensCount(
+      appointments: provider.todayAppointments,
+      doctorId: _selectedDoctor!.id,
+      targetDate: _selectedDate,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final doctors = Provider.of<ClinicProvider>(context).doctors;
@@ -280,6 +290,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     amountFocusNode: _amountFocusNode,
                     provisionalToken: _provisionalToken,
                     provisionalTimeWindow: _provisionalTimeWindow,
+                    bookedTokensCount: _bookedTokensCount,
                     onDoctorChanged: (val) {
                       setState(() {
                         _selectedDoctor = val;

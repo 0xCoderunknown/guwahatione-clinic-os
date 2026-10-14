@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
 import '../../models/doctor.dart';
 import '../../models/patient_review_eligibility.dart';
@@ -20,6 +21,7 @@ class BookingPaymentSection extends StatelessWidget {
   final FocusNode? amountFocusNode;
   final int? provisionalToken;
   final String? provisionalTimeWindow;
+  final int bookedTokensCount;
   final VoidCallback? onSubmitted;
 
   const BookingPaymentSection({
@@ -36,6 +38,7 @@ class BookingPaymentSection extends StatelessWidget {
     this.amountFocusNode,
     this.provisionalToken,
     this.provisionalTimeWindow,
+    this.bookedTokensCount = 0,
     this.onSubmitted,
   });
 
@@ -59,6 +62,16 @@ class BookingPaymentSection extends StatelessWidget {
           onChanged: onDoctorChanged,
           validator: (val) => val == null ? 'Please select a doctor' : null,
         ),
+        if (selectedDoctor != null) ...[
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: _buildTokenCapBadge(
+              bookedTokensCount,
+              selectedDoctor!.dailyTokenLimit,
+            ),
+          ),
+        ],
         const SizedBox(height: 8),
 
         // Live Provisional Token & Estimated Wait Time Badge
@@ -235,6 +248,64 @@ class BookingPaymentSection extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTokenCapBadge(int booked, int limit) {
+    final status = AppointmentEngine.evaluateTokenCapStatus(
+      bookedCount: booked,
+      limit: limit,
+    );
+
+    Color bgColor;
+    Color fgColor;
+    Border? border;
+    String text;
+
+    switch (status) {
+      case TokenCapStatus.normal:
+        bgColor = const Color(0xFFF1F5F9);
+        fgColor = const Color(0xFF475569);
+        border = Border.all(color: const Color(0xFFCBD5E1));
+        text = '$booked/$limit Booked';
+        break;
+      case TokenCapStatus.runwayAlert:
+        bgColor = const Color(0xFFFEF3C7);
+        fgColor = const Color(0xFFB45309);
+        border = Border.all(color: const Color(0xFFFCD34D));
+        final left = limit - booked;
+        text = '⚠️ $booked/$limit Booked • $left Left';
+        break;
+      case TokenCapStatus.atLimit:
+        bgColor = const Color(0xFFFFEDD5);
+        fgColor = const Color(0xFFC2410C);
+        border = Border.all(color: const Color(0xFFFDBA74));
+        text = '⚠️ $booked/$limit Full';
+        break;
+      case TokenCapStatus.overCap:
+        bgColor = const Color(0xFFFEF2F2);
+        fgColor = const Color(0xFFB91C1C);
+        border = Border.all(color: const Color(0xFFEF4444), width: 1.2);
+        text = '🔴 $booked/$limit • Extra Token';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: border,
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
+          color: fgColor,
+          letterSpacing: 0.2,
+        ),
       ),
     );
   }

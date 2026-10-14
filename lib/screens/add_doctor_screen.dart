@@ -50,6 +50,8 @@ class _DoctorFormState extends State<DoctorForm> {
   late final TextEditingController _reviewDaysController;
   late final TextEditingController _pinController;
   late final TextEditingController _regNumberController;
+  late final TextEditingController _shiftTimingController;
+  late final TextEditingController _tokenLimitController;
 
   final List<String> _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   late List<String> _selectedDays;
@@ -72,6 +74,12 @@ class _DoctorFormState extends State<DoctorForm> {
     _regNumberController = TextEditingController(
       text: d?.medicalRegNumber ?? '',
     );
+    _shiftTimingController = TextEditingController(
+      text: d?.shiftTiming ?? '6:00 PM – 8:30 PM',
+    );
+    _tokenLimitController = TextEditingController(
+      text: (d?.dailyTokenLimit ?? 18).toString(),
+    );
     _selectedDays = d != null
         ? List<String>.from(d.availableDays)
         : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -86,6 +94,8 @@ class _DoctorFormState extends State<DoctorForm> {
     _reviewDaysController.dispose();
     _pinController.dispose();
     _regNumberController.dispose();
+    _shiftTimingController.dispose();
+    _tokenLimitController.dispose();
     super.dispose();
   }
 
@@ -186,6 +196,39 @@ class _DoctorFormState extends State<DoctorForm> {
               }
               return null;
             },
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                flex: 6,
+                child: TextFormField(
+                  controller: _shiftTimingController,
+                  decoration: const InputDecoration(
+                    labelText: 'Shift / OPD Timing',
+                    hintText: 'e.g., 6:00 PM – 8:30 PM',
+                    prefixIcon: Icon(Icons.access_time_rounded),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 4,
+                child: TextFormField(
+                  controller: _tokenLimitController,
+                  decoration: const InputDecoration(
+                    labelText: 'Daily Token Cap',
+                    hintText: '18',
+                    prefixIcon: Icon(Icons.confirmation_number_outlined),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (v) =>
+                      v == null || int.tryParse(v.trim()) == null
+                          ? 'Number required'
+                          : null,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 6),
           Wrap(
@@ -307,6 +350,8 @@ class _DoctorFormState extends State<DoctorForm> {
       final reviewDays = int.tryParse(_reviewDaysController.text.trim()) ?? 14;
       final pin = _pinController.text.trim();
       final regNumber = _regNumberController.text.trim();
+      final shiftTiming = _shiftTimingController.text.trim();
+      final tokenLimit = int.tryParse(_tokenLimitController.text.trim()) ?? 18;
       final clinicProvider = Provider.of<ClinicProvider>(
         context,
         listen: false,
@@ -323,6 +368,8 @@ class _DoctorFormState extends State<DoctorForm> {
           freeReviewDays: reviewDays,
           pin: pin.isNotEmpty ? pin : widget.doctor!.pin,
           medicalRegNumber: regNumber.isNotEmpty ? regNumber : null,
+          shiftTiming: shiftTiming.isNotEmpty ? shiftTiming : null,
+          dailyTokenLimit: tokenLimit,
         );
         await clinicProvider.updateDoctor(
           updatedDoctor,
@@ -338,6 +385,10 @@ class _DoctorFormState extends State<DoctorForm> {
           consultationFee: fee,
           freeReviewDays: reviewDays,
           medicalRegNumber: regNumber.isNotEmpty ? regNumber : null,
+          shiftTiming: shiftTiming.isNotEmpty
+              ? shiftTiming
+              : '6:00 PM – 8:30 PM',
+          dailyTokenLimit: tokenLimit,
           requestingRole: authProvider.currentRole,
         );
       }

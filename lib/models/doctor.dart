@@ -11,8 +11,9 @@ class Doctor {
   final int consultationFee; // Default consultation fee in INR
   final int freeReviewDays; // Free review policy window in days (0 to 30; 0 = no free review)
   final String searchPreference; // 'brandFirst' | 'compositionFirst'
-  final String?
-  medicalRegNumber; // State Medical Council / NMC Reg No. (e.g. 'AMC-24891')
+  final String? medicalRegNumber; // State Medical Council / NMC Reg No. (e.g. 'AMC-24891')
+  final String shiftTiming; // e.g. '6:00 PM – 8:30 PM'
+  final int dailyTokenLimit; // Daily token cap (default: 18)
 
   Doctor({
     required this.id,
@@ -26,7 +27,18 @@ class Doctor {
     this.freeReviewDays = 14,
     this.searchPreference = 'brandFirst',
     this.medicalRegNumber,
+    this.shiftTiming = '6:00 PM – 8:30 PM',
+    this.dailyTokenLimit = 18,
   });
+
+  /// Formatted schedule string: e.g. 'Mon, Wed, Fri • 6:00 PM – 8:30 PM'
+  String get formattedSchedule {
+    final days = availableDays.isNotEmpty
+        ? availableDays.join(', ')
+        : 'Mon, Wed, Fri';
+    final timing = shiftTiming.isNotEmpty ? shiftTiming : '6:00 PM – 8:30 PM';
+    return '$days • $timing';
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -41,6 +53,8 @@ class Doctor {
       'freeReviewDays': freeReviewDays,
       'searchPreference': searchPreference,
       'medicalRegNumber': medicalRegNumber,
+      'shiftTiming': shiftTiming,
+      'dailyTokenLimit': dailyTokenLimit,
     };
   }
 
@@ -67,6 +81,8 @@ class Doctor {
       freeReviewDays: (json['freeReviewDays'] as num?)?.toInt() ?? 14,
       searchPreference: json['searchPreference'] as String? ?? 'brandFirst',
       medicalRegNumber: json['medicalRegNumber'] as String?,
+      shiftTiming: json['shiftTiming'] as String? ?? '6:00 PM – 8:30 PM',
+      dailyTokenLimit: (json['dailyTokenLimit'] as num?)?.toInt() ?? 18,
     );
   }
 
@@ -82,6 +98,8 @@ class Doctor {
     int? freeReviewDays,
     String? searchPreference,
     String? medicalRegNumber,
+    String? shiftTiming,
+    int? dailyTokenLimit,
   }) {
     return Doctor(
       id: id ?? this.id,
@@ -95,6 +113,8 @@ class Doctor {
       freeReviewDays: freeReviewDays ?? this.freeReviewDays,
       searchPreference: searchPreference ?? this.searchPreference,
       medicalRegNumber: medicalRegNumber ?? this.medicalRegNumber,
+      shiftTiming: shiftTiming ?? this.shiftTiming,
+      dailyTokenLimit: dailyTokenLimit ?? this.dailyTokenLimit,
     );
   }
 }

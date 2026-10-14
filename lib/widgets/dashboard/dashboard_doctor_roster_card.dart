@@ -106,7 +106,7 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                     Color statusBadgeFg;
                     String statusLabel;
                     final statusSubtitle =
-                        '${AppFormatters.specialty(doc.specialty)} • ₹${doc.consultationFee}';
+                        '${AppFormatters.specialty(doc.specialty)} • ${doc.formattedSchedule}';
 
                     if (isReady) {
                       statusBadgeBg = const Color(0xFFDCFCE7);
@@ -119,7 +119,11 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                     } else if (isCalling || isInConsultation) {
                       statusBadgeBg = const Color(0xFFDBEAFE);
                       statusBadgeFg = const Color(0xFF1D4ED8);
-                      statusLabel = 'IN CONSULTATION';
+                      final activePatient = session?.patientName?.trim();
+                      statusLabel =
+                          (activePatient != null && activePatient.isNotEmpty)
+                              ? 'Consulting: $activePatient'
+                              : 'IN CONSULTATION';
                     } else {
                       statusBadgeBg = const Color(0xFFF1F5F9);
                       statusBadgeFg = const Color(0xFF64748B);

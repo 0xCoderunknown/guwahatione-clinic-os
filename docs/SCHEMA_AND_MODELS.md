@@ -53,6 +53,8 @@
 | `freeReviewDays` | `int` | Yes | Free review policy window in days (`0` to `30`; `0` = no free review; default: `14`). |
 | `searchPreference` | `String` | No | Drug search mode: `'brandFirst'` or `'compositionFirst'` (default: `'brandFirst'`). |
 | `medicalRegNumber` | `String?` | No | State Medical Council / NMC registration number (e.g. `'AMC-24891'`). |
+| `shiftTiming` | `String` | No | Active OPD sitting hours (e.g. `'6:00 PM – 8:30 PM'`; default: `'6:00 PM – 8:30 PM'`). |
+| `dailyTokenLimit` | `int` | No | Maximum token allocation cap per calendar day (default: `18`). |
 
 ---
 

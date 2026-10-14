@@ -10,6 +10,26 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
+## [1.32.3] — 14-10-2026
+
+### Reception Metrics Refinement, Doctor Schedule Display & Walk-In Token Cap Indicator
+- **Operational Impact:**
+  - **Doctor Sitting Schedule & Preserved Live State:** In `DoctorChamberRoster`, replaced static fee text with the doctor's active sitting schedule (`Mon, Wed, Fri • 6:00 PM – 8:30 PM`), while strictly preserving operational chamber statuses: `IDLE`, `READY`, `ON BREAK`, token counters, and the live consultation indicator `Consulting: [patient_name]`.
+  - **Compact Token Cap Indicator (Walk-In Booking):** In `AddAppointmentDialog`, added a minimal, high-signal badge directly beneath the doctor selector with 4 smooth color-coded threshold states: Normal `[ 12/18 Booked ]` (neutral grey), Runway Alert `[ ⚠️ 16/18 Booked • 2 Left ]` (amber), At Limit `[ ⚠️ 18/18 Full ]` (orange), and Over Cap `[ 🔴 19/18 • Extra Token ]` (red outline; allows walk-in booking without blocking).
+  - **Clean 4-Stage Reception Funnel:** Updated the top dashboard metrics strip to cleanly reflect front-desk pipeline progression: `Total Booked` (total scheduled today), `In Lobby` (physically arrived & paid), `Completed` (consultations finished), and `No-Show` (absent/cancelled) maintaining balanced 2×2 mobile geometry and 4-column desktop layout.
+- **Architectural Touchpoints:**
+  - `lib/models/doctor.dart`: Added `shiftTiming` (default: `'6:00 PM – 8:30 PM'`), `dailyTokenLimit` (default: `18`), and `formattedSchedule` getter.
+  - `docs/SCHEMA_AND_MODELS.md`: Updated `doctors` collection schema documentation.
+  - `lib/core/engines/appointment_engine.dart`: Added pure domain methods `calculateBookedTokensCount` and `evaluateTokenCapStatus` with `TokenCapStatus` enum (zero UI dependencies).
+  - `lib/widgets/dashboard/dashboard_doctor_roster_card.dart`: Subtitle now renders doctor specialty and active sitting schedule; status badge displays `Consulting: [patient_name]` during active consultations.
+  - `lib/widgets/booking/booking_payment_section.dart`: Rendered compact token cap pill directly under doctor dropdown.
+  - `lib/widgets/booking/add_appointment_dialog.dart`: Passed calculated booked tokens to `BookingPaymentSection`.
+  - `lib/widgets/dashboard/dashboard_kpi_strip.dart`: Updated KPI cards to 4-stage pipeline.
+  - `lib/screens/add_doctor_screen.dart` & `lib/providers/clinic_provider.dart`: Added configuration fields for shift timing and daily token cap.
+  - `test/reception_metrics_and_token_cap_test.dart`: Added 12 automated unit and widget tests covering all threshold transitions and UI displays (198 tests passing).
+
+---
+
 ## [1.32.2] — 14-10-2026
 
 ### Refactored Desktop Dashboard Header & Reception Ergonomics
