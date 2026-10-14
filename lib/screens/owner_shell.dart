@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
 import '../services/sound_service.dart';
+import '../utils/formatters.dart';
 import '../widgets/widgets.dart';
 import 'appointment_list_screen.dart';
 import 'dashboard_screen.dart';
@@ -278,12 +279,44 @@ class _OwnerShellState extends State<OwnerShell> {
                 elevation: 0.5,
                 title: Row(
                   children: [
-                    Text(
-                      _getTitleForIndex(selectedIndex, isOwner),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _getTitleForIndex(selectedIndex, isOwner),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            if (selectedIndex == 0) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                '•  ${AppFormatters.dateWithDay(DateTime.now())}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        if (selectedIndex == 0)
+                          const Text(
+                            'OPD Consultation Chamber & Reception Desk',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF94A3B8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                      ],
                     ),
                     const Spacer(),
 
@@ -322,43 +355,35 @@ class _OwnerShellState extends State<OwnerShell> {
                       const SizedBox(width: 14),
                     ],
 
-                    // End-of-Day Cash Handover Button
+                    // End-of-Day Cash Handover Button (Subtle Outline / Ghost)
                     Consumer<ClinicProvider>(
                       builder: (_, clinic, _) => Tooltip(
                         message:
                             'End-of-Day Cash Handover & Note Reconciliation',
-                        child: InkWell(
-                          onTap: () =>
-                              DailyCashHandoverDialog.show(context, clinic),
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF475569),
+                            side: const BorderSide(color: Color(0xFFCBD5E1)),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
-                              vertical: 6,
+                              vertical: 7,
                             ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF0FDF4),
-                              borderRadius: BorderRadius.circular(20),
-                              border:
-                                  Border.all(color: const Color(0xFF86EFAC)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Row(
-                              children: [
-                                Icon(
-                                  Icons.receipt_long_rounded,
-                                  size: 14,
-                                  color: Color(0xFF15803D),
-                                ),
-                                SizedBox(width: 5),
-                                Text(
-                                  'Cash Handover',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF15803D),
-                                  ),
-                                ),
-                              ],
+                          ),
+                          onPressed: () =>
+                              DailyCashHandoverDialog.show(context, clinic),
+                          icon: const Icon(
+                            Icons.receipt_long_rounded,
+                            size: 15,
+                            color: Color(0xFF64748B),
+                          ),
+                          label: const Text(
+                            'Cash Handover',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -366,55 +391,37 @@ class _OwnerShellState extends State<OwnerShell> {
                     ),
                     const SizedBox(width: 10),
 
-                    // Lobby Sound Announcer Toggle
+                    // Lobby Sound Announcer Toggle (Compact Icon Button)
                     Consumer<SoundService>(
                       builder: (_, sound, _) => Tooltip(
                         message: sound.isMuted
                             ? 'Lobby Announcer Muted (Click to Unmute)'
                             : 'Lobby Announcer Active (Click to Mute)',
-                        child: InkWell(
-                          onTap: () => sound.toggleMute(),
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
+                        child: IconButton(
+                          onPressed: () => sound.toggleMute(),
+                          icon: Icon(
+                            sound.isMuted
+                                ? Icons.volume_off_rounded
+                                : Icons.volume_up_rounded,
+                            size: 19,
+                            color: sound.isMuted
+                                ? const Color(0xFF94A3B8)
+                                : Colors.teal.shade700,
+                          ),
+                          style: IconButton.styleFrom(
+                            backgroundColor: sound.isMuted
+                                ? const Color(0xFFF1F5F9)
+                                : Colors.teal.shade50,
+                            side: BorderSide(
                               color: sound.isMuted
-                                  ? Colors.grey.shade100
-                                  : Colors.teal.shade50,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: sound.isMuted
-                                    ? Colors.grey.shade300
-                                    : Colors.teal.shade300,
-                              ),
+                                  ? const Color(0xFFE2E8F0)
+                                  : Colors.teal.shade200,
                             ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  sound.isMuted
-                                      ? Icons.volume_off_rounded
-                                      : Icons.volume_up_rounded,
-                                  size: 15,
-                                  color: sound.isMuted
-                                      ? Colors.grey.shade600
-                                      : Colors.teal.shade800,
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  sound.isMuted ? 'Muted' : 'Chime On',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: sound.isMuted
-                                        ? Colors.grey.shade700
-                                        : Colors.teal.shade900,
-                                  ),
-                                ),
-                              ],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                            padding: const EdgeInsets.all(8),
+                            minimumSize: const Size(36, 36),
                           ),
                         ),
                       ),
@@ -426,10 +433,14 @@ class _OwnerShellState extends State<OwnerShell> {
                       message: 'Register Walk-In Patient (Hotkey: F2)',
                       child: FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          backgroundColor: Colors.teal,
+                          backgroundColor: Colors.teal.shade700,
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         onPressed: () => _openWalkInBooking(context),
@@ -437,7 +448,10 @@ class _OwnerShellState extends State<OwnerShell> {
                         label: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('Book Walk-In'),
+                            Text(
+                              'Book Walk-In',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             SizedBox(width: 6),
                             Text(
                               '(F2)',

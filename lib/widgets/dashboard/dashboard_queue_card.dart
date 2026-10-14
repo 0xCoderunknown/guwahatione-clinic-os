@@ -66,25 +66,6 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                     color: Color(0xFF0F172A),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.teal.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    list.length == 1 ? '1 token' : '${list.length} tokens',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.teal.shade800,
-                    ),
-                  ),
-                ),
                 if (widget.provider.isOfflineFallback) ...[
                   const SizedBox(width: 8),
                   Container(
@@ -155,13 +136,22 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                           fontSize: 12.5,
                           fontWeight: _selectedDoctorId == null
                               ? FontWeight.bold
-                              : FontWeight.normal,
+                              : FontWeight.w500,
+                          color: _selectedDoctorId == null
+                              ? Colors.white
+                              : const Color(0xFF334155),
                         ),
                       ),
                       onSelected: (_) =>
                           setState(() => _selectedDoctorId = null),
-                      selectedColor: Colors.teal.shade100,
-                      checkmarkColor: Colors.teal.shade800,
+                      selectedColor: Colors.teal.shade700,
+                      backgroundColor: Colors.white,
+                      checkmarkColor: Colors.white,
+                      side: BorderSide(
+                        color: _selectedDoctorId == null
+                            ? Colors.teal.shade700
+                            : const Color(0xFFCBD5E1),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     ...doctors.map((doc) {
@@ -180,13 +170,22 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                               fontSize: 12.5,
                               fontWeight: isSelected
                                   ? FontWeight.bold
-                                  : FontWeight.normal,
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? Colors.white
+                                  : const Color(0xFF334155),
                             ),
                           ),
                           onSelected: (_) =>
                               setState(() => _selectedDoctorId = doc.id),
-                          selectedColor: Colors.teal.shade100,
-                          checkmarkColor: Colors.teal.shade800,
+                          selectedColor: Colors.teal.shade700,
+                          backgroundColor: Colors.white,
+                          checkmarkColor: Colors.white,
+                          side: BorderSide(
+                            color: isSelected
+                                ? Colors.teal.shade700
+                                : const Color(0xFFCBD5E1),
+                          ),
                         ),
                       );
                     }),
@@ -211,7 +210,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                     Text(
                       widget.provider.dashboardSearchQuery.isNotEmpty
                           ? 'No patient tokens match "${widget.provider.dashboardSearchQuery}"'
-                          : 'No appointments to show',
+                          : 'No patients registered today',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -222,7 +221,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                     Text(
                       widget.provider.dashboardSearchQuery.isNotEmpty
                           ? 'Check the 10-digit phone number or clear search.'
-                          : 'Tap "+ Book Walk-In Patient" to assign the first token.',
+                          : 'Press F2 or click + Book Walk-In to issue Token #1.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade500,

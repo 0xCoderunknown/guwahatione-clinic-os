@@ -105,39 +105,25 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                     Color statusBadgeBg;
                     Color statusBadgeFg;
                     String statusLabel;
-                    String statusSubtitle;
+                    final statusSubtitle =
+                        '${AppFormatters.specialty(doc.specialty)} • ₹${doc.consultationFee}';
 
                     if (isReady) {
                       statusBadgeBg = const Color(0xFFDCFCE7);
                       statusBadgeFg = const Color(0xFF15803D);
-                      statusLabel = 'READY FOR NEXT';
-                      statusSubtitle =
-                          '🟢 Ready for next patient • Typical consultation: 8–10 min';
+                      statusLabel = 'READY';
                     } else if (isEnded) {
-                      statusBadgeBg = const Color(0xFFFEF3C7);
-                      statusBadgeFg = const Color(0xFFB45309);
+                      statusBadgeBg = const Color(0xFFF1F5F9);
+                      statusBadgeFg = const Color(0xFF64748B);
                       statusLabel = 'ON BREAK';
-                      statusSubtitle =
-                          '☕ Ended #${session?.lastCompletedQueueNumber ?? '--'} • Doctor is on a break';
-                    } else if (isCalling) {
+                    } else if (isCalling || isInConsultation) {
                       statusBadgeBg = const Color(0xFFDBEAFE);
                       statusBadgeFg = const Color(0xFF1D4ED8);
-                      statusLabel = 'ADMITTED';
-                      statusSubtitle =
-                          '🚪 Token #${session?.activeQueueNumber ?? '--'} entering chamber';
-                    } else if (isInConsultation) {
-                      statusBadgeBg = const Color(0xFFEDE9FE);
-                      statusBadgeFg = const Color(0xFF6D28D9);
-                      statusLabel = 'CONSULTING';
-                      final activePName = session?.patientName;
-                      statusSubtitle =
-                          '🩺 Consulting Token #${session?.activeQueueNumber ?? '--'}${activePName != null && activePName.isNotEmpty ? ' ($activePName)' : ''} • Typical consultation: 8–10 min';
+                      statusLabel = 'IN CONSULTATION';
                     } else {
                       statusBadgeBg = const Color(0xFFF1F5F9);
                       statusBadgeFg = const Color(0xFF64748B);
                       statusLabel = 'IDLE';
-                      statusSubtitle =
-                          '${AppFormatters.specialty(doc.specialty)} • Fee: ₹${doc.consultationFee} • Typical consultation: 8–10 min';
                     }
 
                     return ListTile(
@@ -238,20 +224,22 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: isReady
                               ? const Color(0xFFDCFCE7)
-                              : (isInConsultation
-                                    ? const Color(0xFFEDE9FE)
+                              : (isInConsultation || isCalling
+                                    ? const Color(0xFFDBEAFE)
                                     : Colors.grey.shade100),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: isReady
                                 ? const Color(0xFF86EFAC)
-                                : Colors.transparent,
+                                : (isInConsultation || isCalling
+                                    ? const Color(0xFF93C5FD)
+                                    : Colors.transparent),
                           ),
                         ),
                         child: Text(
                           isReady
                               ? '▶ CALL NEXT'
-                              : (isInConsultation
+                              : ((isInConsultation || isCalling)
                                     ? 'Token #${session?.activeQueueNumber ?? '--'}'
                                     : (patientCount == 1
                                           ? '1 token'
@@ -261,8 +249,8 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                             color: isReady
                                 ? const Color(0xFF15803D)
-                                : (isInConsultation
-                                      ? const Color(0xFF6D28D9)
+                                : ((isInConsultation || isCalling)
+                                      ? const Color(0xFF1D4ED8)
                                       : Colors.grey.shade800),
                           ),
                         ),

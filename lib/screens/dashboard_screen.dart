@@ -71,9 +71,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 1. Clinic Date & Quick Greeting Bar
+                    // 1. Instant Queue Search Bar (Directly beneath top header)
                     DashboardHeaderBar(provider: provider),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
 
                     // 2. Responsive KPI Metrics Strip
                     DashboardKpiStrip(provider: provider, screenWidth: width),

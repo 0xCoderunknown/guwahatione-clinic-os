@@ -10,6 +10,22 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
+## [1.32.2] — 14-10-2026
+
+### Refactored Desktop Dashboard Header & Reception Ergonomics
+- **Operational Impact:**
+  - **Eliminated 60px Dead Band:** Standalone date card strip consolidated directly into the primary top AppBar line (`Overview Dashboard • Wednesday, 14-10-2026`), elevating KPI metrics and live queue above the fold for counter PC monitors and 1366×768 laptops.
+  - **Sharpened Action Button Hierarchy:** High-frequency primary action `+ Book Walk-In (F2)` styled with high-contrast filled teal; end-of-day `Cash Handover` de-emphasized to a clean outline button; lobby chime toggle condensed into a compact icon button.
+  - **Enhanced Reception Triage & Active Chip Contrast:** Selected doctor filter chips now display prominent primary fill with white text; doctor roster badges accurately signal triage states (`READY` soft green, `IN CONSULTATION` soft blue, `IDLE`/`ON BREAK` neutral grey); repetitive consultation duration copy replaced with clean specialty and fee details.
+- **Architectural Touchpoints:**
+  - `lib/screens/owner_shell.dart`: Consolidated date and subtitle into desktop AppBar header; streamlined action buttons.
+  - `lib/widgets/dashboard/dashboard_header_bar.dart`: Removed standalone date strip card; rendered `Instant Queue Search` bar directly.
+  - `lib/screens/dashboard_screen.dart`: Adjusted vertical spacing for streamlined header flow.
+  - `lib/widgets/dashboard/dashboard_queue_card.dart`: Removed redundant queue token count badge; enhanced filter chip active contrast; refined empty state accelerator copy.
+  - `lib/widgets/dashboard/dashboard_doctor_roster_card.dart`: Updated status badge triage colors and simplified microcopy.
+
+---
+
 ## [1.32.1] — 14-10-2026
 
 ### Gated Rx Template Presets Behind ClinicConfig Experiment Flag (P9)
