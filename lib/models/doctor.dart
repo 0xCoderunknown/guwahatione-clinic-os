@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/formatters.dart';
 
 class Doctor {
   final String id;
@@ -30,6 +31,12 @@ class Doctor {
     this.shiftTiming = '6:00 PM – 8:30 PM',
     this.dailyTokenLimit = 18,
   });
+
+  /// Canonical display title with prefix (e.g. 'Dr. Bhaskar Thakuria').
+  String get titleName => AppFormatters.doctorTitle(name);
+
+  /// Clean doctor name without title prefix (e.g. 'Bhaskar Thakuria').
+  String get cleanName => AppFormatters.cleanDoctorName(name);
 
   /// Formatted schedule string: e.g. 'Mon, Wed, Fri • 6:00 PM – 8:30 PM'
   String get formattedSchedule {

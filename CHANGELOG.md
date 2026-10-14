@@ -8,6 +8,26 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.33.3] — 15-10-2026
+
+### Idempotent Doctor Title Normalization & Doctor Form Ergonomics
+- **Operational Impact:**
+  - **Zero Duplicate Titles (`Dr. Dr.`):** Completely eliminated duplicate `"Dr. Dr."` prefixes that previously occurred when doctor names already stored with title (e.g. `"Dr. Bhaskar Thakuria"`) were interpolated inside UI widgets using hardcoded `'Dr. ${...}'`.
+  - **Consistent Title Display Everywhere:** Ensured doctor names registered without title (e.g. `"Upasana Talukdar"`) consistently render with the professional medical title `"Dr. Upasana Talukdar"` across printed prescriptions, consultation encounter headers, chamber app bars, booking dropdowns, and counter queue cards.
+  - **Resilient Avatar Initials:** Upgraded avatar initials from naive `doc.name[0]` (which erroneously yielded `'D'` for `"Dr. Bhaskar"`) to pure domain initials generator `AppFormatters.doctorInitials(doc.name)` (yielding `'BT'`).
+  - **30-Minute Shift Timing Dropdowns:** Replaced manual free-text typing in `AddDoctorScreen` with two 30-minute dropdowns (`Shift Start` to `Shift End`), standardizing formats to canonical `"$startTime – $endTime"` (e.g. `11:00 AM – 2:30 PM`) while preventing typos.
+  - **Intelligent Awkward / Midnight Timing Warning:** Proactively warns clinic owners with an amber banner when an inverted or awkward shift is configured (such as an overnight shift ending after midnight or shifts falling in late night hours), preventing scheduling blunders.
+  - **Curated Department / Specialty Dropdown:** Upgraded specialty input from free-text to a curated dropdown of top 15 Indian OPD specialties plus an `"Other (Custom)..."` fallback text input, eliminating inconsistent spelling across doctor rosters.
+  - **Logical Form Hierarchy:** Re-ordered `AddDoctorScreen` so the Free Review Window (input + quick chips `0d`, `7d`, `14d`, `21d`, `30d`) is positioned directly above the Available Days chips, removing the awkward shift timing separation.
+- **Architectural Touchpoints:**
+  - `lib/utils/formatters.dart`: Introduced pure helper `AppFormatters.cleanDoctorName(name)` and streamlined `AppFormatters.doctorTitle(name)` and `AppFormatters.doctorInitials(name)`.
+  - `lib/models/doctor.dart`: Added computed getters `doctor.titleName` and `doctor.cleanName`.
+  - `lib/screens/add_doctor_screen.dart`: Applied `AppFormatters.doctorTitle` on save, implemented start/end 30-min dropdowns with awkward timing validation, curated specialty dropdown with custom fallback, and re-ordered sections.
+  - `docs/PRODUCT_ROADMAP.md`: Logged future horizons P16 (Multi-Shift Split Daily OPD Timings), P17 (Doctor Extended Credentials, Accolades & Bio), and P18 (Multi-Specialty Department Tagging).
+  - `test/app_formatters_test.dart` & `test/add_doctor_form_test.dart`: Added comprehensive unit and widget tests (suite now 213 passing tests).
+
+---
+
 ## [1.33.2] — 14-10-2026
 
 ### Indian OPD Optimizations: Doctor Schedule Warnings, Counter Token Receipts, Bulk Absence Close & PostPay De-emphasis

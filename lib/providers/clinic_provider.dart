@@ -400,7 +400,7 @@ class ClinicProvider with ChangeNotifier {
       );
       if (hasDuplicate) {
         throw Exception(
-          'Patient "$name" already has an active appointment with Dr. ${selectedDoctor.name} on this date.',
+          'Patient "$name" already has an active appointment with ${selectedDoctor.titleName} on this date.',
         );
       }
 
@@ -417,7 +417,7 @@ class ClinicProvider with ChangeNotifier {
         );
         if (!eligibility.hasVisitedDoctorEarlier) {
           throw Exception(
-            'Free Review is only allowed for patients who previously visited Dr. ${selectedDoctor.name}.',
+            'Free Review is only allowed for patients who previously visited ${selectedDoctor.titleName}.',
           );
         }
       }

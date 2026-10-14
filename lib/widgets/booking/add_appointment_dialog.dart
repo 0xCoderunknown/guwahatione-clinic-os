@@ -436,7 +436,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '⚠️ ${duplicate.patientName} already holds Token #${duplicate.queueNumber} with ${duplicate.doctorName} for today.',
+                  '⚠️ ${duplicate.patientName} already holds Token #${duplicate.queueNumber} with ${AppFormatters.doctorTitle(duplicate.doctorName)} for today.',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -531,7 +531,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '⚠️ ${doctor.name} does not normally sit on ${dayName}s (Schedule: ${doctor.availableDays.join(", ")}). Booking is allowed if on special duty.',
+              '⚠️ ${AppFormatters.doctorTitle(doctor.name)} does not normally sit on ${dayName}s (Schedule: ${doctor.availableDays.join(", ")}). Booking is allowed if on special duty.',
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -784,7 +784,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            "${_duplicateAppointment!.patientName} already holds Token #${_duplicateAppointment!.queueNumber} with Dr. ${_duplicateAppointment!.doctorName} for today.",
+            "${_duplicateAppointment!.patientName} already holds Token #${_duplicateAppointment!.queueNumber} with ${AppFormatters.doctorTitle(_duplicateAppointment!.doctorName)} for today.",
           ),
           backgroundColor: Colors.amber.shade900,
         ),
@@ -817,7 +817,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            "Free review is only allowed for patients who previously visited Dr. ${_selectedDoctor!.name}.",
+            "Free review is only allowed for patients who previously visited ${AppFormatters.doctorTitle(_selectedDoctor!.name)}.",
           ),
           backgroundColor: Colors.red,
         ),

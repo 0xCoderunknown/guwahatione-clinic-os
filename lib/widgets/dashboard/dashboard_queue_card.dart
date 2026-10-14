@@ -179,7 +179,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                         child: FilterChip(
                           selected: isSelected,
                           label: Text(
-                            '${doc.name} ($count)',
+                            '${doc.titleName} ($count)',
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: isSelected

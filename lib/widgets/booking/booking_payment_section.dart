@@ -57,7 +57,7 @@ class BookingPaymentSection extends StatelessWidget {
             prefixIcon: Icon(Icons.person_add),
           ),
           items: doctors.map((doc) {
-            return DropdownMenuItem(value: doc, child: Text(doc.name));
+            return DropdownMenuItem(value: doc, child: Text(doc.titleName));
           }).toList(),
           onChanged: onDoctorChanged,
           validator: (val) => val == null ? 'Please select a doctor' : null,

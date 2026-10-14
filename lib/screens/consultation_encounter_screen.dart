@@ -248,7 +248,7 @@ class _ConsultationEncounterScreenState
               ],
             ),
             Text(
-              "Dr. ${widget.doctor.name} • ${widget.doctor.specialty}",
+              "${widget.doctor.titleName} • ${widget.doctor.specialty}",
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],

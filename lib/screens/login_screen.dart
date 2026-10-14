@@ -336,7 +336,7 @@ class DoctorLoginForm extends StatelessWidget {
             return DropdownMenuItem<Doctor>(
               value: doc,
               child: Text(
-                '${doc.name} (${doc.specialty})',
+                '${doc.titleName} (${doc.specialty})',
                 overflow: TextOverflow.ellipsis,
               ),
             );

@@ -44,25 +44,147 @@ class DoctorForm extends StatefulWidget {
 class _DoctorFormState extends State<DoctorForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _specialtyController;
+  late final TextEditingController _customSpecialtyController;
   late final TextEditingController _phoneController;
   late final TextEditingController _feeController;
   late final TextEditingController _reviewDaysController;
   late final TextEditingController _pinController;
   late final TextEditingController _regNumberController;
-  late final TextEditingController _shiftTimingController;
   late final TextEditingController _tokenLimitController;
+
+  late String _selectedSpecialty;
+  late String _selectedStartTime;
+  late String _selectedEndTime;
+  late List<String> _timeSlots;
 
   final List<String> _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   late List<String> _selectedDays;
   bool _isSaving = false;
+
+  static const List<String> _standardSpecialties = [
+    'General Medicine / Physician',
+    'Paediatrics',
+    'Gynaecology & Obstetrics',
+    'Orthopaedics',
+    'Dermatology',
+    'ENT (Otorhinolaryngology)',
+    'Cardiology',
+    'Neurology',
+    'Gastroenterology',
+    'Pulmonology / Chest Medicine',
+    'Nephrology & Urology',
+    'Ophthalmology',
+    'Psychiatry & Behavioural Sciences',
+    'Dental Surgery',
+    'General Surgery',
+    'Other (Custom)...',
+  ];
+
+  static const List<String> _baseTimeSlots = [
+    '6:00 AM',
+    '6:30 AM',
+    '7:00 AM',
+    '7:30 AM',
+    '8:00 AM',
+    '8:30 AM',
+    '9:00 AM',
+    '9:30 AM',
+    '10:00 AM',
+    '10:30 AM',
+    '11:00 AM',
+    '11:30 AM',
+    '12:00 PM',
+    '12:30 PM',
+    '1:00 PM',
+    '1:30 PM',
+    '2:00 PM',
+    '2:30 PM',
+    '3:00 PM',
+    '3:30 PM',
+    '4:00 PM',
+    '4:30 PM',
+    '5:00 PM',
+    '5:30 PM',
+    '6:00 PM',
+    '6:30 PM',
+    '7:00 PM',
+    '7:30 PM',
+    '8:00 PM',
+    '8:30 PM',
+    '9:00 PM',
+    '9:30 PM',
+    '10:00 PM',
+    '10:30 PM',
+    '11:00 PM',
+    '11:30 PM',
+    '12:00 AM',
+    '12:30 AM',
+    '1:00 AM',
+    '1:30 AM',
+    '2:00 AM',
+    '2:30 AM',
+    '3:00 AM',
+    '3:30 AM',
+    '4:00 AM',
+    '4:30 AM',
+    '5:00 AM',
+    '5:30 AM',
+  ];
+
+  static String _canonicalTime(String raw) {
+    var clean = raw.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (clean.startsWith('0') && clean.length >= 7 && clean[2] == ':') {
+      clean = clean.substring(1);
+    }
+    return clean;
+  }
+
+  int _timeToMinutes(String timeStr) {
+    try {
+      final clean = timeStr.trim().toUpperCase();
+      final isPM = clean.contains('PM');
+      final isAM = clean.contains('AM');
+      final digits = clean.replaceAll(RegExp(r'[^\d:]'), '');
+      final parts = digits.split(':');
+      var hours = int.parse(parts[0]);
+      final minutes = parts.length > 1 ? int.parse(parts[1]) : 0;
+      if (isPM && hours != 12) hours += 12;
+      if (isAM && hours == 12) hours = 0;
+      return hours * 60 + minutes;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  bool get _isTimingAwkward {
+    final startMin = _timeToMinutes(_selectedStartTime);
+    final endMin = _timeToMinutes(_selectedEndTime);
+    if (startMin == endMin) return true;
+    if (endMin < startMin) return true;
+    if (startMin < 360 || endMin < 360 || startMin >= 1320) return true;
+    return false;
+  }
+
+  String get _timingWarningMessage {
+    final startMin = _timeToMinutes(_selectedStartTime);
+    final endMin = _timeToMinutes(_selectedEndTime);
+    if (startMin == endMin) {
+      return '⚠️ Shift start time and end time are identical (0 duration). Please select valid start and end times.';
+    }
+    if (endMin < startMin) {
+      return '⚠️ Overnight shift: Shift ends on the following day (crossing midnight, e.g. $_selectedStartTime to $_selectedEndTime). Please verify start and end times.';
+    }
+    if (startMin < 360 || endMin < 360 || startMin >= 1320) {
+      return '⚠️ Late night / midnight shift: Selected OPD timing ($_selectedStartTime to $_selectedEndTime) falls during unusual night hours. Please verify if this is intended.';
+    }
+    return '';
+  }
 
   @override
   void initState() {
     super.initState();
     final d = widget.doctor;
     _nameController = TextEditingController(text: d?.name ?? '');
-    _specialtyController = TextEditingController(text: d?.specialty ?? '');
     _phoneController = TextEditingController(text: d?.phone ?? '');
     _feeController = TextEditingController(
       text: (d?.consultationFee ?? 500).toString(),
@@ -74,12 +196,48 @@ class _DoctorFormState extends State<DoctorForm> {
     _regNumberController = TextEditingController(
       text: d?.medicalRegNumber ?? '',
     );
-    _shiftTimingController = TextEditingController(
-      text: d?.shiftTiming ?? '6:00 PM – 8:30 PM',
-    );
     _tokenLimitController = TextEditingController(
       text: (d?.dailyTokenLimit ?? 18).toString(),
     );
+
+    // 1. Specialty Resolution
+    final docSpecialty = d?.specialty.trim() ?? '';
+    if (docSpecialty.isEmpty) {
+      _selectedSpecialty = 'General Medicine / Physician';
+      _customSpecialtyController = TextEditingController();
+    } else {
+      final match = _standardSpecialties.firstWhere(
+        (s) => s.toLowerCase() == docSpecialty.toLowerCase(),
+        orElse: () => '',
+      );
+      if (match.isNotEmpty) {
+        _selectedSpecialty = match;
+        _customSpecialtyController = TextEditingController();
+      } else {
+        _selectedSpecialty = 'Other (Custom)...';
+        _customSpecialtyController = TextEditingController(text: docSpecialty);
+      }
+    }
+
+    // 2. Shift Timing Dropdown Resolution
+    final initialTiming = d?.shiftTiming ?? '6:00 PM – 8:30 PM';
+    final timingParts = initialTiming.split(RegExp(r'\s*(?:–|-|\bto\b)\s*'));
+    if (timingParts.length >= 2) {
+      _selectedStartTime = _canonicalTime(timingParts[0]);
+      _selectedEndTime = _canonicalTime(timingParts[1]);
+    } else {
+      _selectedStartTime = '6:00 PM';
+      _selectedEndTime = '8:30 PM';
+    }
+
+    _timeSlots = List<String>.from(_baseTimeSlots);
+    if (!_timeSlots.contains(_selectedStartTime)) {
+      _timeSlots.add(_selectedStartTime);
+    }
+    if (!_timeSlots.contains(_selectedEndTime)) {
+      _timeSlots.add(_selectedEndTime);
+    }
+
     _selectedDays = d != null
         ? List<String>.from(d.availableDays)
         : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -88,13 +246,12 @@ class _DoctorFormState extends State<DoctorForm> {
   @override
   void dispose() {
     _nameController.dispose();
-    _specialtyController.dispose();
+    _customSpecialtyController.dispose();
     _phoneController.dispose();
     _feeController.dispose();
     _reviewDaysController.dispose();
     _pinController.dispose();
     _regNumberController.dispose();
-    _shiftTimingController.dispose();
     _tokenLimitController.dispose();
     super.dispose();
   }
@@ -107,6 +264,7 @@ class _DoctorFormState extends State<DoctorForm> {
       key: _formKey,
       child: ListView(
         children: [
+          // 1. Doctor Name
           TextFormField(
             controller: _nameController,
             decoration: const InputDecoration(
@@ -116,15 +274,42 @@ class _DoctorFormState extends State<DoctorForm> {
             validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
           ),
           const SizedBox(height: 12),
-          TextFormField(
-            controller: _specialtyController,
+
+          // 2. Department / Specialty Dropdown
+          DropdownButtonFormField<String>(
+            initialValue: _selectedSpecialty,
             decoration: const InputDecoration(
-              labelText: 'Specialty (e.g., General Physician, Paediatrician)',
+              labelText: 'Department / Specialty',
               prefixIcon: Icon(Icons.medical_services_outlined),
             ),
-            validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+            items: _standardSpecialties.map((s) {
+              return DropdownMenuItem(
+                value: s,
+                child: Text(s, overflow: TextOverflow.ellipsis),
+              );
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) {
+                setState(() => _selectedSpecialty = val);
+              }
+            },
           ),
+          if (_selectedSpecialty == 'Other (Custom)...') ...[
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _customSpecialtyController,
+              decoration: const InputDecoration(
+                labelText: 'Specify Custom Specialty',
+                hintText: 'e.g., Diabetologist, Oncologist, etc.',
+                prefixIcon: Icon(Icons.edit_note_outlined),
+              ),
+              validator: (v) =>
+                  v == null || v.trim().isEmpty ? 'Required' : null,
+            ),
+          ],
           const SizedBox(height: 12),
+
+          // 3. Contact & Medical Registration
           TextFormField(
             controller: _phoneController,
             decoration: const InputDecoration(
@@ -144,6 +329,8 @@ class _DoctorFormState extends State<DoctorForm> {
             ),
           ),
           const SizedBox(height: 12),
+
+          // 4. Consultation Fee & Chamber PIN
           Row(
             children: [
               Expanded(
@@ -179,6 +366,96 @@ class _DoctorFormState extends State<DoctorForm> {
             ],
           ),
           const SizedBox(height: 12),
+
+          // 5. Shift / OPD Timing (30-Minute Dropdowns)
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _selectedStartTime,
+                  decoration: const InputDecoration(
+                    labelText: 'Shift Start',
+                    prefixIcon: Icon(Icons.access_time_rounded),
+                  ),
+                  items: _timeSlots.map((t) {
+                    return DropdownMenuItem(value: t, child: Text(t));
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedStartTime = val);
+                  },
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text('to', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _selectedEndTime,
+                  decoration: const InputDecoration(
+                    labelText: 'Shift End',
+                    prefixIcon: Icon(Icons.access_time_filled_rounded),
+                  ),
+                  items: _timeSlots.map((t) {
+                    return DropdownMenuItem(value: t, child: Text(t));
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedEndTime = val);
+                  },
+                ),
+              ),
+            ],
+          ),
+          if (_isTimingAwkward) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.amber.shade800,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _timingWarningMessage,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.amber.shade900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+
+          // 6. Daily Token Cap
+          TextFormField(
+            controller: _tokenLimitController,
+            decoration: const InputDecoration(
+              labelText: 'Daily Token Cap',
+              hintText: '18',
+              prefixIcon: Icon(Icons.confirmation_number_outlined),
+            ),
+            keyboardType: TextInputType.number,
+            validator: (v) =>
+                v == null || int.tryParse(v.trim()) == null
+                    ? 'Number required'
+                    : null,
+          ),
+          const SizedBox(height: 16),
+
+          // 7. Free Review Window (Directly above Available Days)
           TextFormField(
             controller: _reviewDaysController,
             decoration: const InputDecoration(
@@ -196,39 +473,6 @@ class _DoctorFormState extends State<DoctorForm> {
               }
               return null;
             },
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                flex: 6,
-                child: TextFormField(
-                  controller: _shiftTimingController,
-                  decoration: const InputDecoration(
-                    labelText: 'Shift / OPD Timing',
-                    hintText: 'e.g., 6:00 PM – 8:30 PM',
-                    prefixIcon: Icon(Icons.access_time_rounded),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 4,
-                child: TextFormField(
-                  controller: _tokenLimitController,
-                  decoration: const InputDecoration(
-                    labelText: 'Daily Token Cap',
-                    hintText: '18',
-                    prefixIcon: Icon(Icons.confirmation_number_outlined),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (v) =>
-                      v == null || int.tryParse(v.trim()) == null
-                          ? 'Number required'
-                          : null,
-                ),
-              ),
-            ],
           ),
           const SizedBox(height: 6),
           Wrap(
@@ -282,6 +526,8 @@ class _DoctorFormState extends State<DoctorForm> {
             ],
           ),
           const SizedBox(height: 24),
+
+          // 8. Available Days
           const Text(
             'Available Days',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -307,6 +553,8 @@ class _DoctorFormState extends State<DoctorForm> {
             }).toList(),
           ),
           const SizedBox(height: 32),
+
+          // 9. Save Button
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.teal,
@@ -336,6 +584,16 @@ class _DoctorFormState extends State<DoctorForm> {
     if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
+    if (_selectedStartTime == _selectedEndTime) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Shift start time and end time cannot be identical.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (_selectedDays.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -350,8 +608,14 @@ class _DoctorFormState extends State<DoctorForm> {
       final reviewDays = int.tryParse(_reviewDaysController.text.trim()) ?? 14;
       final pin = _pinController.text.trim();
       final regNumber = _regNumberController.text.trim();
-      final shiftTiming = _shiftTimingController.text.trim();
+      final shiftTiming = '$_selectedStartTime – $_selectedEndTime';
       final tokenLimit = int.tryParse(_tokenLimitController.text.trim()) ?? 18;
+
+      final specialtyRaw = _selectedSpecialty == 'Other (Custom)...'
+          ? _customSpecialtyController.text.trim()
+          : _selectedSpecialty;
+      final specialty = AppFormatters.specialty(specialtyRaw);
+
       final clinicProvider = Provider.of<ClinicProvider>(
         context,
         listen: false,
@@ -360,15 +624,15 @@ class _DoctorFormState extends State<DoctorForm> {
 
       if (widget.doctor != null) {
         final updatedDoctor = widget.doctor!.copyWith(
-          name: _nameController.text.trim(),
-          specialty: AppFormatters.specialty(_specialtyController.text.trim()),
+          name: AppFormatters.doctorTitle(_nameController.text.trim()),
+          specialty: specialty,
           phone: _phoneController.text.trim(),
           availableDays: _selectedDays,
           consultationFee: fee,
           freeReviewDays: reviewDays,
           pin: pin.isNotEmpty ? pin : widget.doctor!.pin,
           medicalRegNumber: regNumber.isNotEmpty ? regNumber : null,
-          shiftTiming: shiftTiming.isNotEmpty ? shiftTiming : null,
+          shiftTiming: shiftTiming,
           dailyTokenLimit: tokenLimit,
         );
         await clinicProvider.updateDoctor(
@@ -377,17 +641,15 @@ class _DoctorFormState extends State<DoctorForm> {
         );
       } else {
         await clinicProvider.addDoctor(
-          _nameController.text.trim(),
-          AppFormatters.specialty(_specialtyController.text.trim()),
+          AppFormatters.doctorTitle(_nameController.text.trim()),
+          specialty,
           _phoneController.text.trim(),
           _selectedDays,
           pin: pin.isNotEmpty ? pin : '1234',
           consultationFee: fee,
           freeReviewDays: reviewDays,
           medicalRegNumber: regNumber.isNotEmpty ? regNumber : null,
-          shiftTiming: shiftTiming.isNotEmpty
-              ? shiftTiming
-              : '6:00 PM – 8:30 PM',
+          shiftTiming: shiftTiming,
           dailyTokenLimit: tokenLimit,
           requestingRole: authProvider.currentRole,
         );

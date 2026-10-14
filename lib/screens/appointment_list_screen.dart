@@ -128,7 +128,7 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                         padding: const EdgeInsets.only(right: 8.0),
                         child: FilterChip(
                           selected: isSelected,
-                          label: Text(doc.name),
+                          label: Text(doc.titleName),
                           onSelected: (_) {
                             setState(() {
                               _selectedDoctorId = doc.id;

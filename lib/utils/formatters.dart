@@ -57,18 +57,24 @@ class AppFormatters {
     return '₹${amount.toStringAsFixed(2)}';
   }
 
-  /// Formats doctor title preventing duplicate "Dr. Dr." prefixes.
-  static String doctorTitle(String? name) {
-    if (name == null || name.trim().isEmpty) return 'Doctor';
-    final clean = name.trim();
-    var stripped = clean;
+  /// Extracts clean doctor name without any leading 'Dr.' or 'Dr ' prefix.
+  static String cleanDoctorName(String? name) {
+    if (name == null || name.trim().isEmpty) return '';
+    var stripped = name.trim();
     while (stripped.toLowerCase().startsWith('dr.') ||
         stripped.toLowerCase().startsWith('dr ')) {
       stripped = stripped
           .replaceFirst(RegExp(r'^dr\.?\s*', caseSensitive: false), '')
           .trim();
     }
-    return 'Dr. $stripped';
+    return stripped;
+  }
+
+  /// Formats doctor title preventing duplicate "Dr. Dr." prefixes.
+  static String doctorTitle(String? name) {
+    final clean = cleanDoctorName(name);
+    if (clean.isEmpty) return 'Doctor';
+    return 'Dr. $clean';
   }
 
   /// Sanitizes specialty and corrects common typos like 'Paedetric' -> 'Paediatric'.
@@ -85,10 +91,7 @@ class AppFormatters {
   /// Extracts compact doctor initials (e.g. 'Dr. Bhaskar Thakuria' -> 'BT').
   static String doctorInitials(String? name) {
     if (name == null || name.trim().isEmpty) return '';
-    final clean = name
-        .trim()
-        .replaceFirst(RegExp(r'^dr\.?\s*', caseSensitive: false), '')
-        .trim();
+    final clean = cleanDoctorName(name);
     if (clean.isEmpty) return 'DR';
     final parts = clean
         .split(RegExp(r'\s+'))

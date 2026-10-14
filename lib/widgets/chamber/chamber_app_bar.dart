@@ -48,7 +48,7 @@ class ChamberAppBar extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        doctor.name,
+                        doctor.titleName,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,

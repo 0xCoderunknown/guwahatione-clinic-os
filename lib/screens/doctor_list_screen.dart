@@ -115,7 +115,7 @@ class DoctorRosterCard extends StatelessWidget {
               radius: 24,
               backgroundColor: Colors.teal.shade50,
               child: Text(
-                doctor.name.isNotEmpty ? doctor.name[0] : '?',
+                AppFormatters.doctorInitials(doctor.name),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,

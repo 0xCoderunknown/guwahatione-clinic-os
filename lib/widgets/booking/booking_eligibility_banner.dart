@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../utils/formatters.dart';
+
 /// Banner displaying patient registration history and doctor-specific review eligibility status.
 class BookingEligibilityBanner extends StatelessWidget {
   final String? historyInfo;
@@ -82,8 +84,8 @@ class BookingEligibilityBanner extends StatelessWidget {
           children: [
             Text(
               isZeroPolicy
-                  ? '⚠️ Dr. $doctorName does not offer free reviews (0-day policy). Regular consultation fee applies.'
-                  : '⚠️ $policyDays days have passed since the patient\'s last visit with Dr. $doctorName.',
+                  ? '⚠️ ${AppFormatters.doctorTitle(doctorName)} does not offer free reviews (0-day policy). Regular consultation fee applies.'
+                  : '⚠️ $policyDays days have passed since the patient\'s last visit with ${AppFormatters.doctorTitle(doctorName)}.',
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),

@@ -1,3 +1,4 @@
+import '../utils/formatters.dart';
 import 'appointment.dart';
 
 /// Encapsulates the eligibility evaluation for a patient requesting a Free Review.
@@ -89,7 +90,9 @@ class PatientReviewEligibility {
       return aDay.isBefore(targetDay);
     }).toList();
 
-    final docLabel = doctorName != null ? 'Dr. $doctorName' : 'this doctor';
+    final docLabel = doctorName != null
+        ? AppFormatters.doctorTitle(doctorName)
+        : 'this doctor';
 
     if (pastVisitsWithDoctor.isEmpty) {
       return PatientReviewEligibility(

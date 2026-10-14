@@ -149,9 +149,7 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                             radius: 18,
                             backgroundColor: Colors.indigo.shade50,
                             child: Text(
-                              doc.name.isNotEmpty
-                                  ? doc.name[0].toUpperCase()
-                                  : 'D',
+                              AppFormatters.doctorInitials(doc.name),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -352,7 +350,7 @@ class DashboardDoctorRosterCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Dr. ${doc.name} will be marked absent for today.',
+              '${AppFormatters.doctorTitle(doc.name)} will be marked absent for today.',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
@@ -391,7 +389,7 @@ class DashboardDoctorRosterCard extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Dr. ${doc.name}\'s session closed. $count pending token(s) marked absent.',
+                '${AppFormatters.doctorTitle(doc.name)}\'s session closed. $count pending token(s) marked absent.',
               ),
               backgroundColor: Colors.amber.shade900,
             ),

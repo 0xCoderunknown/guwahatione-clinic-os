@@ -348,7 +348,7 @@ class EncounterDialogs {
                                     ),
                                   ),
                                   Text(
-                                    "Dr. ${record.doctorName}",
+                                    AppFormatters.doctorTitle(record.doctorName),
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.teal.shade800,

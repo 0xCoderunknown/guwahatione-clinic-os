@@ -116,7 +116,7 @@ class PrintOrdersAndFooter extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Dr. ${consultation.doctorName}',
+                  AppFormatters.doctorTitle(consultation.doctorName),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,

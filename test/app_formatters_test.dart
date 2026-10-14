@@ -78,6 +78,31 @@ void main() {
       expect(AppFormatters.doctorTitle(null), 'Doctor');
     });
 
+    test('cleanDoctorName extracts stripped name without title', () {
+      expect(
+        AppFormatters.cleanDoctorName('Bhaskar Baruah'),
+        'Bhaskar Baruah',
+      );
+      expect(
+        AppFormatters.cleanDoctorName('Dr. Bhaskar Baruah'),
+        'Bhaskar Baruah',
+      );
+      expect(
+        AppFormatters.cleanDoctorName('dr. Bhaskar Baruah'),
+        'Bhaskar Baruah',
+      );
+      expect(
+        AppFormatters.cleanDoctorName('Dr Bhaskar Baruah'),
+        'Bhaskar Baruah',
+      );
+      expect(
+        AppFormatters.cleanDoctorName('Dr. Dr. Bhaskar Baruah'),
+        'Bhaskar Baruah',
+      );
+      expect(AppFormatters.cleanDoctorName(''), '');
+      expect(AppFormatters.cleanDoctorName(null), '');
+    });
+
     test('specialty sanitizes common typos and empty fallbacks', () {
       expect(AppFormatters.specialty('Paedetrician'), 'Paediatrician');
       expect(

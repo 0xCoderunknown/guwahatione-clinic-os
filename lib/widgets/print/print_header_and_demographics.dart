@@ -93,7 +93,7 @@ class PrintHeaderAndDemographics extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'Dr. ${consultation.doctorName}',
+                AppFormatters.doctorTitle(consultation.doctorName),
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
