@@ -13,6 +13,7 @@ import 'appointment_list_screen.dart';
 import 'dashboard_screen.dart';
 import 'doctor_list_screen.dart';
 import 'medicine_catalogue_screen.dart';
+import 'patient_directory_screen.dart';
 import 'statistics_screen.dart';
 
 class OwnerShell extends StatefulWidget {
@@ -78,6 +79,7 @@ class _OwnerShellState extends State<OwnerShell> {
     final List<Widget> pages = [
       const DashboardScreen(),
       const AppointmentListScreen(),
+      const PatientDirectoryScreen(),
       const DoctorListScreen(),
       if (isOwner) const StatisticsScreen(),
       const MedicineCatalogueScreen(),
@@ -93,6 +95,11 @@ class _OwnerShellState extends State<OwnerShell> {
         icon: Icon(Icons.calendar_today_outlined),
         selectedIcon: Icon(Icons.calendar_today, color: Colors.teal),
         label: Text('Appointments'),
+      ),
+      const NavigationRailDestination(
+        icon: Icon(Icons.person_search_outlined),
+        selectedIcon: Icon(Icons.person_search, color: Colors.teal),
+        label: Text('Patients'),
       ),
       NavigationRailDestination(
         icon: const Icon(Icons.people_alt_outlined),
@@ -122,6 +129,11 @@ class _OwnerShellState extends State<OwnerShell> {
         icon: Icon(Icons.calendar_today_outlined),
         selectedIcon: Icon(Icons.calendar_today),
         label: 'Queue',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.person_search_outlined),
+        selectedIcon: Icon(Icons.person_search),
+        label: 'Patients',
       ),
       NavigationDestination(
         icon: const Icon(Icons.people_alt_outlined),
@@ -505,10 +517,12 @@ class _OwnerShellState extends State<OwnerShell> {
         case 1:
           return 'Live Appointment Queue';
         case 2:
-          return 'Doctors & Chamber PINs';
+          return 'Patient Directory & Lookup';
         case 3:
-          return 'Payments & Reports';
+          return 'Doctors & Chamber PINs';
         case 4:
+          return 'Payments & Reports';
+        case 5:
           return 'Medicine Catalogue';
         default:
           return 'GuwahatiOne Clinic';
@@ -520,8 +534,10 @@ class _OwnerShellState extends State<OwnerShell> {
         case 1:
           return 'Live Appointment Queue';
         case 2:
-          return 'Doctor Schedules (Read-Only)';
+          return 'Patient Directory & Lookup';
         case 3:
+          return 'Doctor Schedules (Read-Only)';
+        case 4:
           return 'Medicine Catalogue';
         default:
           return 'GuwahatiOne Clinic';

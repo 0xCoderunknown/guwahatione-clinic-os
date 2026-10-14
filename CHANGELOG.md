@@ -10,6 +10,24 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
+## [1.33.0] — 14-10-2026
+
+### Patient Directory & Multi-Doctor Lookup with Zero-Egress Initial State
+- **Operational Impact:**
+  - **Zero-Egress Patient Search:** Added dedicated `Patients` tab to the primary desktop sidebar and mobile navigation bar. Loads with zero automatic Firestore reads until an explicit 10-digit phone number or patient name query is entered, avoiding unnecessary database egress.
+  - **Multi-Doctor Clinical Segregation (Singular Master Card + Accordions):** Each unique patient is presented as 1 singular master card with demographic badges (`Age`, `Gender`, `Phone`, and `⚠️ Allergies`). Past consultations with different physicians (e.g., Cardiology vs Dermatology) are cleanly segregated into expandable doctor accordions, revealing active medications, diagnosis, advice, and a direct `View / Print Prescription` preview without duplicate patient card clutter.
+  - **1-Tap Walk-In Booking from Lookup:** Embedded a `+ Book Walk-In` action on the patient card that opens `AddAppointmentDialog` with patient phone, name, age, and gender pre-populated, enabling rapid re-booking with any doctor.
+- **Architectural Touchpoints:**
+  - `lib/services/patient_service.dart`: Added `searchPatients(query)` with exact phone doc lookup, prefix matching, and case-normalized name queries.
+  - `lib/providers/clinic_provider.dart`: Exposed `searchPatients(query)` and consultation history access.
+  - `lib/screens/patient_directory_screen.dart`: Created full responsive directory screen (max-width 1400 on counter PC/laptop, double-AppBar suppression).
+  - `lib/widgets/patient/patient_lookup_card.dart`: Created patient card with doctor consultation accordions, active prescription tables, and booking action.
+  - `lib/widgets/booking/add_appointment_dialog.dart`: Updated to accept optional `initialPatient` and `initialDoctor` for instant pre-population.
+  - `lib/screens/owner_shell.dart`: Integrated `Patients` destination into `NavigationRail` and `BottomNavigationBar`.
+  - `test/patient_directory_test.dart`: Added automated widget tests covering zero-egress initial state, phone/name search, multi-doctor consultation segregation, and walk-in booking (202 tests passing).
+
+---
+
 ## [1.32.3] — 14-10-2026
 
 ### Reception Metrics Refinement, Doctor Schedule Display & Walk-In Token Cap Indicator

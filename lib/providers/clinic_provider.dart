@@ -300,6 +300,11 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
+  /// Searches patients by phone number (exact or prefix) or name.
+  Future<List<Patient>> searchPatients(String query) async {
+    return await _patientService.searchPatients(query);
+  }
+
   /// Fetches appointment history for a given patient.
   Future<List<Appointment>> getAppointmentsForPatient(
     String phoneNumber,

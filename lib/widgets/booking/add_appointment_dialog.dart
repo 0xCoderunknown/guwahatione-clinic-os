@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
 import '../../models/doctor.dart';
+import '../../models/patient.dart';
 import '../../models/patient_review_eligibility.dart';
 import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
@@ -15,7 +16,14 @@ import 'booking_payment_section.dart';
 /// Modal dialog for receptionist to register patient walk-ins and book appointments.
 /// Features 100% keyboard-first navigation, provisional token preview, and same-day duplicate booking prevention.
 class AddAppointmentDialog extends StatefulWidget {
-  const AddAppointmentDialog({super.key});
+  final Patient? initialPatient;
+  final Doctor? initialDoctor;
+
+  const AddAppointmentDialog({
+    super.key,
+    this.initialPatient,
+    this.initialDoctor,
+  });
 
   @override
   State<AddAppointmentDialog> createState() => _AddAppointmentDialogState();
@@ -65,9 +73,24 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     super.initState();
     _nameController.addListener(_checkDuplicateBooking);
     final doctors = Provider.of<ClinicProvider>(context, listen: false).doctors;
-    if (doctors.length == 1) {
+    if (widget.initialDoctor != null) {
+      _selectedDoctor = widget.initialDoctor;
+      _amountController.text = "${_selectedDoctor!.consultationFee}";
+    } else if (doctors.length == 1) {
       _selectedDoctor = doctors.first;
       _amountController.text = "${_selectedDoctor!.consultationFee}";
+    }
+
+    if (widget.initialPatient != null) {
+      final p = widget.initialPatient!;
+      _phoneController.text = p.phoneNumber;
+      _nameController.text = p.name;
+      _ageController.text = p.age > 0 ? p.age.toString() : '';
+      _selectedGender =
+          ['Male', 'Female', 'Other'].contains(p.gender) ? p.gender : null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _searchPatient(p.phoneNumber);
+      });
     }
   }
 

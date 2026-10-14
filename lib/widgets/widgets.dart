@@ -52,3 +52,5 @@ export 'queue/accordion_dispatch_section.dart';
 export 'queue/accordion_status_actions.dart';
 export 'queue/appointment_accordion.dart';
 export 'queue/completed_consultations_accordion.dart';
+// Patient Directory Widgets
+export 'patient/patient_lookup_card.dart';
