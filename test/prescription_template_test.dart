@@ -1,8 +1,10 @@
+import 'package:appointment_app/config/clinic_config.dart';
 import 'package:appointment_app/core/engines/medicine_engine.dart';
 import 'package:appointment_app/models/prescription_item.dart';
 import 'package:appointment_app/models/prescription_template.dart';
 import 'package:appointment_app/widgets/encounter/encounter_form_state.dart';
 import 'package:appointment_app/widgets/encounter/rx/rx_template_presets_bar.dart';
+import 'package:appointment_app/widgets/encounter/rx_reconciliation_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -272,6 +274,72 @@ void main() {
           findsOneWidget,
         );
 
+        form.dispose();
+      },
+    );
+  });
+
+  group('ClinicConfig Experimental Feature Flag Tests', () {
+    testWidgets(
+      'RxReconciliationSection hides RxTemplatePresetsBar when enablePrescriptionTemplatePresets is false',
+      (tester) async {
+        final form = EncounterFormState();
+        form.isMedicineExpanded = true;
+        const config = ClinicConfig(
+          features: ClinicFeatureFlags(enablePrescriptionTemplatePresets: false),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: RxReconciliationSection(
+                  form: form,
+                  catalog: const [],
+                  uuidGenerator: () => 'uid_1',
+                  onPromptStopReason: (item, index) {},
+                  onUpdate: () {},
+                  config: config,
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.byType(RxTemplatePresetsBar), findsNothing);
+        expect(find.text('Common prescription templates'), findsNothing);
+        form.dispose();
+      },
+    );
+
+    testWidgets(
+      'RxReconciliationSection displays RxTemplatePresetsBar when enablePrescriptionTemplatePresets is true',
+      (tester) async {
+        final form = EncounterFormState();
+        form.isMedicineExpanded = true;
+        const config = ClinicConfig(
+          features: ClinicFeatureFlags(enablePrescriptionTemplatePresets: true),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: RxReconciliationSection(
+                  form: form,
+                  catalog: const [],
+                  uuidGenerator: () => 'uid_1',
+                  onPromptStopReason: (item, index) {},
+                  onUpdate: () {},
+                  config: config,
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.byType(RxTemplatePresetsBar), findsOneWidget);
+        expect(find.text('Common prescription templates'), findsOneWidget);
         form.dispose();
       },
     );

@@ -10,6 +10,19 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
+## [1.32.1] — 14-10-2026
+
+### Gated Rx Template Presets Behind ClinicConfig Experiment Flag (P9)
+- **Operational Impact:**
+  - **Customizable Clinical Presets:** Hardcoded prescription template preset bundles (URI, Gastritis, Diarrhea, Viral Fever, HTN) are now formally gated behind `ClinicConfig.current.features.enablePrescriptionTemplatePresets` (default: `false`).
+  - **Tenant Customization:** Clinics preferring an uncluttered encounter canvas without hardcoded GP presets operate cleanly with pure brand and salt search; clinics testing the experimental preset workflow can opt in with a 1-line configuration in `lib/config/clinic_config.dart`.
+- **Architectural Touchpoints:**
+  - `lib/config/clinic_config.dart`: Added `enablePrescriptionTemplatePresets` (default `false`) to `ClinicFeatureFlags`; enabled tenant customization of `ClinicConfig.current`.
+  - `lib/widgets/encounter/rx_reconciliation_section.dart`: Gated `RxTemplatePresetsBar` conditionally based on active feature flags.
+  - `test/prescription_template_test.dart`: Added widget tests verifying preset bar suppression when flag is disabled and rendering when enabled (186 tests passing).
+
+---
+
 ## [1.32.0] — 14-10-2026
 
 ### HK-2 Architectural Clean-Up: Lock & Audit Pruning, Template Experimentation

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../config/clinic_config.dart';
 import '../../core/engines/engines.dart';
 import '../../models/medicine.dart';
 import '../../models/prescription_item.dart';
@@ -17,6 +18,7 @@ class RxReconciliationSection extends StatelessWidget {
   final String Function() uuidGenerator;
   final void Function(PrescriptionItem item, int index) onPromptStopReason;
   final VoidCallback onUpdate;
+  final ClinicConfig? config;
 
   const RxReconciliationSection({
     super.key,
@@ -25,6 +27,7 @@ class RxReconciliationSection extends StatelessWidget {
     required this.uuidGenerator,
     required this.onPromptStopReason,
     required this.onUpdate,
+    this.config,
   });
 
   const RxReconciliationSection.fromForm({
@@ -34,10 +37,12 @@ class RxReconciliationSection extends StatelessWidget {
     required this.uuidGenerator,
     required this.onPromptStopReason,
     required this.onUpdate,
+    this.config,
   });
 
   @override
   Widget build(BuildContext context) {
+    final activeConfig = config ?? ClinicConfig.current;
     final searchResults = form.medSearchController.text.trim().isNotEmpty
         ? MedicineEngine.searchAndGroup(
             catalog: catalog,
@@ -111,12 +116,14 @@ class RxReconciliationSection extends StatelessWidget {
                   const SizedBox(height: 16),
                 ],
 
-                RxTemplatePresetsBar(
-                  form: form,
-                  uuidGenerator: uuidGenerator,
-                  onUpdate: onUpdate,
-                ),
-                const SizedBox(height: 14),
+                if (activeConfig.features.enablePrescriptionTemplatePresets) ...[
+                  RxTemplatePresetsBar(
+                    form: form,
+                    uuidGenerator: uuidGenerator,
+                    onUpdate: onUpdate,
+                  ),
+                  const SizedBox(height: 14),
+                ],
 
                 const Text(
                   'Add Medicine (Search by Brand or Composition)',

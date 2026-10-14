@@ -44,11 +44,13 @@ class ClinicConfig {
 
   /// Active configuration instance for this client deployment.
   /// Replace or modify this instance for custom tenant deployments.
-  static const ClinicConfig current = ClinicConfig();
+  static ClinicConfig current = const ClinicConfig();
 }
 
 /// Feature flags that can be toggled on or off per client installation.
 class ClinicFeatureFlags {
+  // ─── Stable Operational Feature Flags ───────────────────────────────────────
+
   /// Whether to show the pre-printed letterhead margin toggle on the print preview.
   final bool enableLetterheadToggle;
 
@@ -61,10 +63,18 @@ class ClinicFeatureFlags {
   /// Whether doctors must enter a 4-digit PIN to access their chamber.
   final bool requireDoctorChamberPin;
 
+  // ─── 🧪 Experimental Feature Flags (Customized per client installation) ───────
+
+  /// 🧪 EXPERIMENT FLAG (P9): Whether hardcoded prescription template preset bundles
+  /// (URI, Gastritis, Viral Fever, HTN) are displayed in the consultation prescribing section.
+  /// When disabled, doctors use brand/composition search exclusively.
+  final bool enablePrescriptionTemplatePresets;
+
   const ClinicFeatureFlags({
     this.enableLetterheadToggle = true,
     this.enableDoctorChamberOverride = true,
     this.enableWhatsAppPrescriptionShare = true,
     this.requireDoctorChamberPin = true,
+    this.enablePrescriptionTemplatePresets = false,
   });
 }
