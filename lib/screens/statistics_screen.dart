@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../core/engines/engines.dart';
-import '../models/appointment.dart';
-import '../services/booking_service.dart'; // Direct service access for clean stream
+import '../models/models.dart';
+import '../services/services.dart';
 import '../widgets/widgets.dart';
-import 'doctor_daily_details_screen.dart';
+import 'screens.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});

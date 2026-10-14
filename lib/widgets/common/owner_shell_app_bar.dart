@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/clinic_provider.dart';
-import '../../services/sound_service.dart';
+import '../../services/services.dart';
 import '../../utils/formatters.dart';
 import '../dashboard/daily_cash_handover_dialog.dart';
 

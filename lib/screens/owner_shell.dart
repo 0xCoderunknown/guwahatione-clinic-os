@@ -6,12 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../widgets/widgets.dart';
-import 'appointment_list_screen.dart';
-import 'dashboard_screen.dart';
-import 'doctor_list_screen.dart';
-import 'medicine_catalogue_screen.dart';
-import 'patient_directory_screen.dart';
-import 'statistics_screen.dart';
+import 'screens.dart';
 
 class OwnerShell extends StatefulWidget {
   const OwnerShell({super.key});

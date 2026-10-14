@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/engines/engines.dart';
-import '../models/appointment.dart';
-import '../models/chamber_session.dart';
+import '../models/models.dart';
 import '../providers/clinic_provider.dart';
-import '../services/booking_service.dart';
-import '../services/sound_service.dart';
+import '../services/services.dart';
 import '../widgets/widgets.dart';
 
 /// Reception desk screen for managing, dispatching, and tracking the live patient queue.

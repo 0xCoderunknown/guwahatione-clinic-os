@@ -2,12 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../models/appointment.dart';
-import '../models/doctor.dart';
-import '../services/booking_service.dart';
-import '../services/chamber_service.dart';
+import '../models/models.dart';
+import '../services/services.dart';
 import '../widgets/widgets.dart';
-import 'consultation_encounter_screen.dart';
+import 'screens.dart';
 
 /// Doctor Chamber Screen: queue listener and layout coordinator shell.
 class DoctorChamberScreen extends StatefulWidget {

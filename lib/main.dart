@@ -5,10 +5,8 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/clinic_provider.dart';
-import 'screens/doctor_chamber_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/owner_shell.dart';
-import 'services/sound_service.dart';
+import 'screens/screens.dart';
+import 'services/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

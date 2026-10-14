@@ -4,13 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../models/appointment.dart';
-import '../models/consultation.dart';
-import '../models/doctor.dart';
-import '../models/prescription_item.dart';
+import '../models/models.dart';
 import '../providers/clinic_provider.dart';
 import '../widgets/widgets.dart';
-import 'prescription_print_screen.dart';
+import 'screens.dart';
 
 /// Coordinator Scaffold assembling the clinical encounter steps and binding the encounter state.
 class ConsultationEncounterScreen extends StatefulWidget {

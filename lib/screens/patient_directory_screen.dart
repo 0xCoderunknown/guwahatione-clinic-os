@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/patient.dart';
+import '../models/models.dart';
 import '../providers/clinic_provider.dart';
-import '../widgets/booking/add_appointment_dialog.dart';
-import '../widgets/patient/patient_lookup_card.dart';
+import '../widgets/widgets.dart';
 
 /// Patient Directory & Lookup Screen.
 /// Provides instant patient lookup by phone number or name with zero Firestore egress on initial load.

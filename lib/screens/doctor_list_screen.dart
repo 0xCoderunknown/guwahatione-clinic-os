@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/doctor.dart';
+import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
 import '../utils/formatters.dart';
-import 'add_doctor_screen.dart';
-import 'doctor_chamber_screen.dart';
+import 'screens.dart';
 
 class DoctorListScreen extends StatelessWidget {
   const DoctorListScreen({super.key});

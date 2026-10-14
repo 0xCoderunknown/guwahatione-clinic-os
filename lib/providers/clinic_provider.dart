@@ -4,23 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../core/engines/engines.dart';
-import '../models/appointment.dart';
-import '../models/chamber_session.dart';
-import '../models/consultation.dart';
-import '../models/doctor.dart';
-import '../models/medicine.dart';
-import '../models/patient.dart';
-import '../models/patient_review_eligibility.dart';
-import '../models/prescription_item.dart';
-import '../models/user_role.dart';
-import '../services/booking_service.dart';
-import '../services/catalogue_service.dart';
-import '../services/chamber_service.dart';
-import '../services/consultation_service.dart';
-import '../services/doctor_service.dart';
-import '../services/offline_queue_cache_service.dart';
-import '../services/patient_service.dart';
-import '../services/sound_service.dart';
+import '../models/models.dart';
+import '../services/services.dart';
 
 class ClinicProvider with ChangeNotifier {
   final BookingService _bookingService;
