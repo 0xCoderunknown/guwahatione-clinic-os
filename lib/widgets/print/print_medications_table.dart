@@ -20,7 +20,7 @@ class PrintMedicationsTable extends StatelessWidget {
       children: [
         // Rx Symbol
         const Text(
-          '℞  (Active Medication Schedule)',
+          '℞  (Prescribed Medicines)',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w900,
@@ -259,7 +259,7 @@ class PrintDiscontinuedMedicationsBox extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           ...stoppedMeds.map((item) {
-            final reason = item.stopReason ?? 'Discontinued by physician';
+            final reason = item.stopReason ?? 'Stopped by doctor';
             return Padding(
               padding: const EdgeInsets.only(left: 6, bottom: 2),
               child: Text(

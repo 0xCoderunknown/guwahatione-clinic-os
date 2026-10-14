@@ -193,7 +193,7 @@ class EncounterDialogs {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Prior Outside Regimen Entry'),
+        title: const Text('Add Existing Medicines'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -250,7 +250,7 @@ class EncounterDialogs {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Add to Baseline'),
+            child: const Text('Save as Existing Medicine'),
           ),
         ],
       ),
@@ -297,7 +297,7 @@ class EncounterDialogs {
                   const Icon(Icons.history_rounded, color: Colors.teal),
                   const SizedBox(width: 8),
                   Text(
-                    "Longitudinal Record (${history.length} visits)",
+                    "Previous Visits (${history.length})",
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

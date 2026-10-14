@@ -240,7 +240,7 @@ void main() {
 
   group('ChamberQueueHeader Audit & Dynamic Label Tests', () {
     testWidgets(
-      'Renders Past Session Roster and Archived Snapshot on past dates',
+      'Renders Previous Session and Past Queue on past dates',
       (tester) async {
         await tester.pumpWidget(
           const MaterialApp(
@@ -250,15 +250,15 @@ void main() {
           ),
         );
 
-        expect(find.text('Past Session Roster'), findsOneWidget);
-        expect(find.text('Archived Snapshot'), findsOneWidget);
+        expect(find.text('Previous Session'), findsOneWidget);
+        expect(find.text('Past Queue'), findsOneWidget);
         expect(find.text("Today's Patient Queue"), findsNothing);
-        expect(find.text('Live Sync'), findsNothing);
+        expect(find.text('Live Updates'), findsNothing);
         expect(find.text('15 issued'), findsOneWidget);
       },
     );
 
-    testWidgets('Renders Today Patient Queue and Live Sync on current date', (
+    testWidgets('Renders Today Patient Queue and Live Updates on current date', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -270,9 +270,9 @@ void main() {
       );
 
       expect(find.text("Today's Patient Queue"), findsOneWidget);
-      expect(find.text('Live Sync'), findsOneWidget);
-      expect(find.text('Past Session Roster'), findsNothing);
-      expect(find.text('Archived Snapshot'), findsNothing);
+      expect(find.text('Live Updates'), findsOneWidget);
+      expect(find.text('Previous Session'), findsNothing);
+      expect(find.text('Past Queue'), findsNothing);
       expect(find.text('15 issued'), findsOneWidget);
     });
 
@@ -291,8 +291,8 @@ void main() {
           ),
         );
 
-        expect(find.text('Past Session Roster'), findsOneWidget);
-        expect(find.text('Archived Snapshot'), findsOneWidget);
+        expect(find.text('Previous Session'), findsOneWidget);
+        expect(find.text('Past Queue'), findsOneWidget);
         expect(find.text('24 issued'), findsOneWidget);
       },
     );
@@ -371,10 +371,10 @@ void main() {
         expect(find.text('Absent / No-Show'), findsOneWidget);
         expect(find.text('2'), findsOneWidget);
         expect(find.text('Unattended'), findsOneWidget);
-        expect(find.text('Slots preserved'), findsNothing);
+        expect(find.text('Queue record retained'), findsNothing);
 
-        // Doctor Share: ₹600 from 1 paid visit
-        expect(find.text('Doctor Share'), findsOneWidget);
+        // Doctor's Fees: ₹600 from 1 paid visit
+        expect(find.text("Doctor's Fees"), findsOneWidget);
         expect(find.text('₹600'), findsOneWidget);
         expect(find.text('1 paid visits'), findsOneWidget);
       },
@@ -398,7 +398,7 @@ void main() {
         // Live mode: 1 waiting in lobby, 0 absent
         expect(find.text('1 in queue'), findsOneWidget);
         expect(find.text('Shift closed'), findsNothing);
-        expect(find.text('Slots preserved'), findsOneWidget);
+        expect(find.text('Queue record retained'), findsOneWidget);
         expect(find.text('Unattended'), findsNothing);
         expect(find.text('0'), findsOneWidget); // 0 absent
       },

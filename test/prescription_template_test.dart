@@ -251,7 +251,7 @@ void main() {
           ),
         );
 
-        expect(find.text('1-Tap OPD Presets'), findsOneWidget);
+        expect(find.text('Common prescription templates'), findsOneWidget);
         expect(find.text('URI / Pharyngitis'), findsOneWidget);
         expect(find.text('Viral Fever / SOS'), findsOneWidget);
 

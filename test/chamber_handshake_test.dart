@@ -376,7 +376,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Waiting for Doctor to Signal Ready'), findsOneWidget);
+      expect(find.text('Waiting for doctor'), findsOneWidget);
       expect(find.textContaining('Chamber is idle'), findsOneWidget);
 
       final button = tester.widget<FilledButton>(find.byType(FilledButton));
@@ -414,10 +414,10 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text('Doctor on Breather (Waiting for Doctor)'),
+        find.text('Doctor on Break (Waiting for Doctor)'),
         findsOneWidget,
       );
-      expect(find.textContaining('taking a breather'), findsOneWidget);
+      expect(find.textContaining('is on a break'), findsOneWidget);
 
       final button = tester.widget<FilledButton>(find.byType(FilledButton));
       expect(button.onPressed, isNull);

@@ -235,7 +235,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                     _buildChoiceChip(PaymentType.postPay, 'Post-Pay (Exit)'),
                     _buildChoiceChip(PaymentType.unpaid, 'Unpaid'),
                     _buildChoiceChip(PaymentType.freeReview, 'Free Review'),
-                    _buildChoiceChip(PaymentType.freeFamily, 'Family / VVIP'),
+                    _buildChoiceChip(PaymentType.freeFamily, 'Family / Complimentary'),
                   ],
                 ),
                 const SizedBox(height: 16),

@@ -271,7 +271,7 @@ void main() {
 
         // Verify header and badge
         expect(find.text('Next at Door (Lobby Checked-In)'), findsOneWidget);
-        expect(find.text('Emergency Self-Call'), findsOneWidget);
+        expect(find.text('Call Patient Directly'), findsOneWidget);
 
         // Verify token items
         expect(find.text('Priya Das'), findsOneWidget);
@@ -286,7 +286,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Confirmation dialog should be displayed
-        expect(find.text('Emergency Door Admission'), findsOneWidget);
+        expect(find.text('Direct Patient Entry'), findsOneWidget);
         expect(
           find.textContaining(
             'Admit Token #4 (Priya Das) directly into chamber?',

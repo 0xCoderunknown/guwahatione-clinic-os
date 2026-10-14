@@ -84,7 +84,7 @@ class ChamberDoorOverrideBar extends StatelessWidget {
                   border: Border.all(color: Colors.amber.shade300),
                 ),
                 child: Text(
-                  'Emergency Self-Call',
+                  'Call Patient Directly',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -207,7 +207,7 @@ class ChamberDoorOverrideBar extends StatelessWidget {
           children: [
             Icon(Icons.meeting_room_rounded, color: Colors.teal.shade800),
             const SizedBox(width: 8),
-            const Text('Emergency Door Admission'),
+            const Text('Direct Patient Entry'),
           ],
         ),
         content: Text(

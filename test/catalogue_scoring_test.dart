@@ -365,10 +365,10 @@ void main() {
           ),
         );
 
-        expect(find.text('Master Medicine Catalogue'), findsOneWidget);
+        expect(find.text('Medicine Catalogue'), findsOneWidget);
         expect(find.text('42'), findsOneWidget);
         expect(find.text('28'), findsOneWidget);
-        expect(find.text('Clean Duplicates'), findsOneWidget);
+        expect(find.text('Remove Duplicate Entries'), findsOneWidget);
         expect(find.text('Add Product'), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
@@ -394,7 +394,7 @@ void main() {
           ),
         );
 
-        expect(find.text('Master Medicine Catalogue'), findsOneWidget);
+        expect(find.text('Medicine Catalogue'), findsOneWidget);
         expect(find.text('100'), findsOneWidget);
         expect(find.text('65'), findsOneWidget);
         expect(tester.takeException(), isNull);

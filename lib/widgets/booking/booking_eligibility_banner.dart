@@ -106,7 +106,7 @@ class BookingEligibilityBanner extends StatelessWidget {
                   Text(
                     isZeroPolicy
                         ? '• Doctor Policy: No Free Review (0 days)'
-                        : '• Days Elapsed: $days days (Policy limit: $policyDays days)',
+                        : '• Days Elapsed: $days days (Free follow-up limit: $policyDays days)',
                   ),
                 ],
               ),

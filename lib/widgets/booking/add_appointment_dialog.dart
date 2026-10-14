@@ -608,7 +608,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
         _historyColor = Colors.orange.shade100;
         _historyInfo =
-            "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n⚠️ ${_selectedDoctor?.name} does not offer free reviews (0-day policy)";
+            "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n⚠️ ${_selectedDoctor?.name} does not offer free reviews (0-day free-follow-up policy)";
         if (_selectedPayment == PaymentType.freeReview) {
           _selectedPayment = _selectedVisitStatus == VisitStatus.booked
               ? PaymentType.unpaid

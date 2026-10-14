@@ -36,7 +36,7 @@ class CatalogueHeaderAndStats extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Master Medicine Catalogue',
+          'Medicine Catalogue',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -121,7 +121,7 @@ class CatalogueHeaderAndStats extends StatelessWidget {
       ),
       icon: const Icon(Icons.cleaning_services_outlined, size: 18),
       label: const Text(
-        'Clean Duplicates',
+        'Remove Duplicate Entries',
         style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
       ),
       onPressed: onCleanDuplicates,

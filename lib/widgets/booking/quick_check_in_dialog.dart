@@ -266,7 +266,7 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                   _buildActionTile(
                     keyLabel: '4',
                     icon: Icons.verified_rounded,
-                    title: 'Free Review (14-Day Statutory)',
+                    title: 'Free Follow-up (within 14 days)',
                     subtitle: 'Returning within 14 days of last paid visit',
                     amountBadge: '₹0 (Locked)',
                     color: const Color(0xFF0F766E),
@@ -279,7 +279,7 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                 _buildActionTile(
                   keyLabel: isFreeReviewEligible ? '5' : '4',
                   icon: Icons.favorite_rounded,
-                  title: 'FREE (Family / VVIP Waiver)',
+                  title: 'Complimentary visit',
                   subtitle: isFreeFamily
                       ? 'Pre-authorized discretionary clinic waiver'
                       : 'Discretionary clinic waiver (Locked at ₹0)',

@@ -197,7 +197,7 @@ class DoctorRosterCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'Reg: ${doctor.medicalRegNumber}',
+                                'Registration No. ${doctor.medicalRegNumber}',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,

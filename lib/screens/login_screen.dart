@@ -417,7 +417,7 @@ class ReceptionLoginForm extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          'Full access to book appointments, manage doctors, and view financial audits.',
+          'Full access to book appointments, manage doctors, and view financial reports.',
           style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
         ),
         const SizedBox(height: 16),

@@ -27,24 +27,31 @@ class RxTemplatePresetsBar extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 6,
+          runSpacing: 2,
           children: [
-            const Icon(
-              Icons.bolt_rounded,
-              size: 16,
-              color: Color(0xFF0F766E), // teal-700
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.bolt_rounded,
+                  size: 16,
+                  color: Color(0xFF0F766E), // teal-700
+                ),
+                const SizedBox(width: 4),
+                const Text(
+                  'Common prescription templates',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF334155), // slate-700
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 4),
-            const Text(
-              '1-Tap OPD Presets',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF334155), // slate-700
-                letterSpacing: 0.2,
-              ),
-            ),
-            const SizedBox(width: 6),
             Text(
               '(Common acute bundles • skips duplicates)',
               style: TextStyle(
@@ -121,7 +128,7 @@ class RxTemplatePresetsBar extends StatelessWidget {
       msg =
           'Applied "${result.templateName}" (+${result.addedItems.length} meds, ${result.skippedDuplicates.length} duplicate skipped)';
     } else {
-      msg = 'All medications from "${result.templateName}" are already active';
+      msg = 'All medicines in this preset have already been added.';
       bg = Colors.amber.shade900;
     }
 

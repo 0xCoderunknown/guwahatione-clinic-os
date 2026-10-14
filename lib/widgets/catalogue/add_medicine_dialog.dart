@@ -35,7 +35,7 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Master Medicine Entry'),
+      title: const Text('Add Medicine to Catalogue'),
       content: SizedBox(
         width: 440,
         child: SingleChildScrollView(
@@ -60,7 +60,7 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
                 TextFormField(
                   controller: _compCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Chemical Composition (Active Molecule)',
+                    labelText: 'Active ingredient(s)',
                     hintText:
                         'e.g., Paracetamol, Amoxicillin + Clavulanic Acid',
                     border: OutlineInputBorder(),

@@ -108,8 +108,8 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                         const SizedBox(width: 4),
                         Text(
                           widget.provider.offlineCacheTimestamp != null
-                              ? 'Offline Cache (${AppFormatters.time(widget.provider.offlineCacheTimestamp)})'
-                              : 'Offline Cache',
+                              ? 'Offline data · Updated at ${AppFormatters.time(widget.provider.offlineCacheTimestamp)}'
+                              : 'Offline data',
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -211,7 +211,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                     Text(
                       widget.provider.dashboardSearchQuery.isNotEmpty
                           ? 'No patient tokens match "${widget.provider.dashboardSearchQuery}"'
-                          : 'No appointments registered in this view',
+                          : 'No appointments to show',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -296,7 +296,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                             border: Border.all(color: const Color(0xFFF59E0B)),
                           ),
                           child: const Text(
-                            'Booked (Phone)',
+                            'Phone booking',
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.bold,
@@ -369,7 +369,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                                   ),
                                 ),
                                 Text(
-                                  " • Est: ${estimate.formattedRange}",
+                                  " • Estimated wait: ${estimate.formattedRange}",
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     color: Colors.blue.shade800,
@@ -504,7 +504,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
           if (isDoctorOnBreak) {
             return Tooltip(
               message:
-                  '${AppFormatters.doctorTitle(appt.doctorName)} is taking a breather. Waiting for doctor to call next patient.',
+                  '${AppFormatters.doctorTitle(appt.doctorName)} is on a break. Waiting for doctor to call next patient.',
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -525,7 +525,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                     ),
                     SizedBox(width: 4),
                     Text(
-                      'On Breather',
+                      'On Break',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,

@@ -149,7 +149,7 @@ class CatalogueEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Essential OPD medicines exist by default. Try clearing search filters or add a new custom commercial medicine.',
+            'No medicines match your search. Clear the filters or add a medicine to the catalogue.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
           ),

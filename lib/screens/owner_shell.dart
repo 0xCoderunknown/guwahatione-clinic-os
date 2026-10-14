@@ -48,7 +48,7 @@ class _OwnerShellState extends State<OwnerShell> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                '🔒 Inactivity timeout: Session locked to Reception.',
+                '🔒 Session locked to reception after inactivity.',
               ),
               backgroundColor: Colors.amber,
               duration: Duration(seconds: 4),
@@ -102,7 +102,7 @@ class _OwnerShellState extends State<OwnerShell> {
         const NavigationRailDestination(
           icon: Icon(Icons.bar_chart_outlined),
           selectedIcon: Icon(Icons.bar_chart, color: Colors.teal),
-          label: Text('Revenue & Audit'),
+          label: Text('Revenue & Records'),
         ),
       const NavigationRailDestination(
         icon: Icon(Icons.medication_outlined),
@@ -493,9 +493,9 @@ class _OwnerShellState extends State<OwnerShell> {
         case 2:
           return 'Doctors & Chamber PINs';
         case 3:
-          return 'Financial Ledger & Audit';
+          return 'Payments & Reports';
         case 4:
-          return 'Master Medicine Catalogue';
+          return 'Medicine Catalogue';
         default:
           return 'GuwahatiOne Clinic';
       }
@@ -508,7 +508,7 @@ class _OwnerShellState extends State<OwnerShell> {
         case 2:
           return 'Doctor Schedules (Read-Only)';
         case 3:
-          return 'Master Medicine Catalogue';
+          return 'Medicine Catalogue';
         default:
           return 'GuwahatiOne Clinic';
       }
@@ -519,7 +519,7 @@ class _OwnerShellState extends State<OwnerShell> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Logout of Reception?'),
+        title: const Text('End reception session?'),
         content: const Text(
           'Are you sure you want to end this counter session?',
         ),

@@ -239,7 +239,7 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
                   child: Text(
                     purgedCount > 0
                         ? 'Successfully removed $purgedCount duplicate medicine entries!'
-                        : 'Catalogue is clean! No duplicate medicines found.',
+                        : 'No duplicate medicines found.',
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ),

@@ -82,12 +82,12 @@ class ChamberMetricsGrid extends StatelessWidget {
       ChamberMetricTile(
         title: "Absent / No-Show",
         value: "$absentCount",
-        subtitle: isPastDate ? "Unattended" : "Slots preserved",
+        subtitle: isPastDate ? "Unattended" : "Queue record retained",
         icon: Icons.person_off_outlined,
         color: const Color(0xFF64748B),
       ),
       ChamberMetricTile(
-        title: "Doctor Share",
+        title: "Doctor's Fees",
         value: "₹$totalFees",
         subtitle: "$paidCount paid visits",
         icon: Icons.currency_rupee_rounded,

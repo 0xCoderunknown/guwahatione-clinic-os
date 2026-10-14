@@ -112,13 +112,13 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       statusBadgeFg = const Color(0xFF15803D);
                       statusLabel = 'READY FOR NEXT';
                       statusSubtitle =
-                          '🟢 Doctor is READY! Call next • Pace: ~8-10 min/pt';
+                          '🟢 Ready for next patient • Typical consultation: 8–10 min';
                     } else if (isEnded) {
                       statusBadgeBg = const Color(0xFFFEF3C7);
                       statusBadgeFg = const Color(0xFFB45309);
                       statusLabel = 'ON BREAK';
                       statusSubtitle =
-                          '☕ Ended #${session?.lastCompletedQueueNumber ?? '--'} • Taking breather';
+                          '☕ Ended #${session?.lastCompletedQueueNumber ?? '--'} • Doctor is on a break';
                     } else if (isCalling) {
                       statusBadgeBg = const Color(0xFFDBEAFE);
                       statusBadgeFg = const Color(0xFF1D4ED8);
@@ -131,13 +131,13 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       statusLabel = 'CONSULTING';
                       final activePName = session?.patientName;
                       statusSubtitle =
-                          '🩺 Consulting Token #${session?.activeQueueNumber ?? '--'}${activePName != null && activePName.isNotEmpty ? ' ($activePName)' : ''} • Pace: ~8-10 min/pt';
+                          '🩺 Consulting Token #${session?.activeQueueNumber ?? '--'}${activePName != null && activePName.isNotEmpty ? ' ($activePName)' : ''} • Typical consultation: 8–10 min';
                     } else {
                       statusBadgeBg = const Color(0xFFF1F5F9);
                       statusBadgeFg = const Color(0xFF64748B);
                       statusLabel = 'IDLE';
                       statusSubtitle =
-                          '${AppFormatters.specialty(doc.specialty)} • Fee: ₹${doc.consultationFee} • Pace: ~8-10 min/pt';
+                          '${AppFormatters.specialty(doc.specialty)} • Fee: ₹${doc.consultationFee} • Typical consultation: 8–10 min';
                     }
 
                     return ListTile(

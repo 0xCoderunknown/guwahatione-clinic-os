@@ -31,7 +31,7 @@ class DashboardKpiStrip extends StatelessWidget {
         ),
       ),
       DashboardKpiData(
-        title: 'Expected / Booked',
+        title: 'Upcoming bookings',
         value: '${provider.expectedBookedCount}',
         subtitle: 'Advance & phone reservations',
         icon: Icons.phone_in_talk_rounded,

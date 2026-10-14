@@ -196,7 +196,7 @@ class ChamberTokenCard extends StatelessWidget {
             size: 20,
             color: Color(0xFF64748B),
           ),
-          tooltip: 'View Longitudinal History',
+          tooltip: 'View Patient History',
           visualDensity: VisualDensity.compact,
           onPressed:
               onViewHistory ??

@@ -60,7 +60,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
       _selectedDate.isBefore(DateUtils.dateOnly(DateTime.now()));
 
   String get _queueHeaderTitle =>
-      _isPastDate ? "Past Session Roster" : "Today's Patient Queue";
+      _isPastDate ? "Previous Session" : "Today's Patient Queue";
 
   void _listenToChamberSession() {
     _chamberSessionSub?.cancel();

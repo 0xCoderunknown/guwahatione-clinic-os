@@ -83,7 +83,7 @@ class PrintHeaderAndDemographics extends StatelessWidget {
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
                 ),
                 Text(
-                  'Guwahati, Assam • Ph: +91 98765 43210 • Reg: CL-OPD-7821',
+                  'Guwahati, Assam',
                   style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
                 ),
               ],
@@ -101,13 +101,17 @@ class PrintHeaderAndDemographics extends StatelessWidget {
                 ),
               ),
               Text(
-                doctorSpecialty ?? 'Consultant Physician',
+                (doctorSpecialty != null && doctorSpecialty!.trim().isNotEmpty)
+                    ? doctorSpecialty!
+                    : 'Physician',
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
               ),
-              Text(
-                'Registration No: MCI-ASSAM-2014-982',
-                style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-              ),
+              if (consultation.doctorRegNumber != null &&
+                  consultation.doctorRegNumber!.trim().isNotEmpty)
+                Text(
+                  'Registration No: ${consultation.doctorRegNumber!.trim()}',
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                ),
             ],
           ),
         ],
@@ -196,7 +200,7 @@ class PrintHeaderAndDemographics extends StatelessWidget {
                 child: Text(
                   hasAllergies
                       ? patientAllergies.join(', ')
-                      : 'Nil Known Drug Allergies',
+                      : 'No known drug allergies recorded',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: hasAllergies

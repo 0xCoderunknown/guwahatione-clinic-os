@@ -175,7 +175,7 @@ class AdviceAndOrdersSection extends StatelessWidget {
                 label: Text(
                   nextFollowUpDate != null
                       ? AppFormatters.date(nextFollowUpDate!)
-                      : 'Pick Date',
+                      : 'Choose date',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,

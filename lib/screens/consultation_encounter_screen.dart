@@ -255,7 +255,7 @@ class _ConsultationEncounterScreenState
         ),
         actions: [
           IconButton(
-            tooltip: 'View Longitudinal History',
+            tooltip: 'View Patient History',
             icon: const Icon(Icons.history_rounded),
             onPressed: () => EncounterDialogs.showLongitudinalHistory(
               context,
@@ -549,7 +549,7 @@ class ConsultationBottomDock extends StatelessWidget {
                   label: Text(
                     isSaving
                         ? 'Saving & Ending...'
-                        : 'CONSULTATION END (Save & Sign)',
+                        : 'Finish Consultation & Sign',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,

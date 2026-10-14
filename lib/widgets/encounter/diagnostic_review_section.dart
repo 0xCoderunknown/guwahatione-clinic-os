@@ -57,7 +57,7 @@ class DiagnosticReviewSection extends StatelessWidget {
     final count = reviewedInvestigations.length;
 
     return SectionCard(
-      title: 'Step 3: Past Diagnostic Investigations Review',
+      title: 'Step 3: Previous Test Results',
       icon: Icons.biotech_outlined,
       isExpanded: isExpanded,
       onToggleExpand: onToggleExpand,
@@ -133,7 +133,7 @@ class DiagnosticReviewSection extends StatelessWidget {
                           child: TextFormField(
                             initialValue: inv.resultValue,
                             decoration: const InputDecoration(
-                              hintText: 'Result value / findings',
+                              hintText: 'Result / Findings',
                               isDense: true,
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -181,7 +181,7 @@ class DiagnosticReviewSection extends StatelessWidget {
                                       ? AppFormatters.compactDate(
                                           inv.performedDate!,
                                         )
-                                      : 'Date Done',
+                                      : 'Date performed',
                                   style: const TextStyle(fontSize: 11),
                                 ),
                               ],

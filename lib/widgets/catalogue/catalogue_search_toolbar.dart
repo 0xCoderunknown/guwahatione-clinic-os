@@ -24,7 +24,9 @@ class CatalogueSearchToolbar extends StatelessWidget {
     return TextField(
       controller: searchController,
       decoration: InputDecoration(
-        hintText: isMobile ? 'Search molecule or brand...' : 'Search by chemical molecule (e.g. Paracetamol) or trade brand (e.g. Dolo 650)...',
+        hintText: isMobile
+            ? 'Search by medicine name or active ingredient...'
+            : 'Search by medicine name (e.g. Dolo 650) or active ingredient (e.g. Paracetamol)...',
         prefixIcon: const Icon(Icons.search),
         suffixIcon: searchController.text.isNotEmpty
             ? IconButton(

@@ -19,7 +19,7 @@ class ChamberQueueHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayTitle =
-        title ?? (isPastDate ? "Past Session Roster" : "Today's Patient Queue");
+        title ?? (isPastDate ? "Previous Session" : "Today's Patient Queue");
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -81,7 +81,7 @@ class ChamberQueueHeader extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    "Archived Snapshot",
+                    "Past Queue",
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -103,7 +103,7 @@ class ChamberQueueHeader extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    "Live Sync",
+                    "Live Updates",
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,

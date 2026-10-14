@@ -37,7 +37,7 @@ class PrintOrdersAndFooter extends StatelessWidget {
               children: [
                 if (hasOrders) ...[
                   const Text(
-                    'Recommended Diagnostic Investigations (For Next Visit):',
+                    'Tests advised:',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
                   ),
                   const SizedBox(height: 2),

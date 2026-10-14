@@ -55,7 +55,7 @@ class AccordionDispatchSection extends StatelessWidget {
           buttonIcon = Icons.lock_clock_rounded;
           onDispatch = null;
         } else if (isDoctorOnBreak) {
-          buttonLabel = 'Doctor on Breather (Waiting for Doctor)';
+          buttonLabel = 'Doctor on Break (Waiting for Doctor)';
           buttonIcon = Icons.coffee_rounded;
           onDispatch = null;
         } else if (isDoctorReady) {
@@ -82,7 +82,7 @@ class AccordionDispatchSection extends StatelessWidget {
           };
         } else {
           // Doctor is idle, has not clicked "Ready for First Patient"
-          buttonLabel = 'Waiting for Doctor to Signal Ready';
+          buttonLabel = 'Waiting for doctor';
           buttonIcon = Icons.hourglass_top_rounded;
           onDispatch = null;
         }
@@ -178,7 +178,7 @@ class AccordionDispatchSection extends StatelessWidget {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        '${AppFormatters.doctorTitle(appointment.doctorName)} is taking a breather. Reception queue is held until doctor clicks \'NEXT PATIENT\'.',
+                        '${AppFormatters.doctorTitle(appointment.doctorName)} is on a break. Reception queue is held until doctor clicks \'NEXT PATIENT\'.',
                         style: const TextStyle(
                           fontSize: 11,
                           color: Color(0xFFB45309),

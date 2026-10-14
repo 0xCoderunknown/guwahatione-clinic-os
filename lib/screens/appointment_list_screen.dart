@@ -339,7 +339,7 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Advance / Phone Bookings (${queueView.booked.length})',
+                  'Upcoming Appointments (${queueView.booked.length})',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
@@ -406,7 +406,7 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${queueView.completed.length} patient${queueView.completed.length == 1 ? '' : 's'} were consulted. All records are archived in the top accordion.',
+                  '${queueView.completed.length} ${queueView.completed.length == 1 ? 'patient was' : 'patients were'} seen. All records are archived in the top accordion.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12, color: Colors.green.shade800),
                 ),

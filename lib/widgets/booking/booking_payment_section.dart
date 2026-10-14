@@ -94,7 +94,7 @@ class BookingPaymentSection extends StatelessWidget {
                 label = 'Unpaid (Phone Reservation)';
                 break;
               case PaymentType.freeFamily:
-                label = 'FREE (Family / VVIP)';
+                label = 'Family / Complimentary';
                 break;
               case PaymentType.freeReview:
                 if (!reviewEligibility.hasVisitedDoctorEarlier) {
@@ -173,7 +173,7 @@ class BookingPaymentSection extends StatelessWidget {
                 ? Colors.grey.shade100
                 : null,
             helperText: selectedPayment == PaymentType.freeReview
-                ? 'Locked to ₹0 for 14-day Free Review'
+                ? 'No fee · Eligible free follow-up'
                 : null,
           ),
           keyboardType: TextInputType.number,

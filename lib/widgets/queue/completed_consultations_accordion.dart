@@ -100,7 +100,7 @@ class _CompletedConsultationsAccordionState
           subtitle: Text(
             _isExpanded
                 ? 'Tap to collapse completed list'
-                : 'Tap to view $count finished consult${count == 1 ? '' : 's'}',
+                : 'View $count completed consultation${count == 1 ? '' : 's'}',
             style: TextStyle(fontSize: 12, color: Colors.green.shade700),
           ),
           children: [

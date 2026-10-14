@@ -95,10 +95,10 @@ class StagedMedicineForm extends StatelessWidget {
       if (compName.isEmpty) compName = stagedMedicine!.fullCompositionLabel;
     } else if (stagedGenericGroup != null) {
       displayName = stagedGenericGroup!.compositionLabel;
-      if (compName.isEmpty) compName = 'Generic formulation';
+      if (compName.isEmpty) compName = 'Generic medicine';
     } else if (stagedUnlistedName != null) {
       displayName = stagedUnlistedName!;
-      if (compName.isEmpty) compName = 'Outside / Unlisted';
+      if (compName.isEmpty) compName = 'Medicine not in catalogue';
     }
 
     return Container(
@@ -117,7 +117,7 @@ class StagedMedicineForm extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Staging: $displayName ($compName)',
+                  'Preparing: $displayName ($compName)',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
@@ -127,7 +127,7 @@ class StagedMedicineForm extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.close, size: 18),
-                tooltip: 'Cancel Staging',
+                tooltip: 'Cancel',
                 onPressed: onCancelStaging,
               ),
             ],
