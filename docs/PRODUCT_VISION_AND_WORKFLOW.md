@@ -29,6 +29,8 @@ GuwahatiOne Clinic OS is built to focus on one primary role:
 | **Consulting Physician** | Chamber Laptop / Monitor | 4-Digit Doctor PIN (Chamber) | Focused patient consultation, rapid vitals/findings recording, medication reconciliation & prescribing, diagnostic orders, and review pacing. |
 | **Patient** | Chamber & Waiting Room | None | Receives an atomic token, receives an approximate consultation window, walks away with a clear, legible A4/A5 printed prescription. |
 
+> 🔒 All PINs above are default values. At runtime they are evaluated via domain-salted SHA-256 hashing (`AuthProvider.hashPin`). No plaintext credentials are ever stored in browser storage or device memory.
+
 ---
 
 ## ⚡ 3. Scenario 1: New Patient OPD Encounter Walkthrough
@@ -50,12 +52,10 @@ GuwahatiOne Clinic OS is built to focus on one primary role:
           ▼ (Real-time sync to Chamber; fallback: Doctor Restricted Emergency Runway "Next at Door")
 [ Doctor Chamber Screen ]
    9. Doctor's screen displays clean Header with Patient Demographics & Allergy Alert.
-   10. Body is blank and organized into 3 fast, sequential sections:
+   10. Workspace is structured into the canonical 5-step clinical encounter sequence:
 ```
 
 ### Canonical 5-Step Clinical Encounter Pipeline:
-
-> ⚠️ **Note (Updated):** The original 3-section prototype description ("Section A: Findings", "Section B: Medications", "Section C: Tests") was superseded when the encounter was promoted to the formal 5-step pipeline in `v1.6.0`. The canonical encounter structure is defined in **AGENTS.md Invariant #3** and implemented in `lib/screens/consultation_encounter_screen.dart`.
 
 - **Step 1 — Patient Header & Allergies Alert Banner:** Displays patient demographics, longitudinal history button, and critical allergy alert chips.
 - **Step 2 — Vitals & Clinical Examination:** Rapid inline entry of BP, RBS, Pulse, Weight, Temperature, SpO₂, Chief Complaints, and Provisional Diagnosis. Collapsible into a compact summary badge strip after entry.
@@ -69,12 +69,12 @@ GuwahatiOne Clinic OS is built to focus on one primary role:
 
 ---
 
-## 🔁 4. Scenario 2: Return Patient & 14-Day Free Review
+## 🔁 4. Scenario 2: Return Patient & Doctor-Configured Free Review
 
 ```
 [ Reception Desk ]
    1. Patient returns 7 days later with fresh blood test reports.
-   2. System auto-detects that the patient visited Dr. Bhaskar within the 14-day free review window.
+   2. System auto-detects that the patient visited Dr. Bhaskar within the doctor's configured free review window (e.g. 14 days).
    3. Reception issues a Token marked "FREE REVIEW (₹0)" and clicks "Call In".
           │
           ▼ (Zero-touch real-time chamber update)
@@ -109,7 +109,7 @@ OPD physicians in India have distinct prescribing habits based on training and s
 | **Generic / Composition Centric** | Thinks pharmacologically in active chemical salts (*Telmisartan 40mg*, *Paracetamol 650mg*, *Pantoprazole 40mg*). | Autocomplete highlights salt composition and provides one-tap chips for associated brand formulations. |
 | **Personal Formulary Centric** | Routinely prescribes a curated subset of 15–30 medicines. | Quick-access favorite chips appear above the search bar for zero-typing selection. |
 
-> **Architecture Principle:** The system supports a per-doctor configuration field (`searchPreference: 'brandFirst' | 'compositionFirst'`) keeping the global catalogue normalized. A `favoritesFirst` mode is under consideration as a future backlog item (**P9**+) and must be formally specced in `docs/SCHEMA_AND_MODELS.md` before implementation.
+> **Architecture Principle:** The system supports a per-doctor configuration field (`searchPreference: 'brandFirst' | 'compositionFirst'`) keeping the global catalogue normalized. A `favoritesFirst` mode is under consideration as a future backlog item (**P12**+, post-RFC-2) and must be formally specced in `docs/SCHEMA_AND_MODELS.md` before implementation.
 
 ---
 
@@ -123,11 +123,11 @@ In a busy Indian clinic where a physician sees 30 to 60 patients in a single eve
 - The **Inline Sectional Flow** ("Add Findings" -> "Add Medicine" with smart prefilled defaults) keeps hands on the keyboard and reduces prescribing time to under 15 seconds per drug.
 
 ### 2. The Architectural Reality of "Zero-Touch" Chamber Sync
-To fulfill the PM vision where *"the doctor didn't have to touch even the mouse"*, the app cannot rely solely on the doctor manually picking names from a list.
-- **Implementation Strategy:**
-  - Introduce an `activeCallingToken` field on the doctor's daily chamber record (`counters/daily_chamber_{doctorId}_{date}`).
-  - When the receptionist clicks `"Call Token #X"`, Firestore pushes this change down an active snapshot listener on the doctor's chamber screen.
-  - The Doctor Chamber screen detects the active patient transition and automatically navigates or renders the encounter screen for that patient.
+To fulfill the PM vision where *"the doctor didn't have to touch even the mouse"*, the system uses a real-time Firestore document listener on the doctor's daily chamber record.
+- **Shipped Implementation:**
+  - Reception clicking `[SEND IN]` writes the active token into the chamber sync document at `counters/chamber_{doctorId}_{yyyy-MM-dd}` (model: `ChamberSession`, service: `ChamberService`).
+  - The Doctor Chamber screen holds a live `StreamBuilder<ChamberSession>` on this document. A state transition to `calling` or `in_consultation` automatically surfaces the patient encounter screen with zero manual doctor interaction.
+  - `_isConsultationOpen` re-entrance lock prevents duplicate encounter screens from stacking.
 
 ### 3. Medication Reconciliation: Why START / CONTINUE / STOP is Essential
 Handwritten prescriptions fail because when a patient brings 4 old slips, no one knows which drugs are current and which were stopped.
@@ -152,6 +152,6 @@ To keep the system focused on outpatient clinical workflows:
 
 ---
 
-## 🚀 8. Summary & Next Steps
+## 🚀 8. Summary
 
-This document serves as the **master product and user experience blueprint** for GuwahatiOne Clinic OS. All upcoming UI refinements, state handlers, and keyboard navigation shortcuts should be measured against this standard: **fast, focused, legible, and built for the real-world Indian OPD chamber.**
+This document serves as the **master product and user experience blueprint** for GuwahatiOne Clinic OS. All UI refinements, state handlers, and keyboard navigation shortcuts must be measured against this standard: **fast, focused, legible, and built for the real-world Indian OPD chamber.**

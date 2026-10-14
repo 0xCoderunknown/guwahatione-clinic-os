@@ -18,7 +18,7 @@ A web-first clinic and chamber management system built for standalone polyclinic
 > 
 > ### 🔄 Visit 2 — 1 Week Later (Day 7)
 > **Free Review · Zero Paperwork**  
-> Reception notes your visit is within 14 days—your review is free. You walk into the chamber. The doctor greets you by name. He doesn't ask for your crumpled old prescription; it's already on his screen. He reviews your lab reports, marks one drug as **STOPPED**, adjusts another, and prints your updated treatment plan.
+> Reception notes your visit falls within the doctor's free review window—your review is free. You walk into the chamber. The doctor greets you by name. He doesn't ask for your crumpled old prescription; it's already on his screen. He reviews your lab reports, marks one drug as **STOPPED**, adjusts another, and prints your updated treatment plan.
 > 
 > ---
 > **No lost papers. No memory tests. No clunky hospital ERPs. Just continuous outpatient care.**
@@ -75,6 +75,8 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 - **Admin vs. Prescriber Catalogue Separation (`MedicineCatalogueScreen`)** — Dedicated administration interface in reception shell for clinic owners to curate products and active compositions, with role guards preventing chamber prescriber edits.
 - **Catalogue Deduplication** — Identifies and removes duplicate drug entries with identical names, compositions, and strengths from Firestore.
 - **Clean Prescription Print Output (`PrescriptionPrintScreen`)** — High-contrast monochrome print layout supporting **A4** and **A5** paper, pre-printed letterhead mode (reserved 130px top margin), active Rx schedule filtering (`START`/`CONTINUE` only), and distinct audit warning box for discontinued drugs.
+- **📋 Prescription Template Presets (`P9`)** — 1-tap OPD clinical bundles (URI/Pharyngitis, Acute Gastritis, Gastroenteritis, Viral Fever, HTN Starter) with brand and salt-level duplicate suppression via `MedicineEngine.evaluateTemplateApplication`, staged as non-destructive `START` entries.
+- **🔔 Multi-Chamber Queue Sound Announcer (`P10`)** — In-browser dual-tone chime (587.33 Hz → 880 Hz) and SpeechSynthesis vocal token callout ("Token N, please proceed to Dr. X") on patient dispatch, with persistent mute/unmute toggle and deduplication guard (`SoundService`).
 
 ### 🏢 Clinic Operations & Ledger Integrity
 - **⚡ Agile Reception Queue & Discretionary Chamber Dispatch (`AppointmentListScreen`)** — Top-level collapsible `CompletedConsultationsAccordion` archives finished consultations, keeping the lobby list focused on waiting patients. Single-expansion controlled accordion with high-visibility `[SEND IN]` button. Chamber occupancy collision guard alerts reception before replacing an in-consultation patient. Late/bypassed tokens (`[BYPASSED / LATE]`) maintain their permanent token and queue visibility without destructive "Skip" states or database mutations.
@@ -87,7 +89,7 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 - **🩺 Doctor Chamber Live Board** — Read-only chamber dashboard for consultants showing live token order, active calling token status, and fee share with 1-tap access to patient clinical records and consultation encounters.
 - **🛡️ Audit-Proof Ledger** — Zero deletions allowed; consecutive token sequence is preserved on screen and database.
 - **🚫 Explicit "Absent / No-Show" Status** — Replaced "Cancel" with "Absent" so slots are preserved on the doctor ledger with ₹0 amount.
-- **💳 Granular Payment Types** — Paid Cash, Paid UPI, Post-Pay, Free Review (strictly for returning patients of same doctor within 14 days), Free Family (inviolable courtesy waiver), and Unpaid (phone reservations).
+- **💳 Granular Payment Types** — Paid Cash, Paid UPI, Post-Pay, Free Review (strictly for returning patients of the same doctor within the doctor's configured free review window, 1:1 per paid visit), Free Family (inviolable courtesy waiver), and Unpaid (phone reservations).
 - **⏱️ Asynchronous OPD Advance Booking & 1-Tap Desk Check-In** — Phone reservations (`VisitStatus.booked`) remain segregated from the doctor chamber queue until physical counter check-in; rapid 1-tap & keyboard shortcut modal (`QuickCheckInDialog`) for counter payment reconciliation.
 - **🚪 Restricted Emergency Door Self-Call Runway** — Doctor chamber fallback runway (`ChamberDoorOverrideBar`) strictly capped to the next 1–2 verified lobby-checked-in patients (`waitingInLobby`) with confirmed fee/waiver, auto-hiding during active consultations.
 - **🔒 Read-Only Historical Chamber Archive** — Historical calendar dates switch Doctor Chamber to read-only archive mode (`ChamberArchiveBanner`), suppressing live calling triggers and marking unresolved appointments as `Unattended / No-Show`.
@@ -233,21 +235,23 @@ lib/
 │   └── engines/
 │       ├── engines.dart                     # Central barrel export for all domain engines
 │       ├── revenue_engine.dart              # Pure realized revenue math, chamber KPIs & doctor rollups
-│       ├── appointment_engine.dart          # 14-day free review eligibility, fee resolution & queue states
+│       ├── appointment_engine.dart          # Doctor-configured free review eligibility, fee resolution & queue states
 │       ├── cash_handover_engine.dart        # End-of-day closing reconciliation & denomination counter
 │       ├── medicine_engine.dart             # Chemical search scoring, default OPD regimens & Rx segregation
 │       └── whatsapp_engine.dart             # Structured clinical summary formatting & wa.me deep links
 ├── models/
 │   ├── models.dart                          # Central barrel file exporting all domain models
 │   ├── appointment.dart                     # Appointment schema, PaymentType & AppointmentStatus
+│   ├── appointment_event.dart               # Forensic audit trail event schema for state transitions
 │   ├── chamber_session.dart                 # Pure domain model for 2-way doctor-reception chamber handshake
 │   ├── consultation.dart                    # Immutable encounter schema with active/stopped getters
 │   ├── diagnostic_investigation.dart        # Lab review (performedDate) & OrderedTest schemas
 │   ├── doctor.dart                          # Doctor schema with Chamber PIN, fee, and searchPreference
 │   ├── medicine.dart                        # Master catalogue decoupling composition from trade brand + clinical defaults
 │   ├── patient.dart                         # Patient schema with phone-keying & allergies
-│   ├── patient_review_eligibility.dart      # Encapsulates 14-day free review evaluation result
+│   ├── patient_review_eligibility.dart      # Encapsulates per-doctor free review eligibility evaluation result
 │   ├── prescription_item.dart               # PrescriptionItem state machine (START/CONTINUE/STOP)
+│   ├── prescription_template.dart           # OPD regimen bundles & template application result
 │   ├── user_role.dart                       # UserRole & UserSession models
 │   └── vitals.dart                          # Vitals schema (BP, pulse, SpO2, temp, weight)
 ├── providers/
@@ -261,6 +265,7 @@ lib/
 │   ├── doctor_service.dart                  # Doctor roster & chamber credential management
 │   ├── patient_service.dart                 # Patient demographics & allergy directory queries
 │   ├── offline_queue_cache_service.dart     # Silent local queue caching & dropout resilience
+│   ├── sound_service.dart                   # In-clinic queue chime & vocal token callout (mute-persistent, deduplication-guarded)
 │   └── firestore_paths.dart                 # Centralized type-safe collection & counter path builders
 ├── screens/
 │   ├── login_screen.dart                    # Role selector shell (Doctor Chamber vs Reception Desk)
@@ -318,6 +323,7 @@ lib/
 │   │   ├── rx_reconciliation_section.dart   # Step 4: Coordinator for Rx reconciliation, search, and staging
 │   │   ├── vitals_and_exam_section.dart     # Step 2: Vitals entry grid, collapsible findings pills & exam notes
 │   │   └── rx/                              # Specialized prescribing sub-components
+│   │       ├── rx_template_presets_bar.dart     # 1-tap OPD clinical bundle presets chip bar (P9)
 │   │       ├── staged_medicine_form.dart    # Prefilled OPD defaults, dosage chips & chronic toggle
 │   │       ├── rx_search_results_view.dart  # Chemical salt + trade brand search pills & pickers
 │   │       └── reconciliation_item_row.dart # Active regimen row with 1-tap CONTINUE/STOP actions
@@ -337,6 +343,9 @@ lib/
     ├── platform_print.dart                  # Unified cross-platform print interface
     ├── platform_print_web.dart              # Web print implementation using dart:js_interop
     ├── platform_print_stub.dart             # Native desktop/mobile fallback print stub
+    ├── platform_sound.dart                  # Unified cross-platform sound interface
+    ├── platform_sound_web.dart              # Web Audio API chime & browser SpeechSynthesis implementation
+    ├── platform_sound_stub.dart             # Non-web platform sound no-op stub
     ├── platform_url.dart                    # Cross-platform URL launcher interface
     ├── platform_url_web.dart                # Web window.open via dart:js_interop
     └── platform_url_stub.dart               # Non-web platform URL stub
@@ -353,14 +362,18 @@ The repository maintains an active automated testing suite covering domain busin
 flutter test
 ```
 
-- **172 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, doctor-configurable free review eligibility terms (0 to 30 days), prescription reconciliation (`START`/`CONTINUE`/`STOP`), chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, atomic booking concurrency locks, forensic append-only audit trail logging, chamber collision locks & single-occupant integrity, and print schedule segregation with 100% pass rate.
+- **184 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, doctor-configurable free review eligibility terms (0 to 30 days), prescription reconciliation (`START`/`CONTINUE`/`STOP`), prescription template preset evaluation & duplicate suppression, in-clinic sound chime mute/unmute persistence, chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, atomic booking concurrency locks, forensic append-only audit trail logging, chamber collision locks & single-occupant integrity, and print schedule segregation with 100% pass rate.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---
 
-## 🤝 Contributing
+## 🛠️ Maintenance & Governance
 
-We welcome contributions of all sizes. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+This project is **100% coded and maintained by AI**, directed by the human Product Manager & Tester.
+- For AI maintenance workflows, developer setup, and configuration rules, see [CONTRIBUTING.md](CONTRIBUTING.md).
+- For clinical invariants, patient privacy, and operational ethics, see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+- For product vision and clinical workflows, see [docs/PRODUCT_VISION_AND_WORKFLOW.md](docs/PRODUCT_VISION_AND_WORKFLOW.md).
+- For active sprint priorities and backlog, see [docs/PRODUCT_ROADMAP.md](docs/PRODUCT_ROADMAP.md).
 
 ---
 

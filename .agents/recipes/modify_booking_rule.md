@@ -1,6 +1,6 @@
 # 📋 Recipe: Modifying Appointment & Booking Rules
 
-Follow this checklist whenever modifying queue logic, 14-day free review policies, fee calculations, or booking constraints.
+Follow this checklist whenever modifying queue logic, doctor-configured free review policies (0–30 days, 1:1 cycle), fee calculations, or booking constraints.
 
 ---
 

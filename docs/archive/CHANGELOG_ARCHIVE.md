@@ -1,355 +1,102 @@
-# Changelog Archive (v1.0.0 — v1.14.0)
+# 📦 GuwahatiOne Clinic OS — Changelog Archive (v1.0.0 — v1.14.0)
 
 Historical release notes for GuwahatiOne Clinic OS prior to v1.15.0.  
-For active and recent release notes, see the root [CHANGELOG.md](../../CHANGELOG.md).
+For current and recent releases, see the root [`CHANGELOG.md`](../../CHANGELOG.md).
 
-> ⚠️ **Note for AI Agents & Developers:** Some widget and file names referenced in entries below were **renamed or merged** during the v1.16.5 architectural consolidation. Notably:
-> - `lib/widgets/common/doctor_form.dart` → merged into `lib/screens/add_doctor_screen.dart`
-> - `PrintClinicalSnapshot` → merged into `PrintHeaderAndDemographics`
-> - `DoctorRosterCard` → merged into `DoctorListScreen`
-> - `DoctorStatisticsCard` → merged into `StatisticsScreen`
-> - `VitalsInputGrid` → merged into `VitalsAndExamSection`
->
-> See `CHANGELOG.md [1.16.5]` for the complete list of retired files. Do **not** create or restore these files.
+> 💡 **Product & Engineering Reference:**  
+> - **Historical Scope:** Documents early foundation milestones prior to v1.15.0.  
+> - **For AI Architects & Engineers:** Do **not** extract current code patterns or schemas from these historical notes. Always adhere to active standards in [`AGENTS.md`](../../AGENTS.md) and [`docs/SCHEMA_AND_MODELS.md`](../SCHEMA_AND_MODELS.md).  
+> - **Retired Paradigms:** `FirebaseService` facade was deleted in v1.16.5 (use modular services in `lib/services/`). Hardcoded 14-day review was replaced in v1.20.0 by doctor-configurable `freeReviewDays` (0–30) and 1:1 cycle (v1.22.0). Deprecated `PaymentType.paid` was purged in v1.29.1 (use canonical `paidCash` / `paidUpi`). Merged widgets from v1.16.5 (`doctor_form.dart`, `PrintClinicalSnapshot`, `DoctorRosterCard`, etc.) must not be recreated.  
+> - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
 ---
 
 ## [1.14.0] — 11-10-2026
 
-### Added
-- **Doctor Medical Council Registration Number & Printout Signature Block (`P5`):**
-  - **Schema & Model Expansion:** Added optional `medicalRegNumber` to `Doctor` and immutable `doctorRegNumber` snapshot to `Consultation` models compliant with Indian medical-legal standards.
-  - **Doctor Registration & Edit Form:** Added Medical Council Registration Number input field (`lib/widgets/common/doctor_form.dart`) allowing clinic owners to configure credentials (e.g., `AMC-24891`, `NMC-10293`).
-  - **Roster Card Badge:** Added verified registration badge (`📋 Reg: {medicalRegNumber}`) on `DoctorRosterCard`.
-  - **Official Prescription Footer (`PrintOrdersAndFooter`):** Renders official doctor registration number directly under doctor name on both A4 and A5 printable sheets with automatic fallback to historical consultation record.
-  - **Seamless Encounter Passing:** Enriched `buildConsultation` and `_navigateToPrint` in `ConsultationEncounterScreen` to pass and snapshot the physician's registration number atomically.
-- **Pure Domain Engine Test Fortification:**
-  - Added dedicated test suites for `RevenueEngine` (`test/revenue_engine_test.dart`), `AppointmentEngine` (`test/appointment_engine_estimated_time_test.dart`), and `MedicineEngine` (`test/medicine_engine_defaults_test.dart`), establishing comprehensive test coverage across realized revenue, duplicate booking detection, and pharmacological defaults.
+### Doctor Medical Council Registration & Printout Signature Block (`P5`)
+- **Operational Impact:** Doctor profiles support official State Medical Council / NMC registration credentials (e.g. `AMC-24891`, `NMC-10293`). Registration numbers print automatically under physician signatures on A4 and A5 prescription letterheads, compliant with Indian medical-legal requirements.
+- **Architectural Touchpoints:**
+  - `lib/models/doctor.dart`: Added optional `medicalRegNumber` field.
+  - `lib/models/consultation.dart`: Added immutable `doctorRegNumber` consultation snapshot.
+  - `lib/widgets/print/print_orders_and_footer.dart`: Renders doctor registration credential directly beneath the signature block.
 
 ---
 
-## [1.13.0] — 11-10-2026
+## [1.12.0 – 1.13.0] — 11-10-2026
 
-### Changed
-- **Purified Firebase Layer & Gateway Abstraction:**
-  - Completely eliminated `DocumentSnapshot` and `cloud_firestore` imports from all screens and widgets.
-  - Updated `ChamberService` and `FirebaseService` facade to map raw Firestore snapshots into typed `Stream<ChamberSession>` before dispatching to state providers and UI.
-  - Purged `cloud_firestore` import from `ClinicProvider` and added convenience helper `getDoctorById(doctorId)`.
-- **UI & Widget Purification (Engine Delegation):**
-  - Delegated raw list counting and filtering in widgets to `AppointmentEngine.countDoctorAppointments` and `MedicineEngine.segregatePrescriptions`.
-  - Typed all chamber stream builders across presentation widgets (`StreamBuilder<ChamberSession>`) with boolean getters replacing ad-hoc string comparisons.
-
-### Added
-- **Introduced `ChamberSession` Domain Model:** Created strongly typed, pure Dart domain model `lib/models/chamber_session.dart` with status properties and typed boolean getters (`isReadyForNext`, `isCalling`, `isInConsultation`, `isConsultationEnded`, `isIdle`, `hasActivePatient`).
-
----
-
-## [1.12.0] — 11-10-2026
-
-### Changed
-- **Screen Coordinator Scaffold Standardization Across All Screens:**
-  - Migrated all screens in `lib/screens/` to strict Thin Coordinator Scaffolds (orchestrating only layout bounds, responsive breakpoints, lifecycles, and navigation triggers).
-  - Relocated `AddAppointmentDialog` from `lib/screens/` to `lib/widgets/booking/add_appointment_dialog.dart` and re-exported in `lib/widgets/widgets.dart`.
-  - Stripped in-memory filtering and sorting calculations out of `MedicineCatalogueScreen`, delegating to pure domain methods `MedicineEngine.filterAndSortCatalogue` and `MedicineEngine.countUniqueMolecules`.
-
-### Added
-- **UI Sub-Component Decomposition:** Extracted modular sub-widgets for doctor roster cards, analytics summaries, daily breakdown tables, and chamber queues to establish clean separation of concerns.
+### Screen Coordinator Scaffolds & Typed Chamber Domain Model
+- **Operational Impact:** Established lightweight presentation coordinators across all screens, preventing UI lag and ensuring snappy navigation on counter laptops and tablets.
+- **Architectural Touchpoints:**
+  - `lib/screens/`: Migrated screens to Thin Coordinator Scaffolds orchestrating layout bounds and navigation triggers while delegating calculations to pure domain engines.
+  - `lib/models/chamber_session.dart`: Introduced strongly typed pure Dart domain model with status getters (`isReadyForNext`, `isCalling`, `isInConsultation`, `isConsultationEnded`, `isIdle`, `hasActivePatient`).
+  - Purged raw `DocumentSnapshot` and `cloud_firestore` imports from presentation widgets.
 
 ---
 
 ## [1.11.0] — 11-10-2026
 
-### Added
-- **Keyboard-First Walk-In Registration Modal (`AddAppointmentDialog`):**
-  - Full Tab-chaining across Phone (autofocus) ➔ Name ➔ Age ➔ Sex ➔ Doctor ➔ Payment ➔ Submit with global Enter key submission.
-  - Physical Sex Hotkey Selector (`KeyboardGenderSelector`): 3-way toggle row (`M`/`F`/`O` keys) with null initial state enforcing deliberate selection.
-  - Smart Phone Auto-Advance: 10-digit entry searches patient directory, autofilling returning patients and jumping straight to doctor picker.
-- **Provisional Live Token Preview & Wait Time Badge:**
-  - Instantly computes next token number upon doctor selection via pure domain `AppointmentEngine.calculateProvisionalNextToken`.
-  - Calculates dynamic estimated consultation time window (`AppointmentEngine.calculateProvisionalEstimatedWindow`).
-- **Same-Day Duplicate Booking Protection per Doctor:**
-  - Enforces composite uniqueness: `(Target Date + DoctorId + Normalized Patient Name + Phone)`.
-  - Real-time warning alert banner disabling submit button while duplicate is detected, with 1-click helper to view existing token in today's live queue.
-  - Preserved family member exception sharing a phone number under distinct patient names.
-- **Owner Role & 6-Digit Master PIN Authentication:**
-  - Introduced unified 3-tier user role structure (`receptionist`, `doctor`, `owner`).
-  - Clinic owner authentication via 6-digit master PIN hashed in Firestore (`clinic_config/settings`), unlocking doctor CRUD, consultation fee edits, and revenue audit access.
-  - Restored Doctor Editing modal (`DoctorListScreen`), allowing owners to modify name, specialty, phone, schedule days, and consultation fees.
-
-### Fixed
-- **Defensive Patient Model Parsing:** Resolved `type Null is not a subtype of type String` during phone lookup by handling null `id`, `phoneNumber`, `gender`, and multi-type `lastVisitDate`.
-- **Service Layer Composite Uniqueness:** Updated `BookingService.hasAppointmentForDate` and `FirebaseService.hasAppointmentForDate` to accept composite patient name and doctor ID parameters.
+### Keyboard-First Walk-In Registration & 3-Tier User Roles
+- **Operational Impact:**
+  - **High-Speed Counter Registration:** Tab-chaining walk-in modal with hotkeys (`M`/`F`/`O` for gender) and 10-digit phone lookup auto-filling returning patient demographics.
+  - **Provisional Token & Wait Estimation:** Instantly previews upcoming token number and estimated consultation time window upon doctor selection.
+  - **Same-Day Duplicate Booking Protection:** Prevents duplicate bookings per doctor per day while preserving family members sharing a phone number.
+  - **3-Tier Role Authentication:** Introduced Clinic Owner (master 6-digit PIN unlocking fee/doctor configurations), Doctor Chamber (4-digit PIN), and Receptionist (`0000`).
+- **Architectural Touchpoints:**
+  - `lib/widgets/booking/add_appointment_dialog.dart`: Keyboard-navigable booking modal.
+  - `lib/core/engines/appointment_engine.dart`: `calculateProvisionalNextToken` and estimated wait window math.
+  - `lib/providers/auth_provider.dart`: Unified 3-tier role management.
 
 ---
 
-## [1.10.0] — 10-10-2026
+## [1.9.0 – 1.10.0] — 10-10-2026
 
-### Added
-- **Agile Reception Queue & Discretionary Chamber Dispatch:**
-  - Top-Level Collapsible Accordion (`CompletedConsultationsAccordion`) grouping finished visits into a collapsible drawer.
-  - Discretionary Chamber Dispatch with high-visibility `[SEND IN]` button and chamber occupancy collision detection.
-  - Non-Destructive Late / Bypassed Token Tracking tagging waiting tokens lower than active chamber token as `[BYPASSED / LATE]` without mutating database status.
-- **Air Traffic Control Arrival Estimation:**
-  - Dynamic estimated arrival time calculations (`AppointmentEngine.calculateEstimatedWindow`) considering chamber start times, consultations ahead, and 8-minute OPD averages.
-- **Responsive Layout Optimization Across Clinic Counter Tiers:**
-  - FHD 21.5"-24" Counter Monitors (1920×1080): Container constraints expanded up to 1800px with side-by-side split panels (`flex: 6` Queue, `flex: 4` Doctor Roster).
-  - Counter Laptops (1366×768 & 1536×864): Vertical budget optimizations suppressing redundant headers, compacting padding, and rendering today's live queue above the fold.
-  - Double AppBar Suppression: Suppressed secondary screen AppBars when embedded in `OwnerShell` on desktop.
+### Chamber Handshake Protocol, Arrival Estimation & Indian Date Standards
+- **Operational Impact:**
+  - **Doctor-Reception Handshake:** Established the foundation of physician-paced chamber calling: consultation conclusion switches session to breather, prompting the doctor to signal readiness before reception dispatches the next patient.
+  - **Air Traffic Control Arrival Estimation:** Computes estimated patient consultation times considering chamber start times, consultations ahead, and 8-minute OPD averages.
+  - **Mandatory Indian Date Standardization:** Standardized all UI dates, printed prescriptions, and audit views to Indian numerical format (`DD-MM-YYYY` / `DD-MM-YY`) via centralized `AppFormatters`.
+  - **Counter PC Layout Optimization:** FHD 1920×1080 expanded container constraints up to 1800px; 1366×768 laptop optimizations rendering live queues above the fold.
+- **Architectural Touchpoints:**
+  - `lib/utils/formatters.dart`: `AppFormatters` date, time, and currency utilities.
+  - `lib/core/engines/appointment_engine.dart`: `calculateEstimatedWindow` logic.
 
 ---
 
-## [1.9.0] — 10-10-2026
+## [1.8.0 – 1.8.3] — 07-10-2026 – 09-10-2026
 
-### Added
-- **Doctor-Reception 2-Way Chamber Handshake Protocol:**
-  - **Synchronized Pacing & The Breather:** When a physician clicks **"CONSULTATION END (Save & Sign)"**, the chamber session atomically transitions to `consultation_ended`. Reception immediately sees the doctor is wrapping up / taking a breather.
-  - **Doctor Readiness Trigger:** Prominent, single-click **"NEXT PATIENT"** banner (`ChamberControlBanner`) enabling doctors to signal `ready_for_next` at their own pace.
-  - **Reception Physical Presence Verification:** Reception desk visually alerts with 🟢 `READY FOR NEXT`. Reception verifies physical presence at the counter, skips absent tokens, and admits verified patients into the chamber (`calling`).
-  - **Zero-Confusion Auto-File Load:** Admitting a patient pushes their exact clinical chart to the doctor's chamber screen with zero risk of loading a skipped patient's record.
-  - **Reception Breather Speed Bump:** Added confirmation dialog in `DashboardTodayQueueCard` and `AppointmentAccordion` preventing accidental patient admission while the doctor is on break.
-  - **Doctor Emergency Safety Valve:** Added manual direct-admission override dialog in `ChamberTokenCard` allowing physicians to admit patients directly if the reception desk is offline or unresponsive.
-- **Indian Date Format Standardization (DD-MM-YYYY / DD-MM-YY):**
-  - Centralized all date representations across the app to Indian standard numerical formatting (`dd-MM-yyyy`, `dd-MM-yy`, and `EEEE, dd-MM-yyyy`) via `AppFormatters`.
-  - Standardized booking dialogs, print headers, print follow-up dates, daily detail headers, and accordion cards to use `AppFormatters`.
-
-### Changed
-- Replaced direct `DateFormat` invocations across print previews, accordions, and booking dialogs with centralized `AppFormatters`.
-- Bumped project version to `1.9.0+12`.
+### Pure Dart Domain Engines & Modular Firestore Services Layer
+- **Operational Impact:** Completely decoupled business domain calculations (revenue sharing, fee resolution, drug search scoring) from Flutter UI widgets into pure Dart engines, making clinical logic instantly testable without UI dependencies.
+- **Architectural Touchpoints:**
+  - `lib/core/engines/`: Created `RevenueEngine`, `AppointmentEngine`, and `MedicineEngine` pure Dart modules.
+  - `lib/services/`: Decomposed backend into single-responsibility services: `BookingService`, `ConsultationService`, `ChamberService`, `CatalogueService`, `DoctorService`, `PatientService`.
+  - `lib/widgets/common/metric_kpi_card.dart`: Unified responsive metric KPI card supporting horizontal and vertical layouts.
 
 ---
 
-## [1.8.3] — 09-10-2026
+## [1.5.0 – 1.7.0] — 07-10-2026
 
-### Fixed
-- **Documentation & Repo Hygiene:** Corrected clone repository URL in `README.md` to point to `guwahatione-clinic-os`.
-- **Testing Documentation:** Replaced obsolete test prohibition notices in `README.md` and `CONTRIBUTING.md` with active automated test guidance and CI verification steps.
-- **Project Structure Tree:** Updated `README.md` services directory breakdown to include all modular sub-services in `lib/services/`.
-- **CI Build Pipeline:** Injected mock Firebase options template (`lib/firebase_options.dart.example`) prior to analyzer execution in GitHub Actions CI workflow, resolving failure caused by gitignored secret configuration in clean clones.
-
----
-
-## [1.8.2] — 09-10-2026
-
-### Added
-- **Modular Sub-Service Decomposition (`lib/services/`):**
-  - `FirestorePaths`: Centralized type-safe path, date key, and counter key builders.
-  - `BookingService`: Dedicated service for atomic bookings, queue allocations, and appointment queries.
-  - `ConsultationService`: Dedicated service for append-only encounters and longitudinal timelines.
-  - `ChamberService`: Zero-touch chamber calling broadcast and session lifecycle management.
-  - `CatalogueService`: Master medicine catalogue curation, deterministic seeds, deduplication, and search.
-  - `DoctorService` & `PatientService`: Targeted services for doctor roster and patient demographics.
-- **AI Operational Recipes (`.agents/recipes/`):**
-  - `add_clinical_field.md`: Standardized checklist for clinical encounter field additions.
-  - `modify_booking_rule.md`: Standardized checklist for booking and queue policy modifications.
-- **Fast Domain Automated Testing Re-Enabled:**
-  - Removed test skip annotations; enabled sub-second suite execution.
-  - Added automated test execution step to GitHub Actions CI workflow.
-  - Enabled `unawaited_futures` rule in `analysis_options.yaml`.
-
-### Changed
-- Refactored `FirebaseService` into a lightweight, backward-compatible facade delegating to modular services.
+### 5-Step Clinical Encounter Pipeline & Medication Reconciliation State Machine
+- **Operational Impact:**
+  - **5-Step Encounter Pipeline:** Structured consultation workflow: (1) Patient Demographics & Allergies $\to$ (2) Vitals & Examination $\to$ (3) Past Investigations $\to$ (4) Prescribing & Medication Reconciliation $\to$ (5) Orders & Follow-Up Advice.
+  - **Medication Reconciliation (`START` / `CONTINUE` / `STOP`):** Preserves chronic drug regimens across visits with 1-tap continuation and explicit stop-reason tracking.
+  - **OPD Clinical Regimen Defaults:** Auto-populates standard dosages, timings (e.g. empty-stomach PPIs, bedtime statins), and course durations upon drug selection.
+  - **Master Medicine Catalogue:** Owner formulary management supporting composition-first vs brand-first search scoring.
+- **Architectural Touchpoints:**
+  - `lib/screens/consultation_encounter_screen.dart`: 5-step clinical encounter coordinator.
+  - `lib/widgets/encounter/encounter_form_state.dart`: Encapsulated clinical form state and controller lifecycles.
+  - `lib/core/engines/medicine_engine.dart`: Clinical default OPD regimens and search scoring.
 
 ---
 
-## [1.8.1] — 09-10-2026
+## [1.0.0 – 1.4.0] — 03-10-2026 – 07-10-2026
 
-### Fixed
-- Queue counters now follow the documented per-doctor, per-day key and `currentNumber` field.
-- Saved doctor sessions wait for the initial doctor list before validation.
-- Patient `lastVisitDate` now reflects completed consultations rather than scheduled bookings, and booking preserves existing patient fields.
-- Queue allocation, appointment creation, and patient demographic upsert now commit atomically.
-- Updated AI maintenance guidance and added CI dependency-resolution and analyzer checks.
-
----
-
-## [1.8.0] — 07-10-2026
-
-### Added
-- **Core Domain Engine Architecture (`lib/core/engines/`):**
-  - **`RevenueEngine` (`lib/core/engines/revenue_engine.dart`):** Pure Dart financial engine calculating realized revenue (completed visits strictly), chamber KPIs, doctor fee shares, and owner analytics summaries.
-  - **`AppointmentEngine` (`lib/core/engines/appointment_engine.dart`):** Single source of truth for 14-day same-doctor free review eligibility, consultation fee resolution, and queue status partitioning (`pending`, `completed`, `absent`).
-  - **`MedicineEngine` (`lib/core/engines/medicine_engine.dart`):** Unified multi-mode search scoring, clinical default OPD regimens (form dosages, fasting PPIs, bedtime statins, course durations), and prescription reconciliation segregation.
-  - **`engines.dart`:** Central barrel export for domain engines.
-- **Unified UI Component Consolidation (`lib/widgets/common/`):**
-  - **`MetricKpiCard` (`lib/widgets/common/metric_kpi_card.dart`):** Unified metric card supporting both vertical (`MetricCardLayout.vertical`) and horizontal (`MetricCardLayout.horizontal`) responsive layouts.
-  - Re-exported `MetricKpiCard` in `lib/widgets/widgets.dart`.
-
-### Changed
-- **Decoupled Math from UI Presentation:**
-  - `ClinicProvider`: Rewired `dailyRevenue`, `checkReviewEligibility`, and `calculatePaymentType` to use `RevenueEngine` and `AppointmentEngine`.
-  - `ChamberMetricsGrid`: Replaced 6 manual `.where()` and `.fold()` passes with a single call to `RevenueEngine.calculateChamberKpis`; delegated `ChamberMetricTile` to `MetricKpiCard`.
-  - `DoctorDailyDetailsScreen`: Stripped inline `.fold()` in `build()` method; rewired to `RevenueEngine.calculateRealizedRevenue`.
-  - `StatisticsScreen`: Stripped inline stats calculations in `_buildDoctorCard`; rewired to `RevenueEngine.calculateDoctorAnalytics`. Replaced custom date header with `ClinicDateNavBar`.
-  - `DashboardKpiStrip`: Replaced inline `.where()` in `build()` with `RevenueEngine.calculateDailyMetrics`; delegated `DashboardMetricCard` to `MetricKpiCard`.
-  - `AddAppointmentDialog`: Replaced inline fee ternary calculations with `AppointmentEngine.resolveConsultationFee` and eligibility checks with `AppointmentEngine.evaluateReviewEligibility`.
-  - `AppointmentAccordion`: Dynamically resolves consultation fees using doctor configuration via `AppointmentEngine.resolveConsultationFee`.
-  - `AppointmentListScreen`: Replaced custom date row with unified `ClinicDateNavBar`.
-
----
-
-## [1.7.0] — 07-10-2026
-
-### Added
-- **Complete Frontend Modularization Across Core Operational Flows:**
-  - **Reception Booking Sub-System (`lib/widgets/booking/`):**
-    - `BookingPatientFields`: Rapid patient phone lookup, name, age, and gender input controls.
-    - `BookingPaymentSection`: Radio selection between Paid, Free Review, and Free Family with automatic fee computation.
-    - `BookingEligibilityBanner`: Same-doctor 14-day policy warning banner with reusable static warning dialog helper (`showFourteenDaysWarningDialog`).
-  - **Reception Queue Management (`lib/widgets/queue/`):**
-    - `AppointmentAccordion`: Modularized token accordion row with payment details, time of booking, quick absent/attended toggling, and "Call In / Start Consultation" action.
-  - **Prescribing Sub-System & Search (`lib/widgets/encounter/rx/`):**
-    - `StagedMedicineForm`: Focused form container with prefilled OPD defaults, dosage chips, frequency/timing dropdowns, and chronic toggle.
-    - `RxSearchResultsView`: Grouped chemical salts and trade brand search result pills with generic/brand pickers.
-    - `ReconciliationItemRow`: Active medication row with 1-tap `CONTINUE` and `STOP` chips (and stop reason prompt).
-  - **Encounter Vitals Input (`lib/widgets/encounter/`):**
-    - `VitalsInputGrid`: Compact numerical vitals grid (`BP Systolic`, `BP Diastolic`, `Pulse`, `SpO2`, `Temp`, `Weight`).
-  - **Doctor Chamber Suite (`lib/widgets/chamber/`):**
-    - `ChamberAppBar`: Header with live clock, refresh indicator, and logout action.
-    - `ChamberMetricsGrid`: Chamber KPI cards (Today's Total, Completed, In Queue, Revenue).
-    - `ChamberQueueHeader`: Section header with waiting counts and token order explanation.
-    - `ChamberTokenCard`: Comprehensive token card with status badges, live calling indicator, and consultation encounter triggers.
-  - **Executive Dashboard Suite (`lib/widgets/dashboard/`):**
-    - `DashboardHeaderBar`: Top greeting, live date, and quick action chips.
-    - `DashboardKpiStrip`: Responsive KPI metrics strip with auto-adjusting breakpoints.
-    - `DashboardQueueCard`: "Today's Live Queue" panel with token cards, status badges, and quick "Call In" buttons.
-    - `DashboardDoctorRosterCard`: Active doctors roster with live chamber calling status and load indicator.
-  - **Monochrome Prescription Print Engine (`lib/widgets/print/`):**
-    - `PrintHeaderAndDemographics`: Clinic header and patient demographics banner with 130px pre-printed letterhead mode spacing.
-    - `PrintClinicalSnapshot`: High-contrast clinical vitals, chief complaints, and provisional diagnosis snapshot.
-    - `PrintMedicationsTable`: Active Rx schedule table for `START`/`CONTINUE` medications and distinct discontinued (`STOP`) medications audit box.
-    - `PrintOrdersAndFooter`: Diagnostic lab orders, lifestyle advice, next review date, and doctor signature block.
-
-### Changed
-- **Slim Coordinator Scaffold Transformations:**
-  - `AppointmentListScreen`: Reduced from 491 lines down to 170 lines.
-  - `VitalsAndExamSection`: Reduced from 402 lines down to 265 lines by binding directly to `EncounterFormState`.
-  - `DashboardScreen`: Reduced from 693 lines down to 184 lines.
-  - `PrescriptionPrintScreen`: Reduced from 634 lines down to 216 lines.
-  - `AddAppointmentDialog`: Reduced from 459 lines down to 182 lines.
-  - `DoctorChamberScreen`: Reduced from 567 lines down to 175 lines.
-  - `RxReconciliationSection`: Reduced from 850 lines down to 226 lines.
-- **Widgets Barrel (`lib/widgets/widgets.dart`):** Updated with clear sectional exports across common, booking, queue, chamber, encounter, dashboard, and print components.
-
----
-
-## [1.6.0] — 07-10-2026
-
-### Added
-- **Encounter Architecture Modularization & Refactoring:**
-  - **Shared Clinical Primitives (`lib/widgets/common/`):** Created standalone atomic reusable widgets to eliminate UI boilerplate across screens:
-    - `AppointmentStatusChip`: Consistent status pills (Completed, In Chamber, Absent, Pending).
-    - `PaymentBadge`: Compact visual payment badges (Paid, Free Review, Free Family).
-    - `TokenBadge`: Standardized token sequence number pill (`#01`, `#02`, etc.).
-    - `AllergyAlertBanner`: High-contrast allergy alert banner with interactive add/remove handlers.
-    - `ClinicDateNavBar`: Standardized date navigation header with Previous/Next, "Today", and date picker.
-    - `SectionCard`: Standardized collapsible container with header icon, title, badge, and animated accordion.
-  - **Centralized Formatters (`AppFormatters` in `lib/utils/formatters.dart`):** Unified date, time, and currency formatting (`date`, `time`, `dateTime`, `dateWithDay`, `compactDate`, `isoDate`, `currency`), eliminating duplicate `DateFormat` instantiations across screens.
-  - **Modular Step-by-Step Encounter Pipeline (`lib/widgets/encounter/`):** Deconstructed the monolithic **~2,600-line** `ConsultationEncounterScreen` into focused clinical widgets:
-    - `PatientHeaderSection`: Step 1 demographics header, allergies banner, and outside regimen entry.
-    - `VitalsAndExamSection`: Step 2 vitals grid, collapsible findings pill strip, chief complaints, provisional diagnosis, and clinical exam notes.
-    - `DiagnosticReviewSection`: Step 3 past investigation review tracker with interactive result entry.
-    - `RxReconciliationSection`: Step 4 medication reconciliation (`START`, `CONTINUE`, `STOP`), chemical salt + brand search, and clinical defaults staging.
-    - `AdviceAndOrdersSection`: Step 5 diagnostic orders, lifestyle advice, and quick follow-up interval chips (3d, 5d, 7d, 14d, 1m, 3m).
-    - `ChamberCallingAlertBar`: Live reception chamber calling alert banner with 1-tap patient switcher.
-    - `ConsultationBottomDock`: Sticky bottom dock with cancel and "Complete & Sign Prescription" action.
-  - **Encounter Form State Encapsulation (`EncounterFormState` in `lib/widgets/encounter/encounter_form_state.dart`):**
-    - Encapsulated all 14 `TextEditingController` instances, Rx staging variables, collections, `loadInitialData()`, `buildVitals()`, and `buildConsultation()` builders.
-    - Centralized `dispose()` method preventing controller memory leaks.
-  - **Encounter Modal Dialog Extraction (`EncounterDialogs` in `lib/widgets/encounter/encounter_dialogs.dart`):**
-    - Extracted allergy prompt, outside lab report dialog, drug stop reason dialog, prior baseline medication dialog, date picker, and longitudinal history modal sheet.
-  - **Widget Barrel Export (`lib/widgets/widgets.dart`):** Single clean import point for all common and clinical encounter widgets.
-
-### Changed
-- **`ConsultationEncounterScreen` Refactored into Coordinator Scaffold:** Reduced from **2,591 lines down to 274 lines** (an 89% reduction), transforming the screen into a lightweight coordinator scaffold that binds `EncounterFormState` to the extracted step widgets via `.fromForm` factory constructors.
-- **`DashboardScreen`, `AppointmentListScreen`, & `DoctorChamberScreen` Refactored:** Updated to use standardized `AppFormatters`, `AppointmentStatusChip`, `PaymentBadge`, `TokenBadge`, and `ClinicDateNavBar`.
-
----
-
-## [1.5.0] — 07-10-2026
-
-### Added
-- **Chamber Auto-Sync (`P1`)** — Real-time Firestore sync channel at `counters/chamber_{doctorId}_{yyyy-MM-dd}` linking the counter PC and doctor chamber screen. When reception clicks `"Call In"` or `"Call In / Start Consultation"` on a pending token, the doctor's chamber screen automatically transitions into that patient's active encounter view.
-- **Consultation Conflict Safety & Live Incoming Alert Banner** — If the doctor is actively attending Patient A and reception calls Patient B, the active form is safely retained while a high-visibility alert banner appears at the top (*"🔔 Reception called next patient: Token #X — [Name]. Switch or keep current?"*).
-- **Automated Chamber Session Cleanup** — Upon signing and completing the consultation via `"Complete & Sign Prescription"`, the chamber session document is atomically reset to `'idle'` so the queue board returns to idle state.
-- **Clinical Dosage & Duration Defaults (`ClinicalDefaultsHelper`) (`P2`)** — Helper utility that auto-populates standard clinical OPD regimens upon selecting a medicine:
-  - *Proton Pump Inhibitors / Antacids (Pan 40, Rabeprazole, etc.):* `1 Tablet`, `1-0-0 (OD)`, `Before Food (Empty Stomach)`, `14 Days`.
-  - *Antihypertensives (Telma 40, Amlodipine, Metoprolol, etc.):* `1 Tablet`, `1-0-0 (OD)`, `After Food (Morning)`, `30 Days` routine OPD refill cycle.
-  - *Antidiabetics (Metformin, Glimepiride, etc.):* `1 Tablet`, `1-0-1 (BD)`, `After Food`, `30 Days`.
-  - *Statins / Lipid-Lowering (Atorvastatin, Rosuvastatin):* `1 Tablet`, `0-0-1 (HS / Night)`, `After Dinner`, `30 Days`.
-  - *Antibiotics (Azithromycin, Augmentin, etc.):* `1 Tablet`, `1-0-1 (BD)` or `1-0-0 (OD)`, `After Food`, `5 Days`.
-  - *Form-Specific Calibrated Units:* Syrups (`5 ml`), Drops (`2 Drops`), Ointments/Creams (`Apply thin layer`), Inhalers (`1 Puff`).
-- **Catalogue-Level Default Overrides on `Medicine`** — Added `defaultDosage`, `defaultFrequency`, `defaultTiming`, and `defaultDurationDays` to `Medicine` model with full Firestore and JSON serialization.
-- **Collapsible Encounter Sections (`P3`)** — Re-architected `ConsultationEncounterScreen` to reduce vertical clutter:
-  - *Step 2 (Vitals & Clinical Examination):* Collapsible toggle (`"Add / Edit Findings"` $\leftrightarrow$ `"Close Findings"`). When closed, renders a clean horizontal strip of summary pills (`BP 120/80`, `Pulse 72`, `Chief Complaints`, `Diagnosis`).
-  - *Step 4 (Prescribing & Reconciliation):* Replaced modal popup dialogs with inline live search, 1-tap staged selection banner with prefilled defaults, and collapsible summary badge (`X continued`, `Y stopped`, `Z newly prescribed`).
-- **Doctor Search Preference (Brand vs Chemical Salt) (`P4`)** — Configurable `searchPreference` on `Doctor` (`'brandFirst'` or `'compositionFirst'`, default: `'brandFirst'`). Dual-mode search scoring in `MedicineSearchScorer` with on-the-fly `[🏷️ Brand | 🧪 Salt]` segmented pill on the search bar in the encounter screen.
-- **Unit Test Suite Expansion** — Added unit tests verifying brand-first ranking, clinical defaults helper, and chronic duration overrides, bringing total verified tests to 35/35 passing.
-
----
-
-## [1.4.0] — 07-10-2026
-
-### Added
-- **Longitudinal Prescription Architecture & Append-Only Consultations** — Complete implementation of the clinical record architecture treating consultations as immutable historical encounters.
-- **5-Step Clinical Sequence Encounter UI (`ConsultationEncounterScreen`)** — Strict clinical workflow: Patient Header + Allergies Alert ➔ Vitals & Clinical Examination ➔ Diagnostic Lab Review ➔ Medication Reconciliation & Prescribing ➔ Advice & Lab Orders.
-- **Medication Reconciliation State Machine** — Explicit lifecycle states (`START`, `CONTINUE`, `STOP`) on prescription items. 1-tap continuation for ongoing chronic regimens (`durationDays = null`) and explicit discontinuation documenting clinical `stopReason`.
-- **Unlisted Medicine Fallback (`unlistedName`)** — Doctors can prescribe outside or brand medications missing from the clinic catalogue.
-- **Composition-First Medicine Search & Scoring Engine (`MedicineSearchScorer`)** — Prioritizes chemical molecule matches at the top with associated clinic brands grouped underneath, offering 1-tap generic and brand prescribing chips.
-- **Default Essential OPD Medicines (`lib/utils/default_medicines.dart`)** — Standard OPD medications (Dolo 650, Calpol 650, Augmentin 625 Duo, Moxikind-CV, Azee 500, Azithral 500, Pan 40, Telma 40, etc.) exist by default with deterministic document IDs (`med_*`) to prevent duplicates on initial seed.
-- **Master Medicine Catalogue Management (`MedicineCatalogueScreen`)** — Dedicated administration interface in reception shell for clinic owners to curate products, active compositions, strengths, and forms with role guards preventing chamber prescriber edits.
-- **Automated & On-Demand Catalogue Deduplication Engine** — Scans master medicines, identifies duplicate products with identical name, composition, and strength, and batch-purges duplicates from Firestore.
-- **Clean Prescription Print Output (`PrescriptionPrintScreen`)** — High-contrast monochrome print layout supporting A4 and A5 paper, with pre-printed letterhead mode (reserved 130px margin), active Rx schedule filtering (START/CONTINUE only), and distinct audit warning box for discontinued drugs.
-- **Reception Dashboard Screen (`DashboardScreen`)** — Redesigned reception overview with compact horizontal KPI cards, live queue preview, quick reception actions, and dynamic adaptation across mobile, laptop, and desktop monitors.
-- **First-Class Patient Gender / Sex Intake** — Upgraded `gender` to a required clinical field across `Patient`, `Consultation`, and `AddAppointmentDialog`.
-
-### Removed
-- **Removed Legacy Compatibility Shims & Fallbacks** — Removed stream-intercepting shims (`_hasCheckedDefaultsAndDuplicates`), legacy fallback defaults (`this.gender = 'Unspecified'`), defensive string parsing fallbacks, and legacy compatibility test suites in favor of strongly-typed models.
-
----
-
-## [1.3.0] — 06-10-2026
-
-### Added
-- **Same-Doctor Free Review Rule & 14-Day Limit** — Only returning patients who previously visited the *same doctor* qualify for a Free Review. First-time patients and patients with no prior history under the selected doctor have the Free Review option cleanly disabled with a descriptive hint.
-- **14-Day Free Review Warning Dialog** — If more than 14 days have passed since the patient's previous visit with the selected doctor, the Free Review option remains selectable (not disabled) but immediately triggers an explicit confirmation warning dialog detailing the last visit date and days elapsed.
-- **Persistent Amber Policy Warning** — Prominent warning banner in appointment booking dialog when Free Review is manually approved beyond the 14-day limit.
-- **Firestore Indexes Configuration (`firestore.indexes.json`)** — Added index definitions for `appointments` and `consultations` collections.
-
-### Fixed
-- **Doctor Chamber View Index Error** — Resolved Cloud Firestore composite index error on Doctor Chamber screen by querying per-day appointments and filtering by doctor in memory without requiring remote composite indexes.
-
----
-
-## [1.2.0] — 05-10-2026
-
-### Added
-- **Flutter Web Platform Support** — Single responsive codebase deployed to web and mobile with responsive navigation rail for reception desktop PCs (`OwnerShell`).
-- **Doctor Chamber Live View (Catalog Mode)** — Zero-friction read-only chamber board for visiting consultants showing live token sequence, patient queue, and fee share tally.
-- **Chamber & Reception PIN Authentication** — Quick, accountless PIN authentication with `SharedPreferences` session persistence.
-- **Audit-Proof Appointments (Zero Deletions)** — Appointments cannot be deleted once created; token numbers remain strictly consecutive.
-- **Explicit "Absent / No-Show" Status** — Replaced deletion with `[ABSENT]` status so slots are preserved on the doctor ledger with ₹0 amount.
-- **Per-Doctor Consultation Fees & PINs** — Each doctor profile stores their customized consultation fee and chamber PIN.
-- **Firebase Hosting Configuration** — Added single-page app hosting configuration in `firebase.json`.
-- **Chamber Preview for Reception** — Clinic owner can preview the live chamber view for any registered doctor.
-
----
-
-## [1.1.0] — 04-10-2026
-
-### Added
-- **Atomic Queue Number Generation** — Race-condition-safe daily queue numbers using Firestore transactions.
-- **Firestore Native Timestamp Storage** — Appointment scheduled dates stored natively as Firestore `Timestamp` objects.
-- **Clinic Holiday Blocking** — Configurable blocked dates (`AppConstants.blockedDates`) preventing bookings on clinic closures.
-- **Stream Subscription Lifecycle Management** — Added proper stream subscription cancellation in `ClinicProvider.dispose()`.
-- **Centralized Consultation Fee** — Single source of truth for fallback consultation fees (`AppConstants.defaultConsultationFee`).
-- **Open-Source Repository Templates** — Added `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `LICENSE` (MIT).
-
----
-
-## [1.0.0] — 03-10-2026
-
-### Initial Release
-- **Outpatient Appointment Booking** — Rapid walk-in appointment registration with 10-digit phone search and patient history autofill.
-- **Multi-Doctor Chamber Support** — Registration and scheduling across multiple visiting consultants with per-doctor queues.
-- **Real-Time Data Sync** — Real-time Firestore streams syncing reception desk actions and doctor chamber views.
-- **Daily Revenue & Payout Analytics** — Breakdown of realized clinic earnings grouped by doctor.
+### Foundational Outpatient Clinic Core
+- **Operational Impact:**
+  - **Audit-Proof Operational Ledger (Invariant #1):** Zero deletion policy. Appointments cannot be deleted once created; cancelled or no-show patients are marked as `[ABSENT]` with ₹0 fee to maintain strict consecutive token sequences.
+  - **Longitudinal Clinical History (Invariant #2):** Consultations stored as immutable, append-only records across visits rather than disposable paper notes.
+  - **Real-Time Multi-Doctor Synchronization:** Firestore realtime streams synchronizing reception counter actions and physician chamber views.
+  - **Monochrome Prescription Print Engine:** High-contrast A4 and A5 printable sheets supporting pre-printed letterhead mode (reserved 130px margin) and distinct warnings for discontinued drugs.
+- **Architectural Touchpoints:**
+  - `lib/models/`: Core domain models (`Appointment`, `Consultation`, `Patient`, `Doctor`, `Medicine`, `Vitals`).
+  - `lib/services/firestore_paths.dart`: Type-safe Firestore path and atomic counter key builders.
+  - `lib/widgets/print/`: Monochrome letterhead printing suite.

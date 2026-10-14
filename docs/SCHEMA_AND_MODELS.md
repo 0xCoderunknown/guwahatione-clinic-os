@@ -233,6 +233,7 @@
 
 - **Document ID:** Auto-generated UID.
 - **Rule:** **STRICTLY APPEND-ONLY.** Never updated, mutated, or deleted (`allow update, delete: if false;`).
+- **Model:** `AppointmentEvent` (`lib/models/appointment_event.dart`). Exported via `lib/models/models.dart` barrel.
 
 ### Fields
 | Field | Type | Required | Description |
@@ -254,7 +255,7 @@
 2. **Duplicate Patient Booking Prevention:** A patient cannot hold multiple active (non-absent) appointments with the same doctor on the same calendar day. The composite validation key is:
    $$\text{scheduledDate} + \text{doctorId} + \text{normalized patientName} + \text{patientPhone}$$
    Family members sharing a phone number are distinguished by `normalized patientName`.
-3. **14-Day Free Review Policy:** Free reviews are valid only if the patient has a prior non-absent consultation with the **same** doctor within 14 calendar days.
+3. **Doctor-Configured Free Review Policy:** Each doctor defines a `freeReviewDays` window (`0`–`30`; default `14`). Free reviews are valid only when the patient has a prior non-absent **paid** consultation with the **same** doctor within that configured window, and only if no free review has already been consumed in the current cycle (strict 1:1 per paid visit). Setting `freeReviewDays: 0` disables free reviews entirely for that doctor.
 4. **Clean Presentation Boundary:** Zero raw Firebase objects (`DocumentSnapshot`, `FieldValue`, `cloud_firestore`) may cross into Flutter screens or widgets; all data flow routes via pure domain models (`ChamberSession`, `Appointment`, etc.) and dedicated engines.
 5. **Mandatory Indian Date Formatting (`DD-MM-YYYY`):** While database and internal serialization continue to use standard Firestore `Timestamp` or ISO-8601 strings, all human-facing presentation and documentation must strictly use `DD-MM-YYYY` (via `AppFormatters`).
 
@@ -274,7 +275,15 @@
 - **Denomination Math:** Evaluates note counts (`₹500`, `₹200`, `₹100`, `₹50`, `₹20`, `₹10`) against expected realized revenue to audit discrepancies.
 
 ### C. Prescription Template Presets Domain Models
+- **Source:** `lib/models/prescription_template.dart`, exported via `lib/models/models.dart`.
 - **`PrescriptionTemplateItem`:** Clinical template entry (`medicineName`, `composition`, `dosage`, `frequency`, `timing`, `durationDays`, `instructions`). Converts via `.toPrescriptionItem()` into staged `PrescriptionItem` with action `MedicationAction.start`.
 - **`PrescriptionTemplate`:** Pre-configured OPD clinical preset bundle (`id`, `name`, `description`, `emoji`, `items`).
 - **`TemplateApplicationResult`:** Forensic result returned by `MedicineEngine.evaluateTemplateApplication` (`templateName`, `addedItems`, `skippedDuplicates`). Evaluates existing active medications and safely skips duplicate brands or matching generic salts.
+
+### D. Sound Announcer Preference Storage (`SharedPreferences`)
+- **Key:** `sound_announcer_muted`
+- **Type:** `bool`
+- **Purpose:** Persists per-device mute preference for in-clinic queue chime and SpeechSynthesis vocal token callout across browser sessions.
+- **Default:** `false` (sound enabled).
+- **Consumer:** `SoundService` (`lib/services/sound_service.dart`).
 

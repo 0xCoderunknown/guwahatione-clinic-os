@@ -1,9 +1,12 @@
-# Changelog
+# 📋 GuwahatiOne Clinic OS — Changelog
 
-All notable changes to this project will be documented in this file.
+All notable updates, clinical workflows, and architectural changes to **GuwahatiOne Clinic OS** are documented in this file in reverse chronological order.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+> 💡 **Product & Engineering Reference:**  
+> - **For Product Management:** Each milestone highlights operational workflow impacts across Clinic Counter (Reception), Doctor Chamber, and Clinic Owner dashboards.  
+> - **For AI Architecture & Coding:** Always defer to [`AGENTS.md`](AGENTS.md) and [`docs/SCHEMA_AND_MODELS.md`](docs/SCHEMA_AND_MODELS.md) for active domain invariants, database contracts, and system rules.  
+> - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
+> - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
 ---
 
@@ -12,458 +15,186 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Architectural Compliance & Invariant #10 Debt Remediation
 - **Purged Deprecated Enum Alias `PaymentType.paid` (Invariant #10):**
   - Removed obsolete `@Deprecated('Use paidCash or paidUpi') static const PaymentType paid` alias from `lib/models/appointment.dart`.
-  - Migrated `AddAppointmentDialog` (`lib/widgets/booking/add_appointment_dialog.dart`) lines 286 and 522 to use canonical `_selectedPayment.isPaid` and `PaymentType.paidCash`.
-  - Migrated legacy test fixtures across `test/revenue_engine_test.dart`, `test/patient_review_and_models_test.dart`, `test/appointment_engine_estimated_time_test.dart`, `test/cash_handover_engine_test.dart`, `test/chamber_handshake_test.dart`, and `test/offline_queue_cache_test.dart` to strictly canonical `PaymentType.paidCash`.
+  - Migrated appointment booking UI (`AddAppointmentDialog` in `lib/widgets/booking/add_appointment_dialog.dart`) to use canonical payment resolution (`_selectedPayment.isPaid` and `PaymentType.paidCash`).
+  - Migrated test fixtures across test suites to strictly canonical `PaymentType.paidCash`.
 - **Quality & Verification Gates:**
   - 100% clean static analysis (`flutter analyze` — 0 issues).
-  - All 184 automated tests passing (`flutter test`).
+  - All 184 automated tests passing cleanly (`flutter test`).
 
 ---
 
 ## [1.29.0] — 13-10-2026
 
 ### P10: Multi-Chamber Queue Sound Announcer & Vocal Token Calling
-- **Native Browser Audio Synthesis (`web/index.html` & `lib/utils/platform_sound_web.dart`):**
-  - Synthesized dual-tone clinic airport chime (587.33 Hz [D5] $\to$ 880 Hz [A5]) via Web Audio API oscillators directly in memory. Zero external audio asset dependencies or network delay.
-  - Coupled with browser Speech Synthesis API to announce: *"Token [number], please proceed to [Doctor Name]"* (accented for English-IN).
-  - Provided safe no-op stubs (`lib/utils/platform_sound_stub.dart`) for desktop, Android, and test VM execution without platform crashes.
-- **Sound Service & Mute Management (`lib/services/sound_service.dart`):**
-  - Built `SoundService` with persistent mute preference via `SharedPreferences` (`sound_announcer_muted`).
-  - Implemented deduplication guard (`lastAnnouncedKey`) to prevent double-announcing tokens during rapid UI rebuilds.
-- **Queue Dispatch Auto-Trigger (`lib/providers/clinic_provider.dart`):**
-  - Integrated `SoundService.instance.announceToken` into `ClinicProvider.callTokenIntoChamber`, triggering vocal and chime announcements on receptionist `[SEND IN]` action.
-- **Reception & Owner Shell Sound Controls (`lib/screens/owner_shell.dart` & `lib/screens/appointment_list_screen.dart`):**
-  - Added 1-click interactive audio toggle pills (`[🔊 Chime On]` / `[🔇 Muted]`) to top AppBars in `OwnerShell` and queue navigation bars in `AppointmentListScreen`.
-- **Automated Verification Suite (`test/sound_service_test.dart`):**
-  - Fortified test suite with 5 unit and widget tests covering mute toggles, deduplication, vocal triggers, and UI state reactivity.
-  - Full suite verified: 184 of 184 tests passing (`flutter test`).
-  - Zero static analysis issues (`flutter analyze`).
+- **Operational Impact:** When reception dispatches a patient (`[SEND IN]`), the system plays an airport clinic chime and announces the token number and doctor name over the clinic counter speakers in Indian English (*"Token 12, please proceed to Dr. Baruah"*). Includes 1-click mute toggles on Counter and Owner AppBars.
+- **Architectural Touchpoints:**
+  - `web/index.html` & `lib/utils/platform_sound_web.dart`: In-memory Web Audio API oscillator chime (587.33 Hz $\to$ 880 Hz) and browser Speech Synthesis API. Zero external audio asset dependencies or network latency.
+  - `lib/utils/platform_sound_stub.dart`: Safe no-op stubs for desktop and test execution.
+  - `lib/services/sound_service.dart`: Persistent mute state via `SharedPreferences` (`sound_announcer_muted`) with event deduplication.
+  - `lib/providers/clinic_provider.dart`: Auto-triggers audio announcement upon `callTokenIntoChamber`.
+  - `test/sound_service_test.dart`: 5 unit and widget tests verifying announcement triggers, deduplication, and mute state reactivity.
 
 ---
 
 ## [1.28.0] — 13-10-2026
 
 ### P9: Prescription Template Presets & Fast OPD Prescribing Pipeline
-- **Pure Domain Engine Models (`lib/models/prescription_template.dart` & `lib/models/models.dart`):**
-  - Introduced `PrescriptionTemplate`, `PrescriptionTemplateItem`, and `TemplateApplicationResult`.
-  - Added clean model conversion `.toPrescriptionItem()` creating append-only staged `PrescriptionItem` entries with `MedicationAction.start`.
-- **Duplicate-Aware Regimen Evaluation (`lib/core/engines/medicine_engine.dart`):**
-  - Added `MedicineEngine.getDefaultPrescriptionTemplates()` providing standard OPD bundles:
-    - 🤧 **URI / Pharyngitis:** Dolo 650, Azithral 500, Levocet 5, Pan 40.
-    - 🔥 **Acute Gastritis:** Pan 40, Domstal 10, Sucrafil O Suspension.
-    - 💧 **Gastroenteritis / Diarrhea:** O2 Tablet, ORS Sachet, Darolac Capsule, Dolo 650 SOS.
-    - 🌡️ **Viral Fever / SOS:** Dolo 650, Pan 40, Limcee 500 Chewable.
-    - ❤️ **HTN Chronic Starter:** Telma 40 baseline.
-  - Implemented `MedicineEngine.evaluateTemplateApplication`: inspects patient's active medication list (both chronic `reconciliationItems` and staged `newPrescriptions`) to intelligently skip duplicate medications by brand name or normalized chemical salt composition without creating collisions.
-- **Encounter Form State Integration (`lib/widgets/encounter/encounter_form_state.dart`):**
-  - Added `applyPrescriptionTemplate` method to `EncounterFormState` evaluating template presets against `allPrescriptionItems` and staging additions into `newPrescriptions`.
-- **1-Tap Preset Bar Widget (`lib/widgets/encounter/rx/rx_template_presets_bar.dart`):**
-  - Created `RxTemplatePresetsBar`: horizontal scrollable chip bar rendered directly above the Step 4 medicine search bar.
-  - Interactive ActionChips with tooltips, instant 1-tap application, and contextual SnackBar alerts indicating added count and skipped duplicate counts.
-- **Encounter Integration (`lib/widgets/encounter/rx_reconciliation_section.dart`):**
-  - Mounted `RxTemplatePresetsBar` immediately above the search input field in Step 4 Prescribing & Reconciliation.
-- **Automated Verification Suite (`test/prescription_template_test.dart`):**
-  - Added 8 unit and widget tests covering default presets, model mapping, exact brand duplicate skipping, chemical composition match skipping, stopped medication non-blocking behavior, form state integration, and UI chip tap interactions.
-  - 100% test pass rate across all 179 tests (`flutter test`).
-  - 100% clean static analysis (`flutter analyze` - 0 issues).
+- **Operational Impact:** Doctors can prescribe standard outpatient medication regimens with a single tap from a horizontal presets bar above the medicine search field in Step 4. Collisions with ongoing chronic medications or staged prescriptions are automatically skipped by brand name or chemical molecule.
+- **Architectural Touchpoints:**
+  - `lib/models/prescription_template.dart`: Introduced `PrescriptionTemplate`, `PrescriptionTemplateItem`, and `TemplateApplicationResult`.
+  - `lib/core/engines/medicine_engine.dart`: Added standard OPD bundles (URI / Pharyngitis, Acute Gastritis, Gastroenteritis / Diarrhea, Viral Fever / SOS, HTN Starter) and duplicate-skipping evaluation logic (`evaluateTemplateApplication`).
+  - `lib/widgets/encounter/rx/rx_template_presets_bar.dart`: Horizontal ActionChip bar mounted above the medicine search input in Step 4 Prescribing & Reconciliation.
+  - `test/prescription_template_test.dart`: 8 unit and widget tests covering template application, duplicate filtering, and UI chip interactions.
 
 ---
 
 ## [1.27.0] — 13-10-2026
 
 ### Architectural Compliance & Invariant #10 Remediation
-- **Purged Backward-Compatibility Shims (Invariant #10):**
-  - Removed deprecated static delegation methods (`calculateCashHandover`, `calculateDenominationTotal`, `calculateDiscrepancy`) from `RevenueEngine` (`lib/core/engines/revenue_engine.dart`).
-  - Purged deprecated model alias `isWithin14Days` from `PatientReviewEligibility` (`lib/models/patient_review_eligibility.dart`).
-  - Migrated `BookingPaymentSection` (`lib/widgets/booking/booking_payment_section.dart`) and automated test suites to canonical `isWithinReviewPeriod` and dynamic `allowedReviewDays`.
-- **Fortified Security & Provider Access Boundaries:**
-  - Added strict `UserRole? requestingRole` owner authorization check on `ClinicProvider.addDoctor` and `ClinicProvider.updateDoctor` (`lib/providers/clinic_provider.dart`), achieving state-level parity with medicine catalogue controls.
-  - Bound `AuthProvider.currentRole` to doctor registration and update triggers in `AddDoctorScreen` (`lib/screens/add_doctor_screen.dart`).
-- **Synchronized Master Data Schema Specification (`docs/SCHEMA_AND_MODELS.md` §4B):**
-  - Updated Chamber Calling Session table to formally document `date` (`yyyy-MM-dd`) and operational server timestamps (`calledAt`, `readyAt`, `endedAt`, `clearedAt`).
-- **Automated Verification Suite:**
-  - 100% clean static analysis (`flutter analyze` - 0 issues).
-  - 171 automated tests passing cleanly (`flutter test`).
+- **Operational Impact:** Hardened clinic security boundaries so only verified Clinic Owner sessions can create or update doctor credentials and fee configurations.
+- **Architectural Touchpoints:**
+  - `lib/core/engines/revenue_engine.dart`: Purged deprecated backward-compatibility delegation methods (`calculateCashHandover`, `calculateDenominationTotal`, `calculateDiscrepancy`).
+  - `lib/models/patient_review_eligibility.dart`: Purged deprecated model alias `isWithin14Days`; migrated consumers to `isWithinReviewPeriod`.
+  - `lib/providers/clinic_provider.dart`: Added strict `UserRole? requestingRole` owner authorization check on `addDoctor` and `updateDoctor`.
+  - `docs/SCHEMA_AND_MODELS.md` §4B: Synchronized master Chamber Calling Session schema (`date`, `calledAt`, `readyAt`, `endedAt`, `clearedAt`).
 
 ---
 
 ## [1.26.0] — 13-10-2026
 
-### Single-Occupant Chamber Integrity & AI Code Review Guardrails (Invariant #11)
-- **Atomic Chamber Occupancy Guard (`lib/services/chamber_service.dart`):**
-  - Updated `callTokenIntoChamber` with atomic concurrency verification: rejects dispatch with `StateError` if the chamber already has an active occupant (`calling` or `in_consultation`) unless explicitly overridden.
-  - Added `streamAllChamberSessions(DateTime date)` to stream all active doctor chamber sessions simultaneously for aggregate views.
-- **Reception Queue Multi-Doctor Chamber Isolation (`lib/screens/appointment_list_screen.dart` & `lib/core/engines/appointment_engine.dart`):**
-  - Extended `AppointmentEngine.partitionQueueForReception` to accept `activeAppointmentIds` set.
-  - In `AppointmentListScreen`, integrated `streamAllChamberSessions` so when "All Doctors" filter is selected, in-chamber patients across all practitioners are cleanly isolated and prevented from appearing as waiting lobby tokens.
-- **Doctor Chamber Modal & Door Collision Locks (`lib/screens/doctor_chamber_screen.dart`):**
-  - Added `_isConsultationOpen` re-entrance lock to prevent duplicate consultation encounter screens from stacking or overwriting an active consultation encounter if incoming calls arrive.
-  - Suppressed emergency door admissions (`ChamberDoorOverrideBar`) whenever chamber is in `calling`, `in_consultation`, or has an active occupant.
-- **Codified AI Rules & Guardrails (`AGENTS.md` & `.agents/rules/clinic_os_rules.md`):**
-  - Formulated **Invariant #11 (Single-Occupant Chamber Integrity & Collision Lock)**.
-  - Added **Step 4: Code Review Guardrails for Chamber & Encounter Integrity** to standard operating protocol.
-  - Added strict Codebase Red Lines banning token pre-emption and duplicate consultation screen stacking.
-- **Automated Verification Suite (`test/chamber_handshake_test.dart` & `test/doctor_door_override_test.dart`):**
-  - Added tests for in-consultation dispatch locking, `activeAppointmentIds` partition segregation, and occupied chamber door override suppression (172 passing tests).
+### Single-Occupant Chamber Integrity & Collision Lock (Invariant #11)
+- **Operational Impact:** Strict physical lock ensuring zero patient pre-emption. A doctor's chamber can hold at most one patient at any time. Reception cannot displace an active patient, and doctors cannot accidentally overwrite an ongoing consultation encounter modal.
+- **Architectural Touchpoints:**
+  - `lib/services/chamber_service.dart`: `callTokenIntoChamber` atomically verifies empty chamber before admission; throws `StateError` if occupied.
+  - `lib/screens/appointment_list_screen.dart`: Multi-doctor queue aggregate view filters out active chamber occupants across all physicians from lobby waiting lists.
+  - `lib/screens/doctor_chamber_screen.dart`: Modal lock (`_isConsultationOpen`) prevents re-entrant navigation; emergency door override bar auto-locks while chamber is occupied.
+  - `AGENTS.md` & `.agents/rules/clinic_os_rules.md`: Codified Invariant #11 and Step 4 Code Review Guardrails.
+  - `test/chamber_handshake_test.dart` & `test/doctor_door_override_test.dart`: Automated test suites validating occupancy locks.
 
 ---
 
 ## [1.25.0] — 13-10-2026
 
-### Enforce Doctor-Paced Chamber Handshake Protocol (Invariant #7)
-- **Strict Reception Dispatch Guarding (`lib/widgets/dashboard/dashboard_queue_card.dart`):**
-  - Eliminated premature unilateral patient calling (`Call In`) when doctor is in `idle` or taking a breather (`consultation_ended`).
-  - Rendered explicit, descriptive non-interactive badges when doctor is not ready: `Waiting for Doctor` (idle), `On Breather` (consultation concluded), `Doctor Busy (#N)` (consulting another patient), and `In Chamber` (currently inside).
-  - Restricted the green `Send In` action button strictly to when the doctor has explicitly signaled `ready_for_next` (`isDoctorReady == true`).
-- **Reception Accordion Dispatch Enforcement (`lib/widgets/queue/accordion_dispatch_section.dart`):**
-  - Replaced unguarded dispatch and override buttons with locked states during doctor idle, breather, or active consultation.
-  - Added descriptive status banner and disabled button (`Waiting for Doctor to Signal Ready`) when chamber is idle.
-  - Replaced break override with strict breather queue holding indicator (`Doctor on Breather (Waiting for Doctor)`).
-- **Automated Handshake Testing (`test/chamber_handshake_test.dart`):**
-  - Added unit and widget test suite covering `AccordionDispatchSection` across all chamber lifecycle states (`idle`, `consultation_ended`, `ready_for_next`), verifying dispatch button locking and readiness activation.
+### Doctor-Paced Chamber Handshake Protocol (Invariant #7)
+- **Operational Impact:** Eliminated forced patient admissions from reception. When a physician ends a visit, the chamber enters a "Breather" (`consultation_ended`). Reception dispatch (`[SEND IN]`) is strictly locked until the doctor explicitly taps **"NEXT PATIENT"** (`ready_for_next`), preventing physician burnout and consultation collisions.
+- **Architectural Touchpoints:**
+  - `lib/widgets/dashboard/dashboard_queue_card.dart`: Replaced premature "Call In" buttons with descriptive locked status badges (`Waiting for Doctor`, `On Breather`, `Doctor Busy (#N)`).
+  - `lib/widgets/queue/accordion_dispatch_section.dart`: Locked dispatch and override triggers during doctor idle, breather, or active consultation.
+  - `test/chamber_handshake_test.dart`: Widget test coverage for chamber lifecycle handshake states.
 
 ---
 
 ## [1.24.0] — 13-10-2026
 
-### Queue Legibility Enhancements & Mobile Responsive Consultation Layout
-- **Queue & Chamber Roster Display Upgrades (`lib/widgets/dashboard/`):**
-  - **`dashboard_queue_card.dart`:** Enlarged `TokenBadge` to 44px for clear reading at standing counter distances; upgraded patient name to 15px bold (`#0F172A`) and phone to 13px (`#64748B`); enlarged status and arrival estimate badges; increased action button touch targets (`Check In`, `Call In`, `Send In`) to 13px bold with 14×9px padding; fixed token count pluralization (`1 token` vs `N tokens`).
-  - **`dashboard_doctor_roster_card.dart`:** Enlarged doctor avatar to 18px and title to 14.5px bold; fixed pluralization on doctor queue badge (`1 token` vs `N tokens`).
-- **Responsive Mobile Encounter Layout (`lib/screens/consultation_encounter_screen.dart` & `lib/widgets/encounter/`):**
-  - **`ConsultationBottomDock`:** Made bottom dock responsive for mobile screens (< 550px) by transitioning to a compact `Back` button beside an `Expanded` prominent `End Consultation & Sign` button with ellipsis guard, preventing `RenderFlex` right overflow.
-  - **`SectionCard` (`lib/widgets/common/section_card.dart`):** Wrapped header title in `Flexible` with `TextOverflow.ellipsis` to prevent wide titles from pushing badges or chevrons off-screen on phones.
-  - **`VitalsAndExamSection` & `RxReconciliationSection`:** Suppressed redundant desktop toggle text buttons on mobile viewports (< 600px) and wrapped empty findings placeholder in `Expanded`.
-  - **Encounter AppBar:** Protected patient title with `Flexible` ellipsis guard for longer names on narrow phone screens.
+### Counter Queue Legibility & Mobile Responsive Encounter Layout
+- **Operational Impact:** Counter monitors (1920×1080) display 44px high-contrast token badges readable at standing counter distances. Mobile phones (390–430px) render fluid encounter screens with responsive bottom docks and ellipsis guards, preventing `RenderFlex` overflow errors.
+- **Architectural Touchpoints:**
+  - `lib/widgets/dashboard/dashboard_queue_card.dart` & `dashboard_doctor_roster_card.dart`: Enlarged typography, token badges, doctor avatars, and action button touch targets.
+  - `lib/screens/consultation_encounter_screen.dart` & `lib/widgets/encounter/`: Mobile breakpoint (< 550px) adaptive bottom dock, flexible section header titles, and compressed finding strips.
 
 ---
 
 ## [1.23.0] — 13-10-2026
 
-### Unified Desk Authentication & Explicit Action Button Latches
-- **Unified Desk Authentication (`lib/screens/login_screen.dart` & `lib/providers/auth_provider.dart`):**
-  - Updated `LoginScreen._handleOwnerLogin` to authenticate both Reception PIN (`0000`) and Owner PIN (`849201`) seamlessly via `loginAsReceptionistOrOwner`.
-  - Added default fallback parity in `loginAsOwner` and `authenticateWithPin` (`inputHash == _defaultOwnerMasterPinHash`), ensuring default master credentials operate reliably even if local storage is desynced.
-  - Added legacy hash sanitization in `AuthProvider.initSession` to prevent legacy 0000 hashes from locking out owner sessions.
-- **Mandatory Explicit Button Latches & Re-entrancy Locks:**
-  - **Appointment Booking (`lib/widgets/booking/add_appointment_dialog.dart`):** Added `_isBooking` transaction state, locked re-entrancy on click, disabled Cancel during writes, and added distinct progress feedback (`Booking Token...` / `Searching Patient...`).
-  - **Medicine Formulary (`lib/widgets/catalogue/add_medicine_dialog.dart`):** Added `_isSaving` state, locked re-entrancy, and added progress spinner feedback (`Saving...`).
-  - **Doctor Registration (`lib/screens/add_doctor_screen.dart`):** Added re-entrancy guard `if (_isSaving) return;`.
-  - **Consultation Encounter (`lib/screens/consultation_encounter_screen.dart`):** Added re-entrancy guard `if (_isSaving) return;`.
-  - **Desk & Chamber Login (`lib/screens/login_screen.dart`):** Added in-flight locks `if (_isLoading) return;` on doctor and receptionist/owner login handlers.
-- **Automated Test Coverage:**
-  - Added 3 unit tests in `test/auth_provider_test.dart` for unified desk login, master fallback resilience, and cache sanitization, passing all 166 automated unit and widget tests.
+### Unified Desk Authentication & Action Latches
+- **Operational Impact:** Counter desk login accepts both Reception PIN (`0000`) and Owner Master PIN (`849201`) from a single input field. Multi-click submit bugs on booking, doctor registration, and prescription forms are eliminated with atomic in-flight latches.
+- **Architectural Touchpoints:**
+  - `lib/screens/login_screen.dart` & `lib/providers/auth_provider.dart`: Unified desk login handler with fallback parity and cache sanitization.
+  - `lib/widgets/booking/add_appointment_dialog.dart`, `add_medicine_dialog.dart`, `add_doctor_screen.dart`, `consultation_encounter_screen.dart`: Added `_isBooking` and `_isSaving` re-entrancy locks disabling duplicate submits.
+  - `test/auth_provider_test.dart`: Added unit tests for desk authentication and session fallback.
 
 ---
 
 ## [1.22.0] — 13-10-2026
 
-### Strict 1:1 Paid-to-Review Cycle Enforcement & Roadmap RFC Expansion
-- **Single Free Review Enforcement (`lib/models/patient_review_eligibility.dart`):**
-  - Updated `PatientReviewEligibility.calculate` to anchor to the most recent paid visit (`latestPaidVisit`), scanning all interim visits for previous free review consumption.
-  - Prevents infinite free review chaining by setting `isReviewAlreadyConsumed: true` and `isWithinReviewPeriod: false` once a free review has been completed within the cycle.
-  - Formats date string in user alert with strict Indian format (`DD-MM-YYYY`).
-- **Booking Modal Guardrail (`lib/widgets/booking/add_appointment_dialog.dart`):**
-  - Displays amber warning banner when free review entitlement is consumed, and automatically resets payment selection to `paidCash` / doctor consultation fee.
-- **Cycle Reset on Fresh Consultation:**
-  - Verified that a subsequent paid visit restarts a brand-new single free review cycle.
-- **Product Roadmap & Architectural RFCs (`docs/PRODUCT_ROADMAP.md`):**
-  - Shipped and verified 1:1 Free Review enforcement in roadmap registry.
-  - Documented active PM debate for Prepaid Carry-Over & Doctor Absence Refund protocol (RFC-2) for zero-deletion financial reconciliation.
-- **Automated Test Coverage:**
-  - Added 3 comprehensive unit test suites in `test/patient_review_and_models_test.dart`, expanding passing suite to 163 automated tests.
+### Strict 1:1 Paid-to-Review Cycle Enforcement
+- **Operational Impact:** Prevents infinite free review chaining. A paid visit entitles the patient to exactly one free review within the doctor's review window. Once used, subsequent visits automatically revert to standard consultation fees until a fresh paid visit resets the cycle.
+- **Architectural Touchpoints:**
+  - `lib/models/patient_review_eligibility.dart`: `PatientReviewEligibility.calculate` anchors to the most recent paid visit and scans subsequent visits for prior review consumption (`isReviewAlreadyConsumed: true`).
+  - `lib/widgets/booking/add_appointment_dialog.dart`: Displays warning banner and auto-resets payment selection to `paidCash` when free review entitlement is consumed.
+  - `test/patient_review_and_models_test.dart`: 3 test suites covering single-use review cycles, fresh paid visit resets, and unpaid visit handling.
 
 ---
 
 ## [1.21.0] — 13-10-2026
 
 ### Mobile Responsive Doctor Chamber Layout & Roster Hardening
-- **Chamber Control Banner Responsiveness (`lib/widgets/chamber/chamber_control_banner.dart`):**
-  - Integrated responsive `LayoutBuilder` (< 600px breakpoint) across all chamber states (`idle`, `consultation_ended`, `ready_for_next`, `calling`).
-  - Mobile layout stacks status text and icon on top and provides full-width primary action button on bottom, eliminating 2-column squishing and horizontal cramping.
-- **Roster Patient Token Cards (`lib/widgets/chamber/chamber_token_card.dart`):**
-  - Refactored token cards from a single rigid row to a responsive 2-row card layout on mobile viewports (< 650px).
-  - Row 1 displays token badge, patient name with ellipsis, masked phone, longitudinal history button, and status badge.
-  - Row 2 pairs payment subtitle with one-click action buttons (`Enter Consultation`, `Waiting Reception Call`, `Unattended`, `Record`, `View Summary`), resolving horizontal `RenderFlex` overflow errors on mobile phones.
-- **Queue & Chamber Header Wrapping (`lib/widgets/chamber/chamber_queue_header.dart` & `lib/widgets/chamber/chamber_door_override_bar.dart`):**
-  - Added responsive `LayoutBuilder` and `Wrap` in `ChamberQueueHeader` for "Past Session Roster" and "Today's Patient Queue", ensuring title, count badge, and live sync/archive indicators wrap cleanly on narrow screens.
-  - Enhanced emergency door override bar header with wrapping to prevent horizontal overflow.
-- **Automated Verification:**
-  - Expanded test suites in `test/chamber_handshake_test.dart` and `test/chamber_read_only_archive_test.dart` with dedicated mobile 390px viewport tests, passing all 160 unit and widget tests.
+- **Operational Impact:** Visiting physicians using smartphones can view chamber queues without horizontal scrolling or text clipping. Chamber banners, patient token cards, and emergency override bars fluidly stack on screens < 650px.
+- **Architectural Touchpoints:**
+  - `lib/widgets/chamber/chamber_control_banner.dart`: Responsive `LayoutBuilder` stacking status and actions on mobile viewports.
+  - `lib/widgets/chamber/chamber_token_card.dart`: 2-row adaptive mobile card separating patient demographics from action buttons.
+  - `lib/widgets/chamber/chamber_queue_header.dart` & `chamber_door_override_bar.dart`: Responsive title, badge, and live sync indicators.
 
 ---
 
 ## [1.20.0] — 13-10-2026
 
-### Doctor-Configurable Free Review Policy (0 to 30 Days)
-- **Configurable Review Terms on Doctor Model (`lib/models/doctor.dart`):**
-  - Added `freeReviewDays` (`0` to `30` days, default: `14`) to the `Doctor` model, constructor, JSON serialization, and `copyWith`.
-  - Setting `freeReviewDays: 0` designates visiting super-specialists or physicians who do not offer free reviews (all visits billed at full fee).
-  - Configurable between `0` and `30` days to accommodate varied clinical specialties (e.g. 7 days for lab report review, 14 days for general OPD, 30 days for post-op surgical checks).
-- **Owner Doctor Onboarding & Policy Editing (`lib/screens/add_doctor_screen.dart`):**
-  - Added **Free Review Window (0 to 30 Days)** input with quick-select choice chips (`None (0d)`, `7 Days`, `14 Days`, `21 Days`, `30 Days`) and direct numeric entry validation.
-  - Policy changes saved by clinic owners immediately take effect across all future bookings and eligibility calculations.
-- **Roster Visibility (`lib/screens/doctor_list_screen.dart`):**
-  - Added review policy badges on `DoctorRosterCard` displaying active policy (`Review: 14d`, `Review: 30d`, or `No Free Review`).
-- **Domain Engine Refactor (`lib/core/engines/appointment_engine.dart` & `lib/models/patient_review_eligibility.dart`):**
-  - Upgraded `PatientReviewEligibility.calculate` and `AppointmentEngine.evaluateReviewEligibility` to evaluate against doctor's configured `freeReviewDays`.
-  - Upgraded `suggestPaymentType` to return `PaymentType.paidCash` if doctor has a `0`-day policy.
-- **Booking & Live Queue Dynamic Feedback (`lib/widgets/booking/`, `lib/widgets/queue/`):**
-  - Upgraded warning modal `BookingEligibilityBanner.showReviewWarningDialog` to display doctor-specific policies and elapsed day metrics.
-  - Upgraded `AppointmentAccordion` to evaluate live queue payment adjustments against assigned doctor's review terms.
-- **Automated Verification (`test/patient_review_and_models_test.dart`):**
-  - Added unit test coverage for `0`-day policy rejection, `30`-day policy qualification, and boundary handling, bringing the test suite to 157 passing tests.
+### Doctor-Configurable Free Review Window (0 to 30 Days)
+- **Operational Impact:** Clinic owners can configure the free review window individually per doctor (`0` to `30` days, default: `14`). Visiting super-specialists can be set to `0` days (no free review; all visits billed at full fee), while surgeons or general OPD can set 7, 14, 21, or 30 days.
+- **Architectural Touchpoints:**
+  - `lib/models/doctor.dart`: Added `freeReviewDays` field with JSON serialization and constructor defaults.
+  - `lib/screens/add_doctor_screen.dart`: Added Free Review Window input with quick-select choice chips (`0d`, `7d`, `14d`, `21d`, `30d`).
+  - `lib/core/engines/appointment_engine.dart` & `lib/models/patient_review_eligibility.dart`: Replaced hardcoded 14-day checks with dynamic evaluation against `doctor.freeReviewDays`.
+  - `test/patient_review_and_models_test.dart`: Unit tests for `0`-day policy rejection and `30`-day qualification.
 
 ---
 
 ## [1.19.0] — 13-10-2026
 
-### Security Hardening & Regulatory Compliance
-- **Cryptographic Credential Hashing (`lib/providers/auth_provider.dart`):**
-  - Integrated `crypto: ^3.0.7` and implemented domain-salted SHA-256 PIN hashing (`AuthProvider.hashPin`).
-  - Purged plaintext access credentials from persistent storage (`SharedPreferences`): only cryptographic hashes (`auth_owner_master_pin_hash`, `auth_receptionist_pin_hash`) are persisted on disk.
-  - Implemented automatic legacy migration on `initSession`: existing plaintext credentials from earlier versions are automatically hashed and permanently purged from device storage.
-  - Enhanced direct login helpers (`loginAsOwner`, `loginAsReceptionist`, `loginAsDoctor`) and chamber verification to evaluate strictly via SHA-256 hash matching.
-- **Healthcare Data Privacy & Regulatory Compliance (`docs/COMPLIANCE_AND_PRIVACY.md`):**
-  - Authored authoritative compliance blueprint aligned with the Indian Digital Personal Data Protection (DPDP) Act 2023, ABDM Health Data Management Policy, and NMC regulations.
-  - Formulated 3-tier Role-Based Access Control (RBAC) matrix separating clinical findings (physicians) from queue dispatch (reception) and financial ledgers (owner).
-  - Codified statutory 3-year minimum clinical record retention and verbal consent walk-in protocols.
-- **Automated Test Fortification (`test/auth_provider_test.dart`):**
-  - Added unit tests for deterministic SHA-256 hashing and automatic legacy plaintext PIN migration and disk purging, bringing test suite to 155 tests.
+### Security Hardening & Healthcare Data Governance
+- **Operational Impact:** Upgraded PIN storage from plaintext to cryptographic hashes. Documented healthcare data privacy compliance aligned with the Indian Digital Personal Data Protection (DPDP) Act 2023, ABDM policy, and NMC regulations.
+- **Architectural Touchpoints:**
+  - `lib/providers/auth_provider.dart`: Integrated domain-salted SHA-256 PIN hashing (`hashPin`). Plaintext credentials permanently purged from `SharedPreferences`. Automatic migration of legacy credentials on session start.
+  - `docs/COMPLIANCE_AND_PRIVACY.md`: Formulated 3-tier Role-Based Access Control (RBAC), statutory 3-year record retention protocols, and consent standards.
+  - `test/auth_provider_test.dart`: Tests for SHA-256 hashing and automatic legacy migration.
 
 ---
 
 ## [1.18.0] — 13-10-2026
 
-### Phase 2: Atomic Concurrency Locks & Forensic Audit Trail
-- **Atomic Booking Concurrency Lock (0% DB Race Conditions):**
-  - Implemented transactional reservation locks at `counters/lock_{doctorId}_{yyyy-MM-dd}_{phone}_{normalizedName}` inside `BookingService.bookAppointment`.
-  - Guarantees race-proof duplicate prevention at the database boundary: simultaneous multi-desk submissions for the same patient/doctor/day trigger typed `DuplicateBookingException` on conflicting clients via Firestore OCC, while family members sharing a phone number remain explicitly preserved.
-- **Append-Only Forensic Operational Audit Ledger (`appointment_events`):**
-  - Created immutable `AppointmentEvent` model and `appointment_events` collection tracking every operational state shift (`created`, `checkedIn`, `admitted`, `completed`, `markedAbsent`, `statusUpdated`).
-  - Integrated audit event generation across all `BookingService` state mutations and `ConsultationService.saveConsultation`.
-  - Added strict database rule in `firestore.rules` locking `appointment_events` with `allow update, delete: if false;` to guarantee forensic immutability.
-- **Test Suite Fortification (`test/booking_concurrency_and_audit_test.dart`):**
-  - Added 5 new unit tests covering deterministic lock path generation, family exception preservation, `DuplicateBookingException` semantics, and `AppointmentEvent` serialization across all 6 lifecycle events, expanding the automated test suite to 153 tests.
+### Atomic Concurrency Locks & Forensic Audit Trail
+- **Operational Impact:** Multi-desk simultaneous bookings for the same patient, doctor, and calendar date are prevented atomically at the database boundary (0% race conditions), while family members sharing a phone number remain supported. Every operational status transition is logged to an immutable audit trail.
+- **Architectural Touchpoints:**
+  - `lib/services/booking_service.dart`: Transactional reservation lock at `counters/lock_{doctorId}_{yyyy-MM-dd}_{phone}_{normalizedName}` throwing `DuplicateBookingException` on collision.
+  - `lib/models/appointment_event.dart`: Append-only `appointment_events` collection logging state shifts (`created`, `checkedIn`, `admitted`, `completed`, `markedAbsent`, `statusUpdated`).
+  - `firestore.rules`: Locked `appointment_events` with `allow update, delete: if false;`.
+  - `test/booking_concurrency_and_audit_test.dart`: 5 unit tests verifying lock generation and event serialization.
 
 ---
 
 ## [1.17.0] — 13-10-2026
 
-### Security & Data Model Hardening
-- **Authoritative Backend Security Rules (`firestore.rules` & `firebase.json`):**
-  - Authored comprehensive production Firestore security rules enforcing **Invariant #1 (Zero Deletions)** with `allow delete: if false;` across `appointments`, `consultations`, `patients`, and `counters`.
-  - Enforced **Invariant #2 (Append-Only Consultations)** with `allow update, delete: if false;` on the `consultations` collection, locking historical encounters from post-facto tampering.
-  - Hardened document creation schema checks and locked immutable appointment attributes (`queueNumber`, `doctorId`, `scheduledDate`).
-  - Wired `firestore.rules` directly into `firebase.json`.
-- **Single Source of Truth & State Reconciliation (`lib/models/appointment.dart`):**
-  - Reconciled dual-source-of-truth drift between `status` (`AppointmentStatus`) and `visitStatus` (`VisitStatus`).
-  - Hardened `Appointment.fromJson` to automatically reconcile terminal states (`completed`, `cancelled/absent`), eliminating in-memory state drift from un-synchronized legacy writes.
-  - Fixed `ConsultationService.saveConsultation` (`lib/services/consultation_service.dart`) to atomically update both `'status'` and `'visitStatus'` to `completed` in Firestore completion batches.
-- **Automated Test Suite Expansion (`test/patient_review_and_models_test.dart`):**
-  - Added unit tests for model state auto-reconciliation and synchronized JSON serialization, bringing the test suite to 148 passing tests.
+### Backend Security Rules & State Reconciliation
+- **Operational Impact:** Production Firestore security rules strictly lock clinical data against deletions. In-memory state synchronization ensures terminal appointment states (`completed`, `absent`) remain strictly aligned.
+- **Architectural Touchpoints:**
+  - `firestore.rules`: Enforced Invariant #1 (`allow delete: if false;` on appointments, consultations, patients, counters) and Invariant #2 (`allow update, delete: if false;` on consultations).
+  - `lib/models/appointment.dart`: Hardened `fromJson` to reconcile `status` (`AppointmentStatus`) and `visitStatus` (`VisitStatus`).
+  - `lib/services/consultation_service.dart`: Atomically updates both status fields on completion.
 
 ---
 
-## [1.16.9] — 12-10-2026
+## [1.16.0 – 1.16.9] — 12-10-2026
 
-### Audited & Synchronized
-- **Documentation Architecture & Credential Synchronization (`docs/`, `.agents/`, `README.md`, `AGENTS.md`):**
-  - **Owner Master PIN Alignment:** Rectified legacy credential documentation across `README.md`, `docs/SCHEMA_AND_MODELS.md`, and `docs/PRODUCT_VISION_AND_WORKFLOW.md` from `123456` to canonical Master PIN `849201` matching app constants and test suites.
-  - **Domain Engine Topology Synchronization:** Updated `README.md` and `AGENTS.md` project maps to explicitly include the 5th domain engine (`CashHandoverEngine`), synchronized automated test counters to 145 passing tests, and pruned redundant tree entries.
-  - **Developer Agent Recipes Fortification (`.agents/recipes/`):**
-    - Updated `add_clinical_field.md` to reference canonical `PrintHeaderAndDemographics` instead of deprecated `PrintClinicalSnapshot`.
-    - Updated `modify_booking_rule.md` unit test guidelines and commands to reference canonical `test/patient_review_and_models_test.dart` instead of legacy `test/widget_test.dart`.
-  - **Standards & Invariant Compliance:** Verified 100% adherence to Indian numerical date formatting (`DD-MM-YYYY`), pure Dart engine separation, and zero Firestore ledger deletions across the entire documentation catalog.
-
----
-
-## [1.16.8] — 12-10-2026
-
-### Extracted & Modularized
-- **Domain Engine Decomposition & Dedicated `CashHandoverEngine`:**
-  - **Extracted Standalone Engine (`lib/core/engines/cash_handover_engine.dart`):**
-    - Decoupled daily end-of-day cash drawer balancing, denomination note math, and audit discrepancy calculation from `RevenueEngine` into its own dedicated 5th pure Dart engine file, 100% fulfilling the architectural roadmap blueprint.
-    - Exported `CashHandoverEngine` in `lib/core/engines/engines.dart` canonical barrel.
-    - Preserved seamless backward-compatibility delegates in `RevenueEngine` (`calculateCashHandover`, `calculateDenominationTotal`, `calculateDiscrepancy`) and re-exported handover models (`CashHandoverDoctorRow`, `CashHandoverSummary`).
-  - **Consumer Alignment:**
-    - Refactored `DailyCashHandoverDialog` (`widgets/dashboard/daily_cash_handover_dialog.dart`) and `test/cash_handover_engine_test.dart` to directly consume atomic `CashHandoverEngine`.
-  - **Roadmap Verification:** Marked Domain Engines & Math Audit as `🟢 Shipped & Verified` in `docs/PRODUCT_ROADMAP.md` with 145 passing automated tests.
+### Architectural Consolidation, Modular Engines & Desk Workflow
+- **Operational Impact:**
+  - **Asynchronous Desk Check-In (v1.16.0):** Phone/advance bookings (`VisitStatus.booked`) stay isolated from active doctor queues until physical counter check-in (`waitingInLobby`). Added 1-tap quick check-in dialog with numpad shortcuts and courtesy waivers (`PaymentType.freeFamily`).
+  - **Emergency Door Self-Call Guard (v1.16.1):** Doctor door self-call strictly capped to the top 1–2 verified lobby-checked-in patients (`PaymentType != unpaid`).
+  - **Read-Only Historical Chamber Archive (v1.16.2 – v1.16.3):** Viewing past calendar dates switches Doctor Chamber into read-only mode (`ChamberArchiveBanner`), rendering unresolved tokens as `UNATTENDED / NO-SHOW`.
+  - **Widget Architecture Consolidation (v1.16.5):** Merged 12 thin/duplicate widgets into their parent screens, reducing widget file count by 21% and deleting the legacy `FirebaseService` facade.
+  - **Standalone `CashHandoverEngine` (v1.16.8):** Decoupled daily end-of-day cash drawer balancing and denomination note math into its own pure Dart domain engine file.
 
 ---
 
-## [1.16.7] — 12-10-2026
+## [1.15.0 – 1.15.1] — 12-10-2026
 
-### Audited & Synchronized
-- **Pure Dart Domain Engines Architecture Audit (`lib/core/engines/`):**
-  - **Zero Flutter UI Dependencies Verified:** Confirmed that all 4 domain engines (`AppointmentEngine`, `MedicineEngine`, `RevenueEngine`, `WhatsAppEngine`) remain 100% pure Dart, preserving clear separation of presentation and business domain logic.
-  - **Canonical Barrel Synchronization:** Consolidated fragmented individual model imports across `appointment_engine.dart`, `medicine_engine.dart`, `revenue_engine.dart`, and `whatsapp_engine.dart` to uniformly consume `lib/models/models.dart`.
-  - **Operational & Clinical Invariants Verified:**
-    - `AppointmentEngine`: 14-day free review calculations, fee determination, multi-parameter duplicate booking prevention, and dynamic consultation arrival estimation.
-    - `RevenueEngine`: Realized collection segregation, chamber KPIs, and cash drawer handover denomination reconciliation.
-    - `MedicineEngine`: Composition-first vs brand-first scoring, clinical dosage fallbacks, and medication reconciliation partitions.
-    - `WhatsAppEngine`: Standardized phone number normalization, append-only digital prescription summaries, and deep link generation.
+### Offline Queue Cache, WhatsApp Engine & Daily Cash Handover
+- **Operational Impact:**
+  - **Offline Queue Resilience:** Daily appointments are cached locally (`SharedPreferences`). Counter PC gracefully displays cached queue data during broadband drops with visual indicator (`[ ⚡ Offline Cache ]`).
+  - **WhatsApp Digital Prescription:** 1-tap `wa.me` deep link generator formats append-only prescription summaries for patient delivery in standard Indian date format (`DD-MM-YYYY`).
+  - **Daily Cash Drawer Handover:** Interactive denomination counter modal (`₹500`, `₹200`, `₹100`, etc.) summarizes cash collections across completed visits and computes drawer discrepancies.
+  - **Responsive Catalogue Layout (v1.15.1):** Fluidly adapts master medicine formulary across mobile, tablet, and desktop viewports.
 
 ---
 
-## [1.16.6] — 12-10-2026
-
-### Refactored & Fortified
-- **Test Suite Modernization & Quality Assurance Fortification:**
-  - **Eliminated Misleading Legacy `widget_test.dart`:**
-    - Renamed and refactored `test/widget_test.dart` to `test/patient_review_and_models_test.dart`, cleanly aligning test file naming with the tested domain subsystems (`PatientReviewEligibility`, `Appointment`, and `Doctor` domain models).
-    - Migrated multi-line model imports to canonical barrel export `models.dart`.
-  - **Added `AuthProvider` Security & PIN Guarding Suite (`test/auth_provider_test.dart`):**
-    - Introduced 12 automated unit tests verifying 3-tier role guarding (Owner Master PIN 6 digits `849201`, Receptionist PIN `0000`, Doctor Chamber PINs).
-    - Tested unified PIN evaluation without manual role selectors, ambiguous duplicate doctor PIN handling, elevated owner step-down to reception, custom PIN mutation, logout cleanup, and session persistence via `SharedPreferences`.
-  - **Added `AppFormatters` Clinical Formatting & Invariants Suite (`test/app_formatters_test.dart`):**
-    - Introduced 10 unit tests verifying mandatory Indian date formats (`DD-MM-YYYY`, `DD-MM-YY`, weekday strings, ISO Firestore counter keys), Indian Rupee currency formatting, doctor initials extraction, and specialty typo sanitization.
-    - Discovered and fixed duplicate `"Dr. Dr."` prefix regression in `AppFormatters.doctorTitle` using exhaustive leading prefix stripping.
-  - **Barrel Synchronization Across Test Suites:**
-    - Harmonized imports across `test/consultation_test.dart`, `test/prescription_print_test.dart`, `test/chamber_read_only_archive_test.dart`, `test/chamber_handshake_test.dart`, and `test/whatsapp_engine_test.dart` to consume canonical barrels (`models.dart`, `widgets.dart`).
-  - **Legacy Reference Pruning:**
-    - Replaced stale reference to retired `ClinicalDefaultsHelper` in `test/catalogue_scoring_test.dart` with `MedicineEngine.getDefaultsForMedicine`.
-  - **Automated Test Expansion:** Expanded test suite from 122 to 144 automated tests covering role guarding, session persistence, and formatting invariants.
-
----
-
-## [1.16.5] — 12-10-2026
-
-### Refactored & Consolidated
-- **Widget Architecture Consolidation (Cleaned 12 Redundant Files):**
-  - **Eliminated Pass-Through Thin Screens:**
-    - Merged `DoctorDailyBreakdownTable` directly into `DoctorDailyDetailsScreen` (`doctor_daily_details_screen.dart`), turning a 45-line shell into a self-contained detail screen and removing a misplaced widget from `widgets/dashboard/`.
-    - Merged `DoctorStatisticsCard` directly into `StatisticsScreen` (`statistics_screen.dart`), making it self-contained and removing a misplaced widget from `widgets/dashboard/`.
-    - Merged `DoctorForm` directly into `AddDoctorScreen` (`add_doctor_screen.dart`), turning an anemic 30-line shell into a complete, self-contained doctor credential form.
-    - Merged `DoctorRosterCard` directly into `DoctorListScreen` (`doctor_list_screen.dart`), removing false categorization in `widgets/common/` and eliminating naming confusion with `DashboardDoctorRosterCard`.
-  - **Micro-Widget Inlining within Subsystems:**
-    - Merged `VitalsInputGrid` directly into `VitalsAndExamSection` (`vitals_and_exam_section.dart`), consolidating all Step 2 encounter inputs in one file.
-    - Merged `ChamberQueueList` into `ChamberQueueHeader` (`chamber_queue_header.dart`), unifying queue list rendering and headers.
-    - Merged `PrintClinicalSnapshot` into `PrintHeaderAndDemographics` (`print_header_and_demographics.dart`), combining patient demographics and vitals snapshot for letterheads.
-  - **Screen Micro-Dock Co-location:**
-    - Co-located `ChamberCallingAlertBar` and `ConsultationBottomDock` directly in `ConsultationEncounterScreen` (`consultation_encounter_screen.dart`).
-    - Merged `DoctorLoginForm` and `ReceptionLoginForm` directly into `LoginScreen` (`login_screen.dart`), eliminating cross-file prop drilling and retiring the `widgets/auth/` directory.
-  - **Dead Code Pruning:**
-    - Removed unreferenced orphan `AllergyAlertBanner` (`widgets/common/allergy_alert_banner.dart`).
-  - **Centralized Barrel Synchronization:**
-    - Cleaned and updated `lib/widgets/widgets.dart` barrel exports, reducing total widget files from 56 to 44 (-21%).
-  - **Legacy Utils Shim Retirement:**
-    - Replaced all calls to deprecated `ClinicalDefaultsHelper` and `MedicineSearchScorer` across `EncounterFormState`, `RxReconciliationSection`, `RxSearchResultsView`, `StagedMedicineForm`, and `catalogue_scoring_test.dart` directly with pure `MedicineEngine`.
-    - Deleted obsolete adapter shims `clinical_defaults_helper.dart` and `medicine_search_scorer.dart`.
-  - **Screen Direct-Service Decoupling:**
-    - Refactored `AppointmentListScreen` and `StatisticsScreen` to directly consume atomic `BookingService` instead of instantiating the full `FirebaseService` facade.
-    - Refactored `DoctorChamberScreen` to directly consume atomic `BookingService` and `ChamberService`, decoupling the screen from `FirebaseService`.
-  - **State Management Layer Modernization (`ClinicProvider` & `AuthProvider`):**
-    - Refactored `ClinicProvider` (`clinic_provider.dart`) to directly consume atomic modular services (`BookingService`, `ChamberService`, `ConsultationService`, `CatalogueService`, `DoctorService`, `PatientService`), supporting modular dependency injection.
-    - Added stream idempotency in `startListeningToAppointments()`, preventing duplicate Firestore subscriptions and offline cache lookups when already listening to the active calendar date.
-    - Eliminated unnecessary UI listener rebuild churn with value equality guards in `_setLoading()`, `setDashboardSearchQuery()`, and `clearDashboardSearchQuery()`.
-    - Cleaned confusing legacy `ownerPin` and `setOwnerPin` aliases in `AuthProvider` (`auth_provider.dart`), securing role semantics between owner master PIN and receptionist PIN.
-  - **Retirement of Legacy Service Facade:**
-    - Deleted obsolete 254-line facade `lib/services/firebase_service.dart`. All screens and providers now directly consume single-responsibility services.
-  - **Data Models & Schema Hardening (`lib/models/`):**
-    - Hardened `Doctor.fromJson` (`doctor.dart`) with polymorphic date parsing (`Timestamp`, `DateTime`, `String`) for `blockedDates` to prevent runtime cast errors from arbitrary Firestore date formats.
-    - Enhanced `Patient.fromJson` (`patient.dart`) with whitespace trimming and Set-based deduplication for critical clinical allergy alert tags.
-    - Introduced clean barrel export file `lib/models/models.dart` exporting all 11 pure data models.
-
----
-
-## [1.16.4] — 12-10-2026
-
-### Refactored & Modularized
-- **Queue Tile Architecture Decomposition (`AppointmentAccordion`):**
-  - **Single Responsibility Principle:** Deconstructed the monolithic 786-line `AppointmentAccordion` into lightweight, atomic sub-widgets, reducing the coordinator file by ~50% (down to 398 lines).
-  - **Extracted `AccordionDispatchSection`:** Encapsulates the `ChamberSession` realtime stream listener, dynamic doctor readiness badges (`Ready`, `Breather`, `Occupied`), and guarded `SEND IN` dispatch buttons with occupied chamber collision and breather confirmation modals.
-  - **Extracted `AccordionStatusActions`:** Encapsulates `Mark Complete`, `Mark Absent` (with audit-proof slot preservation confirmation modal), and `Send WhatsApp Digital Prescription` generation.
-  - **Export Centralization:** Added exports to `lib/widgets/widgets.dart` barrel file.
-  - **Automated Test Fortification:** Added `test/accordion_modular_queue_test.dart` covering realtime chamber stream listeners, dispatch confirmation modals, and status actions.
-
----
-
-## [1.16.3] — 12-10-2026
-
-### Audit Integrity & Historical View Hardening
-- **Dynamic Queue Header & Static Archive Badge (`ChamberQueueHeader`):**
-  - Section title automatically switches from `"Today's Patient Queue"` to `"Past Session Roster"` when viewing historical dates.
-  - Replaced the live sync indicator (`"🟢 Live Sync"`) with a muted static badge (`"⚪ Archived Snapshot"`) on past dates.
-- **Historical Chamber Metric Reconciliation (`ChamberMetricsGrid`):**
-  - Total tokens subtitle on historical dates updates to `"Shift completed"` instead of displaying phantom queue counts.
-  - Waiting queue count evaluates to `0` for closed past shifts.
-  - Reconciled `Absent / No-Show` count on historical dates to dynamically include unresolved tokens that never reached consultation, aligning with the visual `UNATTENDED / NO-SHOW` tags.
-  - **Automated Test Fortification:** Expanded `test/chamber_read_only_archive_test.dart` with audit reconciliation and dynamic header tests.
-
----
-
-## [1.16.2] — 12-10-2026
-
-### Added & Hardened
-- **Read-Only Archive State for Historical Dates in Doctor Chamber:**
-  - **Temporal Guarding (`_isToday` vs `_isPastDate`):** Live chamber actions (chamber initialization, ready signals, and emergency door admissions) are strictly restricted to the current active calendar day (`today`).
-  - **Chamber Archive Indicator (`ChamberArchiveBanner`):** Historical dates completely hide live control banners and render `🔒 Chamber Shift Closed • Read-Only Archive` with formatted Indian date (`DD-MM-YYYY`).
-  - **EOD Unresolved Token Protection:** Past appointments left unresolved render as `UNATTENDED / NO-SHOW` with an `Unattended` static pill, eliminating active queue indicators or live admission options.
-  - **Historical Record Review:** Completed visits on past dates display `[ View Summary ]` to inspect longitudinal records in read-only mode with zero status mutation capability.
-  - **Automated Test Fortification:** Added `test/chamber_read_only_archive_test.dart` covering temporal guarding, read-only chamber banners, and unattended token display.
-
----
-
-## [1.16.1] — 12-10-2026
-
-### Security & Queue Integrity
-- **Restricted Emergency Door Override Runway (`ChamberDoorOverrideBar`):**
-  - **Eliminated Arbitrary Overrides:** Removed unconstrained manual override buttons and long-press triggers across queue cards, preventing arbitrary queue-jumping or admitting unverified/unpaid patients.
-  - **Strict "Next at Door" Quick-Selector:** Added an emergency self-call runway strictly capped to the next 1–2 patients in `VisitStatus.waitingInLobby` with confirmed payment/waiver (`PaymentType != unpaid`).
-  - **Zero Distraction / Auto-Hiding:** The emergency runway automatically hides during active physician consultations (`in_consultation`) or when no verified lobby-checked-in patients are waiting.
-  - **Atomic State Transition:** 1-tap door admission immediately updates appointment status to `VisitStatus.inConsultation`, syncs the live chamber session channel, and hydrates the consultation encounter workspace.
-  - **Automated Test Fortification:** Added `test/doctor_door_override_test.dart` covering emergency self-call runway, lobby status gating, and confirmation dialogs.
-
----
-
-## [1.16.0] — 12-10-2026
-
-### Added & Enhanced
-- **Asynchronous OPD Advance/Phone Booking & Desk Check-In Workflow:**
-  - **Granular Visit Lifecycle (`VisitStatus`):** Added explicit states (`booked`, `waitingInLobby`, `inConsultation`, `completed`, `cancelled`) alongside `checkedInAt` timestamp tracking.
-  - **Doctor Chamber Queue Isolation:** Advance and phone reservations (`VisitStatus.booked`) are cleanly segregated from the physician's active live queue and chamber waiting KPIs until patients physically arrive and check in at the counter.
-  - **1-Tap Quick Desk Check-In & Payment Reconciliation (`QuickCheckInDialog`):** Added rapid check-in modal supporting single-tap action and numpad shortcuts (`1`=Cash, `2`=UPI, `3`=Post-Pay, `4`=Free Review, `5`=Free Family) to streamline counter desk throughput.
-  - **Inviolable Discretionary Fee Waivers (`PaymentType.freeFamily`):** Enforced immutable courtesy/VVIP zero-rupee fee waivers that cannot be overwritten or coerced by historical visit review calculations.
-  - **Granular Payment Types:** Extended `PaymentType` to support `paidCash`, `paidUpi`, `postPay`, and `unpaid`, complete with backward compatibility aliases and helpers.
-  - **Reception & Queue UI Enhancements:** Added dedicated "Advance / Phone Bookings" section to queue accordion, clear status badges ("Booked (Phone)" vs "In Lobby"), and instant 1-tap check-in buttons on dashboard queue cards.
-  - **Automated Test Fortification:** Added `test/opd_checkin_payment_workflow_test.dart` covering asynchronous desk check-in and payment reconciliation.
-
----
-
-## [1.15.1] — 12-10-2026
-
-### Fixed & Enhanced
-- **Mobile Responsive Catalogue Layout:**
-  - Refactored `CatalogueHeaderAndStats` using `LayoutBuilder` to fluidly adapt across mobile (<560px), tablet (560–800px), and desktop (>800px). Eliminates RenderFlex overflows on mobile viewports.
-  - Made `CatalogueSearchToolbar` responsive by stacking the search query input and dosage form dropdown on narrow screens.
-- **Human-Friendly Permission SnackBars:**
-  - Replaced harsh red error banners on "Clean Duplicates" and "Delete Medicine" with warm amber advisory notices (`#D97706`) explaining that Clinic Administrator (Owner) credentials are required.
-- **Reception & Admin Testing Login Credentials:**
-  - Added clear testing credential guidance directly to `ReceptionLoginForm` (`Reception: 0000 | Admin/Owner: 849201`) with expanded viewport tolerance in `LoginScreen`.
-  - **Automated Test Suite Expansion:** Added responsive widget tests verifying mobile (390px) and desktop (1200px) layout stability with zero overflows.
-
----
-
-## [1.15.0] — 12-10-2026
-
-### Added
-- **Offline Queue Fallback Cache (`P6`):**
-  - **Local Persistence Gateway (`OfflineQueueCacheService`):** Silently caches daily appointment queue updates to local browser storage (`SharedPreferences`) using JSON serialization via `Appointment.toCacheMap()`.
-  - **Zero-Dropout Resilience:** Counter PC gracefully falls back to cached appointment ledger if broadband connectivity experiences transient hiccups or Firestore stream errors.
-  - **Reception Status Indicator:** Displays high-visibility amber badge `[ ⚡ Offline Cache (HH:mm) ]` in `DashboardTodayQueueCard` during dropouts, auto-clearing once live stream restores.
-- **WhatsApp Digital Prescription Deep Link (`P7`):**
-  - **Pure Domain Formatter (`WhatsAppEngine`):** Formats append-only consultations into standardized, human-readable WhatsApp markdown messages with Indian date formatting (`DD-MM-YYYY`), patient demographics, vitals, diagnosis, medication schedule (dosage, frequency, duration, timing), discontinued drug audits, and follow-up review interval.
-  - **1-Tap `wa.me` Deep Link Generation:** Cleanses Indian phone numbers to canonical `91XXXXXXXXXX` format and builds deep link URLs.
-  - **Cross-Platform Delivery:** Added green `[ 💬 Send on WhatsApp ]` action on `PrescriptionPrintScreen` and quick dispatch on `AppointmentAccordion` for completed visits, opening Web WhatsApp via zero-dependency `platform_url.dart`.
-- **Daily End-of-Day Financial Handover & Cash Reconciliation (`P8`):**
-  - **Domain Calculation Engine (`RevenueEngine.calculateCashHandover`):** Accurately summarizes daily cash collections across completed visits, filtering out pending/absent slots and segmenting visits by doctor and payment type (`Paid`, `Free Review`, `Free Family`).
-  - **Physical Cash Denomination Counter:** Interactive modal `DailyCashHandoverDialog` allowing receptionists to tally note counts (`₹500`, `₹200`, `₹100`, `₹50`, `₹20`, `₹10`) with live discrepancy evaluation (`🟢 ₹0 Difference • Balanced` vs `🔴 Shortage / Surplus`).
-  - **Reception Dashboard Trigger:** Added 1-tap `[ 🧾 Cash Handover ]` button on `DashboardHeaderBar` and printable handover slip action.
-  - **Automated Test Suite Expansion:** Added dedicated test suites `test/offline_queue_cache_test.dart`, `test/whatsapp_engine_test.dart`, and `test/cash_handover_engine_test.dart`.
-
----
-
-> **Historical Release Notes:**  
-> For changes in versions v1.0.0 through v1.14.0, see [`docs/archive/CHANGELOG_ARCHIVE.md`](docs/archive/CHANGELOG_ARCHIVE.md).
-
+> 📦 **Historical Foundation Release Notes:**  
+> For foundational releases prior to v1.15.0 (v1.0.0 — v1.14.0), see [`docs/archive/CHANGELOG_ARCHIVE.md`](docs/archive/CHANGELOG_ARCHIVE.md).

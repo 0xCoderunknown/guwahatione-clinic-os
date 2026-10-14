@@ -23,7 +23,7 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 | Module | Core Features | Verification Status |
 |---|---|---|
 | **Audit-Proof Queue Ledger** | Atomic consecutive daily tokens ($1 \dots N$). No deletions from Firestore; cancellations/no-shows preserved as `AppointmentStatus.absent` with `₹0`. | 🟢 Verified & Live |
-| **Patient Registration** | 10-digit phone lookup, age/gender, allergy alerts, 14-day free review eligibility auto-calculation. | 🟢 Verified & Live |
+| **Patient Registration** | 10-digit phone lookup, age/gender, allergy alerts, doctor-configured free review eligibility auto-calculation (`freeReviewDays` 0–30). | 🟢 Verified & Live |
 | **Longitudinal Prescribing** | 5-step encounter pipeline, medication reconciliation (`START`, `CONTINUE`, `STOP`), unlisted outside medicine fallback. | 🟢 Verified & Live |
 | **Chamber Auto-Sync (`P1`)** | Real-time sync at `counters/chamber_{doctorId}_{date}`. Reception clicks "Call In" ➔ Doctor screen automatically loads patient encounter. Includes consultation collision alert banner. | 🟢 Shipped & Verified (`v1.5.0`) |
 | **Clinical Defaults (`P2`)** | `ClinicalDefaultsHelper` auto-populates standard OPD regimens (PPIs, Antihypertensives, Diabetes, Statins, Antibiotics, Liquids, Topicals) with prefilled dosage, frequency, and duration defaults. | 🟢 Shipped & Verified (`v1.5.0`) |
@@ -56,7 +56,7 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 | **Cryptographic Credential Hashing & Compliance Matrix** | Domain-salted SHA-256 PIN hashing in `AuthProvider` purging plaintext credentials from storage, DPDP Act & ABDM healthcare compliance matrix, and expanded test suite to 155 automated tests. | 🟢 Shipped & Verified (`v1.19.0`) |
 | **Doctor-Configurable Free Review Policy (0–30 Days)** | Added configurable `freeReviewDays` on `Doctor` model (`0` to `30` days, default: `14`), owner configuration UI with preset choice chips, roster visibility badges, dynamic review eligibility engine evaluation, warning dialogs, and expanded test suite to 157 automated tests. | 🟢 Shipped & Verified (`v1.20.0`) |
 | **Mobile Responsive Doctor Chamber & Roster Tokens** | Responsive `LayoutBuilder` for `ChamberControlBanner`, adaptive 2-row `ChamberTokenCard` layout, and wrapping `ChamberQueueHeader` preventing horizontal `RenderFlex` overflows on mobile viewports (<650px); expanded test suite to 160 automated tests. | 🟢 Shipped & Verified (`v1.21.0`) |
-| **Strict 1:1 Paid-to-Review Cycle Enforcement** | Enforced strictly 1 free review per paid consultation within the doctor's configured `freeReviewDays` window; subsequent visits require paid consultation; prevents infinite review chaining; expanded test suite to 163 automated tests. | 🟢 Implemented & Verified |
+| **Strict 1:1 Paid-to-Review Cycle Enforcement** | Enforced strictly 1 free review per paid consultation within the doctor's configured `freeReviewDays` window; subsequent visits require paid consultation; prevents infinite review chaining; expanded test suite to 163 automated tests. | 🟢 Shipped & Verified (`v1.22.0`) |
 | **Prescription Template Presets (`P9`)** | Pre-configured clinical OPD bundles (URI/Pharyngitis, Acute Gastritis, Gastroenteritis, Viral Fever, HTN Starter) with 1-tap horizontal chip loader (`RxTemplatePresetsBar`), duplicate suppression by brand and salt composition (`evaluateTemplateApplication`), and non-destructive `START` staging; expanded test suite to 179 automated tests. | 🟢 Shipped & Verified (`v1.28.0`) |
 | **Multi-Chamber Queue Sound Announcer (`P10`)** | In-browser Web Audio API dual-tone chime (587.33 Hz $\to$ 880 Hz) and SpeechSynthesis token callout ("Token N, please proceed to Dr. X") on patient dispatch, persistent Mute/Unmute toggle in AppBars, deduplication guard, and zero external asset dependencies; expanded test suite to 184 automated tests. | 🟢 Shipped & Verified (`v1.29.0`) |
 
@@ -77,15 +77,12 @@ All primary operational priorities (P1 through P10) and review cycle enforcement
 The following clinical, financial, and operational dilemmas are under active product deliberation before code implementation:
 
 ### 📋 RFC-1: Strict 1-Time Free Review Cycle Model — ✅ Resolved in `v1.22.0`
-> **Status:** Implemented and verified. See `CHANGELOG.md [1.22.0]` and `lib/models/patient_review_eligibility.dart`. Preserved below for historical context — do **not** treat as an open bug or active debate.
 - **Clinical Intent:** In Indian OPD practice, a "Free Review" exists exclusively to review lab reports, radiology, or drug tolerance resulting directly from an initial paid consultation. It is **never** an open-ended pass for unlimited free consultations.
-- **~~The Current Code Vulnerability~~ (Resolved in v1.22.0):**
-  - ~~`PatientReviewEligibility.calculate` sorts past visits and inspects only the *immediate preceding visit* (`pastVisitsWithDoctor.first`).~~
-  - ~~If a patient visits on Day 1 (Paid), Day 5 (Free Review #1), Day 8 (Free Review #2), and Day 12 (Free Review #3), the current engine sees each visit as $\le 14$ days from the last and marks every single one as eligible for a free review!~~
-- **Implemented Solution:**
+- **Canonical Implementation** (`lib/models/patient_review_eligibility.dart`):
   1. **Strict 1:1 Relationship:** Each paid encounter (`paidCash`, `paidUpi`, `postPay` with collection) unlocks exactly **one (1)** free review token within the doctor's configured `freeReviewDays` window.
   2. **Doctor-Paced Opt-In:** Free reviews only apply if the doctor has configured `freeReviewDays > 0`. If `freeReviewDays == 0`, free reviews are disabled completely.
   3. **Consumption & Reset:** Once a free review is completed (`visitStatus == completed` with `PaymentType.freeReview`), that entitlement is permanently marked **consumed**. The next visit must be a paid visit, which subsequently unlocks a brand-new review cycle.
+
 
 ### 💰 RFC-2: Prepaid Token Carry-Forward vs. Doctor No-Show Refund
 - **Scenario A: Patient Paid in Advance but Did Not Attend (Patient No-Show)**
