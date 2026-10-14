@@ -49,25 +49,49 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            child: Row(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
-                  Icons.queue_play_next_rounded,
-                  size: 20,
-                  color: Color(0xFF0F172A),
-                ),
-                const SizedBox(width: 10),
-                const Text(
-                  "Today's Live Queue",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFF0F172A),
-                  ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.queue_play_next_rounded,
+                      size: 20,
+                      color: Color(0xFF0F172A),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        "Today's Live Queue",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF0F172A),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AppointmentListScreen(),
+                        ),
+                      ),
+                      child: const Text(
+                        'Full Ledger →',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
                 ),
                 if (widget.provider.isOfflineFallback) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -75,7 +99,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                     ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEF3C7),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: const Color(0xFFF59E0B)),
                     ),
                     child: Row(
@@ -87,33 +111,23 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                           color: Color(0xFFB45309),
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          widget.provider.offlineCacheTimestamp != null
-                              ? 'Offline data · Updated at ${AppFormatters.time(widget.provider.offlineCacheTimestamp)}'
-                              : 'Offline data',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFB45309),
+                        Expanded(
+                          child: Text(
+                            widget.provider.offlineCacheTimestamp != null
+                                ? 'Offline data · Updated at ${AppFormatters.time(widget.provider.offlineCacheTimestamp)}'
+                                : 'Offline data',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFB45309),
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ],
-                const Spacer(),
-                TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AppointmentListScreen(),
-                    ),
-                  ),
-                  child: const Text(
-                    'Full Ledger →',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ),
               ],
             ),
           ),
@@ -250,139 +264,13 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                   targetQueueNumber: appt.queueNumber,
                 );
 
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 8,
-                  ),
-                  leading: TokenBadge(
-                    queueNumber: appt.queueNumber,
-                    doctorTag: _selectedDoctorId == null
-                        ? AppFormatters.doctorInitials(appt.doctorName)
-                        : null,
-                    size: 44,
-                    isCompleted: appt.status == AppointmentStatus.completed,
-                    isAbsent: appt.status == AppointmentStatus.absent,
-                  ),
-                  title: Row(
-                    children: [
-                      Text(
-                        appt.patientName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '(${appt.patientPhone})',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      if (appt.visitStatus == VisitStatus.booked)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF3C7),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: const Color(0xFFF59E0B)),
-                          ),
-                          child: const Text(
-                            'Phone booking',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF92400E),
-                            ),
-                          ),
-                        )
-                      else if (appt.visitStatus == VisitStatus.waitingInLobby)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFDCFCE7),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: const Color(0xFF86EFAC)),
-                          ),
-                          child: const Text(
-                            'In Lobby',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF166534),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          "${AppFormatters.doctorTitle(appt.doctorName)} • Fee: ${AppFormatters.currency(appt.amountCollected)} (${appt.paymentType.displayName})",
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            color: Color(0xFF475569),
-                          ),
-                        ),
-                        if (appt.status == AppointmentStatus.pending) ...[
-                          const SizedBox(height: 5),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3.5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: Colors.blue.shade200),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.schedule_rounded,
-                                  size: 13,
-                                  color: Colors.blue.shade700,
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  estimate.relativeSummary,
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue.shade900,
-                                  ),
-                                ),
-                                Text(
-                                  " • Estimated wait: ${estimate.formattedRange}",
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    color: Colors.blue.shade800,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  trailing: _buildTrailingAction(appt, context),
-                );
+                final isMobile = MediaQuery.of(context).size.width < 750;
+
+                if (isMobile) {
+                  return _buildMobileQueueItem(appt, estimate, context);
+                }
+
+                return _buildDesktopQueueItem(appt, estimate, context);
               },
             ),
         ],
@@ -390,9 +278,271 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
     );
   }
 
-  Widget _buildTrailingAction(Appointment appt, BuildContext context) {
+  Widget _buildMobileQueueItem(
+    Appointment appt,
+    EstimatedConsultationWindow estimate,
+    BuildContext context,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TokenBadge(
+                queueNumber: appt.queueNumber,
+                doctorTag: _selectedDoctorId == null
+                    ? AppFormatters.doctorInitials(appt.doctorName)
+                    : null,
+                size: 38,
+                isCompleted: appt.status == AppointmentStatus.completed,
+                isAbsent: appt.status == AppointmentStatus.absent,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      appt.patientName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.5,
+                        color: Color(0xFF0F172A),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${appt.patientPhone} • ${AppFormatters.doctorTitle(appt.doctorName)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Fee: ${AppFormatters.currency(appt.amountCollected)} (${appt.paymentType.displayName})",
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFF475569),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildVisitStatusBadge(appt),
+            ],
+          ),
+          if (appt.status == AppointmentStatus.pending) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.schedule_rounded,
+                    size: 13,
+                    color: Colors.blue.shade700,
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      '${estimate.relativeSummary} • Estimated wait: ${estimate.formattedRange}',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue.shade900,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (appt.visitStatus == VisitStatus.booked ||
+              appt.status == AppointmentStatus.pending) ...[
+            const SizedBox(height: 8),
+            _buildActionRow(appt, context, isMobile: true),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopQueueItem(
+    Appointment appt,
+    EstimatedConsultationWindow estimate,
+    BuildContext context,
+  ) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 8,
+      ),
+      leading: TokenBadge(
+        queueNumber: appt.queueNumber,
+        doctorTag: _selectedDoctorId == null
+            ? AppFormatters.doctorInitials(appt.doctorName)
+            : null,
+        size: 44,
+        isCompleted: appt.status == AppointmentStatus.completed,
+        isAbsent: appt.status == AppointmentStatus.absent,
+      ),
+      title: Row(
+        children: [
+          Flexible(
+            child: Text(
+              appt.patientName,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: Color(0xFF0F172A),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '(${appt.patientPhone})',
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(width: 10),
+          _buildVisitStatusBadge(appt),
+        ],
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 4.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "${AppFormatters.doctorTitle(appt.doctorName)} • Fee: ${AppFormatters.currency(appt.amountCollected)} (${appt.paymentType.displayName})",
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: Color(0xFF475569),
+              ),
+            ),
+            if (appt.status == AppointmentStatus.pending) ...[
+              const SizedBox(height: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3.5,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      size: 13,
+                      color: Colors.blue.shade700,
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        estimate.relativeSummary,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade900,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Flexible(
+                      child: Text(
+                        " • Estimated wait: ${estimate.formattedRange}",
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: Colors.blue.shade800,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      trailing: _buildActionRow(appt, context, isMobile: false),
+    );
+  }
+
+  Widget _buildVisitStatusBadge(Appointment appt) {
     if (appt.visitStatus == VisitStatus.booked) {
-      return FilledButton.icon(
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 3,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF3C7),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFFF59E0B)),
+        ),
+        child: const Text(
+          'Phone booking',
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF92400E),
+          ),
+        ),
+      );
+    } else if (appt.visitStatus == VisitStatus.waitingInLobby) {
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 3,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDCFCE7),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFF86EFAC)),
+        ),
+        child: const Text(
+          'In Lobby',
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF166534),
+          ),
+        ),
+      );
+    }
+    return AppointmentStatusChip(status: appt.status, isCompact: true);
+  }
+
+  Widget _buildActionRow(
+    Appointment appt,
+    BuildContext context, {
+    required bool isMobile,
+  }) {
+    if (appt.visitStatus == VisitStatus.booked) {
+      final btn = FilledButton.icon(
         style: FilledButton.styleFrom(
           backgroundColor: const Color(0xFF0F766E),
           foregroundColor: Colors.white,
@@ -400,12 +550,16 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         icon: const Icon(Icons.how_to_reg_rounded, size: 16),
-        label: const Text(
-          'Check In',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+        label: Text(
+          isMobile ? 'Check In Patient into Lobby' : 'Check In',
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
         ),
         onPressed: () => QuickCheckInDialog.show(context, appointment: appt),
       );
+      if (isMobile) {
+        return SizedBox(width: double.infinity, child: btn);
+      }
+      return btn;
     }
 
     if (appt.status == AppointmentStatus.pending) {
@@ -427,155 +581,189 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
               activeApptId != appt.id;
 
           if (isThisInChamber) {
-            return Tooltip(
-              message:
-                  'Token #${appt.queueNumber} is currently in chamber with ${AppFormatters.doctorTitle(appt.doctorName)}',
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDCFCE7),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF86EFAC)),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.meeting_room_rounded,
-                      size: 14,
-                      color: Color(0xFF15803D),
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'In Chamber',
-                      style: TextStyle(
+            final badge = Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF86EFAC)),
+              ),
+              child: Row(
+                mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
+                mainAxisAlignment: isMobile
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.meeting_room_rounded,
+                    size: 14,
+                    color: Color(0xFF15803D),
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      isMobile
+                          ? 'In Chamber with ${AppFormatters.doctorTitle(appt.doctorName)}'
+                          : 'In Chamber',
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF15803D),
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            );
+            return Tooltip(
+              message:
+                  'Token #${appt.queueNumber} is currently in chamber with ${AppFormatters.doctorTitle(appt.doctorName)}',
+              child: badge,
             );
           }
 
           if (isAnotherPatientInChamber) {
-            return Tooltip(
-              message:
-                  '${AppFormatters.doctorTitle(appt.doctorName)} is currently consulting Token #$activeQueueNum',
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.lock_clock_rounded,
-                      size: 14,
-                      color: Colors.blueGrey.shade700,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
+            final badge = Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
+              ),
+              child: Row(
+                mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
+                mainAxisAlignment: isMobile
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.lock_clock_rounded,
+                    size: 14,
+                    color: Colors.blueGrey.shade700,
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
                       'Doctor Busy (#$activeQueueNum)',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Colors.blueGrey.shade800,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            );
+            return Tooltip(
+              message:
+                  '${AppFormatters.doctorTitle(appt.doctorName)} is currently consulting Token #$activeQueueNum',
+              child: badge,
             );
           }
 
           if (isDoctorOnBreak) {
-            return Tooltip(
-              message:
-                  '${AppFormatters.doctorTitle(appt.doctorName)} is on a break. Waiting for doctor to call next patient.',
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.coffee_rounded,
-                      size: 14,
-                      color: Color(0xFFB45309),
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      'On Break',
-                      style: TextStyle(
+            final badge = Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFDE68A)),
+              ),
+              child: Row(
+                mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
+                mainAxisAlignment: isMobile
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.coffee_rounded,
+                    size: 14,
+                    color: Color(0xFFB45309),
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      isMobile
+                          ? 'Doctor on Break • Waiting for doctor'
+                          : 'On Break',
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFFB45309),
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            );
+            return Tooltip(
+              message:
+                  '${AppFormatters.doctorTitle(appt.doctorName)} is on a break. Waiting for doctor to call next patient.',
+              child: badge,
             );
           }
 
           if (!isDoctorReady) {
-            return Tooltip(
-              message:
-                  '${AppFormatters.doctorTitle(appt.doctorName)} has not signaled ready yet. Chamber is idle.',
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.hourglass_top_rounded,
-                      size: 14,
-                      color: Colors.blueGrey.shade600,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Waiting for Doctor',
+            final badge = Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
+              ),
+              child: Row(
+                mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
+                mainAxisAlignment: isMobile
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.hourglass_top_rounded,
+                    size: 14,
+                    color: Colors.blueGrey.shade600,
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      isMobile
+                          ? 'Waiting for Doctor to Signal Ready'
+                          : 'Waiting for Doctor',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Colors.blueGrey.shade700,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            );
+            return Tooltip(
+              message:
+                  '${AppFormatters.doctorTitle(appt.doctorName)} has not signaled ready yet. Chamber is idle.',
+              child: badge,
             );
           }
 
           // ONLY reached when isDoctorReady == true (Doctor clicked "READY FOR FIRST PATIENT" / "NEXT PATIENT")
-          return FilledButton.icon(
+          final btn = FilledButton.icon(
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF15803D),
               foregroundColor: Colors.white,
@@ -585,9 +773,11 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
               ),
             ),
             icon: const Icon(Icons.login_rounded, size: 16),
-            label: const Text(
-              'Send In',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            label: Text(
+              isMobile
+                  ? 'Send Token #${appt.queueNumber} into Chamber'
+                  : 'Send In',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
             ),
             onPressed: () async {
               await widget.provider.callTokenIntoChamber(
@@ -608,10 +798,17 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
               }
             },
           );
+          if (isMobile) {
+            return SizedBox(width: double.infinity, child: btn);
+          }
+          return btn;
         },
       );
     }
 
+    if (isMobile) {
+      return const SizedBox.shrink();
+    }
     return AppointmentStatusChip(status: appt.status, isCompact: true);
   }
 }

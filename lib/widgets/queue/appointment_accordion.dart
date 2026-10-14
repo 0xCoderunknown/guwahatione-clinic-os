@@ -205,6 +205,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                 child: Text(
                   '${widget.appointment.patientPhone} • ${AppFormatters.doctorTitle(widget.appointment.doctorName)}',
                   style: const TextStyle(fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               PaymentBadge(
@@ -248,38 +249,86 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: const Color(0xFFF59E0B)),
                     ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.info_outline_rounded,
-                          color: Color(0xFFB45309),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text(
-                            'Patient booked via phone/advance. Admit to lobby once arrived at desk.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF92400E),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isNarrow = constraints.maxWidth < 400;
+                        if (isNarrow) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline_rounded,
+                                    color: Color(0xFFB45309),
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'Patient booked via phone/advance. Admit to lobby once arrived at desk.',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF92400E),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF0F766E),
+                                  foregroundColor: Colors.white,
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                icon: const Icon(
+                                  Icons.how_to_reg_rounded,
+                                  size: 16,
+                                ),
+                                label: const Text('Check In Patient'),
+                                onPressed: () => QuickCheckInDialog.show(
+                                  context,
+                                  appointment: widget.appointment,
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                        return Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline_rounded,
+                              color: Color(0xFFB45309),
+                              size: 20,
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF0F766E),
-                            foregroundColor: Colors.white,
-                            visualDensity: VisualDensity.compact,
-                          ),
-                          icon: const Icon(Icons.how_to_reg_rounded, size: 16),
-                          label: const Text('Check In'),
-                          onPressed: () => QuickCheckInDialog.show(
-                            context,
-                            appointment: widget.appointment,
-                          ),
-                        ),
-                      ],
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'Patient booked via phone/advance. Admit to lobby once arrived at desk.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF92400E),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFF0F766E),
+                                foregroundColor: Colors.white,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              icon: const Icon(Icons.how_to_reg_rounded, size: 16),
+                              label: const Text('Check In'),
+                              onPressed: () => QuickCheckInDialog.show(
+                                context,
+                                appointment: widget.appointment,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ],

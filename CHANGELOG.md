@@ -8,6 +8,26 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.33.1] — 14-10-2026
+
+### Mobile Reception Responsiveness: Walk-In Floating Button & Responsive Queue Patient Cards
+- **Operational Impact:**
+  - **Prominent Mobile Walk-In Entry Point:** Restored the missing walk-in registration workflow on mobile devices by introducing an extended `FloatingActionButton` (`+ Book Walk-In`) on reception operational tabs (Dashboard & Queue) and an AppBar `Walk-In` header action in `DashboardScreen`, ensuring counter receptionists on mobile phones can immediately register walk-in patients with a single tap.
+  - **Responsive Reception Queue Patient Cards:** Completely overhauled the layout of patient queue cards in "Today's Live Queue" (`DashboardTodayQueueCard`) on mobile devices. Replaced tight desktop `ListTile` horizontal squeezing with a dedicated mobile card format:
+    - Vertical patient information hierarchy (Name on top line with ellipsis, Phone & Doctor on line 2, Fee & Payment Type on line 3).
+    - Ellipsis-protected estimated wait time strip.
+    - Full-width, thumb-friendly operational action row for desk check-ins and chamber dispatch (`Send Token #N into Chamber`, `Waiting for Doctor to Signal Ready`, `Doctor Busy Consulting Token #X`, `Doctor on Break`).
+  - **Overflow-Proof Dashboard Headers & Badges:** Protected card headers (`DashboardTodayQueueCard`, `DashboardDoctorRosterCard`, and `AppointmentAccordion`) against horizontal overflows on compact mobile phone viewports (360px–390px) by wrapping titles and badges in flexible layouts.
+  - **Mobile-Adaptive Patient Lookup Cards:** Updated `PatientLookupCard` in `PatientDirectoryScreen` to display the `+ Book Walk-In` button full-width beneath patient demographics on screens < 600px, avoiding horizontal squeeze.
+- **Architectural Touchpoints:**
+  - `lib/screens/owner_shell.dart`: Added `FloatingActionButton.extended` in `_buildMobileShell`.
+  - `lib/screens/dashboard_screen.dart`: Added mobile AppBar `Walk-In` action button.
+  - `lib/widgets/dashboard/dashboard_queue_card.dart`: Implemented `_buildMobileQueueItem`, responsive card header, and dedicated mobile action bar.
+  - `lib/widgets/dashboard/dashboard_doctor_roster_card.dart`: Made header and status badges flexible and overflow-proof.
+  - `lib/widgets/patient/patient_lookup_card.dart`: Made master demographic header and booking button responsive.
+  - `lib/widgets/queue/appointment_accordion.dart`: Made advance phone booking check-in banner responsive to narrow viewports.
+  - `test/mobile_reception_view_test.dart`: Added 3 automated widget tests covering mobile FAB, header button, and overflow-proof patient queue cards (total suite 205 tests passing).
+
 ---
 
 ## [1.33.0] — 14-10-2026

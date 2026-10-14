@@ -494,8 +494,25 @@ class _OwnerShellState extends State<OwnerShell> {
     List<Widget> pages,
     List<NavigationDestination> destinations,
   ) {
+    // Show prominent floating booking trigger on reception operational views (Dashboard = 0, Queue = 1)
+    final showFab = selectedIndex == 0 || selectedIndex == 1;
+
     return Scaffold(
       body: pages[selectedIndex],
+      floatingActionButton: showFab
+          ? FloatingActionButton.extended(
+              key: const Key('mobile_book_walkin_fab'),
+              onPressed: () => _openWalkInBooking(context),
+              backgroundColor: Colors.teal.shade700,
+              foregroundColor: Colors.white,
+              elevation: 4,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text(
+                'Book Walk-In',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+              ),
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: (int index) {

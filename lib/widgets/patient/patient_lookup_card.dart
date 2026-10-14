@@ -48,155 +48,168 @@ class PatientLookupCard extends StatelessWidget {
   }
 
   Widget _buildPatientHeader(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Initials Avatar
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: Colors.teal.shade50,
-          child: Text(
-            patient.name.isNotEmpty ? patient.name[0].toUpperCase() : 'P',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.teal.shade800,
-            ),
-          ),
-        ),
-        const SizedBox(width: 14),
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
-        // Demographic Details
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                patient.name,
-                style: const TextStyle(
-                  fontSize: 17,
+    final bookingButton = FilledButton.icon(
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.teal,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      onPressed: () {
+        if (onBookWalkIn != null) {
+          onBookWalkIn!();
+        } else {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => AddAppointmentDialog(initialPatient: patient),
+          );
+        }
+      },
+      icon: const Icon(Icons.add_rounded, size: 16),
+      label: const Text(
+        'Book Walk-In',
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+      ),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Initials Avatar
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.teal.shade50,
+              child: Text(
+                patient.name.isNotEmpty ? patient.name[0].toUpperCase() : 'P',
+                style: TextStyle(
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
+                  color: Colors.teal.shade800,
                 ),
               ),
-              const SizedBox(height: 4),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
+            ),
+            const SizedBox(width: 14),
+
+            // Demographic Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2.5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Text(
-                      '${patient.age > 0 ? '${patient.age} Y' : 'Age —'} • ${patient.gender}',
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF475569),
-                      ),
+                  Text(
+                    patient.name,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2.5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.phone_outlined,
-                          size: 13,
-                          color: Color(0xFF64748B),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2.5,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          patient.phoneNumber,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Text(
+                          '${patient.age > 0 ? '${patient.age} Y' : 'Age —'} • ${patient.gender}',
                           style: const TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF475569),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  if (patient.allergies.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2.5,
                       ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEE2E2),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFFCA5A5)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.warning_amber_rounded,
-                            size: 13,
-                            color: Color(0xFFB91C1C),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Allergies: ${patient.allergies.join(', ')}',
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFB91C1C),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.phone_outlined,
+                              size: 13,
+                              color: Color(0xFF64748B),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            Text(
+                              patient.phoneNumber,
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF475569),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                      if (patient.allergies.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEE2E2),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFFCA5A5)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.warning_amber_rounded,
+                                size: 13,
+                                color: Color(0xFFB91C1C),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Allergies: ${patient.allergies.join(', ')}',
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFB91C1C),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-
-        // Quick Booking Action
-        FilledButton.icon(
-          style: FilledButton.styleFrom(
-            backgroundColor: Colors.teal,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
             ),
-          ),
-          onPressed: () {
-            if (onBookWalkIn != null) {
-              onBookWalkIn!();
-            } else {
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (_) => AddAppointmentDialog(initialPatient: patient),
-              );
-            }
-          },
-          icon: const Icon(Icons.add_rounded, size: 16),
-          label: const Text(
-            'Book Walk-In',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          ),
+            if (!isMobile) ...[
+              const SizedBox(width: 12),
+              bookingButton,
+            ],
+          ],
         ),
+        if (isMobile) ...[
+          const SizedBox(height: 12),
+          SizedBox(width: double.infinity, child: bookingButton),
+        ],
       ],
     );
   }
