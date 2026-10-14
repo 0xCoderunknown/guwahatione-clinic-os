@@ -109,7 +109,7 @@ OPD physicians in India have distinct prescribing habits based on training and s
 | **Generic / Composition Centric** | Thinks pharmacologically in active chemical salts (*Telmisartan 40mg*, *Paracetamol 650mg*, *Pantoprazole 40mg*). | Autocomplete highlights salt composition and provides one-tap chips for associated brand formulations. |
 | **Personal Formulary Centric** | Routinely prescribes a curated subset of 15–30 medicines. | Quick-access favorite chips appear above the search bar for zero-typing selection. |
 
-> **Architecture Principle:** The system supports a per-doctor configuration field (`searchPreference: 'brandFirst' | 'compositionFirst'`) keeping the global catalogue normalized. A `favoritesFirst` mode is under consideration as a future backlog item (**P12**+, post-RFC-2) and must be formally specced in `docs/SCHEMA_AND_MODELS.md` before implementation.
+> **Architecture Principle:** The system supports a per-doctor configuration field (`searchPreference: 'brandFirst' | 'compositionFirst'`) keeping the global catalogue normalized. A `favoritesFirst` mode is under consideration as a future backlog item (**P13**+, post-RFC-2) and must be formally specced in `docs/SCHEMA_AND_MODELS.md` before implementation.
 
 ---
 

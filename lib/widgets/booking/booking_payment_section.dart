@@ -78,7 +78,7 @@ class BookingPaymentSection extends StatelessWidget {
         _buildProvisionalTokenBadge(),
         const SizedBox(height: 14),
 
-        // 2. Payment Type Dropdown
+        // 2. Payment Type Dropdown (Ordered: Upfront Paid -> Free Policies -> Unpaid Phone -> Post-Pay at bottom)
         DropdownButtonFormField<PaymentType>(
           key: ValueKey(selectedPayment),
           initialValue: selectedPayment,
@@ -87,7 +87,14 @@ class BookingPaymentSection extends StatelessWidget {
             labelText: 'Payment Type',
             border: OutlineInputBorder(),
           ),
-          items: PaymentType.values.map((type) {
+          items: const [
+            PaymentType.paidCash,
+            PaymentType.paidUpi,
+            PaymentType.freeReview,
+            PaymentType.freeFamily,
+            PaymentType.unpaid,
+            PaymentType.postPay,
+          ].map((type) {
             String label;
             bool enabled = true;
             final fee =
@@ -99,15 +106,6 @@ class BookingPaymentSection extends StatelessWidget {
                 break;
               case PaymentType.paidUpi:
                 label = 'Paid (UPI) — ₹$fee';
-                break;
-              case PaymentType.postPay:
-                label = 'Post-Pay (Pay on Exit)';
-                break;
-              case PaymentType.unpaid:
-                label = 'Unpaid (Phone Reservation)';
-                break;
-              case PaymentType.freeFamily:
-                label = 'Family / Complimentary';
                 break;
               case PaymentType.freeReview:
                 if (!reviewEligibility.hasVisitedDoctorEarlier) {
@@ -121,6 +119,15 @@ class BookingPaymentSection extends StatelessWidget {
                       'FREE (Review) — ⚠️ >${reviewEligibility.allowedReviewDays} days passed';
                 }
                 break;
+              case PaymentType.freeFamily:
+                label = 'Family / Complimentary';
+                break;
+              case PaymentType.unpaid:
+                label = 'Unpaid (Phone Reservation)';
+                break;
+              case PaymentType.postPay:
+                label = 'Post-Pay (Exit Collect — Use with Caution)';
+                break;
             }
 
             return DropdownMenuItem<PaymentType>(
@@ -128,12 +135,51 @@ class BookingPaymentSection extends StatelessWidget {
               enabled: enabled,
               child: Text(
                 label,
-                style: TextStyle(color: enabled ? null : Colors.grey.shade500),
+                style: TextStyle(
+                  color: enabled
+                      ? (type == PaymentType.postPay ? Colors.amber.shade900 : null)
+                      : Colors.grey.shade500,
+                  fontWeight: type == PaymentType.postPay ? FontWeight.w600 : null,
+                ),
               ),
             );
           }).toList(),
           onChanged: onPaymentChanged,
         ),
+
+        // Cautionary banner when Post-Pay is chosen
+        if (selectedPayment == PaymentType.postPay) ...[
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFFF59E0B)),
+            ),
+            child: const Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: Color(0xFFB45309),
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Caution: Fee will NOT be collected upfront at reception. Patient must return to counter to pay after consultation.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF92400E),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
 
         // Warning banner if Free Review is selected when allowed review period has passed
         if (selectedPayment == PaymentType.freeReview &&

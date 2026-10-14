@@ -78,6 +78,7 @@
 | `doctorId` | `String` | Yes | Assigned doctor ID. |
 | `doctorName` | `String` | Yes | Assigned doctor display name. |
 | `checkedInAt` | `Timestamp?` | No | Timestamp recorded when patient arrives at desk and checks in to lobby. |
+| `notes` | `String?` | No | Operational ledger audit note (e.g. cancellation or doctor absent session close reason). |
 
 ---
 
@@ -273,4 +274,17 @@
 - **Purpose:** Persists per-device mute preference for in-clinic queue chime and SpeechSynthesis vocal token callout across browser sessions.
 - **Default:** `false` (sound enabled).
 - **Consumer:** `SoundService` (`lib/services/sound_service.dart`).
+
+### E. Client Feature Flags & Deployment Configurations (`ClinicFeatureFlags`)
+- **Source:** `lib/config/clinic_config.dart`.
+- **Purpose:** Centralized per-tenant / client deployment configuration controlling stable operational workflows and experimental pilot features.
+- **Stable Operational Flags:**
+  - `enableLetterheadToggle` (`bool`, default: `true`): Enables pre-printed stationery margin toggle on prescription print previews.
+  - `enableDoctorChamberOverride` (`bool`, default: `true`): Enables restricted emergency door self-call runway on doctor chamber screen.
+  - `enableWhatsAppPrescriptionShare` (`bool`, default: `true`): Enables 1-tap WhatsApp deep-link prescription sharing.
+  - `requireDoctorChamberPin` (`bool`, default: `true`): Enforces 4-digit numeric PIN authentication for chamber access.
+- **🧪 Experimental Flags (Tenant Configurable):**
+  - `enablePrescriptionTemplatePresets` (`bool`, default: `false`): Enables generic GP prescribing bundle chips in clinical encounter.
+  - `enableTokenReceiptPrint` (`bool`, default: `true`): Enables counter token receipt slip dialog after walk-in registration and on queue accordion cards.
+  - `enableBulkSessionClose` (`bool`, default: `true`): Enables Owner-PIN-gated bulk "Close Session (Doctor Absent)" batch action marking un-consulted tokens as absent with ₹0 collection.
 

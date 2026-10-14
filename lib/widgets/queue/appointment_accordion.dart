@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/clinic_config.dart';
 import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
 import '../../providers/clinic_provider.dart';
@@ -10,6 +11,7 @@ import '../booking/quick_check_in_dialog.dart';
 import '../common/appointment_status_chip.dart';
 import '../common/payment_badge.dart';
 import '../common/token_badge.dart';
+import '../print/token_receipt_dialog.dart';
 import 'accordion_dispatch_section.dart';
 import 'accordion_status_actions.dart';
 
@@ -233,10 +235,10 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                   children: [
                     _buildChoiceChip(PaymentType.paidCash, 'Paid (Cash)'),
                     _buildChoiceChip(PaymentType.paidUpi, 'Paid (UPI)'),
-                    _buildChoiceChip(PaymentType.postPay, 'Post-Pay (Exit)'),
-                    _buildChoiceChip(PaymentType.unpaid, 'Unpaid'),
                     _buildChoiceChip(PaymentType.freeReview, 'Free Review'),
                     _buildChoiceChip(PaymentType.freeFamily, 'Family / Complimentary'),
+                    _buildChoiceChip(PaymentType.unpaid, 'Unpaid'),
+                    _buildChoiceChip(PaymentType.postPay, 'Post-Pay (Exit)'),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -343,6 +345,32 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                   appointment: widget.appointment,
                   onUpdateStatus: (status) => _updateStatus(context, status),
                 ),
+                if (ClinicConfig.current.features.enableTokenReceiptPrint) ...[
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        foregroundColor: const Color(0xFF0F766E),
+                        side: const BorderSide(color: Color(0xFF5EEAD4)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                      ),
+                      icon: const Icon(Icons.receipt_long, size: 16),
+                      label: const Text(
+                        'Print Token Slip',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () => TokenReceiptDialog.show(
+                        context,
+                        widget.appointment,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

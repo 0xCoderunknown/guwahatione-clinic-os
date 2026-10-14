@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/clinic_config.dart';
 import '../../core/engines/engines.dart';
 import '../../models/chamber_session.dart';
+import '../../models/doctor.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/clinic_provider.dart';
 import '../../screens/doctor_list_screen.dart';
@@ -229,44 +231,91 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isReady
-                              ? const Color(0xFFDCFCE7)
-                              : (isInConsultation || isCalling
-                                    ? const Color(0xFFDBEAFE)
-                                    : Colors.grey.shade100),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isReady
-                                ? const Color(0xFF86EFAC)
-                                : (isInConsultation || isCalling
-                                    ? const Color(0xFF93C5FD)
-                                    : Colors.transparent),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isReady
+                                  ? const Color(0xFFDCFCE7)
+                                  : (isInConsultation || isCalling
+                                        ? const Color(0xFFDBEAFE)
+                                        : Colors.grey.shade100),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isReady
+                                    ? const Color(0xFF86EFAC)
+                                    : (isInConsultation || isCalling
+                                        ? const Color(0xFF93C5FD)
+                                        : Colors.transparent),
+                              ),
+                            ),
+                            child: Text(
+                              isReady
+                                  ? '▶ CALL NEXT'
+                                  : ((isInConsultation || isCalling)
+                                        ? 'Token #${session?.activeQueueNumber ?? '--'}'
+                                        : (patientCount == 1
+                                              ? '1 token'
+                                              : '$patientCount tokens')),
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: isReady
+                                    ? const Color(0xFF15803D)
+                                    : ((isInConsultation || isCalling)
+                                          ? const Color(0xFF1D4ED8)
+                                          : Colors.grey.shade800),
+                              ),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          isReady
-                              ? '▶ CALL NEXT'
-                              : ((isInConsultation || isCalling)
-                                    ? 'Token #${session?.activeQueueNumber ?? '--'}'
-                                    : (patientCount == 1
-                                          ? '1 token'
-                                          : '$patientCount tokens')),
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                            color: isReady
-                                ? const Color(0xFF15803D)
-                                : ((isInConsultation || isCalling)
-                                      ? const Color(0xFF1D4ED8)
-                                      : Colors.grey.shade800),
-                          ),
-                        ),
+                          if (ClinicConfig.current.features.enableBulkSessionClose &&
+                              isOwner &&
+                              patientCount > 0) ...[
+                            const SizedBox(width: 4),
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert, size: 18),
+                              tooltip: 'Doctor Session Options',
+                              padding: EdgeInsets.zero,
+                              itemBuilder: (ctx) => [
+                                const PopupMenuItem(
+                                  value: 'close_session',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.event_busy,
+                                        color: Colors.redAccent,
+                                        size: 18,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Close Session (Doctor Absent)',
+                                        style: TextStyle(
+                                          color: Colors.redAccent,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              onSelected: (val) {
+                                if (val == 'close_session') {
+                                  final auth = Provider.of<AuthProvider>(
+                                    context,
+                                    listen: false,
+                                  );
+                                  _confirmCloseSession(context, doc, auth);
+                                }
+                              },
+                            ),
+                          ],
+                        ],
                       ),
                     );
                   },
@@ -276,5 +325,85 @@ class DashboardDoctorRosterCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmCloseSession(
+    BuildContext context,
+    Doctor doc,
+    AuthProvider auth,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.event_busy, color: Colors.redAccent),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Close Session • ${AppFormatters.doctorTitle(doc.name)}',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Dr. ${doc.name} will be marked absent for today.',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'All remaining un-consulted tokens (pending / lobby) will be marked as ABSENT with ₹0 collection.\n\nAudit Ledger Invariant: Zero appointments will be deleted from the database. All token slots remain visible in the ledger.',
+              style: TextStyle(fontSize: 13, height: 1.4),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Mark Absent & Close Session'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        final count = await provider.closeDoctorSession(
+          doctorId: doc.id,
+          date: DateTime.now(),
+          requestingRole: auth.currentRole,
+          reason: 'Doctor absent / session closed by clinic admin',
+        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Dr. ${doc.name}\'s session closed. $count pending token(s) marked absent.',
+              ),
+              backgroundColor: Colors.amber.shade900,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
   }
 }

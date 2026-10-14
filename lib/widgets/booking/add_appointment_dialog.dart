@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/clinic_config.dart';
 import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
 import '../../models/doctor.dart';
@@ -9,6 +10,7 @@ import '../../models/patient.dart';
 import '../../models/patient_review_eligibility.dart';
 import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
+import '../print/token_receipt_dialog.dart';
 import 'booking_eligibility_banner.dart';
 import 'booking_patient_fields.dart';
 import 'booking_payment_section.dart';
@@ -336,6 +338,14 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                       }
                     },
                   ),
+                  if (_selectedDoctor != null &&
+                      !AppointmentEngine.isDoctorAvailableOnDate(
+                        doctor: _selectedDoctor,
+                        date: _selectedDate,
+                      )) ...[
+                    const SizedBox(height: 12),
+                    _buildOffDayWarningBanner(_selectedDoctor!, _selectedDate),
+                  ],
 
                   // 4. Duplicate Booking Warning Alert Banner
                   if (_duplicateAppointment != null) ...[
@@ -485,6 +495,50 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                 },
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOffDayWarningBanner(Doctor doctor, DateTime date) {
+    const dayNames = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    final dayName = dayNames[date.weekday - 1];
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF3C7), // Warm amber background
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFF59E0B), width: 1.2),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.event_busy,
+            color: Color(0xFFB45309),
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '⚠️ ${doctor.name} does not normally sit on ${dayName}s (Schedule: ${doctor.availableDays.join(", ")}). Booking is allowed if on special duty.',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF92400E),
+                height: 1.3,
+              ),
+            ),
           ),
         ],
       ),
@@ -774,7 +828,10 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     setState(() => _isBooking = true);
 
     try {
-      await Provider.of<ClinicProvider>(context, listen: false).bookAppointment(
+      final newAppt = await Provider.of<ClinicProvider>(
+        context,
+        listen: false,
+      ).bookAppointment(
         phoneNumber: _phoneController.text.trim(),
         name: _nameController.text.trim(),
         age: int.parse(_ageController.text.trim()),
@@ -786,7 +843,26 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         selectedDoctor: _selectedDoctor!,
         isNewPatient: _isNewPatient,
       );
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context, newAppt);
+        if (ClinicConfig.current.features.enableTokenReceiptPrint) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Token #${newAppt.queueNumber} booked for ${newAppt.patientName}',
+              ),
+              action: SnackBarAction(
+                label: 'PRINT SLIP',
+                textColor: const Color(0xFF5EEAD4),
+                onPressed: () {
+                  TokenReceiptDialog.show(context, newAppt);
+                },
+              ),
+              duration: const Duration(seconds: 6),
+            ),
+          );
+        }
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isBooking = false);

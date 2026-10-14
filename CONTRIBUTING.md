@@ -81,3 +81,7 @@ Authoritative product tracking lives in [`docs/PRODUCT_ROADMAP.md`](docs/PRODUCT
 - [x] **P9:** Prescription Template Presets & OPD Regimen Bundles (`v1.28.0`)
 - [x] **P10:** Multi-Chamber Queue Sound Announcer & Vocal Token Calling (`v1.29.0`)
 - [ ] **P11:** Prepaid Carry-Over & Doctor No-Show Refund Protocol (RFC-2 in `docs/PRODUCT_ROADMAP.md`)
+- [x] **P12:** Patient Lookup / Explore Patients — Patients tab with zero-egress search, multi-doctor consultation accordions, and walk-in shortcut (`v1.33.0`)
+- [ ] **P13:** Emergency / Illiterate Walk-In Dummy Key (`9900000001`+)
+- [x] ~~**P14:** Doctor Discretionary Fee Waiver~~ — Scrapped (redundant with `PaymentType.freeFamily`)
+- [ ] **P15 · 🧪:** Fullscreen Waiting Hall Queue Display Board (`/display`)

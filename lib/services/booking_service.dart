@@ -222,4 +222,53 @@ class BookingService {
     }
     return false;
   }
+
+  /// Closes today's session for a specific doctor when the doctor is absent or unavailable.
+  /// Atomically updates all un-consulted appointments (pending / booked / waitingInLobby)
+  /// to AppointmentStatus.absent with amountCollected = 0.
+  /// Strict Audit Invariant: NEVER deletes documents.
+  Future<int> closeDoctorSessionForDate({
+    required String doctorId,
+    required DateTime date,
+    String reason = 'Doctor absent / session closed',
+  }) async {
+    final start = DateTime(date.year, date.month, date.day);
+    final end = start.add(const Duration(days: 1));
+
+    final snapshot = await _appointmentsRef
+        .where('doctorId', isEqualTo: doctorId)
+        .where('scheduledDate', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .where('scheduledDate', isLessThan: Timestamp.fromDate(end))
+        .get();
+
+    final batch = _firestore.batch();
+    int markedCount = 0;
+
+    for (final doc in snapshot.docs) {
+      final data = doc.data();
+      final visitStatus = data['visitStatus'] as String?;
+      final status = data['status'] as String?;
+      final isCompleted =
+          visitStatus == VisitStatus.completed.name ||
+          status == AppointmentStatus.completed.name;
+      final isAlreadyAbsent =
+          visitStatus == VisitStatus.cancelled.name ||
+          status == AppointmentStatus.absent.name;
+
+      if (!isCompleted && !isAlreadyAbsent) {
+        batch.update(doc.reference, {
+          'visitStatus': VisitStatus.cancelled.name,
+          'status': AppointmentStatus.absent.name,
+          'amountCollected': 0,
+          'notes': reason,
+        });
+        markedCount++;
+      }
+    }
+
+    if (markedCount > 0) {
+      await batch.commit();
+    }
+    return markedCount;
+  }
 }

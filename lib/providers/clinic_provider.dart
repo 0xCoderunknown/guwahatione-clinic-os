@@ -374,7 +374,7 @@ class ClinicProvider with ChangeNotifier {
       .where((a) => a.visitStatus == VisitStatus.booked)
       .length;
 
-  Future<void> bookAppointment({
+  Future<Appointment> bookAppointment({
     required String phoneNumber,
     required String name,
     required int age,
@@ -429,8 +429,10 @@ class ClinicProvider with ChangeNotifier {
         gender: gender,
         phoneNumber: phoneNumber,
       );
-      await _bookingService.bookAppointment(
-        appointmentId: _uuid.v4(),
+      final appointmentId = _uuid.v4();
+      final now = DateTime.now();
+      final queueNumber = await _bookingService.bookAppointment(
+        appointmentId: appointmentId,
         patient: patient,
         visitStatus: visitStatus,
         paymentType: paymentType,
@@ -439,6 +441,21 @@ class ClinicProvider with ChangeNotifier {
         doctorId: selectedDoctor.id,
         doctorName: selectedDoctor.name,
       );
+
+      final appointment = Appointment(
+        id: appointmentId,
+        patientPhone: phoneNumber,
+        patientName: name,
+        visitStatus: visitStatus,
+        paymentType: paymentType,
+        amountCollected: amountCollected,
+        queueNumber: queueNumber,
+        scheduledDate: scheduledDate,
+        doctorId: selectedDoctor.id,
+        doctorName: selectedDoctor.name,
+        checkedInAt: visitStatus == VisitStatus.waitingInLobby ? now : null,
+      );
+      return appointment;
     } catch (e) {
       rethrow;
     } finally {
@@ -739,6 +756,32 @@ class ClinicProvider with ChangeNotifier {
 
   Future<List<Medicine>> searchMedicines(String query) async {
     return await _catalogueService.searchMedicines(query);
+  }
+
+  /// Bulk closes today's OPD session for a given doctor when absent or on emergency leave.
+  /// Strictly owner-authorized. All un-consulted tokens are atomically marked absent with ₹0 collection.
+  Future<int> closeDoctorSession({
+    required String doctorId,
+    required DateTime date,
+    UserRole? requestingRole,
+    String reason = 'Doctor absent / session closed',
+  }) async {
+    if (requestingRole != null && !requestingRole.isOwner) {
+      throw Exception(
+        'Permission Denied: Only clinic administrators (owner) can close doctor sessions in bulk.',
+      );
+    }
+    _setLoading(true);
+    try {
+      final count = await _bookingService.closeDoctorSessionForDate(
+        doctorId: doctorId,
+        date: date,
+        reason: reason,
+      );
+      return count;
+    } finally {
+      _setLoading(false);
+    }
   }
 
   void _setLoading(bool value) {

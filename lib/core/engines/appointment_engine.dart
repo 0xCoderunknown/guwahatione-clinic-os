@@ -444,6 +444,19 @@ abstract class AppointmentEngine {
     if (bookedCount >= limit - 2) return TokenCapStatus.runwayAlert;
     return TokenCapStatus.normal;
   }
+
+  /// Checks if the given date matches the doctor's configured available days.
+  /// Returns true if doctor has no day restrictions (all days configured or empty),
+  /// or if the target date's weekday matches one of the doctor's available days.
+  static bool isDoctorAvailableOnDate({
+    required Doctor? doctor,
+    required DateTime date,
+  }) {
+    if (doctor == null || doctor.availableDays.isEmpty) return true;
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final currentDay = dayNames[date.weekday - 1];
+    return doctor.availableDays.contains(currentDay);
+  }
 }
 
 /// Operational token allocation alert statuses for doctor OPD capacity.

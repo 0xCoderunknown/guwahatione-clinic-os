@@ -167,6 +167,52 @@ void main() {
         TokenCapStatus.overCap,
       );
     });
+
+    test('AppointmentEngine.isDoctorAvailableOnDate validates schedule correctly', () {
+      final docWithDays = Doctor(
+        id: 'doc-1',
+        name: 'Dr. A. Sharma',
+        specialty: 'General Medicine',
+        phone: '9876543210',
+        availableDays: ['Mon', 'Wed', 'Fri'],
+        blockedDates: [],
+        shiftTiming: '6:00 PM – 8:30 PM',
+        consultationFee: 500,
+        freeReviewDays: 14,
+        dailyTokenLimit: 18,
+      );
+
+      final docAllDays = Doctor(
+        id: 'doc-2',
+        name: 'Dr. All Days',
+        specialty: 'Pediatrics',
+        phone: '9876543211',
+        availableDays: [],
+        blockedDates: [],
+        shiftTiming: '10:00 AM – 2:00 PM',
+        consultationFee: 400,
+        freeReviewDays: 14,
+        dailyTokenLimit: 18,
+      );
+
+      // 12-10-2026 is Monday (Mon) -> true
+      final monday = DateTime(2026, 10, 12);
+      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: docWithDays, date: monday), isTrue);
+
+      // 13-10-2026 is Tuesday (Tue) -> false
+      final tuesday = DateTime(2026, 10, 13);
+      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: docWithDays, date: tuesday), isFalse);
+
+      // 14-10-2026 is Wednesday (Wed) -> true
+      final wednesday = DateTime(2026, 10, 14);
+      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: docWithDays, date: wednesday), isTrue);
+
+      // Doctor with empty availableDays sits on all days
+      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: docAllDays, date: tuesday), isTrue);
+
+      // Null doctor returns true
+      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: null, date: tuesday), isTrue);
+    });
   });
 
   group('Token Cap Badge Widget Tests in BookingPaymentSection', () {

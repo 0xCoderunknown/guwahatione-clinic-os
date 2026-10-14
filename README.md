@@ -241,7 +241,6 @@ lib/
 ├── models/
 │   ├── models.dart                          # Central barrel file exporting all domain models
 │   ├── appointment.dart                     # Appointment schema, PaymentType & AppointmentStatus
-│   ├── appointment_event.dart               # Forensic audit trail event schema for state transitions
 │   ├── chamber_session.dart                 # Pure domain model for 2-way doctor-reception chamber handshake
 │   ├── consultation.dart                    # Immutable encounter schema with active/stopped getters
 │   ├── diagnostic_investigation.dart        # Lab review (performedDate) & OrderedTest schemas
@@ -271,6 +270,7 @@ lib/
 │   ├── owner_shell.dart                     # Responsive shell (Desktop rail vs mobile bar)
 │   ├── dashboard_screen.dart                # Reception KPI overview cards & 1-tap "Call In"
 │   ├── appointment_list_screen.dart         # Live queue, absent marking, payment updates & "Call In"
+│   ├── patient_directory_screen.dart        # Multi-doctor patient lookup with zero-egress search & walk-in shortcut
 │   ├── doctor_chamber_screen.dart           # Real-time zero-touch chamber sync board & active token badge
 │   ├── consultation_encounter_screen.dart   # Self-contained 5-step encounter coordinator scaffold with dock & alert
 │   ├── prescription_print_screen.dart       # High-contrast A4/A5 print preview with letterhead toggle & WhatsApp share
@@ -288,6 +288,8 @@ lib/
 │   │   ├── payment_badge.dart               # Visual payment type badges
 │   │   ├── section_card.dart                # Collapsible animated section cards with badges & actions
 │   │   └── token_badge.dart                 # Uniform token sequence badges
+│   ├── patient/                             # Patient lookup & directory card components
+│   │   └── patient_lookup_card.dart         # Master patient card with doctor consultation accordions & walk-in shortcut
 │   ├── booking/                             # Reception appointment booking dialog components
 │   │   ├── add_appointment_dialog.dart      # Rapid booking modal with patient history search
 │   │   ├── booking_eligibility_banner.dart  # 14-day policy warning banner & static confirmation dialog
@@ -361,7 +363,7 @@ The repository maintains an active automated testing suite covering domain busin
 flutter test
 ```
 
-- **185 Automated Unit & Widget Tests:** Sub-4s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, doctor-configurable free review eligibility terms (0 to 30 days), prescription reconciliation (`START`/`CONTINUE`/`STOP`), prescription template preset evaluation & duplicate suppression, in-clinic sound chime mute/unmute persistence, chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, atomic booking concurrency locks, forensic append-only audit trail logging, chamber collision locks & single-occupant integrity, and print schedule segregation with 100% pass rate.
+- **209 Automated Unit & Widget Tests:** Sub-10s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, doctor-configurable free review eligibility terms (0 to 30 days), prescription reconciliation (`START`/`CONTINUE`/`STOP`), prescription template preset evaluation & duplicate suppression, in-clinic sound chime mute/unmute persistence, chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, chamber collision locks & single-occupant integrity, print schedule segregation, reception token cap threshold transitions, mobile walk-in FAB & responsive queue cards, multi-doctor patient lookup with zero-egress search, doctor sitting day validations, counter token receipt slip rendering, and atomic bulk doctor absence session closures — all with 100% pass rate.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---

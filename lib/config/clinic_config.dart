@@ -70,11 +70,21 @@ class ClinicFeatureFlags {
   /// When disabled, doctors use brand/composition search exclusively.
   final bool enablePrescriptionTemplatePresets;
 
+  /// 🧪 EXPERIMENT FLAG: Whether counter token receipt / paid slip printing is enabled
+  /// after walk-in booking and inside the reception queue accordion.
+  final bool enableTokenReceiptPrint;
+
+  /// 🧪 EXPERIMENT FLAG: Whether bulk "Close Session (Doctor Absent)" action is enabled
+  /// for clinic owners to mark all remaining un-consulted tokens as absent.
+  final bool enableBulkSessionClose;
+
   const ClinicFeatureFlags({
     this.enableLetterheadToggle = true,
     this.enableDoctorChamberOverride = true,
     this.enableWhatsAppPrescriptionShare = true,
     this.requireDoctorChamberPin = true,
     this.enablePrescriptionTemplatePresets = false,
+    this.enableTokenReceiptPrint = true,
+    this.enableBulkSessionClose = true,
   });
 }

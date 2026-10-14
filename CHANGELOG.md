@@ -8,6 +8,31 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.33.2] — 14-10-2026
+
+### Indian OPD Optimizations: Doctor Schedule Warnings, Counter Token Receipts, Bulk Absence Close & PostPay De-emphasis
+- **Operational Impact:**
+  - **Doctor Sitting Days (`availableDays`) Non-Blocking Schedule Warning:** In `AddAppointmentDialog`, booking a doctor on an off-day (e.g. Saturday when doctor only sits Mon/Wed/Fri) now renders an amber non-blocking schedule banner (`⚠️ Dr. [Name] does not normally sit on Saturdays...`), preventing accidental bookings while preserving receptionist flexibility for special duty or emergency shifts.
+  - **Counter Token Receipt / Paid Slip Printing (🧪 Pilot Experiment):** Added `TokenReceiptDialog` (gated under `ClinicFeatureFlags.enableTokenReceiptPrint`) formatted for thermal POS / A6 slip printing. Features clinic branding, prominent `#N` queue token hero, Indian formatted date (`DD-MM-YYYY`), patient/doctor details, payment status (`₹500 (Paid (Cash))` or `₹0 (FREE Review)`), and 1-tap browser print. Accessible immediately after booking via a `[PRINT SLIP]` SnackBar action and persistently via a "Print Token Slip" button on `AppointmentAccordion`.
+  - **Bulk "Close Session (Doctor Absent)" Action (🧪 Pilot Experiment):** When a consulting doctor is unexpectedly absent or cancels on short notice, clinic owners can now close the doctor's entire session in 1 click from `DashboardDoctorRosterCard` options (gated under `ClinicFeatureFlags.enableBulkSessionClose`). Atomically marks all un-consulted tokens as `AppointmentStatus.absent` with `amountCollected: 0` in a single Firestore batch write. Strictly preserves Invariant #1 (Zero Deletions) by retaining all token slots on the operational ledger.
+  - **De-emphasized `postPay` Counter Payment Option:** Reordered payment options in `BookingPaymentSection` to place `postPay` at the bottom with a caution label (`Post-Pay (Exit Collect — Use with Caution)`) and an amber counter warning reminding reception that fees must be collected on exit, reducing cash leakage risks in busy OPD walk-in clinics. Reordered queue choice chips in `AppointmentAccordion` accordingly.
+  - **Roadmap Governance & Pruning (Scrapped P14):** Formally retired proposed `PaymentType.freeConcession` / `freeDoctorDiscretionary` from `PRODUCT_ROADMAP.md` as redundant with `PaymentType.freeFamily` ("Family / Complimentary"), preventing ledger schema bloat and duplicate concession bookkeeping.
+- **Architectural Touchpoints:**
+  - `lib/core/engines/appointment_engine.dart`: Added pure domain method `AppointmentEngine.isDoctorAvailableOnDate` (zero UI dependencies).
+  - `lib/config/clinic_config.dart`: Added `enableTokenReceiptPrint` and `enableBulkSessionClose` experimental toggles to `ClinicFeatureFlags`.
+  - `lib/services/booking_service.dart`: Added `closeDoctorSessionForDate` atomic batch write.
+  - `lib/providers/clinic_provider.dart`: Added role-guarded `closeDoctorSession` and updated `bookAppointment` to return `Future<Appointment>`.
+  - `lib/widgets/print/token_receipt_dialog.dart`: Created thermal-ready receipt dialog with `printDocument()` browser trigger.
+  - `lib/widgets/booking/add_appointment_dialog.dart`: Added `_buildOffDayWarningBanner` and post-booking `[PRINT SLIP]` SnackBar trigger.
+  - `lib/widgets/booking/booking_payment_section.dart`: Reordered payment dropdown items with Post-Pay at bottom and cautionary banner.
+  - `lib/widgets/dashboard/dashboard_doctor_roster_card.dart`: Added "Close Session (Doctor Absent)" options menu with double confirmation modal.
+  - `lib/widgets/queue/appointment_accordion.dart`: Added "Print Token Slip" button and reordered payment choice chips.
+  - `docs/SCHEMA_AND_MODELS.md`: Documented `notes` field in `appointments` collection and `ClinicFeatureFlags` specification under Section 10.E.
+  - `docs/PRODUCT_ROADMAP.md` & `CONTRIBUTING.md`: Scrapped P14 and updated delivery tracking.
+  - `test/reception_metrics_and_token_cap_test.dart` & `test/token_receipt_and_session_close_test.dart`: Added 4 automated unit and widget tests (total suite 209 tests passing).
+
+---
+
 ## [1.33.1] — 14-10-2026
 
 ### Mobile Reception Responsiveness: Walk-In Floating Button & Responsive Queue Patient Cards
@@ -165,13 +190,13 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 ## [1.29.1] — 14-10-2026
 
 ### Architectural Compliance & Invariant #10 Debt Remediation
-- **Purged Deprecated Enum Alias `PaymentType.paid` (Invariant #10):**
-  - Removed obsolete `@Deprecated('Use paidCash or paidUpi') static const PaymentType paid` alias from `lib/models/appointment.dart`.
-  - Migrated appointment booking UI (`AddAppointmentDialog` in `lib/widgets/booking/add_appointment_dialog.dart`) to use canonical payment resolution (`_selectedPayment.isPaid` and `PaymentType.paidCash`).
-  - Migrated test fixtures across test suites to strictly canonical `PaymentType.paidCash`.
-- **Quality & Verification Gates:**
-  - 100% clean static analysis (`flutter analyze` — 0 issues).
-  - All 184 automated tests passing cleanly (`flutter test`).
+- **Operational Impact:**
+  - **Purged Deprecated Enum Alias `PaymentType.paid` (Invariant #10):** Enforced zero backward-compatibility debt by eliminating the obsolete `@Deprecated` `PaymentType.paid` alias. Booking workflows and test fixtures migrated directly to canonical payment types (`paidCash` / `paidUpi`) without compatibility shims or polyfills.
+- **Architectural Touchpoints:**
+  - `lib/models/appointment.dart`: Removed deprecated `PaymentType.paid` static const alias.
+  - `lib/widgets/booking/add_appointment_dialog.dart`: Updated booking submission to use canonical payment resolution (`_selectedPayment.isPaid` and `PaymentType.paidCash`).
+  - `test/`: Migrated fixtures across test suites to strictly canonical `PaymentType.paidCash`.
+  - Quality Gates: Clean static analysis (0 issues) and all 184 automated tests passing cleanly.
 
 ---
 
