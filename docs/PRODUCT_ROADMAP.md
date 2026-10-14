@@ -62,13 +62,136 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 
 ---
 
-## 🎯 3. Active Priority Backlog (Next Horizon)
+## 🔧 3. Active Housekeeping Goals (Near-Term, Non-Negotiable)
+
+These are **active goals**, not future backlog. They correct design decisions that were AI-proposed and shipped but proved to add friction in real-world clinical use. They are not optional enhancements — they represent what the product *should have been*.
+
+---
+
+### 🏥 HK-1: Encounter Screen Redesign — Replace the 5-Step Pipeline
+
+> **Status:** Approved for implementation. Supersedes `AGENTS.md §1 Rule #3`.
+
+The current 5-step linear encounter pipeline (`ConsultationEncounterScreen`) was AI-proposed and AI-implemented. In real clinical use it creates unnecessary friction. Every visit forces the doctor through Steps 1–5 regardless of context. This is being replaced with a **free-form, section-based encounter layout**.
+
+#### New Layout Specification
+
+The encounter screen renders as a single scrollable document. Sections are independent and collapsible. Doctor can interact with them in **any order** — no mandatory sequence.
+
+---
+
+**Patient Header** *(always visible, non-interactive top bar)*
+```
+[ NAME: Kaushik Talukdar | Age: 37 | Sex: M | Phone: 98XXXXXXXX ]
+[ ⚠️ Allergic: Penicillin ]   ← small chip, only shown if allergy exists
+```
+- Allergy stays in the header as a **small passive chip** — not a full banner section.
+- Allergy is a **dumb free-text field**: doctor writes the composition/substance that caused the reaction (e.g. `"Penicillin"`, `"Sulfa drugs"`). No structured coding, no dropdowns.
+- Future TODO: allow doctor to edit patient details (name, age, gender) from this header.
+
+---
+
+**Section: Clinical Observations** *(expandable modal on tap)*
+Two parts, both optional:
+1. **Vitals** — BP, Pulse, SpO2, Temperature, Weight. Standard compact grid.
+2. **Findings / Remarks** — Freeform text. Doctor notes clinical findings, symptoms, working diagnosis. For returning patients, the **last visit's findings are shown read-only** above the new entry field for quick reference.
+
+---
+
+**Section: Past History** *(only shown for returning patients; closed accordion by default)*
+
+Three sub-accordions, all closed on load:
+- **Past Findings** — Read-only view of last visit's clinical observations and notes.
+- **Past Medicines** — Read-only list of last visit's prescribed medicines with dosage and duration. Includes a **`[CARRY FORWARD TO CURRENT PRESCRIPTION]`** button (see below).
+- **Past Lab Results** — Read-only view of last visit's ordered investigations and recorded values.
+
+**Carry Forward Rule:**
+- Tapping `[CARRY FORWARD]` copies all medicines from the last visit into the current prescription area exactly as they were: same medicine (including composition), same dosage, same duration, as **`CONTINUE`** state entries.
+- The prescription section auto-expands and populates immediately.
+- The `[CARRY FORWARD]` button is **disabled after first tap** (greyed out, label changes to `✓ Carried Forward`) to prevent duplicate population.
+- **Re-enable edge case:** If the doctor clears the entire staging area after carrying forward (e.g. removes all carried entries manually), the button **re-enables** automatically. The disable state is tied to whether any carried-forward entries exist in the staging area — not to whether the button was ever tapped. This prevents the doctor from being permanently locked out of carrying forward during the same encounter if they clicked it by mistake.
+- Once carried forward, the doctor can review each entry and tap `[STOP]` on any medicine they wish to discontinue, adding a stop reason.
+
+---
+
+**Section: Prescribe Medicines** *(expandable; auto-expands when Carry Forward is triggered)*
+- Current medicine search and staging flow (composition/brand search, dosage, frequency, duration).
+- Shows all `START` (new) and `CONTINUE` (carried forward / ongoing) entries.
+- `STOP` entries are shown with strikethrough + reason (for print audit trail).
+
+---
+
+**Section: Tests & Investigations** *(expandable modal on tap)*
+- Doctor orders lab investigations (blood work, imaging, etc.).
+- Optional. If nothing ordered, section prints nothing.
+
+---
+
+**Section: Remarks** *(expandable; simple freeform text box)*
+- Anything the doctor wants to note that doesn't fit other sections: lifestyle advice, dietary instructions, referral notes, etc.
+- Printed as "Doctor's Notes" at the bottom of the prescription.
+
+---
+
+**Section: Next Review** *(dropdown, optional)*
+- Dropdown with fixed values: `3 days`, `7 days`, `14 days`, `1 month`, `3 months`, `Not Needed`.
+- Selecting **Not Needed** (or leaving it unset) omits the follow-up line from the printed prescription entirely. Minor acute conditions (simple fever, mild infection) typically have no follow-up.
+- An `[×]` reset control clears the selection if the doctor accidentally sets a date.
+
+---
+
+#### Pre-Print Preview (In-App Review Before Printing)
+
+Before sending to the browser print dialog, the doctor is shown a **lightweight in-app preview modal** of the formatted prescription — essentially the `PrescriptionPrintScreen` layout rendered inside a scrollable modal overlay.
+
+- **Purpose:** Quick sanity check. Doctor spots wrong follow-up date, a medicine that wasn't stopped, a missing test order, etc. — and taps `[Back to Edit]` to fix it.
+- **Actions:** `[Back to Edit]` (dismiss modal, return to encounter) or `[Print & Complete]` (trigger browser print dialog and mark encounter as complete).
+- This is not a separate navigation route — it is a modal overlay on the encounter screen itself.
+- Distinct from the current `PrescriptionPrintScreen` which is a full navigation push and treated as a terminal step.
+- **Keyboard shortcuts (mandatory from day one):** `Enter` → Print & Complete. `Esc` → Back to Edit. A doctor moving fast must never have to aim a mouse cursor to dismiss a sanity-check modal. These bindings are non-negotiable and must be wired at the time the modal is first implemented.
+
+---
+
+#### What This Replaces
+
+| Retired | Replacement |
+|---|---|
+| Mandatory Step 1 (Allergies full section) | Passive allergy chip in patient header |
+| Mandatory Step 2 (Vitals + Exam, always open) | `Clinical Observations` section (closed by default, expand on demand) |
+| Mandatory Step 3 (Investigations Review) | `Past Lab Results` inside Past History accordion |
+| Mandatory Step 4 (Medication Reconciliation, always open) | `Prescribe Medicines` section + Carry Forward from Past History |
+| Mandatory Step 5 (Orders + Follow-up, always open) | `Tests & Investigations` section + `Next Review` dropdown |
+| Manual CONTINUE tap per drug for returning patients | Single `[CARRY FORWARD]` button bulk-copying last visit's regimen |
+
+> **AGENTS.md Impact:** `§1 Rule #3` (Strict 5-Step Pipeline as non-negotiable invariant) is **superseded** by this specification. The 5-step pipeline is retired. The clinical data model (START/CONTINUE/STOP, append-only consultations, longitudinal records) remains fully intact — only the UI layout and interaction pattern changes.
+
+---
+
+### ⚖️ HK-2: Over-Engineering Review — Pending PM Verdict
+
+The following shipped features were flagged by the architect as disproportionate in complexity relative to the real-world threat model and operational scale of a small Indian OPD clinic. They are **not being removed immediately** — each is listed here for PM review. The verdict options are:
+- **Remove** — strip it out cleanly, no shim left behind (consistent with Zero Backward-Compat Debt invariant).
+- **Promote to 🧪** — move to the Experiment Flag Registry (Section 8) and treat as revocable, low-priority maintenance surface.
+- **Keep** — PM decides the complexity is justified and the flag is cleared.
+
+| Feature | Why It Was Shipped | Why It May Be Overkill | Verdict |
+|---|---|---|---|
+| **SHA-256 PIN Hashing** (`AuthProvider.hashPin`, `v1.19.0`) | Compliance posture, DPDP Act framing, zero plaintext in browser storage. | The threat model doesn't justify it. Reception PIN is `0000` — publicly known by design. Doctor PINs are 4-digit numbers shared verbally. Nobody is extracting `SharedPreferences` in a clinic. The primary fraud risk is cash at the counter, not credential theft. | ⏳ Pending |
+| **Atomic Multi-Desk Booking Locks** (`counters/lock_*`, `v1.18.0`) | Eliminate race conditions when multiple reception desks book simultaneously. | Almost all Indian OPD clinics have exactly **one** reception desk. The existing Firestore transaction on the queue counter already prevents duplicate token allocation. The distributed lock layer solves a problem that doesn't exist for 95% of the user base. | ⏳ Pending |
+| **Hardcoded Prescription Template Bundles (`P9`, `v1.28.0`)** | 1-tap OPD clinical presets for common conditions (URI, Gastritis, Viral Fever, HTN Starter). | Templates are hardcoded for a generic GP. A specialist (cardiologist, ENT, dermatologist) finds them irrelevant or potentially dangerous if applied without review. A doctor whose prescribing habit deviates from the bundle even once will stop using it. The right design is **per-doctor saved templates built from actual encounters** — not hardcoded bundles. | ⏳ Pending |
+| **Forensic Audit Events Collection** (`appointment_events`, `v1.18.0`) | Immutable, append-only log of every appointment lifecycle state shift for compliance auditing. | The `appointments` collection already stores status transitions immutably. The `appointment_events` sub-collection is a second audit trail that adds a Firestore write on every state shift (created → booked → checked-in → in-consultation → completed / absent). For a small OPD clinic with no compliance team querying event logs, this is an operational overhead with no visible benefit. | ⏳ Pending |
+
+---
+
+## 🎯 4. Active Priority Backlog (Next Horizon)
+
 
 All primary operational priorities (P1 through P10) and review cycle enforcement have been successfully implemented and verified across 184 automated tests. Future enhancements and architectural debates are prioritized below:
 
 | Priority | Proposed Feature | Problem Solved | Acceptance Criteria |
 |---|---|---|---|
 | **P11** | **Prepaid Carry-Over & Doctor No-Show / Refund Protocol (RFC)** | Patient paid online/cash but didn't attend, OR consulting doctor canceled/absent. Current ledger has no formal carry-forward or refund state. | Formalized refund ledger (`PaymentType.refunded` / `refundAmount`) updating daily cash/UPI totals, or explicit carry-over token revalidation without double charging. |
+| **P12 · 🧪 (TODO)** | **Patient Lookup / Explore Patients** | No way to quickly look up a patient's history (name, phone, past visits, allergies) without going through the full booking flow. Useful for front-desk staff fielding enquiries, referrals, or repeat patient calls. | Dedicated "Explore Patients" screen (owner/reception access): free-text search by name or 10-digit phone against Firestore `patients` collection, displays patient profile card (allergy alerts, last visit date, linked doctor, visit count). Optional 1-tap shortcut to open the walk-in booking modal pre-populated with the looked-up patient's details. No appointment creation is forced — purely a read-only enquiry tool unless the user explicitly initiates booking. |
 
 ---
 
@@ -120,3 +243,32 @@ To prevent AI assistants from regressing or re-introducing discarded patterns:
 1. Before implementing any feature, check this matrix to ensure the task aligns with Section 3 or Section 4.
 2. If an AI receives a prompt that matches an item in Section 1 or Section 5, it must **flag the conflict immediately** and adhere to the architectural guardrails.
 3. Only the **Product Manager** can promote items from Proposed to Active Backlog.
+4. Features marked `🧪` (see Section 7) require explicit PM sign-off before being hardened into stable, non-removable product surface. Treat them as revocable at any point.
+
+---
+
+## 🧪 7. Experiment Flag Registry
+
+Some features — shipped or planned — are inherently exploratory in nature. They solve a real problem but carry uncertainty around UX fit, data model stability, or long-term clinical value. These are formally tagged with the **🧪 EXPERIMENT** flag.
+
+### What the 🧪 Flag Means
+
+| Property | Behaviour |
+|---|---|
+| **Revocable** | PM can remove or gut the feature at any time without it being treated as a regression. |
+| **No Schema Lock-in** | Firestore fields or collections introduced solely for an experimental feature may be removed or restructured without a migration shim. |
+| **No Test Coverage Mandate** | Experimental features are exempt from the 100% domain engine test coverage rule until promoted to stable. |
+| **No Backward-Compat Debt** | Consistent with the Zero Backward-Compatibility Debt invariant — experimental features that are scrapped leave zero adapter residue. |
+| **UI Opt-In Only** | Experimental features must never gate, block, or degrade the core booking / queue / encounter pipeline. They are strictly additive. |
+
+### AI Agent Rules for 🧪 Features
+- When implementing a `🧪` feature, **scope it narrowly** — one new file or widget; avoid deep tentacles into core engines.
+- When refactoring or modifying core systems, **do not let changes break `🧪` features silently** — but also do not bend core architecture to preserve them.
+- If a `🧪` feature's Firestore schema conflicts with a clean architectural direction, **the clean direction wins**.
+
+### 🧪 Current Experiment Inventory
+
+| Feature | Status | Flag Reason | Promotion Criteria |
+|---|---|---|---|
+| **Multi-Chamber Sound Announcer (P10)** | 🟢 Shipped (`v1.29.0`) | Browser SpeechSynthesis and Web Audio API reliability varies widely across clinic PC hardware, browsers, and OS audio routing. Real-world sound quality and intelligibility in a noisy OPD reception is unproven. | Validated across ≥ 3 real clinic deployments with stable chime delivery and zero browser crash reports. |
+| **Patient Lookup / Explore Patients (P12)** | 📋 TODO | Feature scope and access model (owner-only vs. reception) is unclear. Firestore query patterns for name prefix search are unproven at scale. Direct booking shortcut may complicate walk-in modal state. | Defined UX wireframe approved by PM; Firestore `patients` index confirmed; booking integration tested end-to-end. |
