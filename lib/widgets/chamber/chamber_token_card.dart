@@ -37,8 +37,8 @@ class ChamberTokenCard extends StatelessWidget {
     } else if (appointment.status == AppointmentStatus.absent) {
       badgeBg = const Color(0xFFF1F5F9);
       badgeFg = const Color(0xFF64748B);
-      statusTitle = "ABSENT";
-      paymentSubtitle = "Slot Preserved • ₹0";
+      statusTitle = isPastDate ? "No-Show" : "ABSENT";
+      paymentSubtitle = isPastDate ? "" : "Slot Preserved • ₹0";
     } else if (appointment.status == AppointmentStatus.completed) {
       if (appointment.paymentType.isPaid ||
           (appointment.paymentType == PaymentType.postPay &&
@@ -68,8 +68,8 @@ class ChamberTokenCard extends StatelessWidget {
       // EOD Unresolved Token: Pending visit left over from a past date
       badgeBg = const Color(0xFFF1F5F9);
       badgeFg = const Color(0xFF64748B);
-      statusTitle = "UNATTENDED / NO-SHOW";
-      paymentSubtitle = "Shift Closed • Past Date";
+      statusTitle = "No-Show";
+      paymentSubtitle = "";
     } else {
       // Pending / In Queue (Today)
       badgeBg = const Color(0xFFE0F2FE);
@@ -81,8 +81,9 @@ class ChamberTokenCard extends StatelessWidget {
     final maskedPhone = _maskPhone(appointment.patientPhone);
 
     final canEnterConsultation =
+        isPastDate ||
         appointment.status == AppointmentStatus.completed ||
-        (!isPastDate && isCallingNow);
+        isCallingNow;
 
     Widget? actionWidget;
     if (appointment.status != AppointmentStatus.absent) {
@@ -130,34 +131,6 @@ class ChamberTokenCard extends StatelessWidget {
               ],
             ),
           );
-        } else {
-          actionWidget = Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.event_busy_rounded,
-                  size: 13,
-                  color: Colors.grey.shade600,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Unattended',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          );
         }
       } else {
         actionWidget = OutlinedButton.icon(
@@ -179,6 +152,10 @@ class ChamberTokenCard extends StatelessWidget {
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 650;
 
+        final displayName = isPastDate
+            ? '#${appointment.queueNumber} • ${appointment.patientName}'
+            : appointment.patientName;
+
         final tokenBadgeWidget = TokenBadge(
           queueNumber: appointment.queueNumber,
           size: isCompact ? 38 : 44,
@@ -191,7 +168,7 @@ class ChamberTokenCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              appointment.patientName,
+              displayName,
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -301,31 +278,40 @@ class ChamberTokenCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          tokenBadgeWidget,
-                          const SizedBox(width: 10),
+                          if (!isPastDate) ...[
+                            tokenBadgeWidget,
+                            const SizedBox(width: 10),
+                          ],
                           Expanded(child: patientDetailsWidget),
                           historyButtonWidget,
                           const SizedBox(width: 4),
                           statusBadgeWidget,
                         ],
                       ),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(child: paymentSubtitleWidget),
-                          if (actionWidget != null) ...[
-                            const SizedBox(width: 8),
-                            actionWidget,
+                      if (paymentSubtitle.isNotEmpty || actionWidget != null) ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            if (paymentSubtitle.isNotEmpty)
+                              Expanded(child: paymentSubtitleWidget)
+                            else
+                              const Spacer(),
+                            if (actionWidget != null) ...[
+                              const SizedBox(width: 8),
+                              actionWidget,
+                            ],
                           ],
-                        ],
-                      ),
+                        ),
+                      ],
                     ],
                   )
                 : Row(
                     children: [
-                      tokenBadgeWidget,
-                      const SizedBox(width: 14),
+                      if (!isPastDate) ...[
+                        tokenBadgeWidget,
+                        const SizedBox(width: 14),
+                      ],
                       Expanded(child: patientDetailsWidget),
                       historyButtonWidget,
                       const SizedBox(width: 8),
@@ -333,8 +319,10 @@ class ChamberTokenCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           statusBadgeWidget,
-                          const SizedBox(height: 4),
-                          paymentSubtitleWidget,
+                          if (paymentSubtitle.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            paymentSubtitleWidget,
+                          ],
                         ],
                       ),
                       if (actionWidget != null) ...[

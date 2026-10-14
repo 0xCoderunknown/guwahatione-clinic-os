@@ -10,6 +10,28 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
+## [1.31.0] — 14-10-2026
+
+### Doctor Chamber Mobile & Historical Archive De-Duplication
+- **Operational Impact:**
+  - **Uncluttered Chamber Header:** Removed redundant `"CHAMBER CATALOG"` badge from the chamber app bar, granting the physician's name full horizontal expansion without artificial truncation or ellipses.
+  - **Compact 1-Line Archive Banner:** Replaced verbose multi-line archive box with a single, sleek 1-line status banner: `🔒 Viewing Past Records (Read-Only)`. Eliminated redundant date repetition (date is already active in the date switcher).
+  - **Historical Patient Card De-duplication:** 
+    - Formatted patient name cleanly as `#X • Patient Name` with full horizontal expansion.
+    - Consolidated historical status into a single muted `No-Show` pill, removing redundant `"Shift Closed • Past Date"` subtitle strings and static `[ 📅 Unattended ]` trailing pills.
+    - Enabled direct card-level tapping to view past consultation summaries seamlessly.
+  - **Tightened Metrics Subtitles:** Shortened wordy card helper texts (e.g. `X in queue`, `Shift closed`, `Unattended`, `X paid visits`) for a snug fit on mobile viewports (< 450px).
+  - **Clean Queue Empty State:** Replaced wordy placeholder text with concise, professional copy in `ChamberEmptyQueue`.
+- **Architectural Touchpoints:**
+  - `lib/widgets/chamber/chamber_app_bar.dart`: Doctor name wrapped with `Expanded`; removed `'CHAMBER CATALOG'` badge in standard mode.
+  - `lib/widgets/chamber/chamber_archive_banner.dart`: Replaced multi-line container with a compact 1-line banner.
+  - `lib/widgets/chamber/chamber_token_card.dart`: Consolidated `No-Show` badge, removed duplicate subtitles/trailing widgets on historical dates, and enabled tap-to-summary.
+  - `lib/widgets/chamber/chamber_metrics_grid.dart`: Concise metric subtitles.
+  - `lib/widgets/chamber/chamber_queue_header.dart`: Cleaned empty queue placeholder copy.
+  - `test/chamber_read_only_archive_test.dart`: Updated and added test cases for 1-line archive banner, clean header expansion, single No-Show badge, and tap interaction (186 tests passing).
+
+---
+
 ## [1.30.0] — 14-10-2026
 
 ### Dashboard Header Reorganization & Operational Lifecycle KPI Hierarchy

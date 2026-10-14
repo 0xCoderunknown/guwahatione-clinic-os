@@ -46,7 +46,7 @@ class ChamberAppBar extends StatelessWidget implements PreferredSizeWidget {
               children: [
                 Row(
                   children: [
-                    Flexible(
+                    Expanded(
                       child: Text(
                         doctor.name,
                         style: const TextStyle(
@@ -57,35 +57,31 @@ class ChamberAppBar extends StatelessWidget implements PreferredSizeWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isPreviewMode
-                            ? Colors.purple.shade50
-                            : Colors.teal.shade50,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: isPreviewMode
-                              ? Colors.purple.shade200
-                              : Colors.teal.shade200,
+                    if (isPreviewMode) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.purple.shade200,
+                          ),
+                        ),
+                        child: Text(
+                          'PREVIEW',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            color: Colors.purple.shade700,
+                          ),
                         ),
                       ),
-                      child: Text(
-                        isPreviewMode ? 'OWNER PREVIEW' : 'CHAMBER CATALOG',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                          color: isPreviewMode
-                              ? Colors.purple.shade700
-                              : Colors.teal.shade700,
-                        ),
-                      ),
-                    ),
+                    ],
                   ],
                 ),
                 Text(

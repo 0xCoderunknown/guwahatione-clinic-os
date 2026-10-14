@@ -68,9 +68,7 @@ class ChamberMetricsGrid extends StatelessWidget {
       ChamberMetricTile(
         title: "Total Tokens",
         value: "$totalBooked",
-        subtitle: isPastDate
-            ? "Shift completed"
-            : "$waitingCount still in queue",
+        subtitle: isPastDate ? "Shift closed" : "$waitingCount in queue",
         icon: Icons.confirmation_number_outlined,
         color: Colors.blue,
       ),
@@ -84,14 +82,14 @@ class ChamberMetricsGrid extends StatelessWidget {
       ChamberMetricTile(
         title: "Absent / No-Show",
         value: "$absentCount",
-        subtitle: isPastDate ? "Unattended / Closed" : "Slots preserved",
+        subtitle: isPastDate ? "Unattended" : "Slots preserved",
         icon: Icons.person_off_outlined,
         color: const Color(0xFF64748B),
       ),
       ChamberMetricTile(
         title: "Doctor Share",
         value: "₹$totalFees",
-        subtitle: "From $paidCount paid visits",
+        subtitle: "$paidCount paid visits",
         icon: Icons.currency_rupee_rounded,
         color: const Color(0xFF059669),
       ),

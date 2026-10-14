@@ -160,7 +160,7 @@ class ChamberEmptyQueue extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            "When Sam books appointments at the reception desk, they appear here live.",
+            "Appointments booked at reception will appear here live.",
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
           ),

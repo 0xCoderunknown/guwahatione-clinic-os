@@ -1,13 +1,45 @@
 import 'package:appointment_app/models/appointment.dart';
+import 'package:appointment_app/models/doctor.dart';
 import 'package:appointment_app/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('ChamberAppBar Minimal Header Tests', () {
+    final doctor = Doctor(
+      id: 'doc-1',
+      name: 'Dr. Bhaskar Thakuria',
+      specialty: 'General Medicine',
+      phone: '9876543210',
+      consultationFee: 600,
+      availableDays: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+      blockedDates: const [],
+    );
+
+    testWidgets(
+      'Removes CHAMBER CATALOG badge and expands doctor name without truncation',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              appBar: ChamberAppBar(doctor: doctor, isPreviewMode: false),
+            ),
+          ),
+        );
+
+        expect(find.text('CHAMBER CATALOG'), findsNothing);
+        expect(find.text('Dr. Bhaskar Thakuria'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  });
+
   group('ChamberArchiveBanner Widget Tests', () {
-    testWidgets('Renders closed shift title and Indian formatted date', (
-      tester,
-    ) async {
+    testWidgets('Renders single compact 1-line status banner', (tester) async {
       final pastDate = DateTime(2026, 10, 10);
 
       await tester.pumpWidget(
@@ -17,13 +49,14 @@ void main() {
       );
 
       expect(
-        find.text('🔒 Chamber Shift Closed • Read-Only Archive'),
+        find.text('🔒 Viewing Past Records (Read-Only)'),
         findsOneWidget,
       );
-      expect(find.textContaining('10-10-2026'), findsOneWidget);
+      // Repetition of date and verbose explanation removed
+      expect(find.textContaining('10-10-2026'), findsNothing);
       expect(
         find.textContaining('Live calling and patient admission are disabled.'),
-        findsOneWidget,
+        findsNothing,
       );
     });
   });
@@ -61,7 +94,7 @@ void main() {
     );
 
     testWidgets(
-      'Past date pending token displays UNATTENDED / NO-SHOW and Unattended static pill',
+      'Past date pending token displays single No-Show badge, clean name, and is directly tappable',
       (tester) async {
         bool consultPressed = false;
 
@@ -78,23 +111,29 @@ void main() {
           ),
         );
 
-        // Verify EOD unresolved tokens show Unattended / No-Show
-        expect(find.text('UNATTENDED / NO-SHOW'), findsOneWidget);
-        expect(find.text('Shift Closed • Past Date'), findsOneWidget);
-        expect(find.text('Unattended'), findsOneWidget);
+        // Display patient name cleanly as #7 • Kavita Das
+        expect(find.text('#7 • Kavita Das'), findsOneWidget);
 
-        // Must NOT display live status or action buttons
+        // Single muted No-Show pill
+        expect(find.text('No-Show'), findsOneWidget);
+
+        // Verbose redundant labels removed
+        expect(find.text('UNATTENDED / NO-SHOW'), findsNothing);
+        expect(find.text('Shift Closed • Past Date'), findsNothing);
+        expect(find.text('Unattended'), findsNothing);
+
+        // Must NOT display live status or live action buttons
         expect(find.text('WAITING'), findsNothing);
         expect(find.text('In Waiting Room'), findsNothing);
         expect(find.text('Waiting Reception Call'), findsNothing);
         expect(find.text('Enter Consultation'), findsNothing);
         expect(find.text('Admit'), findsNothing);
 
-        // Tapping card must NOT invoke consult
+        // Card itself is directly tappable to view summary
         await tester.tap(find.byType(ChamberTokenCard));
         await tester.pump();
 
-        expect(consultPressed, isFalse);
+        expect(consultPressed, isTrue);
       },
     );
 
@@ -116,6 +155,7 @@ void main() {
           ),
         );
 
+        expect(find.text('#8 • Anil Roy'), findsOneWidget);
         expect(find.text('COMPLETED'), findsOneWidget);
         expect(find.text('View Summary'), findsOneWidget);
         expect(find.text('Enter Consultation'), findsNothing);
@@ -159,16 +199,18 @@ void main() {
           ),
         );
 
+        expect(find.text('Sunita Bora'), findsOneWidget);
         expect(find.text('WAITING'), findsOneWidget);
         expect(find.text('In Waiting Room'), findsOneWidget);
         expect(find.text('Waiting Reception Call'), findsOneWidget);
         expect(find.text('UNATTENDED / NO-SHOW'), findsNothing);
+        expect(find.text('No-Show'), findsNothing);
         expect(find.text('Unattended'), findsNothing);
       },
     );
 
     testWidgets(
-      'ChamberTokenCard renders responsive 2-row layout on mobile (width 390)',
+      'ChamberTokenCard renders cleanly without overflow on mobile (width 390)',
       (tester) async {
         tester.view.physicalSize = const Size(390, 844);
         tester.view.devicePixelRatio = 1.0;
@@ -187,10 +229,11 @@ void main() {
           ),
         );
 
-        expect(find.text('UNATTENDED / NO-SHOW'), findsOneWidget);
-        expect(find.text('Shift Closed • Past Date'), findsOneWidget);
-        expect(find.text('Unattended'), findsOneWidget);
-        expect(find.text('Kavita Das'), findsOneWidget);
+        expect(find.text('#7 • Kavita Das'), findsOneWidget);
+        expect(find.text('No-Show'), findsOneWidget);
+        expect(find.text('Shift Closed • Past Date'), findsNothing);
+        expect(find.text('Unattended'), findsNothing);
+        expect(tester.takeException(), isNull);
       },
     );
   });
@@ -300,7 +343,7 @@ void main() {
     ];
 
     testWidgets(
-      'Reconciles unresolved tokens as Absent / No-Show and shows Shift completed on past dates',
+      'Reconciles unresolved tokens as Absent / No-Show and shows Shift closed on past dates',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -314,11 +357,11 @@ void main() {
           ),
         );
 
-        // Total Tokens: 3, subtitle: Shift completed
+        // Total Tokens: 3, subtitle: Shift closed
         expect(find.text('Total Tokens'), findsOneWidget);
         expect(find.text('3'), findsOneWidget);
-        expect(find.text('Shift completed'), findsOneWidget);
-        expect(find.textContaining('still in queue'), findsNothing);
+        expect(find.text('Shift closed'), findsOneWidget);
+        expect(find.textContaining('in queue'), findsNothing);
 
         // Consulted: 1
         expect(find.text('Consulted'), findsOneWidget);
@@ -327,8 +370,13 @@ void main() {
         // Absent / No-Show: 2 (2 unresolved tokens on past date)
         expect(find.text('Absent / No-Show'), findsOneWidget);
         expect(find.text('2'), findsOneWidget);
-        expect(find.text('Unattended / Closed'), findsOneWidget);
+        expect(find.text('Unattended'), findsOneWidget);
         expect(find.text('Slots preserved'), findsNothing);
+
+        // Doctor Share: ₹600 from 1 paid visit
+        expect(find.text('Doctor Share'), findsOneWidget);
+        expect(find.text('₹600'), findsOneWidget);
+        expect(find.text('1 paid visits'), findsOneWidget);
       },
     );
 
@@ -348,10 +396,10 @@ void main() {
         );
 
         // Live mode: 1 waiting in lobby, 0 absent
-        expect(find.text('1 still in queue'), findsOneWidget);
-        expect(find.text('Shift completed'), findsNothing);
+        expect(find.text('1 in queue'), findsOneWidget);
+        expect(find.text('Shift closed'), findsNothing);
         expect(find.text('Slots preserved'), findsOneWidget);
-        expect(find.text('Unattended / Closed'), findsNothing);
+        expect(find.text('Unattended'), findsNothing);
         expect(find.text('0'), findsOneWidget); // 0 absent
       },
     );
