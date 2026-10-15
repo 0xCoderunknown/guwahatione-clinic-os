@@ -444,17 +444,13 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 
 ---
 
-### 2. `consultation_encounter_screen.dart` (562 lines)
+### 2. `consultation_encounter_screen.dart` (485 lines)
 * **Layer:** Central Clinical Encounter Workspace.
-* **Code Health & Invariant Adherence:** 🟡 **Strict 5-Step Pipeline / Clinical State Loss Risk.**
+* **Code Health & Invariant Adherence:** 🟢 **Exemplary (Purged Violation in `v1.36.2`).**
   - Strictly follows Invariant #3: 5-step clinical encounter sequence.
   - Follows Invariant #2: Append-only consultation write and atomic completion batch.
-  - Manages real-time chamber alerts (`ChamberCallingAlertBar`).
-* **Feature Completeness Check:**
-  - ⚠️ **Clinical State Loss Risk (Unsaved Form Displacement):** In `_switchToIncomingPatient()` (lines 103–120), when reception calls the next patient, tapping "Switch Now" immediately replaces the route (`Navigator.pushReplacement`) without checking if the current form has unsaved inputs. If a doctor has typed vitals, complaints, or diagnoses, they are abruptly discarded.
-* **Refactor Recommendation:**
-  - Add dirty-state guarding to prompt the physician before discarding in-progress consultation work.
-* **Severity:** `🔴 High`
+  - Adheres to Invariant #7 & #11: Consultation is strictly single-occupant and non-preemptible. Purged legacy `ChamberCallingAlertBar` and `_switchToIncomingPatient` which previously violated the doctor-paced handshake protocol.
+* **Severity:** `🟢 Resolved`
 
 ---
 
@@ -641,7 +637,7 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 
 | Priority | Component | Issue | Action Item |
 |:---:|:---|:---|:---|
-| 🔴 **High** | `consultation_encounter_screen.dart` | `_switchToIncomingPatient()` discards unsaved form data. | Add dirty-form confirmation modal before switching patients. |
+| 🟢 **Resolved** | `consultation_encounter_screen.dart` | Legacy `ChamberCallingAlertBar` & `_switchToIncomingPatient()` violated Invariants #7 & #11. | ✅ **Shipped (`v1.36.2`)**: Purged illegal caller alert bar and switch routing; active consultation is strictly single-occupant and non-preemptible. |
 | 🟢 **Resolved** | `add_medicine_dialog.dart` | Missing default dosage/frequency/timing/duration inputs. | ✅ **Shipped (`v1.36.0`)**: Added input fields for default clinical regimen. |
 | 🟢 **Resolved** | `staged_medicine_form.dart` | Missing 1-key (Enter) "Verify & Next" rapid prescribing loop. | ✅ **Shipped (`v1.36.0`)**: Enter keypress verifies staged drug and autofocuses search input. |
 | 🟢 **Resolved** | `daily_cash_handover_dialog.dart` | False cash shortage alert due to UPI revenue inclusion. | ✅ **Shipped (`v1.35.1`)**: Physical note counter discrepancy now evaluates strictly against physical cash revenue; UPI and total revenue displayed in dedicated cards & table columns. |

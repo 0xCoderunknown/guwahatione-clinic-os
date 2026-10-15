@@ -8,6 +8,20 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.36.2] — 15-10-2026
+
+### Enforce Doctor-Paced Handshake Integrity & Purge Illegal Encounter Pre-Emption
+- **Operational & Engineering Impact:**
+  - **Enforce Invariant #7 & #11 (Doctor-Paced Chamber Handshake & Single-Occupancy):** Purged `ChamberCallingAlertBar`, `_listenToChamberSessionAlert`, and `_switchToIncomingPatient` from `ConsultationEncounterScreen`. 
+  - **Zero Consultation Pre-Emption:** Receptions buttons are strictly locked (`Chamber Occupied` or `Doctor on Break`) whenever a physician is conducting an encounter or in a breather. Reception cannot dispatch patients into an active consultation.
+  - **Doctor Paced Admission:** Doctor completes encounter ➔ enters `consultation_ended` breather ➔ taps "Next Patient" ➔ status transitions to `ready_for_next` ➔ Reception "SEND IN" button unlocks.
+  - **Documentation Alignment:** Corrected `docs/CODEBASE_AUDIT_AND_REFACTOR_PLAN.md` to remove flawed recommendation of "switching patient prompts" during consultations, reinforcing `AGENTS.md` as the single canonical source of truth for chamber invariants.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 234 unit and widget tests passing green.
+
+---
+
 ## [1.36.1] — 15-10-2026
 
 ### Doctor Planned Leave & Extended Week Absence System with Dynamic Range Messaging
