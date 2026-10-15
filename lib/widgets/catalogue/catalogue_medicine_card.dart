@@ -31,21 +31,18 @@ class CatalogueMedicineCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Dosage Form Badge
+          // Medication Icon Pill
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: Colors.teal.shade50,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.teal.shade200),
             ),
-            child: Text(
-              item.form,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: Colors.teal.shade800,
-              ),
+            child: Icon(
+              Icons.medication_rounded,
+              size: 20,
+              color: Colors.teal.shade800,
             ),
           ),
           const SizedBox(width: 14),
@@ -81,7 +78,8 @@ class CatalogueMedicineCard extends StatelessWidget {
                           item.manufacturer!,
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade700,
                           ),
                         ),
                       ),
@@ -89,13 +87,36 @@ class CatalogueMedicineCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "Composition: ${item.composition} • Strength: ${item.strength}",
+                  "Composition: ${item.composition}",
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     color: Colors.grey.shade700,
                   ),
                 ),
+                if (item.defaultFrequency != null || item.defaultDosage != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFFA7F3D0)),
+                        ),
+                        child: Text(
+                          'OPD Default: ${item.defaultDosage ?? ''} ${item.defaultFrequency ?? ''} • ${item.defaultTiming ?? ''} • ${item.durationLabel}'.trim(),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF065F46),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

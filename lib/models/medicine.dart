@@ -1,69 +1,75 @@
 class Medicine {
   final String id;
-  final String productName; // Commercial brand / trade name (e.g., 'Dolo 650')
-  final String composition; // Generic chemical molecule (e.g., 'Paracetamol')
-  final String strength; // Molecule strength (e.g., '650 mg')
-  final String form; // Dosage form (e.g., 'Tablet', 'Syrup', 'Capsule')
-  final String? manufacturer; // e.g., 'Micro Labs'
-  final String? category; // e.g., 'Analgesic / Antipyretic'
+  final String productName; // Brand name with dosage form (e.g., 'Telma 40 tablet', 'Dolo 650 tablet')
+  final String composition; // Generic molecule with strength (e.g., 'Telmisartan 40mg', 'Paracetamol 650mg')
+  final String? manufacturer; // Pharmaceutical manufacturer (e.g., 'Glenmark', 'Micro Labs')
   final String? defaultDosage; // e.g., '1 Tablet', '5 ml'
   final String? defaultFrequency; // e.g., '1-0-0 (OD)', '1-0-1 (BD)'
   final String? defaultTiming; // e.g., 'After Food', 'Before Food'
-  final int? defaultDurationDays; // e.g., 30 (or null for continuous)
+  final int? defaultDurationDays; // e.g., 30 (or null for chronic / to continue)
 
   const Medicine({
     required this.id,
     required this.productName,
     required this.composition,
-    required this.strength,
-    required this.form,
     this.manufacturer,
-    this.category,
     this.defaultDosage,
     this.defaultFrequency,
     this.defaultTiming,
     this.defaultDurationDays,
   });
 
-  String get fullCompositionLabel => '$composition $strength'.trim();
+  /// The complete generic composition (strength is integral to composition).
+  String get fullCompositionLabel => composition;
 
-  /// Prominent uppercase bracketed composition header (e.g. `[TELMISARTAN 40mg]`)
+  /// Prominent uppercase bracketed composition header (e.g. `[TELMISARTAN 40MG]`).
   String get formattedCompositionHeader =>
-      '[${fullCompositionLabel.toUpperCase()}]';
+      '[${composition.toUpperCase()}]';
 
-  /// Standard duration display string ('To continue' for chronic or 'X days')
-  String get durationLabel => (defaultDurationDays == null || defaultDurationDays! <= 0)
-      ? 'To continue'
-      : '$defaultDurationDays days';
+  /// Standard duration display string ('To continue' for chronic or 'X days').
+  String get durationLabel =>
+      (defaultDurationDays == null || defaultDurationDays! <= 0)
+          ? 'To continue'
+          : '$defaultDurationDays days';
 
-  String get displayName => '$productName ($fullCompositionLabel) [$form]';
+  /// Descriptive display string.
+  String get displayName => manufacturer != null && manufacturer!.isNotEmpty
+      ? '$productName ($composition) [$manufacturer]'
+      : '$productName ($composition)';
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'productName': productName,
       'composition': composition,
-      'strength': strength,
-      'form': form,
-      'manufacturer': manufacturer,
-      'category': category,
-      if (defaultDosage != null) 'defaultDosage': defaultDosage,
-      if (defaultFrequency != null) 'defaultFrequency': defaultFrequency,
-      if (defaultTiming != null) 'defaultTiming': defaultTiming,
+      if (manufacturer != null && manufacturer!.isNotEmpty)
+        'manufacturer': manufacturer,
+      if (defaultDosage != null && defaultDosage!.isNotEmpty)
+        'defaultDosage': defaultDosage,
+      if (defaultFrequency != null && defaultFrequency!.isNotEmpty)
+        'defaultFrequency': defaultFrequency,
+      if (defaultTiming != null && defaultTiming!.isNotEmpty)
+        'defaultTiming': defaultTiming,
       if (defaultDurationDays != null)
         'defaultDurationDays': defaultDurationDays,
     };
   }
 
   factory Medicine.fromJson(Map<String, dynamic> json) {
+    // If legacy records contain separated strength, ensure composition contains it cleanly
+    String comp = json['composition'] as String? ?? '';
+    final legacyStrength = json['strength'] as String?;
+    if (legacyStrength != null &&
+        legacyStrength.trim().isNotEmpty &&
+        !comp.toLowerCase().contains(legacyStrength.toLowerCase())) {
+      comp = '$comp $legacyStrength'.trim();
+    }
+
     return Medicine(
       id: json['id'] as String? ?? '',
       productName: json['productName'] as String? ?? '',
-      composition: json['composition'] as String? ?? '',
-      strength: json['strength'] as String? ?? '',
-      form: json['form'] as String? ?? 'Tablet',
+      composition: comp,
       manufacturer: json['manufacturer'] as String?,
-      category: json['category'] as String?,
       defaultDosage: json['defaultDosage'] as String?,
       defaultFrequency: json['defaultFrequency'] as String?,
       defaultTiming: json['defaultTiming'] as String?,
@@ -75,10 +81,7 @@ class Medicine {
     String? id,
     String? productName,
     String? composition,
-    String? strength,
-    String? form,
     String? manufacturer,
-    String? category,
     String? defaultDosage,
     String? defaultFrequency,
     String? defaultTiming,
@@ -88,10 +91,7 @@ class Medicine {
       id: id ?? this.id,
       productName: productName ?? this.productName,
       composition: composition ?? this.composition,
-      strength: strength ?? this.strength,
-      form: form ?? this.form,
       manufacturer: manufacturer ?? this.manufacturer,
-      category: category ?? this.category,
       defaultDosage: defaultDosage ?? this.defaultDosage,
       defaultFrequency: defaultFrequency ?? this.defaultFrequency,
       defaultTiming: defaultTiming ?? this.defaultTiming,

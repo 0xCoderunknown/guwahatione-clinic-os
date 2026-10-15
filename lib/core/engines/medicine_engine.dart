@@ -2,25 +2,21 @@ import '../../models/models.dart';
 
 /// Structured grouping result for medicine catalogue search queries.
 class CompositionGroupResult {
-  final String compositionLabel; // e.g., 'Paracetamol 650 mg'
-  final String composition; // e.g., 'Paracetamol'
-  final String strength; // e.g., '650 mg'
-  final String form; // e.g., 'Tablet'
-  final List<Medicine> associatedBrands; // e.g., [Dolo 650, Calpol 650]
+  final String compositionLabel; // e.g., 'Telmisartan 40mg'
+  final String composition; // e.g., 'Telmisartan 40mg'
+  final List<Medicine> associatedBrands; // e.g., [Telma 40 tablet, Telmikind 40 tablet]
   final int score;
   final bool isCompositionMatch;
 
   const CompositionGroupResult({
     required this.compositionLabel,
     required this.composition,
-    required this.strength,
-    required this.form,
     required this.associatedBrands,
     required this.score,
     required this.isCompositionMatch,
   });
 
-  /// Prominent uppercase bracketed composition header (e.g., `[TELMISARTAN 40mg]`)
+  /// Prominent uppercase bracketed composition header (e.g., `[TELMISARTAN 40MG]`)
   String get formattedHeader => '[${compositionLabel.toUpperCase()}]';
 }
 
@@ -66,10 +62,10 @@ class ReconciliationPartition {
 /// Zero Flutter UI dependencies.
 abstract class MedicineEngine {
   /// Searches catalogue medicines referring strictly to Column 1 (productName)
-  /// and Column 2 (composition + strength).
+  /// and Column 2 (composition).
   ///
   /// Enforces a minimum 3-character trigger threshold (e.g. 'Tel').
-  /// Returns composition cards [COMPOSITION STRENGTH] with associated products.
+  /// Returns composition cards [COMPOSITION] with associated products.
   static List<CompositionGroupResult> searchAndGroup({
     required List<Medicine> catalog,
     required String query,
@@ -88,41 +84,34 @@ abstract class MedicineEngine {
 
     for (final med in catalog) {
       final compLower = med.composition.trim().toLowerCase();
-      final strengthLower = med.strength.trim().toLowerCase();
-      final fullCompLower =
-          '${med.composition} ${med.strength}'.trim().toLowerCase();
       final brandLower = med.productName.trim().toLowerCase();
 
       int score = 0;
       bool isCompMatch = false;
 
-      // Column 2 Match: Composition / Molecule / Salt
-      if (compLower == cleanQuery || fullCompLower == cleanQuery) {
+      // Column 2 Match: Composition / Molecule / Salt with Strength
+      if (compLower == cleanQuery) {
         score = 100;
         isCompMatch = true;
-      } else if (compLower.startsWith(cleanQuery) ||
-          fullCompLower.startsWith(cleanQuery)) {
+      } else if (compLower.startsWith(cleanQuery)) {
         score = 90;
         isCompMatch = true;
-      } else if (compLower.contains(cleanQuery) ||
-          fullCompLower.contains(cleanQuery) ||
-          strengthLower.contains(cleanQuery)) {
+      } else if (compLower.contains(cleanQuery)) {
         score = 70;
         isCompMatch = true;
       }
 
-      // Column 1 Match: Product Name / Trade Brand
+      // Column 1 Match: Product Name / Trade Brand with Form
       if (brandLower == cleanQuery) {
-        if (score < 100) score = 100;
+        if (score < 95) score = 95;
       } else if (brandLower.startsWith(cleanQuery)) {
-        if (score < 90) score = 90;
+        if (score < 80) score = 80;
       } else if (brandLower.contains(cleanQuery)) {
-        if (score < 70) score = 70;
+        if (score < 60) score = 60;
       }
 
       if (score > 0) {
-        final groupKey =
-            '${med.composition.trim()}__${med.strength.trim()}__${med.form.trim()}';
+        final groupKey = compLower;
         groupedByComp.putIfAbsent(groupKey, () => []).add(med);
 
         final currentMax = groupScores[groupKey] ?? 0;
@@ -165,10 +154,8 @@ abstract class MedicineEngine {
 
       results.add(
         CompositionGroupResult(
-          compositionLabel: first.fullCompositionLabel,
+          compositionLabel: first.composition,
           composition: first.composition,
-          strength: first.strength,
-          form: first.form,
           associatedBrands: meds,
           score: groupScores[key] ?? 0,
           isCompositionMatch: groupIsCompMatch[key] ?? false,
@@ -199,25 +186,24 @@ abstract class MedicineEngine {
       );
     }
 
-    final formLower = medicine.form.toLowerCase();
     final compLower = medicine.composition.toLowerCase();
     final productLower = medicine.productName.toLowerCase();
-    final catLower = (medicine.category ?? '').toLowerCase();
 
     String dosage = '1 Tablet';
-    if (formLower.contains('syrup') || formLower.contains('suspension')) {
+    if (productLower.contains('syrup') || productLower.contains('suspension')) {
       dosage = '5 ml';
-    } else if (formLower.contains('capsule')) {
+    } else if (productLower.contains('capsule')) {
       dosage = '1 Capsule';
-    } else if (formLower.contains('drop')) {
+    } else if (productLower.contains('drop')) {
       dosage = '2 Drops';
-    } else if (formLower.contains('gel') ||
-        formLower.contains('cream') ||
-        formLower.contains('ointment')) {
+    } else if (productLower.contains('gel') ||
+        productLower.contains('cream') ||
+        productLower.contains('ointment')) {
       dosage = 'Apply thin layer';
-    } else if (formLower.contains('inhaler') || formLower.contains('rotacap')) {
+    } else if (productLower.contains('inhaler') ||
+        productLower.contains('rotacap')) {
       dosage = '1 Puff';
-    } else if (formLower.contains('injection')) {
+    } else if (productLower.contains('injection')) {
       dosage = '1 Vial';
     }
 
@@ -247,9 +233,7 @@ abstract class MedicineEngine {
         compLower.contains('atenolol') ||
         compLower.contains('cilnidipine') ||
         productLower.contains('telma') ||
-        productLower.contains('amlong') ||
-        catLower.contains('antihypertensive') ||
-        catLower.contains('cardio')) {
+        productLower.contains('amlong')) {
       return ClinicalDefaultRegimen(
         dosage: dosage,
         frequency: '1-0-0 (OD)',
@@ -266,8 +250,7 @@ abstract class MedicineEngine {
         compLower.contains('vildagliptin') ||
         compLower.contains('dapagliflozin') ||
         productLower.contains('glycomet') ||
-        productLower.contains('gemer') ||
-        catLower.contains('diabetic')) {
+        productLower.contains('gemer')) {
       return ClinicalDefaultRegimen(
         dosage: dosage,
         frequency: '1-0-1 (BD)',
@@ -281,8 +264,7 @@ abstract class MedicineEngine {
     if (compLower.contains('atorvastatin') ||
         compLower.contains('rosuvastatin') ||
         productLower.contains('atorva') ||
-        productLower.contains('rozavel') ||
-        catLower.contains('lipid')) {
+        productLower.contains('rozavel')) {
       return ClinicalDefaultRegimen(
         dosage: dosage,
         frequency: '0-0-1 (HS / Night)',
@@ -315,8 +297,7 @@ abstract class MedicineEngine {
         compLower.contains('azithromycin') ||
         compLower.contains('cefixime') ||
         compLower.contains('ciprofloxacin') ||
-        compLower.contains('ofloxacin') ||
-        catLower.contains('antibiotic')) {
+        compLower.contains('ofloxacin')) {
       final isAzithro = compLower.contains('azithromycin');
       return ClinicalDefaultRegimen(
         dosage: dosage,
@@ -333,9 +314,7 @@ abstract class MedicineEngine {
         compLower.contains('aceclofenac') ||
         compLower.contains('tramadol') ||
         productLower.contains('dolo') ||
-        productLower.contains('calpol') ||
-        catLower.contains('analgesic') ||
-        catLower.contains('antipyretic')) {
+        productLower.contains('calpol')) {
       return ClinicalDefaultRegimen(
         dosage: dosage,
         frequency: 'SOS (As Needed)',
@@ -391,15 +370,14 @@ abstract class MedicineEngine {
   }) {
     final cleanQuery = query.trim().toLowerCase();
     final filtered = catalog.where((m) {
-      final matchesQuery =
-          cleanQuery.isEmpty ||
+      final matchesQuery = cleanQuery.isEmpty ||
           m.productName.toLowerCase().contains(cleanQuery) ||
           m.composition.toLowerCase().contains(cleanQuery) ||
-          m.strength.toLowerCase().contains(cleanQuery);
+          (m.manufacturer != null &&
+              m.manufacturer!.toLowerCase().contains(cleanQuery));
 
-      final matchesForm =
-          formFilter == 'All' ||
-          m.form.toLowerCase() == formFilter.toLowerCase();
+      final matchesForm = formFilter == 'All' ||
+          m.productName.toLowerCase().contains(formFilter.toLowerCase());
 
       return matchesQuery && matchesForm;
     }).toList();

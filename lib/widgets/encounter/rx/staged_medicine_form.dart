@@ -202,6 +202,8 @@ class StagedMedicineForm extends StatelessWidget {
                 flex: 2,
                 child: TextField(
                   controller: stagedDosageController,
+                  textInputAction: TextInputAction.next,
+                  onSubmitted: (_) => onConfirmAddStaged(),
                   decoration: const InputDecoration(
                     labelText: 'Dosage',
                     hintText: '1 Tablet / 5 ml',
@@ -307,6 +309,8 @@ class StagedMedicineForm extends StatelessWidget {
                   child: TextField(
                     controller: stagedDurationController,
                     keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => onConfirmAddStaged(),
                     decoration: const InputDecoration(
                       labelText: 'Days',
                       hintText: 'e.g., 21',
@@ -323,6 +327,8 @@ class StagedMedicineForm extends StatelessWidget {
                 flex: currentDurationPreset == 'Custom' ? 4 : 5,
                 child: TextField(
                   controller: stagedInstructionsController,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => onConfirmAddStaged(),
                   decoration: const InputDecoration(
                     labelText: 'Instructions / Notes (Optional)',
                     hintText: 'e.g., Take with warm water...',

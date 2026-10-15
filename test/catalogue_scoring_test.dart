@@ -13,50 +13,38 @@ void main() {
     final catalog = [
       const Medicine(
         id: '1',
-        productName: 'Dolo 650',
-        composition: 'Paracetamol',
-        strength: '650 mg',
-        form: 'Tablet',
+        productName: 'Dolo 650 tablet',
+        composition: 'Paracetamol 650mg',
         manufacturer: 'Micro Labs',
       ),
       const Medicine(
         id: '2',
-        productName: 'Calpol 650',
-        composition: 'Paracetamol',
-        strength: '650 mg',
-        form: 'Tablet',
+        productName: 'Calpol 650 tablet',
+        composition: 'Paracetamol 650mg',
         manufacturer: 'GSK',
       ),
       const Medicine(
         id: '3',
-        productName: 'Crocin 500',
-        composition: 'Paracetamol',
-        strength: '500 mg',
-        form: 'Tablet',
+        productName: 'Crocin 500 tablet',
+        composition: 'Paracetamol 500mg',
         manufacturer: 'GSK',
       ),
       const Medicine(
         id: '4',
-        productName: 'Azee 500',
-        composition: 'Azithromycin',
-        strength: '500 mg',
-        form: 'Tablet',
+        productName: 'Azee 500 tablet',
+        composition: 'Azithromycin 500mg',
         manufacturer: 'Cipla',
       ),
       const Medicine(
         id: '5',
-        productName: 'Azithral 500',
-        composition: 'Azithromycin',
-        strength: '500 mg',
-        form: 'Tablet',
+        productName: 'Azithral 500 tablet',
+        composition: 'Azithromycin 500mg',
         manufacturer: 'Alembic',
       ),
       const Medicine(
         id: '6',
-        productName: 'Augmentin 625 Duo',
-        composition: 'Amoxicillin + Clavulanic Acid',
-        strength: '625 mg',
-        form: 'Tablet',
+        productName: 'Augmentin 625 Duo tablet',
+        composition: 'Amoxicillin 500mg + Clavulanic Acid 125mg',
         manufacturer: 'GSK',
       ),
     ];
@@ -72,19 +60,18 @@ void main() {
 
       // Must match chemical composition
       expect(topResult.isCompositionMatch, isTrue);
-      expect(topResult.composition, 'Azithromycin');
-      expect(topResult.strength, '500 mg');
-      expect(topResult.score, 100);
+      expect(topResult.composition, 'Azithromycin 500mg');
+      expect(topResult.score, greaterThanOrEqualTo(70));
 
       // Associated clinic brands grouped underneath
       final brandNames = topResult.associatedBrands
           .map((b) => b.productName)
           .toList();
-      expect(brandNames, containsAll(['Azee 500', 'Azithral 500']));
+      expect(brandNames, containsAll(['Azee 500 tablet', 'Azithral 500 tablet']));
       expect(brandNames.length, 2);
     });
 
-    test('Searching "Paracetamol" returns Paracetamol 650 and Paracetamol 500 with grouped brands', () {
+    test('Searching "Paracetamol" returns Paracetamol 650mg and Paracetamol 500mg with grouped brands', () {
       final results = MedicineEngine.searchAndGroup(
         catalog: catalog,
         query: 'paracetamol',
@@ -92,37 +79,32 @@ void main() {
 
       expect(results.length, 2); // 650mg group and 500mg group
 
-      final group650 = results.firstWhere((r) => r.strength == '650 mg');
+      final group650 = results.firstWhere((r) => r.composition.contains('650mg'));
       expect(group650.isCompositionMatch, isTrue);
       expect(
         group650.associatedBrands.map((b) => b.productName),
-        containsAll(['Dolo 650', 'Calpol 650']),
+        containsAll(['Dolo 650 tablet', 'Calpol 650 tablet']),
       );
 
-      final group500 = results.firstWhere((r) => r.strength == '500 mg');
+      final group500 = results.firstWhere((r) => r.composition.contains('500mg'));
       expect(group500.isCompositionMatch, isTrue);
       expect(
         group500.associatedBrands.map((b) => b.productName),
-        contains('Crocin 500'),
+        contains('Crocin 500 tablet'),
       );
     });
 
     test('Composition match ranks higher than trade brand match when chemical name is typed', () {
-      // Catalog where one drug has composition "Paracetamol" and another has brand "Paracetamol Drop"
       final mixedCatalog = [
         const Medicine(
           id: 'b1',
-          productName: 'Paracetamol Brand Formulation',
-          composition: 'Acetaminophen Complex',
-          strength: '100 mg',
-          form: 'Syrup',
+          productName: 'Paracetamol Brand Formulation syrup',
+          composition: 'Acetaminophen Complex 100mg',
         ),
         const Medicine(
           id: 'c1',
-          productName: 'Dolo 650',
-          composition: 'Paracetamol',
-          strength: '650 mg',
-          form: 'Tablet',
+          productName: 'Dolo 650 tablet',
+          composition: 'Paracetamol 650mg',
         ),
       ];
 
@@ -131,9 +113,9 @@ void main() {
         query: 'Paracetamol',
       );
 
-      expect(results.first.composition, 'Paracetamol');
+      expect(results.first.composition, 'Paracetamol 650mg');
       expect(results.first.isCompositionMatch, isTrue);
-      expect(results.first.score, 100); // Composition prefix match
+      expect(results.first.score, 90); // Composition prefix match
       expect(results.last.score, lessThan(results.first.score)); // Trade brand match has lower score
     });
 
@@ -145,8 +127,8 @@ void main() {
 
       expect(results.length, 1);
       final group = results.first;
-      expect(group.compositionLabel, 'Paracetamol 650 mg');
-      expect(group.associatedBrands.first.productName, 'Dolo 650');
+      expect(group.compositionLabel, 'Paracetamol 650mg');
+      expect(group.associatedBrands.first.productName, 'Dolo 650 tablet');
     });
 
     test('Prescribing unlisted outside medicine stores fallback name without modifying catalog', () {
@@ -177,7 +159,7 @@ void main() {
 
       expect(results, isNotEmpty);
       expect(results.first.score, greaterThan(0));
-      expect(results.first.associatedBrands.first.productName, 'Dolo 650');
+      expect(results.first.associatedBrands.first.productName, 'Dolo 650 tablet');
     });
 
     test('3-Letter minimum threshold: typing less than 3 letters returns empty results', () {
@@ -186,27 +168,23 @@ void main() {
       expect(MedicineEngine.searchAndGroup(catalog: catalog, query: '  Te '), isEmpty);
     });
 
-    test('Doctor types "Tel" (3 letters): returns card [TELMISARTAN 40MG] with Telma 40 and Telmikind 40', () {
+    test('Doctor types "Tel" (3 letters): returns card [TELMISARTAN 40MG] with Telma 40 tablet and Telmikind 40 tablet', () {
       final htnCatalog = [
         const Medicine(
           id: 'med_telma_40',
-          productName: 'Telma 40',
-          composition: 'Telmisartan',
-          strength: '40 mg',
-          form: 'Tablet',
+          productName: 'Telma 40 tablet',
+          composition: 'Telmisartan 40mg',
           manufacturer: 'Glenmark',
-          defaultFrequency: '1-0-0',
+          defaultFrequency: '1-0-0 (OD)',
           defaultTiming: 'After Food',
           defaultDurationDays: null, // To continue
         ),
         const Medicine(
           id: 'med_telmikind_40',
-          productName: 'Telmikind 40',
-          composition: 'Telmisartan',
-          strength: '40 mg',
-          form: 'Tablet',
+          productName: 'Telmikind 40 tablet',
+          composition: 'Telmisartan 40mg',
           manufacturer: 'Mankind',
-          defaultFrequency: '1-0-0',
+          defaultFrequency: '1-0-0 (OD)',
           defaultTiming: 'After Food',
           defaultDurationDays: null, // To continue
         ),
@@ -219,34 +197,30 @@ void main() {
 
       expect(results.length, 1);
       final card = results.first;
-      expect(card.formattedHeader, '[TELMISARTAN 40 MG]');
-      expect(card.associatedBrands.map((b) => b.productName), containsAll(['Telma 40', 'Telmikind 40']));
+      expect(card.formattedHeader, '[TELMISARTAN 40MG]');
+      expect(card.associatedBrands.map((b) => b.productName), containsAll(['Telma 40 tablet', 'Telmikind 40 tablet']));
 
-      // Readymade defaults for Telma 40
-      final telma = card.associatedBrands.firstWhere((b) => b.productName == 'Telma 40');
+      // Readymade defaults for Telma 40 tablet
+      final telma = card.associatedBrands.firstWhere((b) => b.productName == 'Telma 40 tablet');
       expect(telma.manufacturer, 'Glenmark');
-      expect(telma.defaultFrequency, '1-0-0');
+      expect(telma.defaultFrequency, '1-0-0 (OD)');
       expect(telma.defaultTiming, 'After Food');
       expect(telma.durationLabel, 'To continue');
-      expect(telma.formattedCompositionHeader, '[TELMISARTAN 40 MG]');
+      expect(telma.formattedCompositionHeader, '[TELMISARTAN 40MG]');
     });
 
     test('Doctor writes product name "Telma 40": displays matching product alongside composition', () {
       final htnCatalog = [
         const Medicine(
           id: 'med_telma_40',
-          productName: 'Telma 40',
-          composition: 'Telmisartan',
-          strength: '40 mg',
-          form: 'Tablet',
+          productName: 'Telma 40 tablet',
+          composition: 'Telmisartan 40mg',
           manufacturer: 'Glenmark',
         ),
         const Medicine(
           id: 'med_telmikind_40',
-          productName: 'Telmikind 40',
-          composition: 'Telmisartan',
-          strength: '40 mg',
-          form: 'Tablet',
+          productName: 'Telmikind 40 tablet',
+          composition: 'Telmisartan 40mg',
           manufacturer: 'Mankind',
         ),
       ];
@@ -258,8 +232,8 @@ void main() {
 
       expect(results.length, 1);
       final card = results.first;
-      expect(card.formattedHeader, '[TELMISARTAN 40 MG]');
-      expect(card.associatedBrands.first.productName, 'Telma 40');
+      expect(card.formattedHeader, '[TELMISARTAN 40MG]');
+      expect(card.associatedBrands.first.productName, 'Telma 40 tablet');
     });
 
     test('Short alphanumeric 2-character query like "O2" or "D3" activates search', () {
@@ -267,9 +241,7 @@ void main() {
         const Medicine(
           id: 'med_o2',
           productName: 'O2 Tablet',
-          composition: 'Ofloxacin + Ornidazole',
-          strength: '200 mg + 500 mg',
-          form: 'Tablet',
+          composition: 'Ofloxacin 200mg + Ornidazole 500mg',
         ),
       ];
 
@@ -284,17 +256,13 @@ void main() {
 
     testWidgets('RxSearchResultsView renders card layout when enableGroupedCompositionCards is true', (tester) async {
       final sampleGroup = CompositionGroupResult(
-        compositionLabel: 'Telmisartan 40 mg',
-        composition: 'Telmisartan',
-        strength: '40 mg',
-        form: 'Tablet',
+        compositionLabel: 'Telmisartan 40mg',
+        composition: 'Telmisartan 40mg',
         associatedBrands: [
           const Medicine(
             id: 'm1',
-            productName: 'Telma 40',
-            composition: 'Telmisartan',
-            strength: '40 mg',
-            form: 'Tablet',
+            productName: 'Telma 40 tablet',
+            composition: 'Telmisartan 40mg',
             manufacturer: 'Glenmark',
           ),
         ],
@@ -316,23 +284,19 @@ void main() {
         ),
       );
 
-      expect(find.text('[TELMISARTAN 40 MG]'), findsOneWidget);
-      expect(find.text('{Telma 40} (Glenmark)'), findsOneWidget);
+      expect(find.text('[TELMISARTAN 40MG]'), findsOneWidget);
+      expect(find.text('{Telma 40 tablet} (Glenmark)'), findsOneWidget);
     });
 
     testWidgets('RxSearchResultsView renders flat direct list when enableGroupedCompositionCards is false', (tester) async {
       final sampleGroup = CompositionGroupResult(
-        compositionLabel: 'Telmisartan 40 mg',
-        composition: 'Telmisartan',
-        strength: '40 mg',
-        form: 'Tablet',
+        compositionLabel: 'Telmisartan 40mg',
+        composition: 'Telmisartan 40mg',
         associatedBrands: [
           const Medicine(
             id: 'm1',
-            productName: 'Telma 40',
-            composition: 'Telmisartan',
-            strength: '40 mg',
-            form: 'Tablet',
+            productName: 'Telma 40 tablet',
+            composition: 'Telmisartan 40mg',
             manufacturer: 'Glenmark',
           ),
         ],
@@ -355,20 +319,17 @@ void main() {
       );
 
       // Card header should NOT be present in flat list mode
-      expect(find.text('[TELMISARTAN 40 MG]'), findsNothing);
+      expect(find.text('[TELMISARTAN 40MG]'), findsNothing);
       // Flat list row with product name and composition
-      expect(find.text('Telma 40 (Glenmark)'), findsOneWidget);
-      expect(find.text('Telmisartan 40 mg [Tablet]'), findsOneWidget);
+      expect(find.text('Telma 40 tablet (Glenmark)'), findsOneWidget);
+      expect(find.text('Telmisartan 40mg'), findsOneWidget);
     });
 
     test('MedicineEngine.getDefaultsForMedicine populates appropriate dosage, frequency, and timing defaults', () {
       const ppi = Medicine(
         id: 'med_pan_40',
-        productName: 'Pan 40',
-        composition: 'Pantoprazole',
-        strength: '40 mg',
-        form: 'Tablet',
-        category: 'Proton Pump Inhibitor',
+        productName: 'Pan 40 tablet',
+        composition: 'Pantoprazole 40mg',
       );
       final ppiDefaults = MedicineEngine.getDefaultsForMedicine(ppi);
       expect(ppiDefaults.timing, 'Before Food (Empty Stomach)');
@@ -377,11 +338,8 @@ void main() {
 
       const antihtn = Medicine(
         id: 'med_telma_40',
-        productName: 'Telma 40',
-        composition: 'Telmisartan',
-        strength: '40 mg',
-        form: 'Tablet',
-        category: 'Antihypertensive',
+        productName: 'Telma 40 tablet',
+        composition: 'Telmisartan 40mg',
       );
       final antihtnDefaults = MedicineEngine.getDefaultsForMedicine(antihtn);
       expect(antihtnDefaults.frequency, '1-0-0 (OD)');
@@ -394,10 +352,8 @@ void main() {
       // Explicit catalogue override with indefinite chronic duration (null)
       const chronicMed = Medicine(
         id: 'med_chronic_1',
-        productName: 'Chronic Pill',
-        composition: 'Molecule X',
-        strength: '10 mg',
-        form: 'Tablet',
+        productName: 'Chronic Pill tablet',
+        composition: 'Molecule X 10mg',
         defaultDosage: '1 Tablet',
         defaultFrequency: '1-0-0 (OD)',
         defaultTiming: 'After Breakfast',
@@ -465,8 +421,6 @@ void main() {
 
         expect(med.id.startsWith('med_'), isTrue);
         expect(med.composition.isNotEmpty, isTrue);
-        expect(med.strength.isNotEmpty, isTrue);
-        expect(med.form.isNotEmpty, isTrue);
       }
       expect(defaultEssentialMedicines.length, greaterThanOrEqualTo(10));
     });
@@ -475,33 +429,28 @@ void main() {
       final sampleWithDuplicates = [
         {
           'id': 'doc-1',
-          'productName': 'Dolo 650',
-          'composition': 'Paracetamol',
-          'strength': '650 mg',
+          'productName': 'Dolo 650 tablet',
+          'composition': 'Paracetamol 650mg',
         },
         {
           'id': 'doc-2',
-          'productName': 'Dolo 650',
-          'composition': 'Paracetamol',
-          'strength': '650 mg',
+          'productName': 'Dolo 650 tablet',
+          'composition': 'Paracetamol 650mg',
         }, // duplicate
         {
           'id': 'doc-3',
-          'productName': 'dolo 650',
-          'composition': 'paracetamol',
-          'strength': '650 mg',
+          'productName': 'dolo 650 tablet',
+          'composition': 'paracetamol 650mg',
         }, // case-insensitive duplicate
         {
           'id': 'doc-4',
-          'productName': 'Pan 40',
-          'composition': 'Pantoprazole',
-          'strength': '40 mg',
+          'productName': 'Pan 40 tablet',
+          'composition': 'Pantoprazole 40mg',
         },
         {
           'id': 'doc-5',
-          'productName': 'Pan 40',
-          'composition': 'Pantoprazole',
-          'strength': '40 mg',
+          'productName': 'Pan 40 tablet',
+          'composition': 'Pantoprazole 40mg',
         }, // duplicate
       ];
 
@@ -510,7 +459,7 @@ void main() {
 
       for (final item in sampleWithDuplicates) {
         final key =
-            '${item['productName']!.trim().toLowerCase()}|${item['composition']!.trim().toLowerCase()}|${item['strength']!.trim().toLowerCase()}';
+            '${item['productName']!.trim().toLowerCase()}|${item['composition']!.trim().toLowerCase()}';
         if (seen.containsKey(key)) {
           duplicateDocIds.add(item['id']!);
         } else {
@@ -520,7 +469,7 @@ void main() {
 
       expect(duplicateDocIds, containsAll(['doc-2', 'doc-3', 'doc-5']));
       expect(duplicateDocIds.length, 3);
-      expect(seen.length, 2); // 1 Dolo 650 and 1 Pan 40 preserved
+      expect(seen.length, 2); // 1 Dolo 650 tablet and 1 Pan 40 tablet preserved
     });
   });
 

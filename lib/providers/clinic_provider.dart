@@ -710,10 +710,11 @@ class ClinicProvider with ChangeNotifier {
   Future<void> addMedicine({
     required String productName,
     required String composition,
-    required String strength,
-    required String form,
     String? manufacturer,
-    String? category,
+    String? defaultDosage,
+    String? defaultFrequency,
+    String? defaultTiming,
+    int? defaultDurationDays,
     UserRole? requestingRole,
   }) async {
     if (requestingRole != null && !requestingRole.isOwner) {
@@ -727,10 +728,11 @@ class ClinicProvider with ChangeNotifier {
         id: _uuid.v4(),
         productName: productName,
         composition: composition,
-        strength: strength,
-        form: form,
         manufacturer: manufacturer,
-        category: category,
+        defaultDosage: defaultDosage,
+        defaultFrequency: defaultFrequency,
+        defaultTiming: defaultTiming,
+        defaultDurationDays: defaultDurationDays,
       );
       await _catalogueService.addMedicine(med);
     } finally {

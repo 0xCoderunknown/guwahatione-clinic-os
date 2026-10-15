@@ -177,11 +177,11 @@
   "id": "uuid",
   "action": "START | CONTINUE | STOP",
   "medicineId": "med_dolo_650",
-  "medicineName": "Dolo 650",
-  "composition": "Paracetamol",
-  "strength": "650 mg",
-  "form": "Tablet",
+  "medicineName": "Dolo 650 tablet",
+  "composition": "Paracetamol 650mg",
   "manufacturer": "Micro Labs Ltd",
+  "strength": "650 mg",        // legacy / snapshot optional
+  "form": "Tablet",           // legacy / snapshot optional
   "dosage": "1 Tablet",
   "frequency": "1-0-1",
   "timing": "After Food",
@@ -216,17 +216,15 @@
 ## 💊 6. `medicines` Collection (Formulary Catalogue)
 
 - **Document ID:** Canonical deterministic slug (e.g. `med_dolo_650`) or UUID.
+- **Architectural Simplification (Zero Backward-Compatibility Debt):** Dosage form is integral to `productName` (e.g. `"Telma 40 tablet"`), and molecule strength is integral to `composition` (e.g. `"Telmisartan 40mg"`). Redundant separate `strength`, `form`, and `category` fields are retired.
 
 ### Fields
 | Field | Type | Description |
 |---|---|---|
 | `id` | `String` | Deterministic or unique ID. |
-| `productName` | `String` | Commercial brand name (e.g. `"Dolo 650"`, `"Pan 40"`). |
-| `composition` | `String` | Chemical generic active ingredient (e.g. `"Paracetamol"`). |
-| `strength` | `String` | Strength with units (e.g. `"650 mg"`). |
-| `form` | `String` | Dosage form (`"Tablet"`, `"Syrup"`, `"Capsule"`, `"Ointment"`, etc.). |
-| `manufacturer` | `String?` | Pharmaceutical manufacturer (e.g. `"Micro Labs"`). |
-| `category` | `String?` | Therapeutic class (e.g. `"Analgesic / Antipyretic"`). |
+| `productName` | `String` | Commercial brand name with form (e.g. `"Telma 40 tablet"`, `"Dolo 650 tablet"`, `"Ascoril D Plus syrup"`). |
+| `composition` | `String` | Generic chemical active ingredient with strength (e.g. `"Telmisartan 40mg"`, `"Paracetamol 650mg"`). |
+| `manufacturer` | `String?` | Pharmaceutical manufacturer (e.g. `"Glenmark"`, `"Micro Labs"`, `"GSK"`). |
 | `defaultDosage` | `String?` | Clinical default dosage (e.g. `"1 Tablet"`, `"5 ml"`). |
 | `defaultFrequency` | `String?` | Clinical default regimen (e.g. `"1-0-0 (OD)"`, `"1-0-1 (BD)"`). |
 | `defaultTiming` | `String?` | Clinical default timing (e.g. `"Before Food"`, `"After Food"`). |

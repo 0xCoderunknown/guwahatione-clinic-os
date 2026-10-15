@@ -6,13 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Prescription Snapshot & Catalogue Immunity Tests', () {
-    test('PrescriptionItem snapshots name, composition, strength, form, and manufacturer at prescribing time', () {
-      final catalogueMedicine = Medicine(
+    test('PrescriptionItem snapshots name, composition, and manufacturer at prescribing time', () {
+      const catalogueMedicine = Medicine(
         id: 'med_dolo_650',
-        productName: 'Dolo 650',
-        composition: 'Paracetamol',
-        strength: '650 mg',
-        form: 'Tablet',
+        productName: 'Dolo 650 tablet',
+        composition: 'Paracetamol 650mg',
         manufacturer: 'Micro Labs Ltd',
       );
 
@@ -23,8 +21,6 @@ void main() {
         medicineId: catalogueMedicine.id,
         medicineName: catalogueMedicine.productName,
         composition: catalogueMedicine.composition,
-        strength: catalogueMedicine.strength,
-        form: catalogueMedicine.form,
         manufacturer: catalogueMedicine.manufacturer,
         dosage: '1 Tablet',
         frequency: '1-0-1',
@@ -34,25 +30,19 @@ void main() {
       );
 
       // Verify fields exist on item
-      expect(item.medicineName, 'Dolo 650');
-      expect(item.composition, 'Paracetamol');
-      expect(item.strength, '650 mg');
-      expect(item.form, 'Tablet');
+      expect(item.medicineName, 'Dolo 650 tablet');
+      expect(item.composition, 'Paracetamol 650mg');
       expect(item.manufacturer, 'Micro Labs Ltd');
 
       // Serialization round-trip preserves all snapshot fields
       final json = item.toJson();
-      expect(json['medicineName'], 'Dolo 650');
-      expect(json['composition'], 'Paracetamol');
-      expect(json['strength'], '650 mg');
-      expect(json['form'], 'Tablet');
+      expect(json['medicineName'], 'Dolo 650 tablet');
+      expect(json['composition'], 'Paracetamol 650mg');
       expect(json['manufacturer'], 'Micro Labs Ltd');
 
       final fromJson = PrescriptionItem.fromJson(json);
-      expect(fromJson.medicineName, 'Dolo 650');
-      expect(fromJson.composition, 'Paracetamol');
-      expect(fromJson.strength, '650 mg');
-      expect(fromJson.form, 'Tablet');
+      expect(fromJson.medicineName, 'Dolo 650 tablet');
+      expect(fromJson.composition, 'Paracetamol 650mg');
       expect(fromJson.manufacturer, 'Micro Labs Ltd');
     });
 
@@ -61,10 +51,8 @@ void main() {
       final catalogue = <String, Medicine>{
         'med_azith_500': const Medicine(
           id: 'med_azith_500',
-          productName: 'Azithral 500',
-          composition: 'Azithromycin',
-          strength: '500 mg',
-          form: 'Tablet',
+          productName: 'Azithral 500 tablet',
+          composition: 'Azithromycin 500mg',
           manufacturer: 'Alembic Pharmaceuticals',
         ),
       };
@@ -90,8 +78,6 @@ void main() {
             medicineId: originalDrug.id,
             medicineName: originalDrug.productName,
             composition: originalDrug.composition,
-            strength: originalDrug.strength,
-            form: originalDrug.form,
             manufacturer: originalDrug.manufacturer,
             dosage: '1 Tablet',
             frequency: '1-0-0 (OD)',
@@ -108,10 +94,8 @@ void main() {
       // 3. Catalogue mutation: Edit the drug
       catalogue['med_azith_500'] = const Medicine(
         id: 'med_azith_500',
-        productName: 'Azithral Super 1000',
-        composition: 'Azithromycin Double Strength',
-        strength: '1000 mg',
-        form: 'Capsule',
+        productName: 'Azithral Super 1000 capsule',
+        composition: 'Azithromycin 1000mg',
         manufacturer: 'New Chemical Corp',
       );
 
@@ -124,10 +108,8 @@ void main() {
       final rxItem = reopenedConsultation.prescriptionItems.first;
 
       // Assert: Snapshot in consultation is 100% immune to catalogue purge
-      expect(rxItem.medicineName, equals('Azithral 500'));
-      expect(rxItem.composition, equals('Azithromycin'));
-      expect(rxItem.strength, equals('500 mg'));
-      expect(rxItem.form, equals('Tablet'));
+      expect(rxItem.medicineName, equals('Azithral 500 tablet'));
+      expect(rxItem.composition, equals('Azithromycin 500mg'));
       expect(rxItem.manufacturer, equals('Alembic Pharmaceuticals'));
 
       // 6. Verify WhatsApp text summary uses snapshot data
@@ -135,7 +117,7 @@ void main() {
         consultation: reopenedConsultation,
         queueNumber: 1,
       );
-      expect(waSummary, contains('Azithral 500'));
+      expect(waSummary, contains('Azithral 500 tablet'));
       expect(waSummary, isNot(contains('Azithral Super 1000')));
 
       // 7. Verify printout renders the original snapshotted medicine
@@ -150,8 +132,8 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('Azithral 500'), findsOneWidget);
-      expect(find.textContaining('Azithromycin'), findsOneWidget);
+      expect(find.textContaining('Azithral 500 tablet'), findsOneWidget);
+      expect(find.textContaining('Azithromycin 500mg'), findsOneWidget);
       expect(find.textContaining('Azithral Super 1000'), findsNothing);
       expect(find.textContaining('New Chemical Corp'), findsNothing);
     });

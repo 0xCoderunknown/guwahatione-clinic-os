@@ -34,6 +34,7 @@ class EncounterFormState {
   // Step 4: Staged Medicine & Prescribing State
   String searchMode = 'both';
   final TextEditingController medSearchController = TextEditingController();
+  final FocusNode medSearchFocusNode = FocusNode();
   bool isSearchActive = false;
 
   Medicine? stagedMedicine;
@@ -156,8 +157,6 @@ class EncounterFormState {
       id: 'gen_${uuidGenerator()}',
       productName: group.compositionLabel,
       composition: group.composition,
-      strength: group.strength,
-      form: group.form,
     );
     final defaults = MedicineEngine.getDefaultsForMedicine(dummy);
     stagedMedicine = null;
@@ -229,8 +228,6 @@ class EncounterFormState {
       medicineId: medId,
       medicineName: name,
       composition: comp,
-      strength: stagedMedicine?.strength,
-      form: stagedMedicine?.form,
       manufacturer: stagedMedicine?.manufacturer,
       dosage: stagedDosageController.text.trim().isNotEmpty
           ? stagedDosageController.text.trim()
@@ -248,6 +245,7 @@ class EncounterFormState {
     cancelStaging();
     medSearchController.clear();
     isSearchActive = false;
+    medSearchFocusNode.requestFocus();
   }
 
   /// Evaluates and applies a clinical prescription template bundle.
@@ -396,6 +394,7 @@ class EncounterFormState {
     diagnosisInputController.dispose();
     examController.dispose();
     medSearchController.dispose();
+    medSearchFocusNode.dispose();
     stagedDosageController.dispose();
     stagedDurationController.dispose();
     stagedInstructionsController.dispose();

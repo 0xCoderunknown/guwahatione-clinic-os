@@ -122,6 +122,7 @@ class RxReconciliationSection extends StatelessWidget {
                 const SizedBox(height: 6),
                 TextField(
                   controller: form.medSearchController,
+                  focusNode: form.medSearchFocusNode,
                   decoration: InputDecoration(
                     hintText:
                         'Type medicine name or composition (min 3 letters, e.g., Tel, Dolo, Pan)...',

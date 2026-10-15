@@ -6,12 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('MedicineEngine - Clinical Defaults Regimen Tests', () {
     test('Explicit default fields on Medicine take precedence', () {
-      final customMed = Medicine(
+      const customMed = Medicine(
         id: 'custom_1',
-        productName: 'CustomDrug',
-        composition: 'CustomMolecule',
-        strength: '10mg',
-        form: 'Tablet',
+        productName: 'CustomDrug tablet',
+        composition: 'CustomMolecule 10mg',
         defaultDosage: '2 Tablets',
         defaultFrequency: '1-1-1 (TDS)',
         defaultTiming: 'With Milk',
@@ -26,12 +24,10 @@ void main() {
     });
 
     test('PPIs auto-resolve to Empty Stomach / Fasting and OD', () {
-      final panto = Medicine(
+      const panto = Medicine(
         id: 'panto_40',
-        productName: 'Pan 40',
-        composition: 'Pantoprazole',
-        strength: '40 mg',
-        form: 'Tablet',
+        productName: 'Pan 40 tablet',
+        composition: 'Pantoprazole 40mg',
       );
 
       final defaults = MedicineEngine.getDefaultsForMedicine(panto);
@@ -45,12 +41,10 @@ void main() {
     test(
       'Antihypertensives auto-resolve to Morning After Food and 30 Days',
       () {
-        final telma = Medicine(
+        const telma = Medicine(
           id: 'telma_40',
-          productName: 'Telma 40',
-          composition: 'Telmisartan',
-          strength: '40 mg',
-          form: 'Tablet',
+          productName: 'Telma 40 tablet',
+          composition: 'Telmisartan 40mg',
         );
 
         final defaults = MedicineEngine.getDefaultsForMedicine(telma);
@@ -62,12 +56,10 @@ void main() {
     );
 
     test('Statins auto-resolve to Bedtime / HS and After Dinner', () {
-      final atorva = Medicine(
+      const atorva = Medicine(
         id: 'atorva_10',
-        productName: 'Atorva 10',
-        composition: 'Atorvastatin',
-        strength: '10 mg',
-        form: 'Tablet',
+        productName: 'Atorva 10 tablet',
+        composition: 'Atorvastatin 10mg',
       );
 
       final defaults = MedicineEngine.getDefaultsForMedicine(atorva);
@@ -77,24 +69,20 @@ void main() {
     });
 
     test('Antibiotics auto-resolve to complete course (Azithromycin 3d, others 5d)', () {
-      final azithro = Medicine(
+      const azithro = Medicine(
         id: 'azithro_500',
-        productName: 'Azithral 500',
-        composition: 'Azithromycin',
-        strength: '500 mg',
-        form: 'Tablet',
+        productName: 'Azithral 500 tablet',
+        composition: 'Azithromycin 500mg',
       );
 
       final azithroDefaults = MedicineEngine.getDefaultsForMedicine(azithro);
       expect(azithroDefaults.frequency, '1-0-0 (OD)');
       expect(azithroDefaults.durationDays, 3);
 
-      final amox = Medicine(
+      const amox = Medicine(
         id: 'mox_500',
-        productName: 'Augmentin 625',
-        composition: 'Amoxicillin + Clavulanic Acid',
-        strength: '625 mg',
-        form: 'Tablet',
+        productName: 'Augmentin 625 Duo tablet',
+        composition: 'Amoxicillin 500mg + Clavulanic Acid 125mg',
       );
 
       final amoxDefaults = MedicineEngine.getDefaultsForMedicine(amox);
@@ -104,12 +92,10 @@ void main() {
     });
 
     test('Analgesics auto-resolve to SOS and 3 Days', () {
-      final dolo = Medicine(
+      const dolo = Medicine(
         id: 'dolo_650',
-        productName: 'Dolo 650',
-        composition: 'Paracetamol',
-        strength: '650 mg',
-        form: 'Tablet',
+        productName: 'Dolo 650 tablet',
+        composition: 'Paracetamol 650mg',
       );
 
       final defaults = MedicineEngine.getDefaultsForMedicine(dolo);
@@ -119,30 +105,24 @@ void main() {
     });
 
     test('Form dosages adjust for Syrup, Inhaler, Gel, Drops', () {
-      final syrup = Medicine(
+      const syrup = Medicine(
         id: 'syrup_1',
         productName: 'Cough Syrup',
-        composition: 'Dextromethorphan',
-        strength: '10 mg/5ml',
-        form: 'Syrup',
+        composition: 'Dextromethorphan 10mg/5ml',
       );
       expect(MedicineEngine.getDefaultsForMedicine(syrup).dosage, '5 ml');
 
-      final drops = Medicine(
+      const drops = Medicine(
         id: 'drop_1',
         productName: 'Eye Drop',
-        composition: 'Carboxymethylcellulose',
-        strength: '0.5%',
-        form: 'Eye Drop',
+        composition: 'Carboxymethylcellulose 0.5%',
       );
       expect(MedicineEngine.getDefaultsForMedicine(drops).dosage, '2 Drops');
 
-      final gel = Medicine(
+      const gel = Medicine(
         id: 'gel_1',
         productName: 'Pain Gel',
-        composition: 'Diclofenac',
-        strength: '1%',
-        form: 'Ointment',
+        composition: 'Diclofenac 1%',
       );
       expect(
         MedicineEngine.getDefaultsForMedicine(gel).dosage,
@@ -156,7 +136,7 @@ void main() {
       'segregatePrescriptions correctly partitions active vs stopped items',
       () {
         final items = [
-          PrescriptionItem(
+          const PrescriptionItem(
             id: '1',
             action: MedicationAction.start,
             medicineName: 'Med A',
@@ -165,7 +145,7 @@ void main() {
             frequency: '1-0-1',
             timing: 'After Food',
           ),
-          PrescriptionItem(
+          const PrescriptionItem(
             id: '2',
             action: MedicationAction.continueAction,
             medicineName: 'Med B',
@@ -174,7 +154,7 @@ void main() {
             frequency: '1-0-0',
             timing: 'After Food',
           ),
-          PrescriptionItem(
+          const PrescriptionItem(
             id: '3',
             action: MedicationAction.stop,
             medicineName: 'Med C',
@@ -201,34 +181,26 @@ void main() {
   group(
     'MedicineEngine - Catalogue Filter and Unique Molecule Count Tests',
     () {
-      final catalog = [
+      const catalog = [
         Medicine(
           id: '1',
-          productName: 'Dolo 650',
-          composition: 'Paracetamol',
-          strength: '650 mg',
-          form: 'Tablet',
+          productName: 'Dolo 650 tablet',
+          composition: 'Paracetamol 650mg',
         ),
         Medicine(
           id: '2',
-          productName: 'Calpol 650',
-          composition: 'Paracetamol',
-          strength: '650 mg',
-          form: 'Tablet',
+          productName: 'Calpol 650 tablet',
+          composition: 'Paracetamol 650mg',
         ),
         Medicine(
           id: '3',
-          productName: 'Pan 40',
-          composition: 'Pantoprazole',
-          strength: '40 mg',
-          form: 'Tablet',
+          productName: 'Pan 40 tablet',
+          composition: 'Pantoprazole 40mg',
         ),
         Medicine(
           id: '4',
           productName: 'Mucolite Syrup',
-          composition: 'Ambroxol',
-          strength: '30 mg/5ml',
-          form: 'Syrup',
+          composition: 'Ambroxol 30mg/5ml',
         ),
       ];
 
@@ -236,7 +208,7 @@ void main() {
         expect(
           MedicineEngine.countUniqueMolecules(catalog),
           3,
-        ); // Paracetamol, Pantoprazole, Ambroxol
+        ); // Paracetamol 650mg, Pantoprazole 40mg, Ambroxol 30mg/5ml
       });
 
       test('filterAndSortCatalogue filters by text query and dosage form', () {

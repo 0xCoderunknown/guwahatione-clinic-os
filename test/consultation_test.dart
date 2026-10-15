@@ -73,28 +73,23 @@ void main() {
   });
 
   group('Medicine Master Catalogue Tests', () {
-    test('Decouples product name from chemical composition and strength', () {
+    test('Streamlined product name with form and composition with strength', () {
       const med = Medicine(
         id: 'med-dolo',
-        productName: 'Dolo 650',
-        composition: 'Paracetamol',
-        strength: '650 mg',
-        form: 'Tablet',
+        productName: 'Dolo 650 tablet',
+        composition: 'Paracetamol 650mg',
         manufacturer: 'Micro Labs',
-        category: 'Antipyretic',
       );
 
-      expect(med.fullCompositionLabel, 'Paracetamol 650 mg');
-      expect(med.displayName, 'Dolo 650 (Paracetamol 650 mg) [Tablet]');
+      expect(med.fullCompositionLabel, 'Paracetamol 650mg');
+      expect(med.displayName, 'Dolo 650 tablet (Paracetamol 650mg) [Micro Labs]');
 
       final json = med.toJson();
       final fromJson = Medicine.fromJson(json);
 
       expect(fromJson.id, 'med-dolo');
-      expect(fromJson.productName, 'Dolo 650');
-      expect(fromJson.composition, 'Paracetamol');
-      expect(fromJson.strength, '650 mg');
-      expect(fromJson.form, 'Tablet');
+      expect(fromJson.productName, 'Dolo 650 tablet');
+      expect(fromJson.composition, 'Paracetamol 650mg');
       expect(fromJson.manufacturer, 'Micro Labs');
     });
   });

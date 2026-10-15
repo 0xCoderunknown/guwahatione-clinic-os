@@ -8,6 +8,21 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.36.0] — 15-10-2026
+
+### Streamlined Medicine Schema (Form in Name, Strength in Composition), Catalogue Regimen Defaults & 1-Key "Verify & Next" Prescribing Loop
+- **Operational & Engineering Impact:**
+  - **Streamlined Medicine Data Model:** Per PM mandate, eliminated redundant separate `form`, `strength`, and `category` fields across `Medicine`, `PrescriptionItem`, and Firestore contracts. Commercial brand name and dosage form are unified in `productName` (e.g. `Telma 40 tablet`, `Dolo 650 tablet`, `Ascoril D Plus syrup`), chemical active ingredient and molecule strength in `composition` (e.g. `Telmisartan 40mg`, `Paracetamol 650mg`), and pharma company in `manufacturer` (e.g. `Glenmark`, `Micro Labs`, `GSK`). Zero backward-compatibility debt or shims introduced (Invariant #10).
+  - **Formulary Regimen Defaults:** Added `defaultDosage`, `defaultFrequency`, `defaultTiming`, and `defaultDurationDays` to `ClinicProvider.addMedicine`, `Medicine` model, and `AddMedicineDialog`. Custom clinic medicines now store readymade directions for instant 1-click chamber selection.
+  - **1-Key (Enter) "Verify & Next" Prescribing Loop:** In `StagedMedicineForm`, hitting Enter on any regimen field commits the drug to the prescription. `EncounterFormState.medSearchFocusNode` immediately reclaims focus on the medicine search box and resets the query, allowing the physician to type the next medication without ever touching the mouse.
+  - **Composition-First Search Scorer:** Updated `MedicineEngine.searchAndGroup` match scoring hierarchy so chemical molecule matches (100 exact, 90 prefix, 70 contains) strictly outrank trade brand matches (95 exact, 80 prefix, 60 contains).
+  - **Passive Allergy Chip Retained:** Documented and confirmed PM rejection of automated allergy collision checking; allergies remain a passive, high-visibility free-text chip in Step 1 of the encounter.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 227 unit and widget tests passing green.
+
+---
+
 ## [1.35.2] — 15-10-2026
 
 ### Dynamic Doctor Review Window in WhatsApp Prescriptions & FHD Monitor (1800px) Expansion

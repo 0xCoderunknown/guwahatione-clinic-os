@@ -146,25 +146,6 @@ class RxSearchResultsView extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.teal.shade200),
-                    ),
-                    child: Text(
-                      group.form,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal.shade800,
-                      ),
-                    ),
-                  ),
                   if (onStageGeneric != null) ...[
                     const SizedBox(width: 6),
                     InkWell(
@@ -303,7 +284,7 @@ class RxSearchResultsView extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      "${brand.fullCompositionLabel} [${brand.form}]",
+                      brand.composition,
                       style: TextStyle(
                         fontSize: 11,
                         color: Colors.blueGrey.shade700,

@@ -30,7 +30,7 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 | **Special Focus: Prescribing IntelliSense** | 5 | - | - | 2 Remaining Gaps (Search Shipped `v1.35.0`) | 🔴 Urgent Clinical UX |
 | **Special Focus: Household / Paediatric Identity** | 4 | 4 | 0 | ✅ **Shipped `v1.34.0`** (Moved to Roadmap) | 🟢 Resolved |
 | **Special Focus: Prescription Snapshot & Immunity** | 3 | 3 | 0 | ✅ **Shipped `v1.34.1`** (Moved to Roadmap) | 🟢 Resolved |
-| **Batch 1: Engines (`core/engines/`)** | 5 | 5 | 0 | 1 Gap | 🔴 High |
+| **Batch 1: Engines (`core/engines/`)** | 5 | 5 | 0 | 1 Gap | 🟡 Medium |
 | **Batch 1: Data Models (`models/`)** | 12 | 8 | 3 | 2 Gaps | 🟡 Medium |
 | **Batch 2: Services (`services/`)** | 9 | 6 | 2 | 2 Gaps | 🟡 Medium |
 | **Batch 2: Providers (`providers/`)** | 2 | 1 | 0 | 2 Gaps | 🔴 High |
@@ -48,17 +48,21 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 
 > **Product Invariant & Context:** In an active Indian OPD shift (30–60 patients in 3–4 hours), doctors spend 30–60 seconds per prescription. Over 80% of routine prescriptions follow textbook pharmacological regimens (e.g. Telma 40 -> OD morning after breakfast for 30 days chronic; Pan 40 -> OD morning empty stomach for 14 days; Augmentin 625 -> BD after food for 5 days).  
 > **Shipped in `v1.35.0`:** Unified dual-column Brand + Molecule search in `MedicineEngine.searchAndGroup`, grouped composition cards UI, 3-char trigger with 2-char pharmacology allowance (`D3`, `O2`), auto-populated defaults, and standardized duration dropdown (see [`PRODUCT_ROADMAP.md §2`](PRODUCT_ROADMAP.md)).  
-> **Remaining Core Gaps:** The app ships with only ~30 seeded default medicines. Adding a medicine via `AddMedicineDialog` completely omits default dosage, frequency, timing, and duration fields (even though the `Medicine` model has them!). Furthermore, `ClinicProvider.addMedicine()` drops default dosage parameters entirely.
+> **Domain Model Simplification:** Form is integral to `productName` (e.g. `Telma 40 tablet`), and strength is integral to `composition` (e.g. `Telmisartan 40mg`). Redundant separate `strength`, `form`, and `category` fields are retired from `Medicine`, eliminating artificial data-entry barriers and double-concatenation errors.  
+> **Remaining Core Gaps:** Adding a medicine via `AddMedicineDialog` completely omits default dosage, frequency, timing, and duration fields (even though the `Medicine` model has them!). Furthermore, `ClinicProvider.addMedicine()` drops default dosage parameters entirely.
 
 ### Remaining Architectural Breakdown & Action Items:
-1. **Master Formulary Expansion (~80–100 Standard OPD Medicines):**
-   - Expand `defaultEssentialMedicines` in `lib/utils/default_medicines.dart` from ~30 to 80–100 standard Indian OPD drugs across primary therapeutic classes (Cardio/HTN, Diabetes, GI/PPIs, Antibiotics, Antihistamines/Respiratory, Analgesics/NSAIDs, Thyroid, Statins, Neuro/Psych) with **explicit, soft-coded defaults** on each `Medicine` record.
+1. **Model & Dialog Simplification (Zero Strength/Form Redundancy):**
+   - Streamline `Medicine` down to `productName` (with form), `composition` (with strength), and optional `manufacturer`.
+   - Update `AddMedicineDialog` to drop separate Strength and Form inputs.
 2. **Regimen Configuration in `AddMedicineDialog`:**
    - Add inputs for Default Dosage, Frequency (`1-0-0`, `1-0-1`, etc.), Timing (`After Food`, `Empty Stomach`), Duration, and Chronic flag in `AddMedicineDialog` (`lib/widgets/catalogue/add_medicine_dialog.dart`).
 3. **Plumb Defaults Through `ClinicProvider.addMedicine`:**
    - Update `ClinicProvider.addMedicine` (`lib/providers/clinic_provider.dart`) to persist default regimen parameters to Firestore.
 4. **Fast Prescribing "Verify & Next" UX:**
    - Support Enter keypress in `StagedMedicineForm` to immediately confirm the staged medicine into the prescription table and refocus the search input for the next drug.
+5. **Master Formulary Expansion (~80–100 Standard OPD Medicines):**
+   - Expand `defaultEssentialMedicines` in `lib/utils/default_medicines.dart` with streamlined `productName`, `composition`, and `manufacturer`.
 
 ---
 
@@ -128,19 +132,18 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 
 ---
 
-### 5. `medicine_engine.dart` (620 lines)
+### 5. `medicine_engine.dart` (628 lines)
 * **Layer:** Pure Pharmacology Intelligence & Scoring Engine.
-* **Code Health & Invariant Adherence:** 🟡 **Powerful Heuristics / Chained String Matching Risk.**
-  - Outstanding search scoring algorithms (`searchAndGroup`) prioritizing composition vs brand.
+* **Code Health & Invariant Adherence:** 🟢 **Exemplary (Resolved in `v1.36.0`).**
+  - Outstanding dual-column search scoring algorithms (`searchAndGroup`) prioritizing chemical composition vs trade brand.
+  - Streamlined data model: eliminated redundant separate `form`, `strength`, and `category` fields across `Medicine` and `PrescriptionItem`.
+  - Brand and dosage form unified in `productName` (e.g. `Telma 40 tablet`, `Dolo 650 tablet`), chemical molecule and strength unified in `composition` (e.g. `Telmisartan 40mg`, `Paracetamol 650mg`), and pharma company in `manufacturer`.
+  - Rapid 1-key (Enter) "Verify & Next" prescribing loop wired with autofocus on medicine search input.
 * **Micro-File Decision:** Keep standalone.
 * **Feature Completeness Check:**
-  - ⚠️ **High-Risk Fragility:** ~200 lines of sequential `if-else` substring comparisons (`compLower.contains('pantoprazole')`, etc.) for clinical defaults. Adding or reordering drug rules is prone to subtle regressions.
-  - ⚠️ **Missing Clinical Safety Guardrail:** Zero allergy collision checks! Although patient allergies are captured in `Patient`, `MedicineEngine` does not provide an allergy cross-check method (`checkAllergyCollision(allergies, medicine)`).
-  - 💡 **Scope Opportunity:** Allow doctors to persist custom OPD prescription templates in Firestore rather than strictly using the hardcoded default templates.
-* **Refactor Recommendation:**
-  - Add `MedicineEngine.detectAllergyCollisions(allergies, medicine)`.
-  - Refactor `if-else` clinical defaults into a declarative rule list (`List<_ClinicalRegimenRule>`).
-* **Severity:** `🔴 High`
+  - ✅ **Complete:** Robust scoring, OPD defaults, and grouped composition cards.
+  - 🚫 **Rejected Scope (PM Decision):** Automated allergy collision detection is explicitly rejected and out of scope. Allergies remain passive clinical display chips in the header per `PRODUCT_ROADMAP.md` (dumb free-text) to prevent false-positive clinical alerts and algorithmic friction.
+* **Severity:** `🟢 Resolved`
 
 ---
 
@@ -265,7 +268,8 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 | Priority | Component | Issue | Action Item |
 |:---:|:---|:---|:---|
 | 🟢 **Resolved** | `cash_handover_engine.dart` | UPI payments counted in physical cash drawer total. | ✅ **Shipped (`v1.35.1`)**: Segregated physical cash from UPI; drawer discrepancy evaluates physical notes only. |
-| 🔴 **High** | `medicine_engine.dart` | Zero allergy collision checking during prescribing. | Implement `detectAllergyCollisions(patientAllergies, medicine)` and flag warnings in encounter. |
+| 🟡 **Medium** | `medicine_engine.dart` | Fragile ~200-line sequential `if-else` matching for clinical defaults. | Refactor clinical defaults into declarative `List<_ClinicalRegimenRule>`. |
+| 🚫 **Rejected** | `medicine_engine.dart` | Automated allergy collision detection. | Explicitly rejected by PM; allergies remain passive header chips per roadmap to prevent false alerts. |
 | 🟢 **Resolved** | `whatsapp_engine.dart` | Hardcoded "14 days" review policy string. | ✅ **Shipped (`v1.35.2`)**: Dynamically uses doctor-configured `freeReviewDays` (omits if 0 days). |
 | 🟡 **Medium** | `appointment_engine.dart` & `doctor.dart` | Orphaned `Doctor.blockedDates` field. | Enforce doctor leave in `isDateBlocked` and booking duplicate checks. |
 | 🟡 **Medium** | `patient_review_eligibility.dart` | 55-line micro-file satellite. | Consolidate into `appointment_engine.dart`. |
@@ -619,7 +623,7 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 * **`staged_medicine_form.dart` (291 lines):**
   - 🔴 **Prescribing IntelliSense Gap:** Lacks 1-key (Enter/Tab) confirmation shortcut to verify staged medicine and auto-refocus search bar for the next drug.
 * **`rx_reconciliation_section.dart` (280 lines):**
-  - ⚠️ **Missing Safety Guardrail:** Zero patient allergy collision checking against candidate medicine composition.
+  - 🟢 **Clean (Shipped `v1.35.0`):** Fast dual-column search and composition cards integrated cleanly. Passive allergy display maintained in patient header.
 * **`encounter_form_state.dart` (390 lines):** State manager for clinical encounter. 🟢 Clean.
 * **`advice_and_orders_section.dart`, `diagnostic_review_section.dart`, `patient_header_section.dart`, `vitals_and_exam_section.dart`:** Steps 1, 2, 3, 5 presentation. 🟢 Clean.
 * **`reconciliation_item_row.dart`, `rx_search_results_view.dart`, `rx_template_presets_bar.dart`, `encounter_dialogs.dart`:** Cohesive Rx components. 🟢 Clean.
