@@ -12,7 +12,7 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ### Reception Dashboard Cleanups: Streamlined Mobile Header, Clean Fee Presentation & Refined Doctor Status Badges
 - **Operational & Presentation Impact:**
-  - **Eliminated Mobile Booking Redundancy:** Removed duplicate `Walk-In` action button from `DashboardScreen` mobile AppBar. Mobile receptionists now use the single, prominent `FloatingActionButton.extended` in `OwnerShell`.
+  - **Eliminated Mobile Booking Redundancy:** Removed duplicate appointment booking button from `DashboardScreen` mobile AppBar (which redundantly opened `AddAppointmentDialog`). Mobile receptionists now use the single, prominent `FloatingActionButton.extended` in `OwnerShell`. Patient queue check-in and chamber dispatch actions next to patient cards were untouched.
   - **Clean Patient Card Payment Presentation (`Appointment.paymentSummary`):** Replaced cluttered `Fee: ₹500 (Paid (Cash))` with clean, unbracketed presentation:
     - Paid visits: `₹500 Paid`
     - Statutory review: `Free Review`
