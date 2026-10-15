@@ -9,7 +9,9 @@ class CashHandoverDoctorRow {
   final int paidCount;
   final int freeReviewCount;
   final int freeFamilyCount;
-  final int cashCollected;
+  final int cashCollected; // Physical cash in drawer (paidCash + postPay)
+  final int upiCollected; // Digital UPI in bank account (paidUpi)
+  final int totalRevenue; // cashCollected + upiCollected
 
   const CashHandoverDoctorRow({
     required this.doctorId,
@@ -20,7 +22,9 @@ class CashHandoverDoctorRow {
     required this.freeReviewCount,
     required this.freeFamilyCount,
     required this.cashCollected,
-  });
+    this.upiCollected = 0,
+    int? totalRevenue,
+  }) : totalRevenue = totalRevenue ?? (cashCollected + upiCollected);
 }
 
 /// Aggregated end-of-day financial handover summary.
@@ -31,8 +35,13 @@ class CashHandoverSummary {
   final int totalPaidCount;
   final int totalFreeReviewCount;
   final int totalFreeFamilyCount;
-  final int totalRealizedCash;
+  final int totalPhysicalCash; // Physical cash in counter drawer
+  final int totalUpiRevenue; // Bank account UPI collections
+  final int totalRevenue; // totalPhysicalCash + totalUpiRevenue
   final List<CashHandoverDoctorRow> doctorBreakdown;
+
+  /// Expected physical cash in drawer for cash reconciliation
+  int get totalRealizedCash => totalPhysicalCash;
 
   const CashHandoverSummary({
     required this.date,
@@ -41,9 +50,11 @@ class CashHandoverSummary {
     required this.totalPaidCount,
     required this.totalFreeReviewCount,
     required this.totalFreeFamilyCount,
-    required this.totalRealizedCash,
+    required this.totalPhysicalCash,
+    this.totalUpiRevenue = 0,
+    int? totalRevenue,
     required this.doctorBreakdown,
-  });
+  }) : totalRevenue = totalRevenue ?? (totalPhysicalCash + totalUpiRevenue);
 }
 
 /// Pure Dart daily end-of-day financial handover & cash drawer reconciliation engine.
@@ -60,7 +71,8 @@ abstract class CashHandoverEngine {
     int totalPaid = 0;
     int totalFreeReview = 0;
     int totalFreeFamily = 0;
-    int totalCash = 0;
+    int totalPhysicalCash = 0;
+    int totalUpiRevenue = 0;
 
     final Map<String, List<Appointment>> byDoctor = {};
     for (final a in appointments) {
@@ -79,6 +91,7 @@ abstract class CashHandoverEngine {
       int docFreeReview = 0;
       int docFreeFamily = 0;
       int docCash = 0;
+      int docUpi = 0;
 
       for (final a in docAppts) {
         if (a.status == AppointmentStatus.completed) {
@@ -87,13 +100,20 @@ abstract class CashHandoverEngine {
 
           switch (a.paymentType) {
             case PaymentType.paidCash:
-            case PaymentType.paidUpi:
             case PaymentType.postPay:
               if (a.amountCollected > 0) {
                 docPaid++;
                 totalPaid++;
                 docCash += a.amountCollected;
-                totalCash += a.amountCollected;
+                totalPhysicalCash += a.amountCollected;
+              }
+              break;
+            case PaymentType.paidUpi:
+              if (a.amountCollected > 0) {
+                docPaid++;
+                totalPaid++;
+                docUpi += a.amountCollected;
+                totalUpiRevenue += a.amountCollected;
               }
               break;
             case PaymentType.freeReview:
@@ -120,6 +140,8 @@ abstract class CashHandoverEngine {
           freeReviewCount: docFreeReview,
           freeFamilyCount: docFreeFamily,
           cashCollected: docCash,
+          upiCollected: docUpi,
+          totalRevenue: docCash + docUpi,
         ),
       );
     }
@@ -131,7 +153,9 @@ abstract class CashHandoverEngine {
       totalPaidCount: totalPaid,
       totalFreeReviewCount: totalFreeReview,
       totalFreeFamilyCount: totalFreeFamily,
-      totalRealizedCash: totalCash,
+      totalPhysicalCash: totalPhysicalCash,
+      totalUpiRevenue: totalUpiRevenue,
+      totalRevenue: totalPhysicalCash + totalUpiRevenue,
       doctorBreakdown: doctorRows,
     );
   }

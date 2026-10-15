@@ -8,6 +8,20 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.35.1] — 15-10-2026
+
+### Cash Drawer vs. Digital UPI Reconciliation Segregation
+- **Operational & Engineering Impact:**
+  - **Segregated Physical Notes from Bank UPI:** Updated `CashHandoverEngine` to separately calculate `totalPhysicalCash` (physical currency notes collected at the counter via `paidCash` and `postPay`) and `totalUpiRevenue` (digital UPI payments credited directly to clinic bank account).
+  - **Zero False Cash Shortage Alert:** In `DailyCashHandoverDialog`, the cash drawer discrepancy calculation now compares physical denomination counts strictly against `totalPhysicalCash`. Fixed the operational flaw where reception was falsely alerted of a severe cash deficit equal to all UPI transactions.
+  - **4-Metric Financial KPI Strip:** Upgraded dialog header to distinctly display *Physical Cash (Drawer)*, *UPI (Bank)*, *Total Realized Revenue*, and *Completed OPD Patients*.
+  - **Doctor Breakdown Grid with UPI & Total:** Added dedicated *Cash* and *UPI* columns to the doctor breakdown table, providing instant visibility into physical cash handed over vs digital collections.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 226 unit and widget tests passing green.
+
+---
+
 ## [1.35.0] — 15-10-2026
 
 ### Unified 2-Column Medicine Search, Composition Cards & Experiment Flag

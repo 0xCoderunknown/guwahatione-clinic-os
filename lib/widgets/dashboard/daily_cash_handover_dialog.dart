@@ -69,7 +69,7 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
     );
     final discrepancy = CashHandoverEngine.calculateDiscrepancy(
       physicalCounted: physicalTotal,
-      expectedCash: summary.totalRealizedCash,
+      expectedCash: summary.totalPhysicalCash,
     );
 
     return Dialog(
@@ -134,34 +134,45 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // KPI Strip
+                    // KPI Strip (Segregated Cash, UPI & Grand Total)
                     Row(
                       children: [
                         _buildSummaryCard(
-                          title: 'Expected Cash',
+                          title: 'Physical Cash',
                           value: AppFormatters.currency(
-                            summary.totalRealizedCash,
+                            summary.totalPhysicalCash,
                           ),
                           color: const Color(0xFF047857),
                           bgColor: const Color(0xFFECFDF5),
                           icon: Icons.payments_rounded,
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
+                        _buildSummaryCard(
+                          title: 'UPI (Bank)',
+                          value: AppFormatters.currency(
+                            summary.totalUpiRevenue,
+                          ),
+                          color: const Color(0xFF0284C7),
+                          bgColor: const Color(0xFFF0F9FF),
+                          icon: Icons.account_balance_rounded,
+                        ),
+                        const SizedBox(width: 10),
+                        _buildSummaryCard(
+                          title: 'Total Revenue',
+                          value: AppFormatters.currency(
+                            summary.totalRevenue,
+                          ),
+                          color: const Color(0xFF4F46E5),
+                          bgColor: const Color(0xFFEEF2FF),
+                          icon: Icons.account_balance_wallet_rounded,
+                        ),
+                        const SizedBox(width: 10),
                         _buildSummaryCard(
                           title: 'Completed OPD',
                           value: '${summary.totalCompleted} Patients',
                           color: const Color(0xFF0F766E),
                           bgColor: const Color(0xFFF0FDFA),
                           icon: Icons.people_alt_rounded,
-                        ),
-                        const SizedBox(width: 12),
-                        _buildSummaryCard(
-                          title: 'Paid / Free',
-                          value:
-                              '${summary.totalPaidCount} / ${summary.totalFreeReviewCount + summary.totalFreeFamilyCount}',
-                          color: const Color(0xFF6B21A8),
-                          bgColor: const Color(0xFFFAF5FF),
-                          icon: Icons.pie_chart_rounded,
                         ),
                       ],
                     ),
@@ -198,11 +209,11 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                                 ),
                               ),
                               columnWidths: const {
-                                0: FlexColumnWidth(3),
-                                1: FlexColumnWidth(1.2),
+                                0: FlexColumnWidth(2.5),
+                                1: FlexColumnWidth(1.0),
                                 2: FlexColumnWidth(1.5),
                                 3: FlexColumnWidth(1.5),
-                                4: FlexColumnWidth(2),
+                                4: FlexColumnWidth(1.5),
                               },
                               children: [
                                 TableRow(
@@ -212,9 +223,9 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                                   children: [
                                     _buildTh('Doctor'),
                                     _buildTh('OPD'),
-                                    _buildTh('Paid'),
-                                    _buildTh('Free'),
-                                    _buildTh('Cash Collected'),
+                                    _buildTh('Cash'),
+                                    _buildTh('UPI'),
+                                    _buildTh('Total'),
                                   ],
                                 ),
                                 for (final row in summary.doctorBreakdown)
@@ -222,16 +233,24 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                                     children: [
                                       _buildTd(row.doctorName, isBold: true),
                                       _buildTd('${row.completedCount}'),
-                                      _buildTd('${row.paidCount}'),
-                                      _buildTd(
-                                        '${row.freeReviewCount + row.freeFamilyCount}',
-                                      ),
                                       _buildTd(
                                         AppFormatters.currency(
                                           row.cashCollected,
                                         ),
-                                        isBold: true,
                                         color: const Color(0xFF047857),
+                                      ),
+                                      _buildTd(
+                                        AppFormatters.currency(
+                                          row.upiCollected,
+                                        ),
+                                        color: const Color(0xFF0284C7),
+                                      ),
+                                      _buildTd(
+                                        AppFormatters.currency(
+                                          row.totalRevenue,
+                                        ),
+                                        isBold: true,
+                                        color: const Color(0xFF0F172A),
                                       ),
                                     ],
                                   ),

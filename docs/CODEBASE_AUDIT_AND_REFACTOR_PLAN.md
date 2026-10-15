@@ -27,93 +27,54 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 
 | Layer | Files Audited | Clean / Strong | Micro-File Candidates | Half-Baked / Gaps Found | Refactor Priority |
 |---|:---:|:---:|:---:|:---:|:---:|
-| **Special Focus: Prescribing IntelliSense** | 5 | - | - | 4 Core Gaps | 🔴 Urgent Clinical UX |
-| **Special Focus: Household / Paediatric Identity** | 4 | - | - | 3 Critical Gaps | 🔴 Make-or-Break Integrity |
-| **Batch 1: Engines (`core/engines/`)** | 5 | 3 | 0 | 3 Gaps | 🔴 High |
+| **Special Focus: Prescribing IntelliSense** | 5 | - | - | 2 Remaining Gaps (Search Shipped `v1.35.0`) | 🔴 Urgent Clinical UX |
+| **Special Focus: Household / Paediatric Identity** | 4 | 4 | 0 | ✅ **Shipped `v1.34.0`** (Moved to Roadmap) | 🟢 Resolved |
+| **Special Focus: Prescription Snapshot & Immunity** | 3 | 3 | 0 | ✅ **Shipped `v1.34.1`** (Moved to Roadmap) | 🟢 Resolved |
+| **Batch 1: Engines (`core/engines/`)** | 5 | 4 | 0 | 2 Gaps | 🔴 High |
 | **Batch 1: Data Models (`models/`)** | 12 | 8 | 3 | 2 Gaps | 🟡 Medium |
 | **Batch 2: Services (`services/`)** | 9 | 6 | 2 | 2 Gaps | 🟡 Medium |
 | **Batch 2: Providers (`providers/`)** | 2 | 1 | 0 | 2 Gaps | 🔴 High |
 | **Batch 3: Screens (`screens/`)** | 13 | 8 | 0 | 4 Gaps | 🔴 High |
-| **Batch 4: Reusable Widgets (`widgets/`)** | 44 | 38 | 1 | 4 Gaps | 🔴 High |
+| **Batch 4: Reusable Widgets (`widgets/`)** | 44 | 39 | 1 | 3 Gaps | 🔴 High |
 
 > **📌 IMPORTANT NOTE ON PLAN STATUS & EVALUATION TAXONOMY:**  
 > This master document is an **active working blueprint**, not a finalized commitment.  
 > 1. **Broken System / System Bug Fixes (Definite Actions):** Issues that represent broken mechanisms or orphaned code (e.g. cash drawer UPI revenue collision, un-rendered `Doctor.blockedDates`, missing dirty-state guarding, responsive `maxWidth` monitor bottlenecks, micro-file sprawl) are definite engineering fixes.  
-> 2. **Clinical Feature Solutions (Proposals for PM Evaluation):** Feature workflows and domain expansions (such as the specific UI mechanics of *Prescribing IntelliSense* or the exact schema migration for *Household / Paediatric Multi-Patient Identity*) are documented as **architectural possibilities and solution options** for the Product Manager to evaluate, modify, or approve before execution.
+> 2. **Clinical Feature Solutions (Proposals for PM Evaluation):** Feature workflows and domain expansions (such as remaining *Prescribing IntelliSense* formulary defaults or doctor leave calendars) are documented as **architectural possibilities and solution options** for the Product Manager to evaluate, modify, or approve before execution.
 
 ---
 
-## ⚡ CLINICAL INTELLIGENCE SPOTLIGHT: OPD Prescribing IntelliSense & Master Formulary Architecture
+## ⚡ CLINICAL INTELLIGENCE SPOTLIGHT: OPD Prescribing Formulary & Regimen Configuration
 
 > **Product Invariant & Context:** In an active Indian OPD shift (30–60 patients in 3–4 hours), doctors spend 30–60 seconds per prescription. Over 80% of routine prescriptions follow textbook pharmacological regimens (e.g. Telma 40 -> OD morning after breakfast for 30 days chronic; Pan 40 -> OD morning empty stomach for 14 days; Augmentin 625 -> BD after food for 5 days).  
-> **The Problem:** The app currently ships with only ~30 medicines. Adding a medicine via `AddMedicineDialog` completely omits default dosage, frequency, timing, and duration fields (even though the `Medicine` model has them!). Furthermore, `MedicineEngine` uses brittle hardcoded string matching. When a doctor searches and stages a medicine, they have to manually configure or verify multiple fields through repetitive clicks rather than an "IntelliJ IntelliSense" flow (Type -> Search -> Instant Auto-fill -> 1-Key Verify -> Next Drug).
+> **Shipped in `v1.35.0`:** Unified dual-column Brand + Molecule search in `MedicineEngine.searchAndGroup`, grouped composition cards UI, 3-char trigger with 2-char pharmacology allowance (`D3`, `O2`), auto-populated defaults, and standardized duration dropdown (see [`PRODUCT_ROADMAP.md §2`](PRODUCT_ROADMAP.md)).  
+> **Remaining Core Gaps:** The app ships with only ~30 seeded default medicines. Adding a medicine via `AddMedicineDialog` completely omits default dosage, frequency, timing, and duration fields (even though the `Medicine` model has them!). Furthermore, `ClinicProvider.addMedicine()` drops default dosage parameters entirely.
 
-### Architectural Breakdown of Current Deficiencies:
-1. **Model Fields Abandoned in UI & Provider:**
-   - `Medicine` model (`lib/models/medicine.dart`) defines `defaultDosage`, `defaultFrequency`, `defaultTiming`, `defaultDurationDays`.
-   - `AddMedicineDialog` (`lib/widgets/catalogue/add_medicine_dialog.dart`) only has inputs for Brand Name, Composition, Strength, Form, and Manufacturer. It provides **zero inputs** for default regimen.
-   - `ClinicProvider.addMedicine()` drops default dosage parameters entirely.
-2. **Tiny Initial Seed Catalogue Without Defaults:**
-   - `defaultEssentialMedicines` in `lib/utils/default_medicines.dart` contains only ~30 medicines, and **zero** of them have `defaultDosage`, `defaultFrequency`, `defaultTiming`, or `defaultDurationDays` populated!
-   - Result: All default medicines fall back to string matching in `MedicineEngine`, and any non-matching drug defaults to generic "1 Tablet, 1-0-1, 5 days".
-3. **Fragile Keyword Fallbacks:**
-   - `MedicineEngine.getDefaultsForMedicine()` uses 200+ lines of `if-else` string matching on `composition` and `productName`. If a doctor adds a drug like `Thyronorm 50`, `Rifaximin 400`, or `Bilashine 20` that isn't hardcoded, it defaults to wrong regimens (e.g. BD after food instead of OD empty stomach).
-4. **Prescribing UX Friction (Missing 1-Key Verify Loop):**
-   - In `StagedMedicineForm`, after staging a medicine, the doctor must grab the mouse, review, and click "Add to Prescription".
-   - There is no keyboard shortcut (e.g. Enter / Tab) to verify and immediately refocus the search bar for the next medication.
-
-### Prescribing IntelliSense Solution Possibility (Subject to PM Evaluation):
-1. **Master Formulary Expansion:** Expand default seeded catalogue to ~80-100 standard Indian OPD drugs across primary therapeutic classes (Cardio/HTN, Diabetes, GI/PPIs, Antibiotics, Antihistamines/Respiratory, Analgesics/NSAIDs, Thyroid, Statins, Neuro/Psych) with **explicit, soft-coded defaults** on each `Medicine` record.
-2. **Full Regimen Configuration in `AddMedicineDialog`:** Allow clinic owners/doctors to configure default dosage, frequency, timing, duration, and chronic flag when adding any new medicine to the catalogue.
-3. **Plumb Defaults Through `ClinicProvider.addMedicine`:** Ensure all default fields persist to Firestore.
+### Remaining Architectural Breakdown & Action Items:
+1. **Master Formulary Expansion (~80–100 Standard OPD Medicines):**
+   - Expand `defaultEssentialMedicines` in `lib/utils/default_medicines.dart` from ~30 to 80–100 standard Indian OPD drugs across primary therapeutic classes (Cardio/HTN, Diabetes, GI/PPIs, Antibiotics, Antihistamines/Respiratory, Analgesics/NSAIDs, Thyroid, Statins, Neuro/Psych) with **explicit, soft-coded defaults** on each `Medicine` record.
+2. **Regimen Configuration in `AddMedicineDialog`:**
+   - Add inputs for Default Dosage, Frequency (`1-0-0`, `1-0-1`, etc.), Timing (`After Food`, `Empty Stomach`), Duration, and Chronic flag in `AddMedicineDialog` (`lib/widgets/catalogue/add_medicine_dialog.dart`).
+3. **Plumb Defaults Through `ClinicProvider.addMedicine`:**
+   - Update `ClinicProvider.addMedicine` (`lib/providers/clinic_provider.dart`) to persist default regimen parameters to Firestore.
 4. **Fast Prescribing "Verify & Next" UX:**
-   - Doctor types medicine name in encounter -> selects item.
-   - Defaults are instantly pre-populated.
-   - 1-click or Enter key confirms/verifies the staged medicine, adds it to the prescription table, and immediately resets & refocuses the search bar for the next medicine.
-   - Overrides remain 100% accessible via quick-tap frequency/timing chips before confirming.
+   - Support Enter keypress in `StagedMedicineForm` to immediately confirm the staged medicine into the prescription table and refocus the search input for the next drug.
 
 ---
 
-## 👶 CRITICAL CLINICAL SAFETY SPOTLIGHT: Paediatric, Geriatric & Household Multi-Patient Identity Architecture
+## 👶 SHIPPED: Paediatric, Geriatric & Household Multi-Patient Identity Architecture
 
-> **Product Invariant & Context:** In Indian OPD healthcare, a single mobile phone number belongs to a **Family / Household Unit**, not a single individual. Infants, children, and dependent elderly relatives do not own personal mobile phones; their appointments and medical care are managed through a primary family contact (mother, father, son, or daughter).  
-> **The Make-or-Break Problem:** The entire repository currently assumes a strict 1:1 mapping between phone numbers and individual human patients. This causes 3 dangerous clinical and operational breakdowns:
-
-### Breakdown of Current Deficiencies:
-1. **Master Directory Overwrite Collision (Data Erasure):**
-   - `docs/SCHEMA_AND_MODELS.md` and `BookingService.bookAppointment()` hardcode the Firestore document ID as the raw phone number: `patients/{phoneNumber}`.
-   - When a mother (*Sunita Sharma, 32 F*) books an appointment for her 6-month-old infant (*Baby Aarav Sharma*), reception enters `9876543210`. The database writes: `patients/9876543210` -> `name: "Baby Aarav", age: 0`.
-   - When the mother herself visits next week for an adult consultation, reception enters `9876543210`. The database executes `set(..., SetOptions(merge: true))`, overwriting the child's demographic record with `name: "Sunita Sharma", age: 32`. **The child's identity is permanently erased from the master directory.**
-   - The same erasure occurs when an elderly grandparent (*Ramesh Sharma, 72 M*) visits using the family phone.
-2. **Longitudinal Clinical Chart Cross-Contamination (Medical Danger):**
-   - `ConsultationService.getConsultationsForPatient()` and `ConsultationEncounterScreen` query consultations solely by contact phone: `_consultationsRef.where('patientPhone', isEqualTo: phone)`.
-   - When a paediatrician opens *"Longitudinal History"* for the infant, the timeline displays a dangerously mingled record containing the mother's gynaecology/obstetric notes and the grandfather's cardiology prescriptions alongside the infant's paediatric encounters.
-3. **Paediatric Age & Guardian Inadequacy:**
-   - `Patient.age` is strictly typed as an integer (`int age` in whole years).
-   - A 3-month-old infant or 10-day-old newborn is recorded as `age: 0`. In clinical paediatrics, drug dosages are calculated strictly by weight and age in months/days; whole-year integer representation is clinically unacceptable.
-   - There are zero fields for `guardianName` or `guardianRelation` (*"c/o Sunita Sharma (Mother)"*).
-
-### Multi-Patient Solution Possibilities (Subject to PM Evaluation):
-
-#### Architecture Option 1: Decoupled Patient Identity with Household Contact Indexing (Recommended)
-- **Unique Patient Identity:** Decouple `Patient.id` from raw `phoneNumber`. Use a deterministic composite key (e.g. `pat_${phone}_${normalizedName}`) or UUID for each distinct human patient.
-- **Indexed Contact Phone:** Keep `phoneNumber` on `Patient` and `Appointment` as the primary lookup and SMS/WhatsApp notification channel.
-- **Child / Dependent Demographics:**
-  - Add `ageDisplay` or `ageMonths` (e.g. `"4 Months"`, `"18 Days"`, or `"72 Years"`).
-  - Add optional `guardianName` and `guardianRelation` (e.g. `"Sunita Sharma (Mother)"`).
-- **Longitudinal Record Segregation:** Key consultations to `patientId` (or composite `patientPhone + patientName`), ensuring each family member has an isolated, append-only clinical chart.
-
-#### Reception UX Proposal (Family Member Picker in `AddAppointmentDialog`):
-- When Reception types `9876543210`:
-  - The dialog queries all patient profiles sharing this contact phone.
-  - If multiple members exist, it presents quick family selector chips:  
-    `[ 👤 Sunita (34 F) ]  [ 👶 Aarav (6m M) ]  [ 👴 Ramesh (72 M) ]  [ ➕ Add Child / Family Member ]`
-  - Selecting an existing chip instantly auto-fills that specific person's profile, prior visit date, and review eligibility.
-  - Clicking *"Add Child / Family Member"* keeps the same contact phone but opens clean fields to enter the child's name, age in months, and guardian name—without touching or overwriting existing family profiles.
-
-#### Prescription & Letterhead Proposal:
-- The printed prescription and WhatsApp message display:
-  `Patient: Aarav Sharma (6 Months / Male) | c/o Sunita Sharma (Mother) | Contact: 9876543210`
+> **Status:** ✅ **COMPLETED & MOVED TO PRODUCT ROADMAP (`v1.34.0`)**  
+> **Implemented in:** `v1.34.0` (Commit `bc8c2de`)  
+> **Permanent Blueprint:** [`docs/PRODUCT_ROADMAP.md §2`](PRODUCT_ROADMAP.md) | **Decision Record:** [`docs/decisions/001-patient-identity-household-model.md`](decisions/001-patient-identity-household-model.md)  
+> **Core Changes Shipped:**
+> - Decoupled `patientId` from contact phone number; phone numbers now serve as non-unique household contact indices.
+> - Isolated longitudinal clinical records strictly by `patientId` (preventing maternal/paediatric chart cross-contamination).
+> - Added structured paediatric demographics (`ageMonths`, `ageDays`, `formattedAge`) eliminating `"0 Years"` artefacts.
+> - Added guardian and caregiver attribution (`guardianName`, `guardianRelation`, e.g. `"c/o Sunita Sharma (Mother)"`) across appointments, letterhead prints, and WhatsApp summaries.
+> - Added reception household member selector chips (`[👤 Sunita]`, `[👶 Aarav]`, `[➕ Add Member]`) in `AddAppointmentDialog`.
+> - Updated `AppointmentEngine.hasDuplicateAppointment` with family exception logic.  
+> **Automated Verification:** 5 dedicated unit and integration tests in `test/patient_identity_household_test.dart`.
 
 ---
 
@@ -134,17 +95,14 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 
 ---
 
-### 2. `cash_handover_engine.dart` (144 lines)
+### 2. `cash_handover_engine.dart` (185 lines)
 * **Layer:** Pure Financial Handover Engine.
-* **Code Health & Invariant Adherence:** 🟡 **High Logic Clarity / Real-World Financial Flaw.**
+* **Code Health & Invariant Adherence:** 🟢 **Exemplary (Resolved in `v1.35.1`).**
   - Pure calculation loops, denomination counters, and discrepancy math.
+  - Distinctly segregates `totalPhysicalCash` (drawer currency notes) from `totalUpiRevenue` (bank account transfers).
+  - Drawer discrepancy evaluation strictly compares physical denomination counts against physical cash revenue, preventing artificial cash shortages caused by digital payments.
 * **Micro-File Decision:** Keep standalone (Clean, cohesive).
-* **Feature Completeness Check:**
-  - ⚠️ **Real-World Math Bug (Cash vs. UPI Drawer Collision):** Lines 89–97 lump `PaymentType.paidCash` and `PaymentType.paidUpi` together into `totalCash` and `docCash`. In an Indian counter setup, UPI payments land directly in the clinic's bank account; only physical notes sit in the cash drawer. If a receptionist counts physical notes against `totalCash`, an artificial cash shortage is reported equal to all UPI transactions!
-  - 💡 **Scope Opportunity:** Segregate `totalPhysicalCash` vs `totalUpiRevenue` in `CashHandoverSummary`.
-* **Refactor Recommendation:**
-  - Update `CashHandoverSummary` and `CashHandoverDoctorRow` to separately track physical cash and UPI. Drawer denomination balancing must strictly match physical cash.
-* **Severity:** `🔴 High`
+* **Severity:** `🟢 Resolved`
 
 ---
 
@@ -251,10 +209,10 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 
 ---
 
-### 7. `patient.dart` (90 lines)
+### 7. `patient.dart` (140 lines)
 * **Layer:** Patient Master Demographic Model.
-* **Code Health:** 🟢 **Solid.**
-  - Encapsulates phone-key identity, age, gender normalization, and allergies list.
+* **Code Health:** 🟢 **Exemplary (Upgraded in `v1.34.0`).**
+  - Encapsulates decoupled canonical identity (`patientId`), non-unique household phone indexing, structured paediatric age (`ageMonths`, `ageDays`, `formattedAge`), and guardian attribution (`guardianName`, `guardianRelation`).
 * **Severity:** `🟢 Low`
 
 ---
@@ -269,10 +227,11 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 
 ---
 
-### 9. `prescription_item.dart` (131 lines)
+### 9. `prescription_item.dart` (145 lines)
 * **Layer:** Medication Reconciliation Item Model.
-* **Code Health:** 🟢 **Strong Invariant Adherence.**
+* **Code Health:** 🟢 **Strong Invariant Adherence (Upgraded in `v1.34.1`).**
   - Implements `MedicationAction` (`START`, `CONTINUE`, `STOP`) with `stopReason` and chronic flags.
+  - Implements immutable point-in-time clinical snapshot (`name`, `composition`, `strength`, `form`, `manufacturer`) shielding historical consultation records from catalogue mutations or purges.
 * **Severity:** `🟢 Low`
 
 ---
@@ -309,7 +268,7 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 
 | Priority | Component | Issue | Action Item |
 |:---:|:---|:---|:---|
-| 🔴 **High** | `cash_handover_engine.dart` | UPI payments counted in physical cash drawer total. | Segregate physical cash from UPI; drawer discrepancy must only evaluate physical notes. |
+| 🟢 **Resolved** | `cash_handover_engine.dart` | UPI payments counted in physical cash drawer total. | ✅ **Shipped (`v1.35.1`)**: Segregated physical cash from UPI; drawer discrepancy evaluates physical notes only. |
 | 🔴 **High** | `medicine_engine.dart` | Zero allergy collision checking during prescribing. | Implement `detectAllergyCollisions(patientAllergies, medicine)` and flag warnings in encounter. |
 | 🟡 **Medium** | `whatsapp_engine.dart` | Hardcoded "14 days" review policy string. | Use doctor-configured `freeReviewDays` in prescription message template. |
 | 🟡 **Medium** | `appointment_engine.dart` & `doctor.dart` | Orphaned `Doctor.blockedDates` field. | Enforce doctor leave in `isDateBlocked` and booking duplicate checks. |
@@ -692,7 +651,7 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 | 🔴 **High** | `consultation_encounter_screen.dart` | `_switchToIncomingPatient()` discards unsaved form data. | Add dirty-form confirmation modal before switching patients. |
 | 🔴 **High** | `add_medicine_dialog.dart` | Missing default dosage/frequency/timing/duration inputs. | Add input fields for default clinical regimen. |
 | 🔴 **High** | `staged_medicine_form.dart` | Missing 1-key (Enter) "Verify & Next" rapid prescribing loop. | Support Enter keypress to confirm staging and auto-focus next medicine search. |
-| 🔴 **High** | `daily_cash_handover_dialog.dart` | False cash shortage alert due to UPI revenue inclusion. | Compare physical denomination count strictly against cash revenue. |
+| 🟢 **Resolved** | `daily_cash_handover_dialog.dart` | False cash shortage alert due to UPI revenue inclusion. | ✅ **Shipped (`v1.35.1`)**: Physical note counter discrepancy now evaluates strictly against physical cash revenue; UPI and total revenue displayed in dedicated cards & table columns. |
 | 🟡 **Medium** | `patient_directory_screen.dart` | Hardcoded `maxWidth: 1400` violates Invariant #5. | Expand container constraint to `1800px`. |
 | 🟡 **Medium** | `doctor_chamber_screen.dart` & `medicine_catalogue_screen.dart` | Hardcoded `maxWidth: 1100` leaves dead margins on FHD screens. | Expand container constraint to `1800px` or responsive multi-column layout. |
 | 🟡 **Medium** | `add_appointment_dialog.dart` | Does not check `Doctor.blockedDates` for doctor leave. | Enforce doctor leave in booking validation and show warning banner. |

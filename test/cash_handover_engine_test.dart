@@ -144,10 +144,13 @@ void main() {
         date: today,
       );
 
-      // Overall totals
+      // Overall totals (Cash vs UPI Segregation)
       expect(summary.totalAppointments, 6);
       expect(summary.totalCompleted, 5);
-      expect(summary.totalRealizedCash, 1700); // 500 + 600 + 600
+      expect(summary.totalPhysicalCash, 1100); // 500 (doc1) + 600 (doc2 cash)
+      expect(summary.totalUpiRevenue, 600); // 600 (doc2 upi)
+      expect(summary.totalRevenue, 1700); // 1100 cash + 600 upi
+      expect(summary.totalRealizedCash, 1100); // Drawer reconciliation evaluates physical cash
       expect(summary.totalPaidCount, 3);
       expect(summary.totalFreeReviewCount, 1);
       expect(summary.totalFreeFamilyCount, 1);
@@ -163,6 +166,8 @@ void main() {
       expect(doc1.paidCount, 1);
       expect(doc1.freeReviewCount, 1);
       expect(doc1.cashCollected, 500);
+      expect(doc1.upiCollected, 0);
+      expect(doc1.totalRevenue, 500);
 
       final doc2 = summary.doctorBreakdown.firstWhere(
         (d) => d.doctorId == 'doc-2',
@@ -171,7 +176,16 @@ void main() {
       expect(doc2.completedCount, 3);
       expect(doc2.paidCount, 2);
       expect(doc2.freeFamilyCount, 1);
-      expect(doc2.cashCollected, 1200);
+      expect(doc2.cashCollected, 600);
+      expect(doc2.upiCollected, 600);
+      expect(doc2.totalRevenue, 1200);
+
+      // Drawer discrepancy matches physical notes without UPI false deficit
+      final drawerDiscrepancy = CashHandoverEngine.calculateDiscrepancy(
+        physicalCounted: 1100,
+        expectedCash: summary.totalPhysicalCash,
+      );
+      expect(drawerDiscrepancy, 0); // Perfectly balanced drawer
     });
 
     test(
