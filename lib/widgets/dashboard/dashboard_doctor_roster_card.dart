@@ -106,7 +106,6 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       doctorId: doc.id,
                     );
                     final isReady = session?.isReadyForNext ?? false;
-                    final isEnded = session?.isConsultationEnded ?? false;
                     final isCalling = session?.isCalling ?? false;
                     final isInConsultation = session?.isInConsultation ?? false;
 
@@ -121,6 +120,11 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       date: DateTime.now(),
                     );
 
+                    // Doctor has arrived and signaled ready / taken patient today
+                    final hasArrived = session != null &&
+                        (!session.isIdle ||
+                            session.lastCompletedQueueNumber != null);
+
                     if (isOnLeave) {
                       statusBadgeBg = const Color(0xFFFEE2E2);
                       statusBadgeFg = const Color(0xFFDC2626);
@@ -133,18 +137,14 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                           (activePatient != null && activePatient.isNotEmpty)
                               ? 'Consulting: $activePatient'
                               : 'CONSULTING';
-                    } else if (isReady) {
+                    } else if (hasArrived) {
                       statusBadgeBg = const Color(0xFFDCFCE7);
                       statusBadgeFg = const Color(0xFF15803D);
-                      statusLabel = 'READY';
-                    } else if (isEnded) {
-                      statusBadgeBg = const Color(0xFFFEF3C7);
-                      statusBadgeFg = const Color(0xFFB45309);
-                      statusLabel = 'ON BREAK';
+                      statusLabel = 'IN CHAMBER';
                     } else {
                       statusBadgeBg = const Color(0xFFF1F5F9);
-                      statusBadgeFg = const Color(0xFF475569);
-                      statusLabel = 'IN CHAMBER';
+                      statusBadgeFg = const Color(0xFF64748B);
+                      statusLabel = 'NOT ARRIVED';
                     }
 
                     return ListTile(
@@ -166,7 +166,7 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (isReady)
+                          if (hasArrived)
                             Positioned(
                               right: 0,
                               bottom: 0,
@@ -229,10 +229,10 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                           statusSubtitle,
                           style: TextStyle(
                             fontSize: 12.5,
-                            fontWeight: isReady
+                            fontWeight: hasArrived
                                 ? FontWeight.w600
                                 : FontWeight.normal,
-                            color: isReady
+                            color: hasArrived
                                 ? const Color(0xFF15803D)
                                 : Colors.grey.shade700,
                           ),

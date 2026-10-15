@@ -328,7 +328,7 @@ void main() {
       expect(find.text('Token #5'), findsOneWidget);
     });
 
-    testWidgets('Displays IN CHAMBER status and schedule when chamber is empty', (tester) async {
+    testWidgets('Displays NOT ARRIVED status and schedule when chamber has not started yet', (tester) async {
       final fakeSession = ChamberSession.empty('doc-test-1', DateTime.now());
       final authProvider = AuthProvider();
 
@@ -349,11 +349,39 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('IN CHAMBER'), findsOneWidget);
+      expect(find.text('NOT ARRIVED'), findsOneWidget);
       expect(
         find.text('Cardiology • Mon, Wed, Fri • 6:00 PM – 8:30 PM'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('Displays IN CHAMBER status when doctor signals ready for patients', (tester) async {
+      final readySession = ChamberSession(
+        doctorId: 'doc-test-1',
+        date: DateTime.now(),
+        status: 'ready_for_next',
+      );
+      final authProvider = AuthProvider();
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: authProvider),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: DashboardDoctorRosterCard(
+                provider: _FakeClinicProvider(testDoctor, readySession),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('IN CHAMBER'), findsOneWidget);
     });
 
     testWidgets('Displays ABSENT status when doctor is on leave today', (tester) async {
