@@ -120,6 +120,12 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       date: DateTime.now(),
                     );
 
+                    final isScheduledToday =
+                        AppointmentEngine.isDoctorAvailableOnDate(
+                      doctor: doc,
+                      date: DateTime.now(),
+                    );
+
                     // Doctor has arrived and signaled ready / taken patient today
                     final hasArrived = session != null &&
                         (!session.isIdle ||
@@ -141,6 +147,10 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       statusBadgeBg = const Color(0xFFDCFCE7);
                       statusBadgeFg = const Color(0xFF15803D);
                       statusLabel = 'IN CHAMBER';
+                    } else if (!isScheduledToday) {
+                      statusBadgeBg = const Color(0xFFFEF3C7);
+                      statusBadgeFg = const Color(0xFFB45309);
+                      statusLabel = 'NO OPD TODAY';
                     } else {
                       statusBadgeBg = const Color(0xFFF1F5F9);
                       statusBadgeFg = const Color(0xFF64748B);

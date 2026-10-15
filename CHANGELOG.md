@@ -18,14 +18,15 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
     - Statutory review: `Free Review`
     - Discretionary waiver: `Free Waiver`
     - Pending collections: `Post-Pay` or `Unpaid`
-  - **Refined 4-State Doctor Chamber Roster Status Lifecycle:**
+  - **Refined 5-State Doctor Chamber Roster Status Lifecycle:**
     - `[ABSENT]`: Prominently rendered in red (`#FEE2E2` / `#DC2626`) when doctor has planned leave today (`AppointmentEngine.isDoctorOnLeave`).
-    - `[NOT ARRIVED]`: Muted slate badge (`#F1F5F9` / `#64748B`) before the physician starts their chamber or arrives at clinic.
+    - `[NO OPD TODAY]`: Warm amber badge (`#FEF3C7` / `#B45309`) when the doctor does not sit on the current weekday as per their schedule (`!AppointmentEngine.isDoctorAvailableOnDate`).
+    - `[NOT ARRIVED]`: Muted slate badge (`#F1F5F9` / `#64748B`) when scheduled today, before the physician starts their chamber or arrives at clinic.
     - `[IN CHAMBER]`: Green badge (`#DCFCE7` / `#15803D`) once physician hits "Ready for Next / First Patient" and onwards for the day when not attending a patient.
     - `[CONSULTING]` / `[Consulting: Patient Name]`: Kept intact in blue (`#DBEAFE` / `#1D4ED8`) for active chamber encounters.
 - **Verification Gate:**
   - `flutter analyze`: 0 errors, 0 warnings.
-  - `flutter test`: All 238 unit and widget tests passing green.
+  - `flutter test`: All 239 unit and widget tests passing green.
 
 ---
 

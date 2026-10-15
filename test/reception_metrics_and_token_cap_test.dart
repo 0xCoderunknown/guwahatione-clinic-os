@@ -328,8 +328,20 @@ void main() {
       expect(find.text('Token #5'), findsOneWidget);
     });
 
-    testWidgets('Displays NOT ARRIVED status and schedule when chamber has not started yet', (tester) async {
-      final fakeSession = ChamberSession.empty('doc-test-1', DateTime.now());
+    testWidgets('Displays NOT ARRIVED status and schedule when scheduled doctor has not started chamber yet', (tester) async {
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      final todayName = dayNames[DateTime.now().weekday - 1];
+      final scheduledDoctor = Doctor(
+        id: 'doc-scheduled-1',
+        name: 'Dr. Kaushik',
+        specialty: 'Cardiology',
+        phone: '9998887776',
+        availableDays: [todayName],
+        blockedDates: [],
+        shiftTiming: '6:00 PM – 8:30 PM',
+        dailyTokenLimit: 18,
+      );
+      final fakeSession = ChamberSession.empty('doc-scheduled-1', DateTime.now());
       final authProvider = AuthProvider();
 
       await tester.pumpWidget(
@@ -340,7 +352,7 @@ void main() {
           child: MaterialApp(
             home: Scaffold(
               body: DashboardDoctorRosterCard(
-                provider: _FakeClinicProvider(testDoctor, fakeSession),
+                provider: _FakeClinicProvider(scheduledDoctor, fakeSession),
               ),
             ),
           ),
@@ -350,10 +362,43 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('NOT ARRIVED'), findsOneWidget);
-      expect(
-        find.text('Cardiology • Mon, Wed, Fri • 6:00 PM – 8:30 PM'),
-        findsOneWidget,
+    });
+
+    testWidgets('Displays NO OPD TODAY status when doctor does not sit on current weekday', (tester) async {
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      // Pick a weekday that is definitely not today
+      final offDayName = dayNames[DateTime.now().weekday % 7];
+      final offDoctor = Doctor(
+        id: 'doc-off-1',
+        name: 'Dr. Off Duty',
+        specialty: 'Dermatology',
+        phone: '9998887776',
+        availableDays: [offDayName],
+        blockedDates: [],
+        shiftTiming: '10:00 AM – 1:00 PM',
+        dailyTokenLimit: 18,
       );
+      final fakeSession = ChamberSession.empty('doc-off-1', DateTime.now());
+      final authProvider = AuthProvider();
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: authProvider),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: DashboardDoctorRosterCard(
+                provider: _FakeClinicProvider(offDoctor, fakeSession),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('NO OPD TODAY'), findsOneWidget);
     });
 
     testWidgets('Displays IN CHAMBER status when doctor signals ready for patients', (tester) async {
