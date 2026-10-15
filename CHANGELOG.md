@@ -8,6 +8,21 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.33.5] — 15-10-2026
+
+### Chamber Handshake Typing & Stream Performance Optimization
+- **Operational & Engineering Impact:**
+  - **Eliminated $N+1$ Stream Subscriptions:** Refactored `DashboardDoctorRosterCard` to subscribe once at the card level via `provider.streamAllChamberSessions(DateTime.now())` instead of instantiating individual stream builders in `itemBuilder`.
+  - **Strongly Typed `ChamberStatus` Domain Enum:** Introduced `ChamberStatus` enum (`idle`, `readyForNext`, `calling`, `inConsultation`, `consultationEnded`) in `lib/models/chamber_session.dart`. Replaced magic string comparisons across `ChamberControlBanner` and `DoctorChamberScreen`.
+  - **Fine-Grained Context Selection in Booking:** Switched `AddAppointmentDialog` doctor listener to `context.select<ClinicProvider, List<Doctor>>` to avoid full focus tree rebuilds during queue streams. Added `_isSelectedDateToday` guards on provisional token estimation for future date bookings.
+  - **Pure Render Cycle in Auth:** Removed mutation side effect on `_selectedDoctor` in `LoginScreen.build()`.
+  - **Uniform Indian Date & Time Formats:** Swapped manual string concatenations in `AppointmentEngine` with `AppFormatters.date()` and `AppFormatters.time()`.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 213 unit and widget tests passing green.
+
+---
+
 ## [1.33.4] — 15-10-2026
 
 ### Autonomous AI Maintainability & Low-Token Architecture Refactoring

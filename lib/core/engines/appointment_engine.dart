@@ -193,7 +193,7 @@ abstract class AppointmentEngine {
         isWithinReviewPeriod: false,
         isReviewAlreadyConsumed: true,
         message:
-            'Free review already used for visit on ${latestPaidVisit.scheduledDate.day.toString().padLeft(2, '0')}-${latestPaidVisit.scheduledDate.month.toString().padLeft(2, '0')}-${latestPaidVisit.scheduledDate.year} (1 review allowed per paid visit).',
+            'Free review already used for visit on ${AppFormatters.date(latestPaidVisit.scheduledDate)} (1 review allowed per paid visit).',
       );
     }
 
@@ -456,15 +456,8 @@ abstract class AppointmentEngine {
       Duration(minutes: averageMinutesPerPatient + 7),
     );
 
-    String formatTime(DateTime dt) {
-      final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
-      final minute = dt.minute.toString().padLeft(2, '0');
-      final period = dt.hour >= 12 ? 'PM' : 'AM';
-      return '$hour:$minute $period';
-    }
-
     final formattedRange =
-        '${formatTime(estimatedStart)} – ${formatTime(estimatedEnd)}';
+        '${AppFormatters.time(estimatedStart)} – ${AppFormatters.time(estimatedEnd)}';
     final waitMinutes = startMinutes;
     final relativeSummary = '~$waitMinutes min wait ($patientsAhead ahead)';
 

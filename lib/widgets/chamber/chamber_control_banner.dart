@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../models/chamber_session.dart';
+
 /// Doctor Chamber Handshake Control Banner.
 ///
 /// Coordinates the 2-way handshake protocol between Doctor and Reception:
@@ -7,7 +9,7 @@ import 'package:flutter/material.dart';
 /// - Provides the primary "NEXT PATIENT" trigger that signals Reception to call the next present patient.
 /// - Displays incoming patient status when Reception admits a verified patient into the chamber.
 class ChamberControlBanner extends StatelessWidget {
-  final String status;
+  final ChamberStatus status;
   final int? lastCompletedQueueNumber;
   final String? lastCompletedPatientName;
   final int? activeQueueNumber;
@@ -33,16 +35,17 @@ class ChamberControlBanner extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 600;
-        if (status == 'consultation_ended') {
-          return _buildConsultationEndedCard(context, isCompact);
-        } else if (status == 'ready_for_next') {
-          return _buildReadyForNextCard(context, isCompact);
-        } else if (status == 'calling') {
-          return _buildCallingIncomingCard(context, isCompact);
-        } else if (status == 'in_consultation') {
-          return _buildInConsultationCard(context, isCompact);
-        } else {
-          return _buildIdleCard(context, isCompact);
+        switch (status) {
+          case ChamberStatus.consultationEnded:
+            return _buildConsultationEndedCard(context, isCompact);
+          case ChamberStatus.readyForNext:
+            return _buildReadyForNextCard(context, isCompact);
+          case ChamberStatus.calling:
+            return _buildCallingIncomingCard(context, isCompact);
+          case ChamberStatus.inConsultation:
+            return _buildInConsultationCard(context, isCompact);
+          case ChamberStatus.idle:
+            return _buildIdleCard(context, isCompact);
         }
       },
     );

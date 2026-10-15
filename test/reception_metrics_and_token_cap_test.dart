@@ -422,6 +422,11 @@ class _FakeClinicProvider extends ChangeNotifier implements ClinicProvider {
   }
 
   @override
+  Stream<Map<String, ChamberSession>> streamAllChamberSessions(DateTime date) {
+    return Stream.value({_doctor.id: _session});
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

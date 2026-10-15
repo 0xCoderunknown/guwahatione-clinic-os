@@ -1,3 +1,43 @@
+/// Strongly typed domain status for chamber operational state.
+enum ChamberStatus {
+  idle,
+  readyForNext,
+  calling,
+  inConsultation,
+  consultationEnded;
+
+  static ChamberStatus fromString(String? val) {
+    switch (val) {
+      case 'ready_for_next':
+        return ChamberStatus.readyForNext;
+      case 'calling':
+        return ChamberStatus.calling;
+      case 'in_consultation':
+        return ChamberStatus.inConsultation;
+      case 'consultation_ended':
+        return ChamberStatus.consultationEnded;
+      case 'idle':
+      default:
+        return ChamberStatus.idle;
+    }
+  }
+
+  String get wireName {
+    switch (this) {
+      case ChamberStatus.readyForNext:
+        return 'ready_for_next';
+      case ChamberStatus.calling:
+        return 'calling';
+      case ChamberStatus.inConsultation:
+        return 'in_consultation';
+      case ChamberStatus.consultationEnded:
+        return 'consultation_ended';
+      case ChamberStatus.idle:
+        return 'idle';
+    }
+  }
+}
+
 /// Strongly typed domain model representing the real-time chamber handshake session
 /// between Reception and consulting Doctors.
 ///
@@ -12,6 +52,8 @@ class ChamberSession {
   final String? patientPhone;
   final int? lastCompletedQueueNumber;
   final String? lastCompletedPatientName;
+
+  ChamberStatus get statusEnum => ChamberStatus.fromString(status);
 
   const ChamberSession({
     required this.doctorId,

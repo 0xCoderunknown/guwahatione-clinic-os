@@ -154,8 +154,11 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     }
   }
 
+  bool get _isSelectedDateToday =>
+      DateUtils.isSameDay(_selectedDate, DateTime.now());
+
   int? get _provisionalToken {
-    if (_selectedDoctor == null) return null;
+    if (_selectedDoctor == null || !_isSelectedDateToday) return null;
     final provider = Provider.of<ClinicProvider>(context, listen: false);
     return AppointmentEngine.calculateProvisionalNextToken(
       appointments: provider.todayAppointments,
@@ -165,7 +168,11 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   }
 
   String? get _provisionalTimeWindow {
-    if (_selectedDoctor == null || _provisionalToken == null) return null;
+    if (_selectedDoctor == null ||
+        _provisionalToken == null ||
+        !_isSelectedDateToday) {
+      return null;
+    }
     final provider = Provider.of<ClinicProvider>(context, listen: false);
     final window = AppointmentEngine.calculateProvisionalEstimatedWindow(
       appointments: provider.todayAppointments,
@@ -179,7 +186,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   }
 
   int get _bookedTokensCount {
-    if (_selectedDoctor == null) return 0;
+    if (_selectedDoctor == null || !_isSelectedDateToday) return 0;
     final provider = Provider.of<ClinicProvider>(context, listen: false);
     return AppointmentEngine.calculateBookedTokensCount(
       appointments: provider.todayAppointments,
@@ -190,7 +197,9 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final doctors = Provider.of<ClinicProvider>(context).doctors;
+    final doctors = context.select<ClinicProvider, List<Doctor>>(
+      (p) => p.doctors,
+    );
 
     return CallbackShortcuts(
       bindings: {

@@ -39,11 +39,8 @@ class _LoginScreenState extends State<LoginScreen>
   Widget build(BuildContext context) {
     final clinicProvider = Provider.of<ClinicProvider>(context);
     final doctors = clinicProvider.doctors;
-
-    // Set default selected doctor if not set
-    if (_selectedDoctor == null && doctors.isNotEmpty) {
-      _selectedDoctor = doctors.first;
-    }
+    final effectiveDoctor =
+        _selectedDoctor ?? (doctors.isNotEmpty ? doctors.first : null);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -158,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen>
                           // Doctor Chamber Tab
                           DoctorLoginForm(
                             doctors: doctors,
-                            selectedDoctor: _selectedDoctor,
+                            selectedDoctor: effectiveDoctor,
                             pinController: _doctorPinController,
                             isLoading: _isLoading,
                             onDoctorChanged: (val) {
@@ -224,7 +221,9 @@ class _LoginScreenState extends State<LoginScreen>
 
   Future<void> _handleDoctorLogin() async {
     if (_isLoading) return;
-    if (_selectedDoctor == null) {
+    final clinic = Provider.of<ClinicProvider>(context, listen: false);
+    final doc = _selectedDoctor ?? (clinic.doctors.isNotEmpty ? clinic.doctors.first : null);
+    if (doc == null) {
       setState(() => _errorMessage = 'Please select a doctor.');
       return;
     }
@@ -240,14 +239,14 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.loginAsDoctor(_selectedDoctor!, pin);
+    final success = await authProvider.loginAsDoctor(doc, pin);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (!success) {
       setState(
-        () => _errorMessage = 'Incorrect PIN for ${_selectedDoctor!.name}.',
+        () => _errorMessage = 'Incorrect PIN for ${doc.name}.',
       );
     }
   }

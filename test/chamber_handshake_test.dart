@@ -19,7 +19,7 @@ void main() {
           MaterialApp(
             home: Scaffold(
               body: ChamberControlBanner(
-                status: 'consultation_ended',
+                status: ChamberStatus.consultationEnded,
                 lastCompletedQueueNumber: 12,
                 lastCompletedPatientName: 'Rahul Sharma',
                 onNextPatient: () => nextPatientPressed = true,
@@ -46,7 +46,7 @@ void main() {
           MaterialApp(
             home: Scaffold(
               body: ChamberControlBanner(
-                status: 'ready_for_next',
+                status: ChamberStatus.readyForNext,
                 onNextPatient: () {},
               ),
             ),
@@ -68,7 +68,7 @@ void main() {
           MaterialApp(
             home: Scaffold(
               body: ChamberControlBanner(
-                status: 'calling',
+                status: ChamberStatus.calling,
                 activeQueueNumber: 14,
                 activePatientName: 'Amit Roy',
                 onNextPatient: () {},
@@ -98,7 +98,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: ChamberControlBanner(
-              status: 'idle',
+              status: ChamberStatus.idle,
               onNextPatient: () => readyFirstPressed = true,
             ),
           ),
@@ -127,7 +127,7 @@ void main() {
           MaterialApp(
             home: Scaffold(
               body: ChamberControlBanner(
-                status: 'idle',
+                status: ChamberStatus.idle,
                 onNextPatient: () => readyFirstPressed = true,
               ),
             ),

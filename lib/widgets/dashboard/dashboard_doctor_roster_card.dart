@@ -88,23 +88,23 @@ class DashboardDoctorRosterCard extends StatelessWidget {
               ),
             )
           else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: doctors.length,
-              separatorBuilder: (_, index) =>
-                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
-              itemBuilder: (ctx, i) {
-                final doc = doctors[i];
-                final patientCount = AppointmentEngine.countDoctorAppointments(
-                  appointments: provider.todayAppointments,
-                  doctorId: doc.id,
-                );
-
-                return StreamBuilder<ChamberSession>(
-                  stream: provider.streamChamberSession(doc.id, DateTime.now()),
-                  builder: (context, chamberSnap) {
-                    final session = chamberSnap.data;
+            StreamBuilder<Map<String, ChamberSession>>(
+              stream: provider.streamAllChamberSessions(DateTime.now()),
+              builder: (context, chamberSnap) {
+                final sessionMap = chamberSnap.data ?? const {};
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: doctors.length,
+                  separatorBuilder: (_, index) =>
+                      const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  itemBuilder: (ctx, i) {
+                    final doc = doctors[i];
+                    final session = sessionMap[doc.id];
+                    final patientCount = AppointmentEngine.countDoctorAppointments(
+                      appointments: provider.todayAppointments,
+                      doctorId: doc.id,
+                    );
                     final isReady = session?.isReadyForNext ?? false;
                     final isEnded = session?.isConsultationEnded ?? false;
                     final isCalling = session?.isCalling ?? false;

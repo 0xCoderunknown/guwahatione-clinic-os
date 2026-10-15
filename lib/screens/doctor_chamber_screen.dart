@@ -33,7 +33,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   bool _isConsultationOpen = false;
   List<Appointment> _latestAppointments = [];
 
-  String _chamberStatus = 'idle';
+  ChamberStatus _chamberStatus = ChamberStatus.idle;
   int? _lastCompletedQueueNumber;
   String? _lastCompletedPatientName;
   int? _activeQueueNumber;
@@ -65,7 +65,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
     if (!_isToday) {
       if (mounted) {
         setState(() {
-          _chamberStatus = 'idle';
+          _chamberStatus = ChamberStatus.idle;
           _activeCallingApptId = null;
           _activeQueueNumber = null;
           _activePatientName = null;
@@ -82,7 +82,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
           if (!mounted) return;
 
           setState(() {
-            _chamberStatus = session.status;
+            _chamberStatus = session.statusEnum;
             _activeCallingApptId = session.hasActivePatient
                 ? session.activeAppointmentId
                 : null;
@@ -325,8 +325,8 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
           // 3. PaymentType != PaymentType.unpaid
           // Strictly disabled on past dates and whenever chamber is already occupied or calling a patient.
           final isChamberOccupied =
-              _chamberStatus == 'in_consultation' ||
-              _chamberStatus == 'calling' ||
+              _chamberStatus == ChamberStatus.inConsultation ||
+              _chamberStatus == ChamberStatus.calling ||
               (_activeCallingApptId != null &&
                   _activeCallingApptId!.isNotEmpty);
 
