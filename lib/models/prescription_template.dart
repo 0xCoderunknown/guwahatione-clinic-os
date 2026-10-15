@@ -4,6 +4,9 @@ import 'prescription_item.dart';
 class PrescriptionTemplateItem {
   final String medicineName;
   final String composition;
+  final String? strength;
+  final String? form;
+  final String? manufacturer;
   final String dosage;
   final String frequency;
   final String timing;
@@ -13,6 +16,9 @@ class PrescriptionTemplateItem {
   const PrescriptionTemplateItem({
     required this.medicineName,
     required this.composition,
+    this.strength,
+    this.form,
+    this.manufacturer,
     this.dosage = '1 Tablet',
     this.frequency = '1-0-1 (BD)',
     this.timing = 'After Food',
@@ -30,6 +36,9 @@ class PrescriptionTemplateItem {
       action: action,
       medicineName: medicineName,
       composition: composition,
+      strength: strength,
+      form: form,
+      manufacturer: manufacturer,
       dosage: dosage,
       frequency: frequency,
       timing: timing,

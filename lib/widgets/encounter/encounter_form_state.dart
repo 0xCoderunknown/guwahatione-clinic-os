@@ -229,6 +229,9 @@ class EncounterFormState {
       medicineId: medId,
       medicineName: name,
       composition: comp,
+      strength: stagedMedicine?.strength,
+      form: stagedMedicine?.form,
+      manufacturer: stagedMedicine?.manufacturer,
       dosage: stagedDosageController.text.trim().isNotEmpty
           ? stagedDosageController.text.trim()
           : '1 Tablet',

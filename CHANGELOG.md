@@ -8,6 +8,19 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.34.1] — 15-10-2026
+
+### Prescription Snapshot & Catalogue Immunity
+- **Operational & Engineering Impact:**
+  - **Point-in-Time Clinical Snapshots:** Upgraded `PrescriptionItem` to capture an immutable snapshot of `name`, `composition`, `strength`, `form`, and `manufacturer` at prescribing time.
+  - **Catalogue Mutation & Purge Immunity:** Formularies and medicine catalogues can now be edited, renamed, merged, or completely purged without modifying or corrupting historical consultation records, printed prescriptions, or WhatsApp summaries.
+  - **Zero Join Dependency on View / Reprint:** Prescription viewer and `PrintMedicationsTable` render directly from the append-only consultation snapshot with zero runtime reliance on the active `medicines` collection.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 220 unit and widget tests passing green (2 new tests in `test/prescription_snapshot_test.dart`).
+
+---
+
 ## [1.34.0] — 15-10-2026
 
 ### Patient Identity & Multi-Patient Household Model

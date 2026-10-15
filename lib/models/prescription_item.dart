@@ -35,7 +35,10 @@ class PrescriptionItem {
   final String? medicineId; // Catalog reference if selected from master
   final String medicineName; // Trade name (e.g., 'Dolo 650' or entered name)
   final String
-  composition; // Generic chemical + strength (e.g., 'Paracetamol 650mg')
+  composition; // Generic chemical molecule (e.g., 'Paracetamol')
+  final String? strength; // Molecule strength snapshot (e.g., '650 mg')
+  final String? form; // Dosage form snapshot (e.g., 'Tablet', 'Syrup')
+  final String? manufacturer; // Manufacturer snapshot (e.g., 'Micro Labs Ltd')
   final String dosage; // e.g., '1 Tablet', '5 ml'
   final String frequency; // e.g., '1-0-1', 'OD (Once Daily)', 'BD'
   final String timing; // e.g., 'After Food', 'Before Food'
@@ -52,6 +55,9 @@ class PrescriptionItem {
     this.medicineId,
     required this.medicineName,
     required this.composition,
+    this.strength,
+    this.form,
+    this.manufacturer,
     this.dosage = '1 Tablet',
     this.frequency = '1-0-1',
     this.timing = 'After Food',
@@ -82,6 +88,9 @@ class PrescriptionItem {
       'medicineId': medicineId,
       'medicineName': medicineName,
       'composition': composition,
+      'strength': strength,
+      'form': form,
+      'manufacturer': manufacturer,
       'dosage': dosage,
       'frequency': frequency,
       'timing': timing,
@@ -99,6 +108,9 @@ class PrescriptionItem {
       medicineId: json['medicineId'] as String?,
       medicineName: json['medicineName'] as String? ?? '',
       composition: json['composition'] as String? ?? '',
+      strength: json['strength'] as String?,
+      form: json['form'] as String?,
+      manufacturer: json['manufacturer'] as String?,
       dosage: json['dosage'] as String? ?? '1 Tablet',
       frequency: json['frequency'] as String? ?? '1-0-1',
       timing: json['timing'] as String? ?? 'After Food',
@@ -115,6 +127,9 @@ class PrescriptionItem {
     String? medicineId,
     String? medicineName,
     String? composition,
+    String? strength,
+    String? form,
+    String? manufacturer,
     String? dosage,
     String? frequency,
     String? timing,
@@ -130,6 +145,9 @@ class PrescriptionItem {
       medicineId: medicineId ?? this.medicineId,
       medicineName: medicineName ?? this.medicineName,
       composition: composition ?? this.composition,
+      strength: strength ?? this.strength,
+      form: form ?? this.form,
+      manufacturer: manufacturer ?? this.manufacturer,
       dosage: dosage ?? this.dosage,
       frequency: frequency ?? this.frequency,
       timing: timing ?? this.timing,
