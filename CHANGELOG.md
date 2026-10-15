@@ -8,6 +8,22 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.35.0] — 15-10-2026
+
+### Unified 2-Column Medicine Search, Composition Cards & Experiment Flag
+- **Operational & Engineering Impact:**
+  - **Unified Dual-Column Search Engine:** Replaced manual brand/salt toggle pill in `RxReconciliationSection` with simultaneous search across Column 1 (`productName`) and Column 2 (`composition` / `strength`) in `MedicineEngine.searchAndGroup`. Doctors can type either product name (e.g. `Telma 40`) or chemical molecule (e.g. `Telmisartan`) without mode switching.
+  - **3-Letter Trigger & Short Alphanumeric Allowance:** Enforced a minimum 3-character threshold to prevent noisy partial queries, with intelligent exception for 2-character alphanumeric pharmacology terms (e.g. `O2`, `D3`, `B6`).
+  - **Composition Card UI (`[COMPOSITION]` with `{Products}`):** Grouped search results into high-contrast clinical cards featuring bracketed uppercase chemical headers (e.g. `[TELMISARTAN 40MG]`) with selectable trade brand buttons (`{Telma 40} (Glenmark)`, `{Telmikind 40} (Mankind)`).
+  - **Readymade Values & Auto-Population:** Selecting any product automatically pre-populates dosage (`1 Tablet`), frequency (`1-0-0`), timing (`After Food`), and duration (`To continue` / `30 days`), reducing prescribing friction to 1 click while remaining fully editable.
+  - **Streamlined Duration Dropdown:** Replaced raw text input + filter chip with a standardized duration dropdown (`To continue`, `30 days`, `15 days`, `14 days`, `10 days`, `7 days`, `5 days`, `3 days`, `Custom`).
+  - **🧪 Experiment Flag (`enableGroupedCompositionCards`):** Added configurable flag in `ClinicFeatureFlags` allowing client installations to toggle between grouped composition cards and a streamlined flat brand-first direct selection list.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 226 unit and widget tests passing green (6 new tests in `test/catalogue_scoring_test.dart`).
+
+---
+
 ## [1.34.1] — 15-10-2026
 
 ### Prescription Snapshot & Catalogue Immunity

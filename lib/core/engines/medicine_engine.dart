@@ -19,6 +19,9 @@ class CompositionGroupResult {
     required this.score,
     required this.isCompositionMatch,
   });
+
+  /// Prominent uppercase bracketed composition header (e.g., `[TELMISARTAN 40mg]`)
+  String get formattedHeader => '[${compositionLabel.toUpperCase()}]';
 }
 
 /// Clinical regimen defaults for routine OPD prescriptions.
@@ -62,16 +65,21 @@ class ReconciliationPartition {
 ///
 /// Zero Flutter UI dependencies.
 abstract class MedicineEngine {
-  /// Scores and groups catalogue medicines prioritizing chemical composition or
-  /// commercial trade brands based on [searchMode] ('brandFirst', 'compositionFirst', 'both').
+  /// Searches catalogue medicines referring strictly to Column 1 (productName)
+  /// and Column 2 (composition + strength).
+  ///
+  /// Enforces a minimum 3-character trigger threshold (e.g. 'Tel').
+  /// Returns composition cards [COMPOSITION STRENGTH] with associated products.
   static List<CompositionGroupResult> searchAndGroup({
     required List<Medicine> catalog,
     required String query,
-    String searchMode = 'compositionFirst',
+    int minQueryLength = 3,
   }) {
     final cleanQuery = query.trim().toLowerCase();
-    if (cleanQuery.isEmpty) {
-      return _groupByComposition(catalog, defaultScore: 0);
+    final isAlphanumericShort =
+        cleanQuery.length >= 2 && RegExp(r'\d').hasMatch(cleanQuery);
+    if (cleanQuery.length < minQueryLength && !isAlphanumericShort) {
+      return const [];
     }
 
     final Map<String, List<Medicine>> groupedByComp = {};
@@ -79,45 +87,37 @@ abstract class MedicineEngine {
     final Map<String, bool> groupIsCompMatch = {};
 
     for (final med in catalog) {
-      final compLower = med.composition.toLowerCase();
-      final strengthLower = med.strength.toLowerCase();
-      final fullCompLower = '${med.composition} ${med.strength}'.toLowerCase();
-      final brandLower = med.productName.toLowerCase();
+      final compLower = med.composition.trim().toLowerCase();
+      final strengthLower = med.strength.trim().toLowerCase();
+      final fullCompLower =
+          '${med.composition} ${med.strength}'.trim().toLowerCase();
+      final brandLower = med.productName.trim().toLowerCase();
 
       int score = 0;
       bool isCompMatch = false;
 
-      if (searchMode == 'brandFirst') {
-        if (brandLower.startsWith(cleanQuery)) {
-          score = 100;
-        } else if (brandLower.contains(cleanQuery)) {
-          score = 80;
-        } else if (fullCompLower.startsWith(cleanQuery) ||
-            compLower.startsWith(cleanQuery)) {
-          score = 60;
-          isCompMatch = true;
-        } else if (fullCompLower.contains(cleanQuery) ||
-            compLower.contains(cleanQuery) ||
-            strengthLower.contains(cleanQuery)) {
-          score = 40;
-          isCompMatch = true;
-        }
-      } else {
-        // compositionFirst or both
-        if (fullCompLower.startsWith(cleanQuery) ||
-            compLower.startsWith(cleanQuery)) {
-          score = 100;
-          isCompMatch = true;
-        } else if (fullCompLower.contains(cleanQuery) ||
-            compLower.contains(cleanQuery) ||
-            strengthLower.contains(cleanQuery)) {
-          score = 80;
-          isCompMatch = true;
-        } else if (brandLower.startsWith(cleanQuery)) {
-          score = 60;
-        } else if (brandLower.contains(cleanQuery)) {
-          score = 40;
-        }
+      // Column 2 Match: Composition / Molecule / Salt
+      if (compLower == cleanQuery || fullCompLower == cleanQuery) {
+        score = 100;
+        isCompMatch = true;
+      } else if (compLower.startsWith(cleanQuery) ||
+          fullCompLower.startsWith(cleanQuery)) {
+        score = 90;
+        isCompMatch = true;
+      } else if (compLower.contains(cleanQuery) ||
+          fullCompLower.contains(cleanQuery) ||
+          strengthLower.contains(cleanQuery)) {
+        score = 70;
+        isCompMatch = true;
+      }
+
+      // Column 1 Match: Product Name / Trade Brand
+      if (brandLower == cleanQuery) {
+        if (score < 100) score = 100;
+      } else if (brandLower.startsWith(cleanQuery)) {
+        if (score < 90) score = 90;
+      } else if (brandLower.contains(cleanQuery)) {
+        if (score < 70) score = 70;
       }
 
       if (score > 0) {
@@ -138,11 +138,25 @@ abstract class MedicineEngine {
     final List<CompositionGroupResult> results = [];
     for (final entry in groupedByComp.entries) {
       final meds = entry.value;
+      // Sort matching brands to the front
       meds.sort((a, b) {
-        final aMatch = a.productName.toLowerCase().contains(cleanQuery);
-        final bMatch = b.productName.toLowerCase().contains(cleanQuery);
-        if (aMatch && !bMatch) return -1;
-        if (!aMatch && bMatch) return 1;
+        final aLower = a.productName.toLowerCase();
+        final bLower = b.productName.toLowerCase();
+        final aExact = aLower == cleanQuery;
+        final bExact = bLower == cleanQuery;
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+
+        final aStarts = aLower.startsWith(cleanQuery);
+        final bStarts = bLower.startsWith(cleanQuery);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+
+        final aContains = aLower.contains(cleanQuery);
+        final bContains = bLower.contains(cleanQuery);
+        if (aContains && !bContains) return -1;
+        if (!aContains && bContains) return 1;
+
         return a.productName.compareTo(b.productName);
       });
 
@@ -166,44 +180,10 @@ abstract class MedicineEngine {
       if (b.score != a.score) {
         return b.score.compareTo(a.score);
       }
-      if (searchMode == 'compositionFirst') {
-        if (b.isCompositionMatch != a.isCompositionMatch) {
-          return b.isCompositionMatch ? 1 : -1;
-        }
-      } else {
-        if (b.isCompositionMatch != a.isCompositionMatch) {
-          return b.isCompositionMatch ? -1 : 1;
-        }
-      }
       return a.compositionLabel.compareTo(b.compositionLabel);
     });
 
     return results;
-  }
-
-  static List<CompositionGroupResult> _groupByComposition(
-    List<Medicine> catalog, {
-    required int defaultScore,
-  }) {
-    final Map<String, List<Medicine>> grouped = {};
-    for (final med in catalog) {
-      final key =
-          '${med.composition.trim()}__${med.strength.trim()}__${med.form.trim()}';
-      grouped.putIfAbsent(key, () => []).add(med);
-    }
-
-    return grouped.entries.map((e) {
-      final first = e.value.first;
-      return CompositionGroupResult(
-        compositionLabel: first.fullCompositionLabel,
-        composition: first.composition,
-        strength: first.strength,
-        form: first.form,
-        associatedBrands: e.value,
-        score: defaultScore,
-        isCompositionMatch: false,
-      );
-    }).toList();
   }
 
   /// Provides clinical intelligence fallbacks for routine OPD medications.

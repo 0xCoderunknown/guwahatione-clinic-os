@@ -128,6 +128,23 @@ const List<Medicine> defaultEssentialMedicines = [
     form: 'Tablet',
     manufacturer: 'Glenmark',
     category: 'Antihypertensive (ARB)',
+    defaultDosage: '1 Tablet',
+    defaultFrequency: '1-0-0',
+    defaultTiming: 'After Food',
+    defaultDurationDays: null, // To continue
+  ),
+  Medicine(
+    id: 'med_telmikind_40',
+    productName: 'Telmikind 40',
+    composition: 'Telmisartan',
+    strength: '40 mg',
+    form: 'Tablet',
+    manufacturer: 'Mankind',
+    category: 'Antihypertensive (ARB)',
+    defaultDosage: '1 Tablet',
+    defaultFrequency: '1-0-0',
+    defaultTiming: 'After Food',
+    defaultDurationDays: null, // To continue
   ),
   Medicine(
     id: 'med_telma_h',
@@ -137,6 +154,10 @@ const List<Medicine> defaultEssentialMedicines = [
     form: 'Tablet',
     manufacturer: 'Glenmark',
     category: 'Antihypertensive (Combination)',
+    defaultDosage: '1 Tablet',
+    defaultFrequency: '1-0-0',
+    defaultTiming: 'After Food',
+    defaultDurationDays: null, // To continue
   ),
   Medicine(
     id: 'med_amlokind_5',
@@ -146,6 +167,10 @@ const List<Medicine> defaultEssentialMedicines = [
     form: 'Tablet',
     manufacturer: 'Mankind',
     category: 'Antihypertensive (CCB)',
+    defaultDosage: '1 Tablet',
+    defaultFrequency: '1-0-0',
+    defaultTiming: 'After Food',
+    defaultDurationDays: null, // To continue
   ),
 
   // Antidiabetic

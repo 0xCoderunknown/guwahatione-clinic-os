@@ -134,7 +134,7 @@ void main() {
       expect(results.first.composition, 'Paracetamol');
       expect(results.first.isCompositionMatch, isTrue);
       expect(results.first.score, 100); // Composition prefix match
-      expect(results.last.score, 60); // Trade brand match has lower score
+      expect(results.last.score, lessThan(results.first.score)); // Trade brand match has lower score
     });
 
     test('Searching by brand name "Dolo" still matches and groups by its composition', () {
@@ -169,16 +169,196 @@ void main() {
       expect(catalog.any((m) => m.productName.contains('Aziver')), isFalse);
     });
 
-    test('Brand-First search mode ranks trade brand prefix highest and sorts matching brand first', () {
+    test('Unified search ranks trade brand match and sorts matching brand first', () {
       final results = MedicineEngine.searchAndGroup(
         catalog: catalog,
         query: 'Dolo',
-        searchMode: 'brandFirst',
       );
 
       expect(results, isNotEmpty);
-      expect(results.first.score, 100);
+      expect(results.first.score, greaterThan(0));
       expect(results.first.associatedBrands.first.productName, 'Dolo 650');
+    });
+
+    test('3-Letter minimum threshold: typing less than 3 letters returns empty results', () {
+      expect(MedicineEngine.searchAndGroup(catalog: catalog, query: 'D'), isEmpty);
+      expect(MedicineEngine.searchAndGroup(catalog: catalog, query: 'Do'), isEmpty);
+      expect(MedicineEngine.searchAndGroup(catalog: catalog, query: '  Te '), isEmpty);
+    });
+
+    test('Doctor types "Tel" (3 letters): returns card [TELMISARTAN 40MG] with Telma 40 and Telmikind 40', () {
+      final htnCatalog = [
+        const Medicine(
+          id: 'med_telma_40',
+          productName: 'Telma 40',
+          composition: 'Telmisartan',
+          strength: '40 mg',
+          form: 'Tablet',
+          manufacturer: 'Glenmark',
+          defaultFrequency: '1-0-0',
+          defaultTiming: 'After Food',
+          defaultDurationDays: null, // To continue
+        ),
+        const Medicine(
+          id: 'med_telmikind_40',
+          productName: 'Telmikind 40',
+          composition: 'Telmisartan',
+          strength: '40 mg',
+          form: 'Tablet',
+          manufacturer: 'Mankind',
+          defaultFrequency: '1-0-0',
+          defaultTiming: 'After Food',
+          defaultDurationDays: null, // To continue
+        ),
+      ];
+
+      final results = MedicineEngine.searchAndGroup(
+        catalog: htnCatalog,
+        query: 'Tel',
+      );
+
+      expect(results.length, 1);
+      final card = results.first;
+      expect(card.formattedHeader, '[TELMISARTAN 40 MG]');
+      expect(card.associatedBrands.map((b) => b.productName), containsAll(['Telma 40', 'Telmikind 40']));
+
+      // Readymade defaults for Telma 40
+      final telma = card.associatedBrands.firstWhere((b) => b.productName == 'Telma 40');
+      expect(telma.manufacturer, 'Glenmark');
+      expect(telma.defaultFrequency, '1-0-0');
+      expect(telma.defaultTiming, 'After Food');
+      expect(telma.durationLabel, 'To continue');
+      expect(telma.formattedCompositionHeader, '[TELMISARTAN 40 MG]');
+    });
+
+    test('Doctor writes product name "Telma 40": displays matching product alongside composition', () {
+      final htnCatalog = [
+        const Medicine(
+          id: 'med_telma_40',
+          productName: 'Telma 40',
+          composition: 'Telmisartan',
+          strength: '40 mg',
+          form: 'Tablet',
+          manufacturer: 'Glenmark',
+        ),
+        const Medicine(
+          id: 'med_telmikind_40',
+          productName: 'Telmikind 40',
+          composition: 'Telmisartan',
+          strength: '40 mg',
+          form: 'Tablet',
+          manufacturer: 'Mankind',
+        ),
+      ];
+
+      final results = MedicineEngine.searchAndGroup(
+        catalog: htnCatalog,
+        query: 'Telma 40',
+      );
+
+      expect(results.length, 1);
+      final card = results.first;
+      expect(card.formattedHeader, '[TELMISARTAN 40 MG]');
+      expect(card.associatedBrands.first.productName, 'Telma 40');
+    });
+
+    test('Short alphanumeric 2-character query like "O2" or "D3" activates search', () {
+      final catalogWithShort = [
+        const Medicine(
+          id: 'med_o2',
+          productName: 'O2 Tablet',
+          composition: 'Ofloxacin + Ornidazole',
+          strength: '200 mg + 500 mg',
+          form: 'Tablet',
+        ),
+      ];
+
+      final results = MedicineEngine.searchAndGroup(
+        catalog: catalogWithShort,
+        query: 'O2',
+      );
+
+      expect(results, isNotEmpty);
+      expect(results.first.associatedBrands.first.productName, 'O2 Tablet');
+    });
+
+    testWidgets('RxSearchResultsView renders card layout when enableGroupedCompositionCards is true', (tester) async {
+      final sampleGroup = CompositionGroupResult(
+        compositionLabel: 'Telmisartan 40 mg',
+        composition: 'Telmisartan',
+        strength: '40 mg',
+        form: 'Tablet',
+        associatedBrands: [
+          const Medicine(
+            id: 'm1',
+            productName: 'Telma 40',
+            composition: 'Telmisartan',
+            strength: '40 mg',
+            form: 'Tablet',
+            manufacturer: 'Glenmark',
+          ),
+        ],
+        score: 100,
+        isCompositionMatch: true,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RxSearchResultsView(
+              results: [sampleGroup],
+              query: 'Tel',
+              enableGroupedCompositionCards: true,
+              onStageMedicine: (_) {},
+              onStageUnlisted: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('[TELMISARTAN 40 MG]'), findsOneWidget);
+      expect(find.text('{Telma 40} (Glenmark)'), findsOneWidget);
+    });
+
+    testWidgets('RxSearchResultsView renders flat direct list when enableGroupedCompositionCards is false', (tester) async {
+      final sampleGroup = CompositionGroupResult(
+        compositionLabel: 'Telmisartan 40 mg',
+        composition: 'Telmisartan',
+        strength: '40 mg',
+        form: 'Tablet',
+        associatedBrands: [
+          const Medicine(
+            id: 'm1',
+            productName: 'Telma 40',
+            composition: 'Telmisartan',
+            strength: '40 mg',
+            form: 'Tablet',
+            manufacturer: 'Glenmark',
+          ),
+        ],
+        score: 100,
+        isCompositionMatch: true,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RxSearchResultsView(
+              results: [sampleGroup],
+              query: 'Tel',
+              enableGroupedCompositionCards: false,
+              onStageMedicine: (_) {},
+              onStageUnlisted: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      // Card header should NOT be present in flat list mode
+      expect(find.text('[TELMISARTAN 40 MG]'), findsNothing);
+      // Flat list row with product name and composition
+      expect(find.text('Telma 40 (Glenmark)'), findsOneWidget);
+      expect(find.text('Telmisartan 40 mg [Tablet]'), findsOneWidget);
     });
 
     test('MedicineEngine.getDefaultsForMedicine populates appropriate dosage, frequency, and timing defaults', () {

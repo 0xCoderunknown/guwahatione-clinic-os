@@ -78,6 +78,11 @@ class ClinicFeatureFlags {
   /// for clinic owners to mark all remaining un-consulted tokens as absent.
   final bool enableBulkSessionClose;
 
+  /// 🧪 EXPERIMENT FLAG: Whether medicine search displays grouped composition cards
+  /// [COMPOSITION] {Brand 1} {Brand 2}.
+  /// When disabled, renders a streamlined flat brand-first direct selection list.
+  final bool enableGroupedCompositionCards;
+
   const ClinicFeatureFlags({
     this.enableLetterheadToggle = true,
     this.enableDoctorChamberOverride = true,
@@ -86,5 +91,6 @@ class ClinicFeatureFlags {
     this.enablePrescriptionTemplatePresets = false,
     this.enableTokenReceiptPrint = true,
     this.enableBulkSessionClose = true,
+    this.enableGroupedCompositionCards = true,
   });
 }

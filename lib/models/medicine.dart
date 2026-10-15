@@ -27,6 +27,15 @@ class Medicine {
 
   String get fullCompositionLabel => '$composition $strength'.trim();
 
+  /// Prominent uppercase bracketed composition header (e.g. `[TELMISARTAN 40mg]`)
+  String get formattedCompositionHeader =>
+      '[${fullCompositionLabel.toUpperCase()}]';
+
+  /// Standard duration display string ('To continue' for chronic or 'X days')
+  String get durationLabel => (defaultDurationDays == null || defaultDurationDays! <= 0)
+      ? 'To continue'
+      : '$defaultDurationDays days';
+
   String get displayName => '$productName ($fullCompositionLabel) [$form]';
 
   Map<String, dynamic> toJson() {

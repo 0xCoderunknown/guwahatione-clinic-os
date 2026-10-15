@@ -19,6 +19,7 @@ class StagedMedicineForm extends StatelessWidget {
   final ValueChanged<String?> onTimingChanged;
   final bool stagedIsChronic;
   final ValueChanged<bool> onChronicChanged;
+  final ValueChanged<String?>? onDurationPresetChanged;
   final VoidCallback onCancelStaging;
   final VoidCallback onConfirmAddStaged;
 
@@ -37,6 +38,7 @@ class StagedMedicineForm extends StatelessWidget {
     required this.onTimingChanged,
     required this.stagedIsChronic,
     required this.onChronicChanged,
+    this.onDurationPresetChanged,
     required this.onCancelStaging,
     required this.onConfirmAddStaged,
   });
@@ -75,6 +77,18 @@ class StagedMedicineForm extends StatelessWidget {
         form.stagedIsChronic = val;
         onUpdate();
       },
+      onDurationPresetChanged: (val) {
+        if (val == 'To continue') {
+          form.stagedIsChronic = true;
+          form.stagedDurationController.text = '';
+        } else if (val == 'Custom') {
+          form.stagedIsChronic = false;
+        } else if (val != null && val.endsWith(' days')) {
+          form.stagedIsChronic = false;
+          form.stagedDurationController.text = val.replaceAll(' days', '');
+        }
+        onUpdate();
+      },
       onCancelStaging: () {
         form.cancelStaging();
         onUpdate();
@@ -100,6 +114,55 @@ class StagedMedicineForm extends StatelessWidget {
       displayName = stagedUnlistedName!;
       if (compName.isEmpty) compName = 'Medicine not in catalogue';
     }
+
+    final frequencyOptions = [
+      '1-0-0',
+      '1-0-1',
+      '0-0-1',
+      '1-1-1',
+      '1-0-0 (OD)',
+      '1-0-1 (BD)',
+      '0-0-1 (HS)',
+      '1-1-1 (TDS)',
+      'SOS (As Needed)',
+      'Once Weekly',
+    ];
+    if (!frequencyOptions.contains(stagedFrequency)) {
+      frequencyOptions.insert(0, stagedFrequency);
+    }
+
+    final timingOptions = [
+      'After Food',
+      'Before Food',
+      'After Food (Morning)',
+      'At Bedtime',
+      'With Food',
+    ];
+    if (!timingOptions.contains(stagedTiming)) {
+      timingOptions.insert(0, stagedTiming);
+    }
+
+    final String currentDurationPreset;
+    if (stagedIsChronic) {
+      currentDurationPreset = 'To continue';
+    } else if (['30', '15', '14', '10', '7', '5', '3']
+        .contains(stagedDurationController.text.trim())) {
+      currentDurationPreset = '${stagedDurationController.text.trim()} days';
+    } else {
+      currentDurationPreset = 'Custom';
+    }
+
+    final durationOptions = [
+      'To continue',
+      '30 days',
+      '15 days',
+      '14 days',
+      '10 days',
+      '7 days',
+      '5 days',
+      '3 days',
+      'Custom',
+    ];
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -161,22 +224,14 @@ class StagedMedicineForm extends StatelessWidget {
                     fillColor: Colors.white,
                     border: OutlineInputBorder(),
                   ),
-                  items:
-                      const [
-                            '1-0-0 (OD)',
-                            '1-0-1 (BD)',
-                            '0-0-1 (HS)',
-                            '1-1-1 (TDS)',
-                            'SOS (As Needed)',
-                            'Once Weekly',
-                          ]
-                          .map(
-                            (f) => DropdownMenuItem(
-                              value: f,
-                              child: Text(f, style: TextStyle(fontSize: 12)),
-                            ),
-                          )
-                          .toList(),
+                  items: frequencyOptions
+                      .map(
+                        (f) => DropdownMenuItem(
+                          value: f,
+                          child: Text(f, style: const TextStyle(fontSize: 12)),
+                        ),
+                      )
+                      .toList(),
                   onChanged: onFrequencyChanged,
                 ),
               ),
@@ -192,21 +247,14 @@ class StagedMedicineForm extends StatelessWidget {
                     fillColor: Colors.white,
                     border: OutlineInputBorder(),
                   ),
-                  items:
-                      const [
-                            'After Food',
-                            'Before Food',
-                            'After Food (Morning)',
-                            'At Bedtime',
-                            'With Food',
-                          ]
-                          .map(
-                            (t) => DropdownMenuItem(
-                              value: t,
-                              child: Text(t, style: TextStyle(fontSize: 12)),
-                            ),
-                          )
-                          .toList(),
+                  items: timingOptions
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(t, style: const TextStyle(fontSize: 12)),
+                        ),
+                      )
+                      .toList(),
                   onChanged: onTimingChanged,
                 ),
               ),
@@ -216,33 +264,63 @@ class StagedMedicineForm extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                flex: 2,
-                child: TextField(
-                  controller: stagedDurationController,
-                  enabled: !stagedIsChronic,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: stagedIsChronic ? 'Duration' : 'Days',
-                    hintText: stagedIsChronic ? 'Continuous' : '30',
+                flex: 3,
+                child: DropdownButtonFormField<String>(
+                  initialValue: currentDurationPreset,
+                  decoration: const InputDecoration(
+                    labelText: 'Duration',
                     isDense: true,
                     filled: true,
                     fillColor: Colors.white,
-                    border: const OutlineInputBorder(),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: durationOptions
+                      .map(
+                        (d) => DropdownMenuItem(
+                          value: d,
+                          child: Text(
+                            d == 'To continue' ? 'To continue (Chronic)' : d,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) {
+                    if (onDurationPresetChanged != null) {
+                      onDurationPresetChanged!(val);
+                    } else if (val == 'To continue') {
+                      onChronicChanged(true);
+                    } else if (val != null && val.endsWith(' days')) {
+                      onChronicChanged(false);
+                      stagedDurationController.text =
+                          val.replaceAll(' days', '');
+                    } else {
+                      onChronicChanged(false);
+                    }
+                  },
+                ),
+              ),
+              if (currentDurationPreset == 'Custom') ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: stagedDurationController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Days',
+                      hintText: 'e.g., 21',
+                      isDense: true,
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                 ),
-              ),
+              ],
               const SizedBox(width: 10),
-              FilterChip(
-                label: const Text(
-                  'Continuous (Chronic)',
-                  style: TextStyle(fontSize: 11),
-                ),
-                selected: stagedIsChronic,
-                onSelected: onChronicChanged,
-              ),
-              const SizedBox(width: 12),
               Expanded(
-                flex: 4,
+                flex: currentDurationPreset == 'Custom' ? 4 : 5,
                 child: TextField(
                   controller: stagedInstructionsController,
                   decoration: const InputDecoration(

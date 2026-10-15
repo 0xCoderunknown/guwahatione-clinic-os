@@ -43,11 +43,13 @@ class RxReconciliationSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeConfig = config ?? ClinicConfig.current;
-    final searchResults = form.medSearchController.text.trim().isNotEmpty
+    final searchQuery = form.medSearchController.text.trim();
+    final isQueryLongEnough = searchQuery.length >= 3 ||
+        (searchQuery.length == 2 && RegExp(r'\d').hasMatch(searchQuery));
+    final searchResults = isQueryLongEnough
         ? MedicineEngine.searchAndGroup(
             catalog: catalog,
-            query: form.medSearchController.text,
-            searchMode: form.searchMode,
+            query: searchQuery,
           )
         : const <CompositionGroupResult>[];
 
@@ -62,23 +64,7 @@ class RxReconciliationSection extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFCBD5E1)),
-            ),
-            padding: const EdgeInsets.all(2),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildSearchModePill('brandFirst', '🏷️ Brand'),
-                _buildSearchModePill('compositionFirst', '🧪 Salt'),
-              ],
-            ),
-          ),
           if (MediaQuery.sizeOf(context).width >= 600) ...[
-            const SizedBox(width: 8),
             TextButton.icon(
               icon: Icon(
                 form.isMedicineExpanded ? Icons.unfold_less : Icons.unfold_more,
@@ -137,9 +123,8 @@ class RxReconciliationSection extends StatelessWidget {
                 TextField(
                   controller: form.medSearchController,
                   decoration: InputDecoration(
-                    hintText: form.searchMode == 'brandFirst'
-                        ? 'Type brand name (e.g., Telma, Dolo, Augmentin, Pan)...'
-                        : 'Type composition / salt (e.g., Telmisartan, Paracetamol)...',
+                    hintText:
+                        'Type medicine name or composition (min 3 letters, e.g., Tel, Dolo, Pan)...',
                     prefixIcon: const Icon(Icons.search, size: 20),
                     suffixIcon: form.medSearchController.text.isNotEmpty
                         ? IconButton(
@@ -163,13 +148,37 @@ class RxReconciliationSection extends StatelessWidget {
                     onUpdate();
                   },
                 ),
+                if (searchQuery.isNotEmpty && !isQueryLongEnough) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6, left: 4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 14,
+                          color: Colors.blueGrey.shade600,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Type at least 3 letters to search medicines (e.g., Tel, Dol, Pan)...',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.blueGrey.shade700,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
 
-                if (form.isSearchActive &&
-                    form.medSearchController.text.trim().isNotEmpty) ...[
+                if (form.isSearchActive && isQueryLongEnough) ...[
                   RxSearchResultsView(
                     results: searchResults,
-                    query: form.medSearchController.text,
+                    query: searchQuery,
+                    enableGroupedCompositionCards:
+                        activeConfig.features.enableGroupedCompositionCards,
                     onStageGeneric: (grp) {
                       form.stageGeneric(grp, uuidGenerator);
                       onUpdate();
@@ -239,41 +248,6 @@ class RxReconciliationSection extends StatelessWidget {
                 );
               },
             ),
-    );
-  }
-
-  Widget _buildSearchModePill(String mode, String label) {
-    final isSelected = form.searchMode == mode;
-    return InkWell(
-      onTap: () {
-        form.searchMode = mode;
-        onUpdate();
-      },
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? Colors.teal.shade800 : Colors.grey.shade700,
-          ),
-        ),
-      ),
     );
   }
 }
