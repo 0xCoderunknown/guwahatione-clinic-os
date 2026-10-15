@@ -21,6 +21,16 @@ class DoctorService {
     await _doctorsRef.doc(doctor.id).update(doctor.toJson());
   }
 
+  /// Updates planned leave dates (blockedDates) for a physician.
+  Future<void> updateDoctorLeave(
+    String doctorId,
+    List<DateTime> blockedDates,
+  ) async {
+    await _doctorsRef.doc(doctorId).update({
+      'blockedDates': blockedDates.map((d) => d.toIso8601String()).toList(),
+    });
+  }
+
   Future<void> updateDoctorSearchPreference(
     String doctorId,
     String searchPreference,

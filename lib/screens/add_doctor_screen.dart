@@ -59,6 +59,7 @@ class _DoctorFormState extends State<DoctorForm> {
 
   final List<String> _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   late List<String> _selectedDays;
+  List<DateTime> _blockedDates = [];
   bool _isSaving = false;
 
   static const List<String> _standardSpecialties = [
@@ -241,6 +242,14 @@ class _DoctorFormState extends State<DoctorForm> {
     _selectedDays = d != null
         ? List<String>.from(d.availableDays)
         : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+
+    _blockedDates = d != null
+        ? (d.blockedDates
+            .map((dt) => DateTime(dt.year, dt.month, dt.day))
+            .toSet()
+            .toList()
+          ..sort((a, b) => a.compareTo(b)))
+        : [];
   }
 
   @override
@@ -552,9 +561,125 @@ class _DoctorFormState extends State<DoctorForm> {
               );
             }).toList(),
           ),
+          const SizedBox(height: 24),
+
+          // 9. Planned Leave & Blocked Dates
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.event_busy,
+                      size: 20,
+                      color: Color(0xFFDC2626),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Planned Leave & Blocked Dates',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    const Spacer(),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0F766E),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                      ),
+                      onPressed: _pickSingleLeaveDate,
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text(
+                        'Add Day',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F766E),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                      ),
+                      onPressed: _pickLeaveDateRange,
+                      icon: const Icon(Icons.date_range, size: 16),
+                      label: const Text(
+                        'Add Week / Range',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Mark individual days or extended week leave. The reception desk will strictly block bookings on these dates.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 12),
+                if (_blockedDates.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      'No planned leaves configured.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _blockedDates.map((d) {
+                      return Chip(
+                        avatar: const Icon(
+                          Icons.calendar_today,
+                          size: 14,
+                          color: Color(0xFF991B1B),
+                        ),
+                        label: Text(
+                          AppFormatters.date(d),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF991B1B),
+                          ),
+                        ),
+                        backgroundColor: const Color(0xFFFEE2E2),
+                        deleteIcon: const Icon(
+                          Icons.close,
+                          size: 14,
+                          color: Color(0xFF991B1B),
+                        ),
+                        onDeleted: () {
+                          setState(() => _blockedDates.remove(d));
+                        },
+                      );
+                    }).toList(),
+                  ),
+              ],
+            ),
+          ),
           const SizedBox(height: 32),
 
-          // 9. Save Button
+          // 10. Save Button
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.teal,
@@ -578,6 +703,74 @@ class _DoctorFormState extends State<DoctorForm> {
         ],
       ),
     );
+  }
+
+  Future<void> _pickSingleLeaveDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: today,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
+      helpText: 'Select Doctor Leave Date',
+    );
+    if (picked != null) {
+      final normalized = DateTime(picked.year, picked.month, picked.day);
+      if (!_blockedDates.any(
+        (d) =>
+            d.year == normalized.year &&
+            d.month == normalized.month &&
+            d.day == normalized.day,
+      )) {
+        setState(() {
+          _blockedDates.add(normalized);
+          _blockedDates.sort((a, b) => a.compareTo(b));
+        });
+      }
+    }
+  }
+
+  Future<void> _pickLeaveDateRange() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final pickedRange = await showDateRangePicker(
+      context: context,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
+      helpText: 'Select Extended Leave Period (e.g. Week)',
+    );
+    if (pickedRange != null) {
+      final start = DateTime(
+        pickedRange.start.year,
+        pickedRange.start.month,
+        pickedRange.start.day,
+      );
+      final end = DateTime(
+        pickedRange.end.year,
+        pickedRange.end.month,
+        pickedRange.end.day,
+      );
+      final newDates = <DateTime>[];
+      var curr = start;
+      while (!curr.isAfter(end)) {
+        newDates.add(curr);
+        curr = DateTime(curr.year, curr.month, curr.day + 1);
+      }
+      setState(() {
+        for (final nd in newDates) {
+          if (!_blockedDates.any(
+            (d) =>
+                d.year == nd.year &&
+                d.month == nd.month &&
+                d.day == nd.day,
+          )) {
+            _blockedDates.add(nd);
+          }
+        }
+        _blockedDates.sort((a, b) => a.compareTo(b));
+      });
+    }
   }
 
   Future<void> _saveDoctor() async {
@@ -628,6 +821,7 @@ class _DoctorFormState extends State<DoctorForm> {
           specialty: specialty,
           phone: _phoneController.text.trim(),
           availableDays: _selectedDays,
+          blockedDates: _blockedDates,
           consultationFee: fee,
           freeReviewDays: reviewDays,
           pin: pin.isNotEmpty ? pin : widget.doctor!.pin,
@@ -645,6 +839,7 @@ class _DoctorFormState extends State<DoctorForm> {
           specialty,
           _phoneController.text.trim(),
           _selectedDays,
+          blockedDates: _blockedDates,
           pin: pin.isNotEmpty ? pin : '1234',
           consultationFee: fee,
           freeReviewDays: reviewDays,

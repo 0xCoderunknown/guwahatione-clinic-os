@@ -223,6 +223,7 @@ class ClinicProvider with ChangeNotifier {
     String specialty,
     String phone,
     List<String> days, {
+    List<DateTime> blockedDates = const [],
     String pin = '1234',
     int consultationFee = 500,
     int freeReviewDays = 14,
@@ -244,7 +245,7 @@ class ClinicProvider with ChangeNotifier {
         specialty: specialty,
         phone: phone,
         availableDays: days,
-        blockedDates: [],
+        blockedDates: blockedDates,
         pin: pin,
         consultationFee: consultationFee,
         freeReviewDays: freeReviewDays,
@@ -269,6 +270,27 @@ class ClinicProvider with ChangeNotifier {
     _setLoading(true);
     try {
       await _doctorService.updateDoctor(doctor);
+    } catch (e) {
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Updates planned leave dates for a physician.
+  Future<void> updateDoctorLeave(
+    String doctorId,
+    List<DateTime> blockedDates, {
+    UserRole? requestingRole,
+  }) async {
+    if (requestingRole != null && !requestingRole.isOwner) {
+      throw Exception(
+        'Permission Denied: Only clinic administrators (owner) can modify doctor leave.',
+      );
+    }
+    _setLoading(true);
+    try {
+      await _doctorService.updateDoctorLeave(doctorId, blockedDates);
     } catch (e) {
       rethrow;
     } finally {
@@ -394,6 +416,18 @@ class ClinicProvider with ChangeNotifier {
     try {
       if (AppointmentEngine.isDateBlocked(scheduledDate)) {
         throw Exception('Selected date is a clinic holiday.');
+      }
+
+      if (AppointmentEngine.isDoctorOnLeave(
+        doctor: selectedDoctor,
+        date: scheduledDate,
+      )) {
+        final summary = AppointmentEngine.formatDoctorLeaveSummary(
+              doctor: selectedDoctor,
+              date: scheduledDate,
+            ) ??
+            'Doctor is on leave';
+        throw Exception('$summary on this date.');
       }
 
       final hasDuplicate = await _bookingService.hasAppointmentForDate(

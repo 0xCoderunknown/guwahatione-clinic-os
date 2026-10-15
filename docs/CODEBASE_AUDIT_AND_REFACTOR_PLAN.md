@@ -271,7 +271,7 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 | 🟡 **Medium** | `medicine_engine.dart` | Fragile ~200-line sequential `if-else` matching for clinical defaults. | Refactor clinical defaults into declarative `List<_ClinicalRegimenRule>`. |
 | 🚫 **Rejected** | `medicine_engine.dart` | Automated allergy collision detection. | Explicitly rejected by PM; allergies remain passive header chips per roadmap to prevent false alerts. |
 | 🟢 **Resolved** | `whatsapp_engine.dart` | Hardcoded "14 days" review policy string. | ✅ **Shipped (`v1.35.2`)**: Dynamically uses doctor-configured `freeReviewDays` (omits if 0 days). |
-| 🟡 **Medium** | `appointment_engine.dart` & `doctor.dart` | Orphaned `Doctor.blockedDates` field. | Enforce doctor leave in `isDateBlocked` and booking duplicate checks. |
+| 🟢 **Resolved** | `appointment_engine.dart` & `doctor.dart` | Orphaned `Doctor.blockedDates` field. | ✅ **Shipped (`v1.36.1`)**: Integrated `isDoctorOnLeave` and `formatDoctorLeaveSummary` handling single day, 2 days, and extended week leaves. |
 | 🟡 **Medium** | `patient_review_eligibility.dart` | 55-line micro-file satellite. | Consolidate into `appointment_engine.dart`. |
 | 🟢 **Low** | `diagnostic_investigation.dart` | Micro-model satellite. | Consolidate into `consultation.dart`. |
 | 🟢 **Low** | `user_role.dart` | 26-line micro-file. | Consolidate into `auth_provider.dart`. |
@@ -421,10 +421,10 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 
 | Priority | Component | Issue | Action Item |
 |:---:|:---|:---|:---|
-| 🔴 **High** | `clinic_provider.dart` | `addMedicine()` drops default dosage/frequency/timing/duration. | Accept optional default regimen parameters and pass to `Medicine`. |
+| 🟢 **Resolved** | `clinic_provider.dart` | `addMedicine()` drops default dosage/frequency/timing/duration. | ✅ **Shipped (`v1.36.0`)**: Defaults accepted and forwarded to `Medicine` model & Firestore. |
 | 🟡 **Medium** | `chamber_service.dart` | Uses raw magic strings (`'calling'`, `'idle'`) instead of `ChamberStatus`. | Replace raw strings with strongly typed `ChamberStatus` enum. |
 | 🟡 **Medium** | `catalogue_service.dart` | `ensureDefaultMedicinesExist()` skips sync if any single medicine exists. | Implement idempotent batch upsert for new standard formulary drugs. |
-| 🟡 **Medium** | `doctor_service.dart` | Missing doctor leave/block date management. | Add `updateDoctorLeave(doctorId, blockedDates)` to support leave calendar. |
+| 🟢 **Resolved** | `doctor_service.dart` | Missing doctor leave/block date management. | ✅ **Shipped (`v1.36.1`)**: Added `updateDoctorLeave(doctorId, blockedDates)` to `DoctorService` and `ClinicProvider`. |
 | 🟢 **Low** | `auth_provider.dart` | Retains unused plaintext PIN getters. | Purge `_receptionistPin` / `_ownerMasterPin` plaintext properties in favor of pure hash verification. |
 | 🟢 **Low** | `doctor_service.dart` | 45-line micro-file. | Keep standalone as clean service boundary, but augment with leave methods. |
 | 🟢 **Low** | `firestore_paths.dart` | 42-line micro-file. | Preserve standalone to prevent circular dependency tree. |
@@ -642,12 +642,12 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 | Priority | Component | Issue | Action Item |
 |:---:|:---|:---|:---|
 | 🔴 **High** | `consultation_encounter_screen.dart` | `_switchToIncomingPatient()` discards unsaved form data. | Add dirty-form confirmation modal before switching patients. |
-| 🔴 **High** | `add_medicine_dialog.dart` | Missing default dosage/frequency/timing/duration inputs. | Add input fields for default clinical regimen. |
-| 🔴 **High** | `staged_medicine_form.dart` | Missing 1-key (Enter) "Verify & Next" rapid prescribing loop. | Support Enter keypress to confirm staging and auto-focus next medicine search. |
+| 🟢 **Resolved** | `add_medicine_dialog.dart` | Missing default dosage/frequency/timing/duration inputs. | ✅ **Shipped (`v1.36.0`)**: Added input fields for default clinical regimen. |
+| 🟢 **Resolved** | `staged_medicine_form.dart` | Missing 1-key (Enter) "Verify & Next" rapid prescribing loop. | ✅ **Shipped (`v1.36.0`)**: Enter keypress verifies staged drug and autofocuses search input. |
 | 🟢 **Resolved** | `daily_cash_handover_dialog.dart` | False cash shortage alert due to UPI revenue inclusion. | ✅ **Shipped (`v1.35.1`)**: Physical note counter discrepancy now evaluates strictly against physical cash revenue; UPI and total revenue displayed in dedicated cards & table columns. |
 | 🟢 **Resolved** | `patient_directory_screen.dart`, `doctor_chamber_screen.dart` & `medicine_catalogue_screen.dart` | Hardcoded maxWidth caps violate Invariant #5 on FHD monitors. | ✅ **Shipped (`v1.35.2`)**: Expanded container constraints to `maxWidth: 1800` across all three desktop screens. |
-| 🟡 **Medium** | `add_appointment_dialog.dart` | Does not check `Doctor.blockedDates` for doctor leave. | Enforce doctor leave in booking validation and show warning banner. |
-| 🟡 **Medium** | `add_doctor_screen.dart` | `Doctor.blockedDates` has no configuration UI. | Add leave date picker for doctor profile. |
+| 🟢 **Resolved** | `add_appointment_dialog.dart` | Does not check `Doctor.blockedDates` for doctor leave. | ✅ **Shipped (`v1.36.1`)**: Integrated `BookingDoctorLeaveWarningBanner` and disabled confirm button when doctor is on leave. |
+| 🟢 **Resolved** | `add_doctor_screen.dart` | `Doctor.blockedDates` has no configuration UI. | ✅ **Shipped (`v1.36.1`)**: Added Planned Leave section with single day and week/date-range pickers and removable `DD-MM-YYYY` chips. |
 | 🟢 **Low** | `chamber_archive_banner.dart` | 34-line micro-file satellite. | Consolidate into `chamber_queue_header.dart`. |
 
 

@@ -8,6 +8,26 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.36.1] — 15-10-2026
+
+### Doctor Planned Leave & Extended Week Absence System with Dynamic Range Messaging
+- **Operational & Engineering Impact:**
+  - **End-to-End Doctor Leave Pipeline:** Wired `Doctor.blockedDates` through domain engine, services, booking desk, and owner settings.
+  - **Dynamic Leave Duration Messaging (`AppointmentEngine.formatDoctorLeaveSummary`):**
+    - Single day: `"Doctor is on leave on DD-MM-YYYY"`
+    - 2 days: `"Doctor is on leave on DD-MM-YYYY and DD-MM-YYYY"`
+    - 3+ days / Extended Week: `"Doctor is on leave from DD-MM-YYYY to DD-MM-YYYY"`
+    - Omitted doctor name in message since the doctor selector already displays the physician.
+  - **Zero Booking on Leave Days:** `AppointmentEngine.isDoctorOnLeave` strictly blocks booking. `AddAppointmentDialog` renders a red `BookingDoctorLeaveWarningBanner` and disables the confirmation button (`onPressed: null`).
+  - **Server-Side & Provider Guard:** `ClinicProvider.addAppointment` validates `isDoctorOnLeave` and throws with the exact formatted summary if bypassed.
+  - **Owner Profile Leave Management (`AddDoctorScreen`):** Added a dedicated "Planned Leave & Blocked Dates" section with `Add Day` and `Add Week / Range` pickers and removable `DD-MM-YYYY` chips.
+  - **Service Gateway:** Added `DoctorService.updateDoctorLeave(doctorId, blockedDates)` and `ClinicProvider.updateDoctorLeave`.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 234 unit and widget tests passing green (7 new tests in `test/doctor_leave_system_test.dart`).
+
+---
+
 ## [1.36.0] — 15-10-2026
 
 ### Streamlined Medicine Schema (Form in Name, Strength in Composition), Catalogue Regimen Defaults & 1-Key "Verify & Next" Prescribing Loop

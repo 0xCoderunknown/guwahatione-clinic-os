@@ -335,12 +335,28 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     reviewEligibility: _reviewEligibility,
                     amountController: _amountController,
                     onSubmitted: () {
-                      if (!_isBooking && _duplicateAppointment == null) {
+                      final isDoctorOnLeave = AppointmentEngine.isDoctorOnLeave(
+                        doctor: _selectedDoctor,
+                        date: _selectedDate,
+                      );
+                      if (!_isBooking &&
+                          _duplicateAppointment == null &&
+                          !isDoctorOnLeave) {
                         _saveAppointment();
                       }
                     },
                   ),
                   if (_selectedDoctor != null &&
+                      AppointmentEngine.isDoctorOnLeave(
+                        doctor: _selectedDoctor,
+                        date: _selectedDate,
+                      )) ...[
+                    const SizedBox(height: 12),
+                    BookingDoctorLeaveWarningBanner(
+                      doctor: _selectedDoctor!,
+                      date: _selectedDate,
+                    ),
+                  ] else if (_selectedDoctor != null &&
                       !AppointmentEngine.isDoctorAvailableOnDate(
                         doctor: _selectedDoctor,
                         date: _selectedDate,
@@ -372,7 +388,13 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
           ElevatedButton(
             focusNode: _submitFocusNode,
             onPressed:
-                (_isLoading || _isBooking || _duplicateAppointment != null)
+                (_isLoading ||
+                 _isBooking ||
+                 _duplicateAppointment != null ||
+                 AppointmentEngine.isDoctorOnLeave(
+                   doctor: _selectedDoctor,
+                   date: _selectedDate,
+                 ))
                 ? null
                 : _saveAppointment,
             style: ElevatedButton.styleFrom(
@@ -736,6 +758,24 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Please select a doctor")));
+      return;
+    }
+
+    if (AppointmentEngine.isDoctorOnLeave(
+      doctor: _selectedDoctor,
+      date: _selectedDate,
+    )) {
+      final summary = AppointmentEngine.formatDoctorLeaveSummary(
+            doctor: _selectedDoctor,
+            date: _selectedDate,
+          ) ??
+          'Doctor is on leave';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('⚠️ $summary on this date.'),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
       return;
     }
 

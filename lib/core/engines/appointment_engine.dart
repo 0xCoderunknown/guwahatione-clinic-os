@@ -605,6 +605,92 @@ abstract class AppointmentEngine {
     final currentDay = dayNames[date.weekday - 1];
     return doctor.availableDays.contains(currentDay);
   }
+
+  /// Evaluates whether a doctor is on planned leave on the given target date.
+  /// Matches year, month, and day against the doctor's configured blockedDates.
+  static bool isDoctorOnLeave({
+    required Doctor? doctor,
+    required DateTime date,
+  }) {
+    if (doctor == null || doctor.blockedDates.isEmpty) return false;
+    final targetY = date.year;
+    final targetM = date.month;
+    final targetD = date.day;
+    return doctor.blockedDates.any(
+      (b) => b.year == targetY && b.month == targetM && b.day == targetD,
+    );
+  }
+
+  /// Returns the contiguous sorted sequence of leave dates containing [date],
+  /// or an empty list if [date] is not within the doctor's blocked dates.
+  static List<DateTime> getContiguousDoctorLeaveBlock({
+    required Doctor? doctor,
+    required DateTime date,
+  }) {
+    if (!isDoctorOnLeave(doctor: doctor, date: date)) return const [];
+    final target = DateTime(date.year, date.month, date.day);
+
+    // Normalize, deduplicate, and sort all blocked dates
+    final normalized = doctor!.blockedDates
+        .map((d) => DateTime(d.year, d.month, d.day))
+        .toSet()
+        .toList()
+      ..sort((a, b) => a.compareTo(b));
+
+    // Group into contiguous clusters where adjacent elements are exactly 1 day apart
+    final clusters = <List<DateTime>>[];
+    List<DateTime> currentCluster = [];
+
+    for (int i = 0; i < normalized.length; i++) {
+      if (currentCluster.isEmpty) {
+        currentCluster.add(normalized[i]);
+      } else {
+        final prev = currentCluster.last;
+        final curr = normalized[i];
+        final nextDay = DateTime(prev.year, prev.month, prev.day + 1);
+        if (curr.year == nextDay.year &&
+            curr.month == nextDay.month &&
+            curr.day == nextDay.day) {
+          currentCluster.add(curr);
+        } else {
+          clusters.add(currentCluster);
+          currentCluster = [curr];
+        }
+      }
+    }
+    if (currentCluster.isNotEmpty) {
+      clusters.add(currentCluster);
+    }
+
+    for (final cluster in clusters) {
+      if (cluster.contains(target)) {
+        return cluster;
+      }
+    }
+
+    return [target];
+  }
+
+  /// Formats human-facing leave explanation strictly adhering to Indian DD-MM-YYYY dates.
+  /// - 1 day: 'Doctor is on leave on 18-10-2026'
+  /// - 2 days: 'Doctor is on leave on 18-10-2026 and 19-10-2026'
+  /// - 3+ days (extended / week leave): 'Doctor is on leave from 18-10-2026 to 24-10-2026'
+  /// Returns null if doctor is not on leave on [date].
+  static String? formatDoctorLeaveSummary({
+    required Doctor? doctor,
+    required DateTime date,
+  }) {
+    if (!isDoctorOnLeave(doctor: doctor, date: date)) return null;
+    final block = getContiguousDoctorLeaveBlock(doctor: doctor, date: date);
+    if (block.isEmpty) return 'Doctor is on leave';
+    if (block.length == 1) {
+      return 'Doctor is on leave on ${AppFormatters.date(block.first)}';
+    }
+    if (block.length == 2) {
+      return 'Doctor is on leave on ${AppFormatters.date(block[0])} and ${AppFormatters.date(block[1])}';
+    }
+    return 'Doctor is on leave from ${AppFormatters.date(block.first)} to ${AppFormatters.date(block.last)}';
+  }
 }
 
 /// Operational token allocation alert statuses for doctor OPD capacity.
