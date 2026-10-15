@@ -8,6 +8,19 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.36.3] — 15-10-2026
+
+### Single Source of Truth Documentation Consolidation
+- **Architecture & AI Guardrail Impact:**
+  - **Pruned Redundant Documentation:** Purged legacy archives (`docs/archive/`) and historical decision logs (`docs/decisions/`) to establish a zero-hallucination, single source of truth for AI agents and developers.
+  - **Single Source Architecture:** Root `AGENTS.md` is the canonical product constitution, `docs/SCHEMA_AND_MODELS.md` is the database contract, and `docs/PRODUCT_ROADMAP.md` is the active backlog.
+  - **Clean Context Footprint:** Removed outdated planning hypotheses and contradictory proposals, ensuring consistent chamber handshake rules and strict single-occupancy guarantees across all agents.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 234 unit and widget tests passing green.
+
+---
+
 ## [1.36.2] — 15-10-2026
 
 ### Enforce Doctor-Paced Handshake Integrity & Purge Illegal Encounter Pre-Emption
@@ -550,7 +563,3 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
   - **Daily Cash Drawer Handover:** Interactive denomination counter modal (`₹500`, `₹200`, `₹100`, etc.) summarizes cash collections across completed visits and computes drawer discrepancies.
   - **Responsive Catalogue Layout (v1.15.1):** Fluidly adapts master medicine formulary across mobile, tablet, and desktop viewports.
 
----
-
-> 📦 **Historical Foundation Release Notes:**  
-> For foundational releases prior to v1.15.0 (v1.0.0 — v1.14.0), see [`docs/archive/CHANGELOG_ARCHIVE.md`](docs/archive/CHANGELOG_ARCHIVE.md).

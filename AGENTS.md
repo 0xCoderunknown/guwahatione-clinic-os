@@ -46,7 +46,7 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
    - **Mobile (Pixel / iPhone 390–430px):** Must remain seamless edge-to-edge with bottom navigation bar, single top AppBar, and 2×2 metric KPI grid.
 
 6. **Mandatory Indian Date Format (`DD-MM-YYYY`):**
-   - **All dates displayed in UI, printed prescriptions, reports, changelogs (`CHANGELOG.md`, `docs/archive/CHANGELOG_ARCHIVE.md`), and markdown documentation MUST strictly use Indian numerical date formatting (`DD-MM-YYYY` or `DD-MM-YY`).**
+   - **All dates displayed in UI, printed prescriptions, reports, changelogs (`CHANGELOG.md`), and markdown documentation MUST strictly use Indian numerical date formatting (`DD-MM-YYYY` or `DD-MM-YY`).**
    - Never use `YYYY-MM-DD` or `MM/DD/YYYY` in human-facing text, changelogs, release notes, or markdown documentation.
    - Internal database storage and query tokens continue to use standard Firestore `Timestamp` or ISO-8601 strings, but any date presented to humans, doctors, patients, receptionists, or written in markdown files must strictly be formatted as `DD-MM-YYYY`.
 
@@ -146,8 +146,7 @@ test/             -> Automated test suite (234 automated unit and widget tests c
 docs/
 ├── SCHEMA_AND_MODELS.md  -> Single source of truth for Firestore collections & models
 ├── PRODUCT_ROADMAP.md    -> Single source of truth for feature state, backlog, and architecture
-├── COMPLIANCE_AND_PRIVACY.md -> Clinical data handling & privacy standards
-└── archive/              -> Historical reference archives (never use for active invariants)
+└── COMPLIANCE_AND_PRIVACY.md -> Clinical data handling & privacy standards
 ```
 
 ---
