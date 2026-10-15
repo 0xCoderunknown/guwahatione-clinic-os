@@ -116,14 +116,15 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                     final statusSubtitle =
                         '${AppFormatters.specialty(doc.specialty)} • ${doc.formattedSchedule}';
 
-                    if (isReady) {
-                      statusBadgeBg = const Color(0xFFDCFCE7);
-                      statusBadgeFg = const Color(0xFF15803D);
-                      statusLabel = 'READY';
-                    } else if (isEnded) {
-                      statusBadgeBg = const Color(0xFFF1F5F9);
-                      statusBadgeFg = const Color(0xFF64748B);
-                      statusLabel = 'ON BREAK';
+                    final isOnLeave = AppointmentEngine.isDoctorOnLeave(
+                      doctor: doc,
+                      date: DateTime.now(),
+                    );
+
+                    if (isOnLeave) {
+                      statusBadgeBg = const Color(0xFFFEE2E2);
+                      statusBadgeFg = const Color(0xFFDC2626);
+                      statusLabel = 'ABSENT';
                     } else if (isCalling || isInConsultation) {
                       statusBadgeBg = const Color(0xFFDBEAFE);
                       statusBadgeFg = const Color(0xFF1D4ED8);
@@ -131,11 +132,19 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       statusLabel =
                           (activePatient != null && activePatient.isNotEmpty)
                               ? 'Consulting: $activePatient'
-                              : 'IN CONSULTATION';
+                              : 'CONSULTING';
+                    } else if (isReady) {
+                      statusBadgeBg = const Color(0xFFDCFCE7);
+                      statusBadgeFg = const Color(0xFF15803D);
+                      statusLabel = 'READY';
+                    } else if (isEnded) {
+                      statusBadgeBg = const Color(0xFFFEF3C7);
+                      statusBadgeFg = const Color(0xFFB45309);
+                      statusLabel = 'ON BREAK';
                     } else {
                       statusBadgeBg = const Color(0xFFF1F5F9);
-                      statusBadgeFg = const Color(0xFF64748B);
-                      statusLabel = 'IDLE';
+                      statusBadgeFg = const Color(0xFF475569);
+                      statusLabel = 'IN CHAMBER';
                     }
 
                     return ListTile(

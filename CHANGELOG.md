@@ -8,6 +8,26 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.36.4] — 15-10-2026
+
+### Reception Dashboard Cleanups: Streamlined Mobile Header, Clean Fee Presentation & Refined Doctor Status Badges
+- **Operational & Presentation Impact:**
+  - **Eliminated Mobile Booking Redundancy:** Removed duplicate `Walk-In` action button from `DashboardScreen` mobile AppBar. Mobile receptionists now use the single, prominent `FloatingActionButton.extended` in `OwnerShell`.
+  - **Clean Patient Card Payment Presentation (`Appointment.paymentSummary`):** Replaced cluttered `Fee: ₹500 (Paid (Cash))` with clean, unbracketed presentation:
+    - Paid visits: `₹500 Paid`
+    - Statutory review: `Free Review`
+    - Discretionary waiver: `Free Waiver`
+    - Pending collections: `Post-Pay` or `Unpaid`
+  - **Refined Doctor Chamber Roster Status Badges:**
+    - `[ABSENT]`: Prominently rendered in red (`#FEE2E2` / `#DC2626`) when doctor has planned leave today (`AppointmentEngine.isDoctorOnLeave`).
+    - `[IN CHAMBER]`: Clean slate badge (`#F1F5F9` / `#475569`) replacing the generic `[IDLE]` badge when the doctor is present in chamber but not attending any patient.
+    - `[CONSULTING]` / `[Consulting: Patient Name]`: Kept intact for active chamber encounters.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 237 unit and widget tests passing green.
+
+---
+
 ## [1.36.3] — 15-10-2026
 
 ### Single Source of Truth Documentation Consolidation

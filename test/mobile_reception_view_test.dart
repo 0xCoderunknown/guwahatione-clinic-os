@@ -155,7 +155,7 @@ void main() {
       expect(find.text('Book Walk-In'), findsWidgets);
     });
 
-    testWidgets('DashboardScreen on mobile displays top Walk-In header button', (
+    testWidgets('DashboardScreen on mobile displays sleek header without duplicate Walk-In header button', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(390, 844);
@@ -170,8 +170,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('dashboard_mobile_walkin_button')), findsOneWidget);
-      expect(find.text('Walk-In'), findsOneWidget);
+      expect(find.text('GuwahatiOne Clinic'), findsOneWidget);
+      expect(find.byKey(const Key('dashboard_mobile_walkin_button')), findsNothing);
     });
 
     testWidgets('DashboardTodayQueueCard on mobile renders mobile patient card without overflow', (

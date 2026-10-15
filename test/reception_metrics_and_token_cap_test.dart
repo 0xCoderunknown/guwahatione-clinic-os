@@ -328,7 +328,7 @@ void main() {
       expect(find.text('Token #5'), findsOneWidget);
     });
 
-    testWidgets('Displays IDLE status and schedule when chamber is empty', (tester) async {
+    testWidgets('Displays IN CHAMBER status and schedule when chamber is empty', (tester) async {
       final fakeSession = ChamberSession.empty('doc-test-1', DateTime.now());
       final authProvider = AuthProvider();
 
@@ -349,11 +349,45 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('IDLE'), findsOneWidget);
+      expect(find.text('IN CHAMBER'), findsOneWidget);
       expect(
         find.text('Cardiology • Mon, Wed, Fri • 6:00 PM – 8:30 PM'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('Displays ABSENT status when doctor is on leave today', (tester) async {
+      final today = DateTime.now();
+      final absentDoctor = Doctor(
+        id: 'doc-absent-1',
+        name: 'Dr. Absent Doctor',
+        specialty: 'Pediatrics',
+        phone: '9876543210',
+        availableDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        consultationFee: 500,
+        blockedDates: [today],
+      );
+      final fakeSession = ChamberSession.empty('doc-absent-1', today);
+      final authProvider = AuthProvider();
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: authProvider),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: DashboardDoctorRosterCard(
+                provider: _FakeClinicProvider(absentDoctor, fakeSession),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('ABSENT'), findsOneWidget);
     });
   });
 

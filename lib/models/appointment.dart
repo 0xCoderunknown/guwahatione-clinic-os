@@ -107,6 +107,24 @@ class Appointment {
     }
   }
 
+  /// Formats clean, human-friendly payment summary without bracket clutter.
+  /// Examples: "₹500 Paid", "Free Review", "Free Waiver", "Post-Pay", "Unpaid".
+  String get paymentSummary {
+    switch (paymentType) {
+      case PaymentType.paidCash:
+      case PaymentType.paidUpi:
+        return '₹$amountCollected Paid';
+      case PaymentType.freeReview:
+        return 'Free Review';
+      case PaymentType.freeFamily:
+        return 'Free Waiver';
+      case PaymentType.postPay:
+        return 'Post-Pay';
+      case PaymentType.unpaid:
+        return 'Unpaid';
+    }
+  }
+
   Appointment({
     required this.id,
     String? patientId,

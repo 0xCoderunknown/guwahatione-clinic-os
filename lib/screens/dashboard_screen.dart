@@ -45,35 +45,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               elevation: 0.5,
               backgroundColor: Colors.white,
               actions: [
-                FilledButton.icon(
-                  key: const Key('dashboard_mobile_walkin_button'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.teal.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  icon: const Icon(Icons.add_rounded, size: 16),
-                  label: const Text(
-                    'Walk-In',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (_) => const AddAppointmentDialog(),
-                    );
-                  },
-                ),
-                const SizedBox(width: 4),
                 IconButton(
                   icon: const Icon(
                     Icons.logout_rounded,

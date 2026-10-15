@@ -595,4 +595,87 @@ void main() {
       expect(eligibility.isWithinReviewPeriod, isFalse);
     });
   });
+
+  group('Appointment.paymentSummary Tests', () {
+    test('formats paid cash and upi cleanly with rupee amount and Paid label', () {
+      final cashAppt = Appointment(
+        id: 'appt-1',
+        patientPhone: '9876543210',
+        patientName: 'Test Patient',
+        paymentType: PaymentType.paidCash,
+        amountCollected: 500,
+        queueNumber: 1,
+        scheduledDate: DateTime.now(),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Das',
+      );
+      final upiAppt = Appointment(
+        id: 'appt-2',
+        patientPhone: '9876543210',
+        patientName: 'Test Patient',
+        paymentType: PaymentType.paidUpi,
+        amountCollected: 700,
+        queueNumber: 2,
+        scheduledDate: DateTime.now(),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Das',
+      );
+
+      expect(cashAppt.paymentSummary, '₹500 Paid');
+      expect(upiAppt.paymentSummary, '₹700 Paid');
+    });
+
+    test('formats free waivers, post-pay, and unpaid without brackets', () {
+      final freeReview = Appointment(
+        id: 'appt-3',
+        patientPhone: '9876543210',
+        patientName: 'Test Patient',
+        paymentType: PaymentType.freeReview,
+        amountCollected: 0,
+        queueNumber: 3,
+        scheduledDate: DateTime.now(),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Das',
+      );
+      final freeFamily = Appointment(
+        id: 'appt-4',
+        patientPhone: '9876543210',
+        patientName: 'Test Patient',
+        paymentType: PaymentType.freeFamily,
+        amountCollected: 0,
+        queueNumber: 4,
+        scheduledDate: DateTime.now(),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Das',
+      );
+      final postPay = Appointment(
+        id: 'appt-5',
+        patientPhone: '9876543210',
+        patientName: 'Test Patient',
+        paymentType: PaymentType.postPay,
+        amountCollected: 0,
+        queueNumber: 5,
+        scheduledDate: DateTime.now(),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Das',
+      );
+      final unpaid = Appointment(
+        id: 'appt-6',
+        patientPhone: '9876543210',
+        patientName: 'Test Patient',
+        paymentType: PaymentType.unpaid,
+        amountCollected: 0,
+        queueNumber: 6,
+        scheduledDate: DateTime.now(),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Das',
+      );
+
+      expect(freeReview.paymentSummary, 'Free Review');
+      expect(freeFamily.paymentSummary, 'Free Waiver');
+      expect(postPay.paymentSummary, 'Post-Pay');
+      expect(unpaid.paymentSummary, 'Unpaid');
+    });
+  });
 }
+

@@ -325,7 +325,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      "Fee: ${AppFormatters.currency(appt.amountCollected)} (${appt.paymentType.displayName})",
+                      appt.paymentSummary,
                       style: const TextStyle(
                         fontSize: 11.5,
                         color: Color(0xFF475569),
@@ -432,7 +432,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              "${AppFormatters.doctorTitle(appt.doctorName)} • Fee: ${AppFormatters.currency(appt.amountCollected)} (${appt.paymentType.displayName})",
+              "${AppFormatters.doctorTitle(appt.doctorName)} • ${appt.paymentSummary}",
               style: const TextStyle(
                 fontSize: 12.5,
                 color: Color(0xFF475569),
