@@ -2,7 +2,7 @@
 
 > **Maintained by:** Senior Clinical Systems Architect & Product Manager  
 > **Audience:** All AI Agents, Coding Assistants, and Engineering Staff  
-> **Companion Blueprint:** [PRODUCT_VISION_AND_WORKFLOW.md](PRODUCT_VISION_AND_WORKFLOW.md)
+> **Companion Standards:** [`AGENTS.md`](../AGENTS.md) | [`docs/SCHEMA_AND_MODELS.md`](SCHEMA_AND_MODELS.md)
 
 ---
 

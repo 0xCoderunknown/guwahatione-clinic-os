@@ -22,13 +22,15 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
    - Subsequent encounters record medication reconciliation states: `START` (new therapy), `CONTINUE` (reconciled chronic regimen), or `STOP` (explicit discontinuation with `stopReason`).
    - The printed prescription is a transient output; the append-only clinical history across visits is the core product.
 
-3. **Strict 5-Step Clinical Encounter Pipeline:**
-   Every consultation flow must strictly adhere to the 5 clinical stages in `ConsultationEncounterScreen`:
-   - **Step 1:** Patient Header & Allergies Alert Banner
-   - **Step 2:** Vitals & Clinical Examination (Chief complaints & provisional diagnosis)
-   - **Step 3:** Diagnostic Investigations Review (Past lab reports & values)
-   - **Step 4:** Medication Reconciliation & Prescribing (`START` / `CONTINUE` / `STOP`)
-   - **Step 5:** Diagnostic Orders & Follow-Up Advice
+3. **Longitudinal Clinical Encounter Architecture:**
+   - Prescriptions and consultations are **append-only** clinical events (`consultations` collection). Past encounters are never overwritten or mutated.
+   - Encounters are structured around familiar Indian MBBS/MD clinical workflows:
+     - **Header & Passive Allergy Alert:** Patient demographics with passive free-text allergy chip.
+     - **Clinical Observations:** Compact vitals grid + MBBS standard notes (`C/O` Chief Complaints, `O/E` On Examination, `Dx`/`P/D` Provisional Diagnosis).
+     - **Past History & 1-Click Carry Forward:** Prior visits viewable read-only; single `[CARRY FORWARD]` button copies prior regimen into active prescription as `CONTINUE` items.
+     - **Medication Reconciliation & Prescribing:** Unified brand/composition search, pre-filled clinical defaults, rapid frequency chips (`1-0-1`, `1-0-0`, `0-0-1`, `1-1-1`, `SOS`), and timing chips (`After Food / PC`, `Before Food / Khali Pet / AC`).
+     - **Diagnostic Orders & Follow-Up Advice:** Ordered lab tests, free-form remarks/diet instructions, and structured next review dropdown (`3 days`, `7 days`, `14 days`, `1 month`, `3 months`, `Not Needed`).
+   - Clinical encounter sections are modular and collapsible (HK-1). Doctors can record observations in any order without forced linear roadblocks.
 
 4. **Product Boundaries (What Clinic OS Is NOT):**
    - **NOT** a Pharmacy ERP or retail billing software.
@@ -48,10 +50,14 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
    - Never use `YYYY-MM-DD` or `MM/DD/YYYY` in human-facing text, changelogs, release notes, or markdown documentation.
    - Internal database storage and query tokens continue to use standard Firestore `Timestamp` or ISO-8601 strings, but any date presented to humans, doctors, patients, receptionists, or written in markdown files must strictly be formatted as `DD-MM-YYYY`.
 
-7. **Doctor-Paced Chamber Handshake Protocol (Zero Forced Admission):**
-   - The chamber real-time sync channel (`counters/chamber_{doctorId}_{yyyy-MM-dd}`) follows a strict 5-state lifecycle: `idle` ➔ `ready_for_next` ➔ `calling` ➔ `in_consultation` ➔ `consultation_ended`.
-   - When a physician completes an encounter, the session enters `consultation_ended` (Breather).
-   - Reception cannot force a patient into the chamber during a consultation or breather without explicit doctor readiness (`ready_for_next`), preventing physician burn-out and consultation collisions.
+7. **Doctor-Paced Chamber Handshake Protocol (Zero Forced Admission & Zero Data Loss):**
+   - The chamber real-time sync channel (`counters/chamber_{doctorId}_{yyyy-MM-dd}`) strictly enforces a 5-state synchronized lifecycle:
+     1. **Doctor Breather (`consultation_ended`):** When doctor completes an encounter ("Complete & Sign"), the consultation concludes, the encounter screen closes, and the chamber enters `consultation_ended` (Breather).
+     2. **Reception Locked During Breather:** Reception desk displays `"Doctor on Break (Waiting for Doctor)"` with the dispatch button **strictly disabled** (`onDispatch = null`). Reception can verify arrival and payment for the next patient in line, but **MUST NOT and CANNOT send anyone inside**.
+     3. **Doctor Signals Readiness (`ready_for_next`):** Once ready, the doctor hits the `"Next Patient"` button in `DoctorChamberScreen`. This transitions the chamber to `ready_for_next`.
+     4. **Reception Dispatches Next Patient (`calling`):** The reception button unlocks to `"SEND IN TO DOCTOR"`. Reception clicking "Send In" dispatches the verified patient into the chamber (`calling`).
+     5. **Auto-Load & Active Consultation (`in_consultation`):** Doctor chamber screen receives the calling event and auto-loads the consultation encounter screen, moving status to `in_consultation`. Reception dispatch immediately re-locks to `"Chamber Occupied (Token #N Inside)"` (`onDispatch = null`).
+   - **Zero Pre-Emption Guarantee:** Reception cannot force or call a patient into the chamber during an active consultation or breather. A doctor typing an encounter can NEVER have another patient forced into their chamber, eliminating all possibility of unsaved data loss or consultation collisions.
 
 8. **Temporal Guarding & Read-Only Chamber Archive (Today-Only Live Operations):**
    - Live physical actions (starting chamber shifts, signaling ready for next, emergency door admissions) are strictly restricted to the current active calendar date (`today`).
@@ -70,10 +76,9 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
 
 11. **Single-Occupant Chamber Integrity & Collision Lock (Atomic Occupancy):**
     - A consultation chamber is strictly single-occupant. At any given moment, exactly **zero or one** patient can be inside or actively called into a doctor's chamber.
-    - **Zero Pre-emption:** An active patient ($T_N$) undergoing consultation or being called can **never** be superseded or displaced by another token ($T_{N+1}$) from reception queue cards, accordion panels, or doctor door overrides.
-    - `ChamberService.callTokenIntoChamber` must atomically guard against overwriting an active session without explicit override.
-    - Doctor chamber workspace must lock consultation navigation (`_isConsultationOpen`) to prevent duplicate encounter modals from stacking or discarding the active encounter screen.
-    - Emergency door admission lists (`ChamberDoorOverrideBar`) and reception dispatch actions (`AccordionDispatchSection`, `DashboardQueueCard`) must be strictly locked whenever a chamber is occupied.
+    - **Zero Pre-emption:** An active patient ($T_N$) undergoing consultation can **never** be superseded, interrupted, or displaced by another token ($T_{N+1}$) from reception queue cards, accordion panels, or doctor door overrides.
+    - `ConsultationEncounterScreen` must NEVER contain incoming patient switch alerts or route replacements. When an encounter is open, the doctor is in exclusive session with that patient until completion.
+    - Emergency door admission lists (`ChamberDoorOverrideBar`) and reception dispatch actions (`AccordionDispatchSection`, `DashboardQueueCard`) are strictly locked whenever a chamber is occupied.
 
 ---
 
@@ -137,11 +142,12 @@ lib/
 ├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
 ├── widgets/      -> Reusable UI sub-packages (booking, catalogue, chamber, common, dashboard, encounter, print, queue)
 └── utils/        -> Helpers (Default medicines, app constants, platform print, platform sound, formatters)
-test/             -> Automated test suite (209 automated unit and widget tests covering engines, flows, models, and platform services)
+test/             -> Automated test suite (234 automated unit and widget tests covering engines, flows, models, and platform services)
 docs/
-├── SCHEMA_AND_MODELS.md  -> Master data dictionary for Firestore collections & models
-├── PRODUCT_VISION_AND_WORKFLOW.md -> Clinical encounter blueprint & real-world OPD intent
-└── PRODUCT_ROADMAP.md    -> Current feature state, backlog, and scope boundaries
+├── SCHEMA_AND_MODELS.md  -> Single source of truth for Firestore collections & models
+├── PRODUCT_ROADMAP.md    -> Single source of truth for feature state, backlog, and architecture
+├── COMPLIANCE_AND_PRIVACY.md -> Clinical data handling & privacy standards
+└── archive/              -> Historical reference archives (never use for active invariants)
 ```
 
 ---
