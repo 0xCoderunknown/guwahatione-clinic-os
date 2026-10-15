@@ -246,6 +246,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
       if (appt.status == AppointmentStatus.completed) {
         await EncounterDialogs.showLongitudinalHistory(
           context,
+          patientId: appt.patientId,
           patientPhone: appt.patientPhone,
         );
       } else {

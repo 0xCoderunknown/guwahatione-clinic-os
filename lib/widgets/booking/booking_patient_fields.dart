@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Form fields for patient demographic data (Phone with search trigger, Name, Age, Sex).
+import '../../models/patient.dart';
+
+/// Form fields for patient demographic data (Phone with search trigger, Family picker, Name, Age/Unit, Sex, Guardian).
 /// Ergonomically optimized for 100% keyboard navigation and mouse-free workflow.
 class BookingPatientFields extends StatelessWidget {
   final TextEditingController phoneController;
@@ -18,6 +20,21 @@ class BookingPatientFields extends StatelessWidget {
   final bool genderHasError;
   final VoidCallback? onSubmitted;
 
+  // Family Picker
+  final List<Patient> familyMembers;
+  final String? selectedPatientId;
+  final ValueChanged<Patient?> onSelectPatient;
+
+  // Age Unit
+  final String ageUnit;
+  final ValueChanged<String> onAgeUnitChanged;
+
+  // Guardian
+  final TextEditingController guardianNameController;
+  final TextEditingController guardianRelationController;
+  final FocusNode? guardianFocusNode;
+  final FocusNode? guardianRelationFocusNode;
+
   const BookingPatientFields({
     super.key,
     required this.phoneController,
@@ -33,6 +50,15 @@ class BookingPatientFields extends StatelessWidget {
     required this.genderFocusNode,
     this.genderHasError = false,
     this.onSubmitted,
+    this.familyMembers = const [],
+    this.selectedPatientId,
+    required this.onSelectPatient,
+    this.ageUnit = 'Yrs',
+    required this.onAgeUnitChanged,
+    required this.guardianNameController,
+    required this.guardianRelationController,
+    this.guardianFocusNode,
+    this.guardianRelationFocusNode,
   });
 
   @override
@@ -78,6 +104,53 @@ class BookingPatientFields extends StatelessWidget {
               ),
           ],
         ),
+
+        // Family Member Picker Chips
+        if (familyMembers.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                const Text(
+                  'Family:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF475569),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ...familyMembers.map((member) {
+                  final isSelected = member.id == selectedPatientId;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6.0),
+                    child: ChoiceChip(
+                      selected: isSelected,
+                      label: Text(
+                        '${member.name} (${member.formattedAge})',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                      onSelected: (_) => onSelectPatient(member),
+                    ),
+                  );
+                }),
+                ActionChip(
+                  avatar: const Icon(Icons.person_add_alt_1, size: 14),
+                  label: const Text(
+                    '+ Add Member',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  onPressed: () => onSelectPatient(null),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 14),
 
         // 2. Patient Name (Full width for long names)
@@ -97,42 +170,108 @@ class BookingPatientFields extends StatelessWidget {
         ),
         const SizedBox(height: 14),
 
-        // 3. Age & Keyboard-First Sex Selector
+        // 3. Age with Unit Toggle & Keyboard-First Sex Selector
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Age Field
+            // Age Field + Unit Toggle (Yrs / Months / Days)
             Expanded(
-              flex: 3,
-              child: TextFormField(
-                controller: ageController,
-                focusNode: ageFocusNode,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Age',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.cake_outlined),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(3),
+              flex: 5,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: ageController,
+                      focusNode: ageFocusNode,
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: 'Age ($ageUnit)',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.cake_outlined),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(3),
+                      ],
+                      validator: (val) => (val == null || val.trim().isEmpty)
+                          ? 'Required'
+                          : null,
+                      onFieldSubmitted: (_) => genderFocusNode.requestFocus(),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  DropdownButton<String>(
+                    value: ageUnit,
+                    underline: const SizedBox.shrink(),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'Yrs',
+                        child: Text('Yrs', style: TextStyle(fontSize: 12)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Months',
+                        child: Text('Mos', style: TextStyle(fontSize: 12)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Days',
+                        child: Text('Days', style: TextStyle(fontSize: 12)),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) onAgeUnitChanged(val);
+                    },
+                  ),
                 ],
-                validator: (val) =>
-                    (val == null || val.trim().isEmpty) ? 'Required' : null,
-                onFieldSubmitted: (_) => genderFocusNode.requestFocus(),
               ),
             ),
             const SizedBox(width: 10),
 
             // Keyboard-Driven Sex Segmented Selector
             Expanded(
-              flex: 7,
+              flex: 5,
               child: KeyboardGenderSelector(
                 selectedGender: selectedGender,
                 onGenderChanged: onGenderChanged,
                 focusNode: genderFocusNode,
                 hasError: genderHasError,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        // 4. Guardian / Caregiver Details (Optional)
+        Row(
+          children: [
+            Expanded(
+              flex: 6,
+              child: TextFormField(
+                controller: guardianNameController,
+                focusNode: guardianFocusNode,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Guardian / c/o (Optional)',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.family_restroom, size: 20),
+                  hintText: 'Parent / Caregiver',
+                ),
+                onFieldSubmitted: (_) =>
+                    guardianRelationFocusNode?.requestFocus(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 4,
+              child: TextFormField(
+                controller: guardianRelationController,
+                focusNode: guardianRelationFocusNode,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Relation',
+                  border: OutlineInputBorder(),
+                  hintText: 'e.g. Mother',
+                ),
               ),
             ),
           ],

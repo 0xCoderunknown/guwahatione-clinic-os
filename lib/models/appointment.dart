@@ -79,8 +79,12 @@ enum PaymentType {
 
 class Appointment {
   final String id;
+  final String patientId; // Unique patient ID (defaults to patientPhone for legacy records)
   final String patientPhone;
   final String patientName;
+  final String? guardianName; // Optional parent / guardian name
+  final String? guardianRelation; // e.g., 'Mother', 'Father'
+  final String? patientAgeDisplay; // Exact age snapshot at booking time (e.g., '4 Months', '32 Years')
   final VisitStatus visitStatus;
   final PaymentType paymentType;
   final int amountCollected;
@@ -105,8 +109,12 @@ class Appointment {
 
   Appointment({
     required this.id,
+    String? patientId,
     required this.patientPhone,
     required this.patientName,
+    this.guardianName,
+    this.guardianRelation,
+    this.patientAgeDisplay,
     VisitStatus? visitStatus,
     AppointmentStatus? status,
     required this.paymentType,
@@ -116,7 +124,8 @@ class Appointment {
     required this.doctorId,
     required this.doctorName,
     this.checkedInAt,
-  }) : visitStatus =
+  }) : patientId = patientId ?? patientPhone,
+       visitStatus =
            visitStatus ??
            (status != null
                ? _visitStatusFromAppointmentStatus(status)
@@ -135,8 +144,12 @@ class Appointment {
 
   Appointment copyWith({
     String? id,
+    String? patientId,
     String? patientPhone,
     String? patientName,
+    String? guardianName,
+    String? guardianRelation,
+    String? patientAgeDisplay,
     VisitStatus? visitStatus,
     AppointmentStatus? status,
     PaymentType? paymentType,
@@ -149,8 +162,12 @@ class Appointment {
   }) {
     return Appointment(
       id: id ?? this.id,
+      patientId: patientId ?? this.patientId,
       patientPhone: patientPhone ?? this.patientPhone,
       patientName: patientName ?? this.patientName,
+      guardianName: guardianName ?? this.guardianName,
+      guardianRelation: guardianRelation ?? this.guardianRelation,
+      patientAgeDisplay: patientAgeDisplay ?? this.patientAgeDisplay,
       visitStatus:
           visitStatus ??
           (status != null
@@ -169,8 +186,15 @@ class Appointment {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'patientId': patientId,
       'patientPhone': patientPhone,
       'patientName': patientName,
+      if (guardianName != null && guardianName!.trim().isNotEmpty)
+        'guardianName': guardianName!.trim(),
+      if (guardianRelation != null && guardianRelation!.trim().isNotEmpty)
+        'guardianRelation': guardianRelation!.trim(),
+      if (patientAgeDisplay != null && patientAgeDisplay!.trim().isNotEmpty)
+        'patientAgeDisplay': patientAgeDisplay!.trim(),
       'status': status.name,
       'visitStatus': visitStatus.name,
       'paymentType': paymentType.name,
@@ -188,8 +212,15 @@ class Appointment {
   Map<String, dynamic> toCacheMap() {
     return {
       'id': id,
+      'patientId': patientId,
       'patientPhone': patientPhone,
       'patientName': patientName,
+      if (guardianName != null && guardianName!.trim().isNotEmpty)
+        'guardianName': guardianName!.trim(),
+      if (guardianRelation != null && guardianRelation!.trim().isNotEmpty)
+        'guardianRelation': guardianRelation!.trim(),
+      if (patientAgeDisplay != null && patientAgeDisplay!.trim().isNotEmpty)
+        'patientAgeDisplay': patientAgeDisplay!.trim(),
       'status': status.name,
       'visitStatus': visitStatus.name,
       'paymentType': paymentType.name,
@@ -265,10 +296,17 @@ class Appointment {
       paymentType = PaymentType.paidCash;
     }
 
+    final phone = json['patientPhone'] as String? ?? '';
+    final patientId = json['patientId'] as String? ?? phone;
+
     return Appointment(
       id: json['id'] as String? ?? '',
-      patientPhone: json['patientPhone'] as String? ?? '',
+      patientId: patientId,
+      patientPhone: phone,
       patientName: json['patientName'] as String? ?? '',
+      guardianName: json['guardianName'] as String?,
+      guardianRelation: json['guardianRelation'] as String?,
+      patientAgeDisplay: json['patientAgeDisplay'] as String?,
       visitStatus: visitStatus,
       paymentType: paymentType,
       amountCollected: (json['amountCollected'] as num?)?.toInt() ?? 0,

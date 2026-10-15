@@ -285,16 +285,30 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
+  /// Retrieves all patients registered under the given phone number (household members).
+  Future<List<Patient>> getPatientsForPhone(String phoneNumber) async {
+    return await _patientService.getPatientsForPhone(phoneNumber);
+  }
+
+  /// Saves or updates a patient demographic profile.
+  Future<void> savePatient(Patient patient) async {
+    await _patientService.savePatient(patient);
+  }
+
   /// Searches patients by phone number (exact or prefix) or name.
   Future<List<Patient>> searchPatients(String query) async {
     return await _patientService.searchPatients(query);
   }
 
-  /// Fetches appointment history for a given patient.
+  /// Fetches appointment history for a given patient identity or phone.
   Future<List<Appointment>> getAppointmentsForPatient(
-    String phoneNumber,
-  ) async {
-    return await _bookingService.getAppointmentsForPatient(phoneNumber);
+    String patientId, {
+    String? phone,
+  }) async {
+    return await _bookingService.getAppointmentsForPatient(
+      patientId,
+      phone: phone,
+    );
   }
 
   /// Evaluates free review eligibility for a patient with a specific doctor.
@@ -360,9 +374,14 @@ class ClinicProvider with ChangeNotifier {
       .length;
 
   Future<Appointment> bookAppointment({
+    String? patientId,
     required String phoneNumber,
     required String name,
     required int age,
+    int? ageMonths,
+    int? ageDays,
+    String? guardianName,
+    String? guardianRelation,
     String gender = 'Male',
     VisitStatus visitStatus = VisitStatus.waitingInLobby,
     required PaymentType paymentType,
@@ -382,6 +401,7 @@ class ClinicProvider with ChangeNotifier {
         date: scheduledDate,
         patientName: name,
         doctorId: selectedDoctor.id,
+        patientId: patientId,
       );
       if (hasDuplicate) {
         throw Exception(
@@ -392,7 +412,8 @@ class ClinicProvider with ChangeNotifier {
       // Enforce: Only a patient who visited earlier with the same doctor can get a free review.
       if (paymentType == PaymentType.freeReview) {
         final patientAppts = await _bookingService.getAppointmentsForPatient(
-          phoneNumber,
+          patientId ?? phoneNumber,
+          phone: phoneNumber,
         );
         final eligibility = AppointmentEngine.evaluateReviewEligibility(
           patientHistory: patientAppts,
@@ -407,15 +428,23 @@ class ClinicProvider with ChangeNotifier {
         }
       }
 
+      final now = DateTime.now();
+      final effectivePatientId = (patientId != null && patientId.isNotEmpty)
+          ? patientId
+          : 'pat_${now.millisecondsSinceEpoch}_${phoneNumber.length >= 4 ? phoneNumber.substring(phoneNumber.length - 4) : phoneNumber}';
+
       final patient = Patient(
-        id: phoneNumber,
+        id: effectivePatientId,
         name: name,
         age: age,
+        ageMonths: ageMonths,
+        ageDays: ageDays,
         gender: gender,
         phoneNumber: phoneNumber,
+        guardianName: guardianName,
+        guardianRelation: guardianRelation,
       );
       final appointmentId = _uuid.v4();
-      final now = DateTime.now();
       final queueNumber = await _bookingService.bookAppointment(
         appointmentId: appointmentId,
         patient: patient,
@@ -429,8 +458,12 @@ class ClinicProvider with ChangeNotifier {
 
       final appointment = Appointment(
         id: appointmentId,
+        patientId: patient.id,
         patientPhone: phoneNumber,
         patientName: name,
+        patientAgeDisplay: patient.formattedAge,
+        guardianName: patient.guardianName,
+        guardianRelation: patient.guardianRelation,
         visitStatus: visitStatus,
         paymentType: paymentType,
         amountCollected: amountCollected,
@@ -641,22 +674,33 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
-  Future<List<Consultation>> getPatientConsultations(String phone) async {
-    return await _consultationService.getConsultationsForPatient(phone);
+  Future<List<Consultation>> getPatientConsultations(
+    String patientId, {
+    String? phone,
+  }) async {
+    return await _consultationService.getConsultationsForPatient(
+      patientId,
+      phone: phone,
+    );
   }
 
   Future<Consultation?> getConsultationForAppointment(
     String appointmentId,
-    String phone,
-  ) async {
-    final list = await getPatientConsultations(phone);
+    String patientId, {
+    String? phone,
+  }) async {
+    final list = await getPatientConsultations(patientId, phone: phone);
     return list.where((c) => c.appointmentId == appointmentId).firstOrNull;
   }
 
   Future<List<PrescriptionItem>> getActiveMedicationsForPatient(
-    String phone,
-  ) async {
-    return await _consultationService.getLatestActiveMedications(phone);
+    String patientId, {
+    String? phone,
+  }) async {
+    return await _consultationService.getLatestActiveMedications(
+      patientId,
+      phone: phone,
+    );
   }
 
   // ---------------------------------------------------------------------------

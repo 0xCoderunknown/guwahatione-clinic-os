@@ -354,17 +354,19 @@ abstract class AppointmentEngine {
   /// Checks if an active (non-absent) booking already exists for the exact same patient
   /// with the same doctor on the given target date.
   ///
-  /// Composite key: (targetDate + doctorId + normalized patientName + patientPhone)
+  /// Composite key: (targetDate + doctorId + (patientId match OR (normalized patientName + patientPhone)))
   static Appointment? findDuplicateBooking({
     required List<Appointment> appointments,
     required String? doctorId,
     required String patientName,
     required String patientPhone,
+    String? patientId,
     required DateTime targetDate,
   }) {
     if (doctorId == null || doctorId.isEmpty) return null;
     final cleanPhone = patientPhone.trim();
     final cleanName = patientName.trim().toLowerCase();
+    final cleanPatId = patientId?.trim();
     if (cleanPhone.isEmpty || cleanName.isEmpty) return null;
 
     final start = DateTime(targetDate.year, targetDate.month, targetDate.day);
@@ -377,12 +379,40 @@ abstract class AppointmentEngine {
         continue;
       }
 
+      if (cleanPatId != null &&
+          cleanPatId.isNotEmpty &&
+          a.patientId.isNotEmpty &&
+          a.patientId == cleanPatId) {
+        return a;
+      }
+
       if (a.patientPhone.trim() == cleanPhone &&
           a.patientName.trim().toLowerCase() == cleanName) {
         return a;
       }
     }
     return null;
+  }
+
+  /// Evaluates whether an appointment already exists for the given patient identity
+  /// (matching patientId, or normalized name + phone) with this doctor on the target date.
+  static bool hasDuplicateAppointment({
+    required List<Appointment> existingAppointments,
+    required String patientPhone,
+    required String patientName,
+    String? patientId,
+    required String doctorId,
+    required DateTime targetDate,
+  }) {
+    return findDuplicateBooking(
+          appointments: existingAppointments,
+          doctorId: doctorId,
+          patientName: patientName,
+          patientPhone: patientPhone,
+          patientId: patientId,
+          targetDate: targetDate,
+        ) !=
+        null;
   }
 
   /// Validates whether a patient already has an active (non-absent) booking on the target date.
@@ -392,6 +422,7 @@ abstract class AppointmentEngine {
     required DateTime targetDate,
     String? patientName,
     String? doctorId,
+    String? patientId,
   }) {
     if (patientName != null && doctorId != null) {
       return findDuplicateBooking(
@@ -399,6 +430,7 @@ abstract class AppointmentEngine {
             doctorId: doctorId,
             patientName: patientName,
             patientPhone: phoneNumber,
+            patientId: patientId,
             targetDate: targetDate,
           ) !=
           null;

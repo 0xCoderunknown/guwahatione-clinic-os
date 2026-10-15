@@ -285,8 +285,12 @@ class EncounterFormState {
   Consultation buildConsultation({
     required String id,
     required String appointmentId,
+    String? patientId,
     required String patientPhone,
     required String patientName,
+    String? patientAgeDisplay,
+    String? guardianName,
+    String? guardianRelation,
     required String doctorId,
     required String doctorName,
     String? doctorRegNumber,
@@ -295,9 +299,13 @@ class EncounterFormState {
     return Consultation(
       id: id,
       appointmentId: appointmentId,
+      patientId: patientId ?? patientPhone,
       patientPhone: patientPhone,
       patientName: patientName,
       patientAge: patientAge > 0 ? patientAge : 0,
+      patientAgeDisplay: patientAgeDisplay,
+      guardianName: guardianName,
+      guardianRelation: guardianRelation,
       patientGender: patientGender,
       doctorId: doctorId,
       doctorName: doctorName,
@@ -323,9 +331,13 @@ class EncounterFormState {
   Future<void> loadInitialData({
     required ClinicProvider clinic,
     required String patientPhone,
+    String? patientId,
     required String Function() uuidGenerator,
   }) async {
-    final patient = await clinic.searchPatient(patientPhone);
+    final effectiveId = (patientId != null && patientId.isNotEmpty)
+        ? patientId
+        : patientPhone;
+    final patient = await clinic.searchPatient(effectiveId);
     if (patient != null) {
       allergies = List.from(patient.allergies);
       patientGender = patient.gender;
@@ -333,7 +345,8 @@ class EncounterFormState {
     }
 
     final pastConsultations = await clinic.getPatientConsultations(
-      patientPhone,
+      effectiveId,
+      phone: patientPhone,
     );
     if (pastConsultations.isNotEmpty) {
       final latest = pastConsultations.first;

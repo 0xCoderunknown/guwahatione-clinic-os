@@ -86,6 +86,7 @@ class _ConsultationEncounterScreenState
       await form.loadInitialData(
         clinic: clinic,
         patientPhone: widget.appointment.patientPhone,
+        patientId: widget.appointment.patientId,
         uuidGenerator: _uuid.v4,
       );
       await clinic.notifyConsultationStarted(
@@ -143,8 +144,12 @@ class _ConsultationEncounterScreenState
       final consultation = form.buildConsultation(
         id: _uuid.v4(),
         appointmentId: widget.appointment.id,
+        patientId: widget.appointment.patientId,
         patientPhone: widget.appointment.patientPhone,
         patientName: widget.appointment.patientName,
+        patientAgeDisplay: widget.appointment.patientAgeDisplay,
+        guardianName: widget.appointment.guardianName,
+        guardianRelation: widget.appointment.guardianRelation,
         doctorId: widget.doctor.id,
         doctorName: widget.doctor.name,
         doctorRegNumber: widget.doctor.medicalRegNumber,
@@ -187,8 +192,12 @@ class _ConsultationEncounterScreenState
     final draft = form.buildConsultation(
       id: 'draft-${_uuid.v4()}',
       appointmentId: widget.appointment.id,
+      patientId: widget.appointment.patientId,
       patientPhone: widget.appointment.patientPhone,
       patientName: widget.appointment.patientName,
+      patientAgeDisplay: widget.appointment.patientAgeDisplay,
+      guardianName: widget.appointment.guardianName,
+      guardianRelation: widget.appointment.guardianRelation,
       doctorId: widget.doctor.id,
       doctorName: widget.doctor.name,
     );
@@ -256,6 +265,7 @@ class _ConsultationEncounterScreenState
             icon: const Icon(Icons.history_rounded),
             onPressed: () => EncounterDialogs.showLongitudinalHistory(
               context,
+              patientId: widget.appointment.patientId,
               patientPhone: widget.appointment.patientPhone,
             ),
           ),

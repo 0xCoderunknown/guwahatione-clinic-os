@@ -40,6 +40,15 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   final _ageController = TextEditingController();
   final _amountController = TextEditingController();
 
+  final _guardianNameController = TextEditingController();
+  final _guardianRelationController = TextEditingController();
+  final _guardianFocusNode = FocusNode();
+  final _guardianRelationFocusNode = FocusNode();
+
+  List<Patient> _familyMembers = [];
+  String? _selectedPatientId;
+  String _ageUnit = 'Yrs';
+
   final _phoneFocusNode = FocusNode();
   final _nameFocusNode = FocusNode();
   final _ageFocusNode = FocusNode();
@@ -105,11 +114,15 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     _nameController.dispose();
     _ageController.dispose();
     _amountController.dispose();
+    _guardianNameController.dispose();
+    _guardianRelationController.dispose();
 
     _phoneFocusNode.dispose();
     _nameFocusNode.dispose();
     _ageFocusNode.dispose();
     _genderFocusNode.dispose();
+    _guardianFocusNode.dispose();
+    _guardianRelationFocusNode.dispose();
     _doctorFocusNode.dispose();
     _paymentFocusNode.dispose();
     _amountFocusNode.dispose();
@@ -146,6 +159,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       doctorId: docId,
       patientName: name,
       patientPhone: phone,
+      patientId: _selectedPatientId,
       targetDate: _selectedDate,
     );
 
@@ -260,6 +274,17 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     ageFocusNode: _ageFocusNode,
                     genderFocusNode: _genderFocusNode,
                     genderHasError: _genderHasError,
+                    familyMembers: _familyMembers,
+                    selectedPatientId: _selectedPatientId,
+                    onSelectPatient: _onSelectFamilyMember,
+                    ageUnit: _ageUnit,
+                    onAgeUnitChanged: (unit) {
+                      setState(() => _ageUnit = unit);
+                    },
+                    guardianNameController: _guardianNameController,
+                    guardianRelationController: _guardianRelationController,
+                    guardianFocusNode: _guardianFocusNode,
+                    guardianRelationFocusNode: _guardianRelationFocusNode,
                     onGenderChanged: (val) {
                       setState(() {
                         _selectedGender = val;
@@ -434,29 +459,26 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     setState(() => _isLoading = true);
     try {
       final provider = Provider.of<ClinicProvider>(context, listen: false);
-      final patient = await provider.searchPatient(phone);
+      final family = await provider.getPatientsForPhone(phone);
 
-      if (patient != null) {
-        _nameController.text = patient.name;
-        _ageController.text = patient.age > 0 ? patient.age.toString() : '';
-        _selectedGender = ['Male', 'Female', 'Other'].contains(patient.gender)
-            ? patient.gender
-            : null;
-        _genderHasError = false;
-        _isNewPatient = false;
-        _patientAppointments = await provider.getAppointmentsForPatient(phone);
-
-        // Auto-advance focus to Doctor selector on existing record match
-        if (mounted) {
-          _doctorFocusNode.requestFocus();
-        }
+      if (family.isNotEmpty) {
+        setState(() {
+          _familyMembers = family;
+        });
+        await _onSelectFamilyMember(family.first);
       } else {
-        _isNewPatient = true;
-        _patientAppointments = [];
-        _selectedGender = null;
-        _genderHasError = false;
-        _amountController.text =
-            "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paidCash)}";
+        setState(() {
+          _familyMembers = [];
+          _selectedPatientId = null;
+          _isNewPatient = true;
+          _patientAppointments = [];
+          _selectedGender = null;
+          _genderHasError = false;
+          _guardianNameController.clear();
+          _guardianRelationController.clear();
+          _amountController.text =
+              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: PaymentType.paidCash)}";
+        });
 
         // Auto-advance focus to Patient Name on new patient record
         if (mounted) {
@@ -476,8 +498,63 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         );
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _onSelectFamilyMember(Patient? patient) async {
+    if (patient != null) {
+      setState(() {
+        _selectedPatientId = patient.id;
+        _nameController.text = patient.name;
+        if (patient.ageMonths != null && patient.ageMonths! > 0) {
+          _ageUnit = 'Months';
+          _ageController.text = patient.ageMonths.toString();
+        } else if (patient.ageDays != null && patient.ageDays! > 0) {
+          _ageUnit = 'Days';
+          _ageController.text = patient.ageDays.toString();
+        } else {
+          _ageUnit = 'Yrs';
+          _ageController.text = patient.age > 0 ? patient.age.toString() : '';
+        }
+        _selectedGender =
+            ['Male', 'Female', 'Other'].contains(patient.gender)
+                ? patient.gender
+                : null;
+        _guardianNameController.text = patient.guardianName ?? '';
+        _guardianRelationController.text = patient.guardianRelation ?? '';
+        _genderHasError = false;
+        _isNewPatient = false;
+      });
+
+      final provider = Provider.of<ClinicProvider>(context, listen: false);
+      _patientAppointments = await provider.getAppointmentsForPatient(
+        patient.id,
+        phone: patient.phoneNumber,
+      );
+
+      if (mounted) {
+        _doctorFocusNode.requestFocus();
+      }
+    } else {
+      // "+ Add Member" on same household phone
+      setState(() {
+        _selectedPatientId = null;
+        _isNewPatient = true;
+        _nameController.clear();
+        _ageController.clear();
+        _guardianNameController.clear();
+        _guardianRelationController.clear();
+        _selectedGender = null;
+        _genderHasError = false;
+        _patientAppointments = [];
+      });
+      if (mounted) {
+        _nameFocusNode.requestFocus();
+      }
+    }
+
+    _updateEligibilityAndPayment();
   }
 
   void _updateEligibilityAndPayment() {
@@ -675,6 +752,20 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       return;
     }
 
+    int parsedAge = 0;
+    int? ageMonths;
+    int? ageDays;
+    final ageVal = int.tryParse(_ageController.text.trim()) ?? 0;
+    if (_ageUnit == 'Months') {
+      ageMonths = ageVal;
+      parsedAge = 0;
+    } else if (_ageUnit == 'Days') {
+      ageDays = ageVal;
+      parsedAge = 0;
+    } else {
+      parsedAge = ageVal;
+    }
+
     setState(() => _isBooking = true);
 
     try {
@@ -682,9 +773,18 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         context,
         listen: false,
       ).bookAppointment(
+        patientId: _selectedPatientId,
         phoneNumber: _phoneController.text.trim(),
         name: _nameController.text.trim(),
-        age: int.parse(_ageController.text.trim()),
+        age: parsedAge,
+        ageMonths: ageMonths,
+        ageDays: ageDays,
+        guardianName: _guardianNameController.text.trim().isNotEmpty
+            ? _guardianNameController.text.trim()
+            : null,
+        guardianRelation: _guardianRelationController.text.trim().isNotEmpty
+            ? _guardianRelationController.text.trim()
+            : null,
         gender: _selectedGender!,
         visitStatus: _selectedVisitStatus,
         paymentType: _selectedPayment,

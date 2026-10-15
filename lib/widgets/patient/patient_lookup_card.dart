@@ -216,7 +216,10 @@ class PatientLookupCard extends StatelessWidget {
     final clinic = Provider.of<ClinicProvider>(context, listen: false);
 
     return FutureBuilder<List<Consultation>>(
-      future: clinic.getPatientConsultations(patient.phoneNumber),
+      future: clinic.getPatientConsultations(
+        patient.id,
+        phone: patient.phoneNumber,
+      ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(

@@ -37,8 +37,14 @@ class WhatsAppEngine {
     final dateStr = AppFormatters.date(consultation.createdAt);
     final tokenPart = queueNumber != null ? ' | Token: #$queueNumber' : '';
     buffer.writeln('🗓️ Date: $dateStr$tokenPart');
+    final ageStr = consultation.patientAgeDisplay ??
+        (consultation.patientAge > 0 ? '${consultation.patientAge}y' : 'N/A');
+    final guardianStr = (consultation.guardianName != null &&
+            consultation.guardianName!.trim().isNotEmpty)
+        ? ' (c/o ${consultation.guardianName}${consultation.guardianRelation != null && consultation.guardianRelation!.trim().isNotEmpty ? ", ${consultation.guardianRelation}" : ""})'
+        : '';
     buffer.writeln(
-      '👤 Patient: ${consultation.patientName} (${consultation.patientAge}y, ${consultation.patientGender})',
+      '👤 Patient: ${consultation.patientName}$guardianStr ($ageStr, ${consultation.patientGender})',
     );
     buffer.writeln('📞 Contact: ${consultation.patientPhone}');
     buffer.writeln('👨‍⚕️ Doctor: ${consultation.doctorName}');

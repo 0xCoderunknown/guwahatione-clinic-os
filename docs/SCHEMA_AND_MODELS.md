@@ -9,7 +9,7 @@
 
 | Collection Name | Document ID Pattern | Description |
 |---|---|---|
-| `patients` | `{phoneNumber}` (e.g. `9876543210`) | Master patient directory keyed by 10-digit phone number. |
+| `patients` | Unique patient ID (`pat_{timestamp}_{suffix}` or legacy `{phoneNumber}`) | Master patient directory keyed by unique `id`, with `phoneNumber` as household contact index. |
 | `doctors` | Auto-generated UID or slug | Consulting doctors, specialty, schedule, fees, and PINs. |
 | `appointments` | Auto-generated UID (UUID / Firestore ID) | Daily appointment & token ledger records. **Zero deletions.** |
 | `counters` | `queue_{doctorId}_{yyyy-MM-dd}` | Atomic sequence counter for daily queue token numbering. |
@@ -20,15 +20,21 @@
 
 ## 📑 1. `patients` Collection
 
-- **Document ID:** 10-digit phone number string (`phoneNumber`).
+- **Document ID:** Unique patient ID string (`id`, e.g. `pat_1729000000_1234` or legacy 10-digit phone number).
+- **Invariance:** Phone number acts as a household index (multiple family members can share one contact phone). Consultations and clinical charts key directly to `id`.
 
 ### Fields
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `id` | `String` | Yes | Same as `phoneNumber`. |
-| `phoneNumber` | `String` | Yes | 10-digit primary phone number. |
+| `id` | `String` | Yes | Unique patient identity key. |
+| `phoneNumber` | `String` | Yes | 10-digit primary household contact phone number. |
 | `name` | `String` | Yes | Full name of the patient. |
-| `age` | `int` | Yes | Patient age in years. |
+| `age` | `int` | Yes | Patient age in completed years (or `0` for infants). |
+| `ageMonths` | `int?` | No | Age in months for infants (< 1 year). |
+| `ageDays` | `int?` | No | Age in days for newborns (< 1 month). |
+| `dateOfBirth` | `String?` | No | ISO 8601 date of birth if known. |
+| `guardianName` | `String?` | No | Name of parent / caregiver / legal guardian (e.g. `"Sunita Sharma"`). |
+| `guardianRelation` | `String?` | No | Relationship of guardian to patient (e.g. `"Mother"`, `"Father"`). |
 | `gender` | `String` | Yes | `'Male'`, `'Female'`, or `'Other'`. |
 | `allergies` | `List<String>` | No | Critical clinical allergy alerts (e.g. `["Penicillin", "Sulfa"]`). Default: `[]`. |
 | `lastVisitDate` | `String` (ISO 8601) | No | Most recent completed consultation time; absent until the patient has a consultation. |
@@ -67,8 +73,12 @@
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `id` | `String` | Yes | Appointment ID. |
-| `patientPhone` | `String` | Yes | Patient's phone number. |
+| `patientId` | `String` | Yes | Unique patient identity ID (defaults to `patientPhone` in legacy records). |
+| `patientPhone` | `String` | Yes | Patient's primary household contact phone number. |
 | `patientName` | `String` | Yes | Patient's name at time of booking. |
+| `patientAgeDisplay` | `String?` | No | Formatted age string (e.g. `"4 Months"`, `"18 Days"`, `"34 Years"`). |
+| `guardianName` | `String?` | No | Optional parent or caregiver name. |
+| `guardianRelation` | `String?` | No | Relationship of guardian to patient. |
 | `status` | `String` (Enum) | Yes | `'pending'`, `'completed'`, or `'absent'` (retained for operational ledger). |
 | `visitStatus` | `String` (Enum) | Yes | `'booked'`, `'waitingInLobby'`, `'inConsultation'`, `'completed'`, or `'cancelled'`. |
 | `paymentType` | `String` (Enum) | Yes | `'paidCash'`, `'paidUpi'`, `'freeReview'`, `'freeFamily'`, `'postPay'`, or `'unpaid'`. |
@@ -125,9 +135,13 @@
 |---|---|---|
 | `id` | `String` | Consultation ID. |
 | `appointmentId` | `String` | Reference to corresponding appointment. |
-| `patientPhone` | `String` | Patient phone number. |
+| `patientId` | `String` | Unique patient ID (primary clinical chart link; defaults to `patientPhone` in legacy records). |
+| `patientPhone` | `String` | Patient contact phone number (household index). |
 | `patientName` | `String` | Patient full name. |
-| `patientAge` | `int` | Patient age at consultation time. |
+| `patientAge` | `int` | Patient age at consultation time (or 0 for infants). |
+| `patientAgeDisplay` | `String?` | Formatted clinical age (e.g. `"4 Months"`, `"18 Days"`, `"34 Years"`). |
+| `guardianName` | `String?` | Parent or caregiver name (e.g. `"Sunita Sharma"`). |
+| `guardianRelation` | `String?` | Relationship of guardian to patient (e.g. `"Mother"`). |
 | `patientGender` | `String` | Patient gender. |
 | `doctorId` | `String` | Prescribing doctor ID. |
 | `doctorName` | `String` | Prescribing doctor name. |

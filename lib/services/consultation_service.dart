@@ -41,12 +41,18 @@ class ConsultationService {
     }
 
     // 3. Keep patient record synced (lastVisitDate stamped on consultation completion)
-    final patientDoc = _patientsRef.doc(consultation.patientPhone);
+    final patientDoc = _patientsRef.doc(consultation.patientId);
     batch.set(patientDoc, {
-      'id': consultation.patientPhone,
+      'id': consultation.patientId,
       'lastVisitDate': consultation.createdAt.toIso8601String(),
       'name': consultation.patientName,
       'age': consultation.patientAge,
+      if (consultation.patientAgeDisplay != null)
+        'formattedAge': consultation.patientAgeDisplay,
+      if (consultation.guardianName != null)
+        'guardianName': consultation.guardianName,
+      if (consultation.guardianRelation != null)
+        'guardianRelation': consultation.guardianRelation,
       'gender': consultation.patientGender,
       'phoneNumber': consultation.patientPhone,
     }, SetOptions(merge: true));
@@ -55,22 +61,45 @@ class ConsultationService {
   }
 
   /// Retrieves the longitudinal consultation timeline for a patient, ordered by date desc.
-  Future<List<Consultation>> getConsultationsForPatient(String phone) async {
+  /// Queries by primary patientId with phone fallback for legacy historical records.
+  Future<List<Consultation>> getConsultationsForPatient(
+    String patientId, {
+    String? phone,
+  }) async {
+    final cleanId = patientId.trim();
+    if (cleanId.isEmpty) return [];
+
+    // 1. Query by patientId (canonical key)
     final snapshot = await _consultationsRef
-        .where('patientPhone', isEqualTo: phone)
+        .where('patientId', isEqualTo: cleanId)
         .get();
 
-    final consultations = snapshot.docs
+    List<Consultation> consultations = snapshot.docs
         .map((doc) => Consultation.fromJson(doc.data()))
         .toList();
+
+    // 2. Backward compatibility fallback for legacy consultations
+    if (consultations.isEmpty) {
+      final fallbackPhone = phone?.trim() ?? cleanId;
+      final phoneSnapshot = await _consultationsRef
+          .where('patientPhone', isEqualTo: fallbackPhone)
+          .get();
+
+      consultations = phoneSnapshot.docs
+          .map((doc) => Consultation.fromJson(doc.data()))
+          .toList();
+    }
 
     consultations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return consultations;
   }
 
   /// Retrieves the latest consultation for a patient, or null if none exists.
-  Future<Consultation?> getLatestConsultationForPatient(String phone) async {
-    final list = await getConsultationsForPatient(phone);
+  Future<Consultation?> getLatestConsultationForPatient(
+    String patientId, {
+    String? phone,
+  }) async {
+    final list = await getConsultationsForPatient(patientId, phone: phone);
     if (list.isEmpty) return null;
     return list.first;
   }
@@ -78,9 +107,10 @@ class ConsultationService {
   /// Fetches the active medications from the patient's most recent consultation
   /// to populate the medication reconciliation interface for follow-up visits.
   Future<List<PrescriptionItem>> getLatestActiveMedications(
-    String phone,
-  ) async {
-    final latest = await getLatestConsultationForPatient(phone);
+    String patientId, {
+    String? phone,
+  }) async {
+    final latest = await getLatestConsultationForPatient(patientId, phone: phone);
     if (latest == null) return [];
     return latest.activePrescriptions;
   }

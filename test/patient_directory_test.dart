@@ -244,8 +244,11 @@ class _FakePatientClinicProvider extends ChangeNotifier implements ClinicProvide
   }
 
   @override
-  Future<List<Consultation>> getPatientConsultations(String phone) async {
-    return consultationsByPhone[phone] ?? [];
+  Future<List<Consultation>> getPatientConsultations(
+    String patientId, {
+    String? phone,
+  }) async {
+    return consultationsByPhone[phone ?? patientId] ?? [];
   }
 
   @override

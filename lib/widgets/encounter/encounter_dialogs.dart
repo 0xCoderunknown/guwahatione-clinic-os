@@ -273,10 +273,14 @@ class EncounterDialogs {
   /// Bottom sheet showing longitudinal consultation history.
   static Future<void> showLongitudinalHistory(
     BuildContext context, {
+    String? patientId,
     required String patientPhone,
   }) async {
     final clinic = Provider.of<ClinicProvider>(context, listen: false);
-    final history = await clinic.getPatientConsultations(patientPhone);
+    final history = await clinic.getPatientConsultations(
+      patientId ?? patientPhone,
+      phone: patientPhone,
+    );
 
     if (!context.mounted) return;
 

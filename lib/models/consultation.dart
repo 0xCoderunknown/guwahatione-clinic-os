@@ -10,9 +10,13 @@ import 'vitals.dart';
 class Consultation {
   final String id;
   final String appointmentId;
+  final String patientId;
   final String patientPhone;
   final String patientName;
   final int patientAge;
+  final String? patientAgeDisplay;
+  final String? guardianName;
+  final String? guardianRelation;
   final String patientGender;
   final String doctorId;
   final String doctorName;
@@ -39,9 +43,13 @@ class Consultation {
   const Consultation({
     required this.id,
     required this.appointmentId,
+    String? patientId,
     required this.patientPhone,
     required this.patientName,
     required this.patientAge,
+    this.patientAgeDisplay,
+    this.guardianName,
+    this.guardianRelation,
     required this.patientGender,
     required this.doctorId,
     required this.doctorName,
@@ -56,7 +64,7 @@ class Consultation {
     this.orderedTests = const [],
     this.adviceNotes,
     this.nextFollowUpDate,
-  });
+  }) : patientId = (patientId == null || patientId == '') ? patientPhone : patientId;
 
   /// Medications that are active for today's visit (START + CONTINUE)
   List<PrescriptionItem> get activePrescriptions =>
@@ -81,9 +89,13 @@ class Consultation {
     return {
       'id': id,
       'appointmentId': appointmentId,
+      'patientId': patientId,
       'patientPhone': patientPhone,
       'patientName': patientName,
       'patientAge': patientAge,
+      'patientAgeDisplay': patientAgeDisplay,
+      'guardianName': guardianName,
+      'guardianRelation': guardianRelation,
       'patientGender': patientGender,
       'doctorId': doctorId,
       'doctorName': doctorName,
@@ -128,12 +140,19 @@ class Consultation {
       parsedFollowUp = DateTime.tryParse(rawFollowUp);
     }
 
+    final phone = json['patientPhone'] as String? ?? '';
+    final patId = json['patientId'] as String?;
+
     return Consultation(
       id: json['id'] as String? ?? '',
       appointmentId: json['appointmentId'] as String? ?? '',
-      patientPhone: json['patientPhone'] as String? ?? '',
+      patientId: (patId != null && patId.isNotEmpty) ? patId : phone,
+      patientPhone: phone,
       patientName: json['patientName'] as String? ?? 'Unknown',
       patientAge: (json['patientAge'] as num?)?.toInt() ?? 0,
+      patientAgeDisplay: json['patientAgeDisplay'] as String?,
+      guardianName: json['guardianName'] as String?,
+      guardianRelation: json['guardianRelation'] as String?,
       patientGender: json['patientGender'] as String? ?? 'Unspecified',
       doctorId: json['doctorId'] as String? ?? '',
       doctorName: json['doctorName'] as String? ?? '',
@@ -187,9 +206,13 @@ class Consultation {
   Consultation copyWith({
     String? id,
     String? appointmentId,
+    String? patientId,
     String? patientPhone,
     String? patientName,
     int? patientAge,
+    String? patientAgeDisplay,
+    String? guardianName,
+    String? guardianRelation,
     String? patientGender,
     String? doctorId,
     String? doctorName,
@@ -208,9 +231,13 @@ class Consultation {
     return Consultation(
       id: id ?? this.id,
       appointmentId: appointmentId ?? this.appointmentId,
+      patientId: patientId ?? this.patientId,
       patientPhone: patientPhone ?? this.patientPhone,
       patientName: patientName ?? this.patientName,
       patientAge: patientAge ?? this.patientAge,
+      patientAgeDisplay: patientAgeDisplay ?? this.patientAgeDisplay,
+      guardianName: guardianName ?? this.guardianName,
+      guardianRelation: guardianRelation ?? this.guardianRelation,
       patientGender: patientGender ?? this.patientGender,
       doctorId: doctorId ?? this.doctorId,
       doctorName: doctorName ?? this.doctorName,

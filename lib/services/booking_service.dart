@@ -37,7 +37,7 @@ class BookingService {
       FirestorePaths.doctorQueueCounter(doctorId, scheduledDate),
     );
     final appointmentRef = _appointmentsRef.doc(appointmentId);
-    final patientRef = _patientsRef.doc(patient.phoneNumber);
+    final patientRef = _patientsRef.doc(patient.id);
     var queueNumber = 1;
 
     final effectiveCheckedInAt =
@@ -52,8 +52,12 @@ class BookingService {
 
       final appointment = Appointment(
         id: appointmentId,
+        patientId: patient.id,
         patientPhone: patient.phoneNumber,
         patientName: patient.name,
+        patientAgeDisplay: patient.formattedAge,
+        guardianName: patient.guardianName,
+        guardianRelation: patient.guardianRelation,
         visitStatus: visitStatus,
         paymentType: paymentType,
         amountCollected: amountCollected,
@@ -67,13 +71,7 @@ class BookingService {
       // 2. Commit atomic writes
       transaction.set(counterRef, {'currentNumber': queueNumber});
       transaction.set(appointmentRef, appointment.toJson());
-      transaction.set(patientRef, {
-        'id': patient.id,
-        'name': patient.name,
-        'age': patient.age,
-        'gender': patient.gender,
-        'phoneNumber': patient.phoneNumber,
-      }, SetOptions(merge: true));
+      transaction.set(patientRef, patient.toJson(), SetOptions(merge: true));
     });
 
     return queueNumber;
@@ -172,17 +170,40 @@ class BookingService {
     });
   }
 
-  /// Retrieves all historical appointments for a given patient phone number.
-  Future<List<Appointment>> getAppointmentsForPatient(String phone) async {
+  /// Retrieves historical appointments for a given patient identity or phone number.
+  Future<List<Appointment>> getAppointmentsForPatient(
+    String patientId, {
+    String? phone,
+  }) async {
+    final cleanId = patientId.trim();
+    if (cleanId.isEmpty) return [];
+
+    // 1. Query by patientId
     final snapshot = await _appointmentsRef
-        .where('patientPhone', isEqualTo: phone)
+        .where('patientId', isEqualTo: cleanId)
         .get();
 
-    return snapshot.docs.map((doc) {
+    List<Appointment> list = snapshot.docs.map((doc) {
       final data = Map<String, dynamic>.from(doc.data());
       data['id'] ??= doc.id;
       return Appointment.fromJson(data);
     }).toList();
+
+    // 2. Backward compatibility fallback for legacy records
+    if (list.isEmpty) {
+      final fallbackPhone = phone?.trim() ?? cleanId;
+      final phoneSnap = await _appointmentsRef
+          .where('patientPhone', isEqualTo: fallbackPhone)
+          .get();
+      list = phoneSnap.docs.map((doc) {
+        final data = Map<String, dynamic>.from(doc.data());
+        data['id'] ??= doc.id;
+        return Appointment.fromJson(data);
+      }).toList();
+    }
+
+    list.sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
+    return list;
   }
 
   /// Checks if a patient already has a non-absent appointment on this date with a specific doctor and name.
@@ -191,6 +212,7 @@ class BookingService {
     required DateTime date,
     String? patientName,
     String? doctorId,
+    String? patientId,
   }) async {
     final start = DateTime(date.year, date.month, date.day);
     final end = start.add(const Duration(days: 1));
@@ -205,11 +227,18 @@ class BookingService {
     final query = await queryRef.get();
 
     final cleanName = patientName?.trim().toLowerCase();
+    final cleanPatId = patientId?.trim();
     for (var doc in query.docs) {
       final appt = Appointment.fromJson(doc.data());
       if (appt.status != AppointmentStatus.absent) {
         if (!appt.scheduledDate.isBefore(start) &&
             appt.scheduledDate.isBefore(end)) {
+          if (cleanPatId != null &&
+              cleanPatId.isNotEmpty &&
+              appt.patientId.isNotEmpty &&
+              appt.patientId == cleanPatId) {
+            return true;
+          }
           if (cleanName != null && cleanName.isNotEmpty) {
             if (appt.patientName.trim().toLowerCase() == cleanName) {
               return true;

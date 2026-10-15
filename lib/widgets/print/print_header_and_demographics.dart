@@ -136,7 +136,7 @@ class PrintHeaderAndDemographics extends StatelessWidget {
               Expanded(
                 flex: 3,
                 child: Text(
-                  'Patient Name: ${c.patientName}',
+                  'Patient Name: ${c.patientName}${c.guardianName != null && c.guardianName!.trim().isNotEmpty ? " (c/o ${c.guardianName}${c.guardianRelation != null && c.guardianRelation!.trim().isNotEmpty ? ", ${c.guardianRelation}" : ""})" : ""}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
@@ -146,7 +146,7 @@ class PrintHeaderAndDemographics extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: Text(
-                  'Age / Sex: ${c.patientAge > 0 ? c.patientAge : "N/A"} Yrs / ${c.patientGender}',
+                  'Age / Sex: ${c.patientAgeDisplay ?? (c.patientAge > 0 ? "${c.patientAge} Yrs" : "N/A")} / ${c.patientGender}',
                   style: const TextStyle(fontSize: 12),
                 ),
               ),

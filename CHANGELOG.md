@@ -8,6 +8,22 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.34.0] — 15-10-2026
+
+### Patient Identity & Multi-Patient Household Model
+- **Operational & Engineering Impact:**
+  - **Decoupled Identity from Phone Numbers:** Replaced phone-keyed documents in `patients` with generated canonical patient IDs (`pat_{timestamp}_{suffix}` or UUID). Phone numbers now serve as non-unique household contact indices, preventing family members (e.g. mother, newborn infant, elderly grandparent) from overwriting each other's demographic profiles.
+  - **Isolated Longitudinal Clinical Charts:** Consultations, prescriptions, and allergy histories now link strictly to `patientId` instead of phone numbers, preventing chart cross-contamination while preserving historical fallback resolution for legacy unmigrated records.
+  - **Infant & Paediatric Demographics:** Replaced integer-only age with structured `ageMonths` and `ageDays` alongside `formattedAge` (e.g. `"4 Months"`, `"18 Days"`), completely eliminating misleading `"0 Years"` representations on clinical prescriptions and printed artifacts.
+  - **Guardian & Caregiver Support:** Added optional `guardianName` and `guardianRelation` fields across patient records, appointments, consultations, printed letterheads, and WhatsApp digital prescription messages (`"c/o Sunita Sharma, Mother"`).
+  - **Reception Family Picker & Household Discovery:** `AddAppointmentDialog` now displays family member selection chips when a contact phone matches multiple patients, accompanied by an `"+ Add Member"` option that auto-populates the shared contact number while provisioning a distinct patient identity.
+  - **Household-Aware Duplicate Booking Guard:** `AppointmentEngine.hasDuplicateAppointment` evaluates both `patientId` and patient name, allowing multiple family members to consult with the same doctor on the same day while strictly blocking duplicate bookings for the same individual.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 218 unit and widget tests passing green (5 new tests in `test/patient_identity_household_test.dart`).
+
+---
+
 ## [1.33.5] — 15-10-2026
 
 ### Chamber Handshake Typing & Stream Performance Optimization

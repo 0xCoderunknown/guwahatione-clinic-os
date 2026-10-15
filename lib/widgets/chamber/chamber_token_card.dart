@@ -202,6 +202,7 @@ class ChamberTokenCard extends StatelessWidget {
               onViewHistory ??
               () => EncounterDialogs.showLongitudinalHistory(
                 context,
+                patientId: appointment.patientId,
                 patientPhone: appointment.patientPhone,
               ),
         );
