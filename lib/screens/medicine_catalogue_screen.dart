@@ -63,7 +63,7 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
         ),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100),
+            constraints: const BoxConstraints(maxWidth: 1800),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

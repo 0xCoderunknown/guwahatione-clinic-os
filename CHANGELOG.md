@@ -8,6 +8,19 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.35.2] — 15-10-2026
+
+### Dynamic Doctor Review Window in WhatsApp Prescriptions & FHD Monitor (1800px) Expansion
+- **Operational & Engineering Impact:**
+  - **Dynamic WhatsApp Review Policy:** Refactored `WhatsAppEngine.formatPrescriptionMessage` to dynamically accept and reflect the doctor's configured `freeReviewDays` policy. If a specialist or doctor configures `freeReviewDays == 0` (no free review), the review policy note is completely omitted, eliminating customer disputes. Custom review windows (e.g. 7, 21, or 30 days) are formatted cleanly.
+  - **Auto-Pass Doctor Review Days on Dispatch:** Wired `PrescriptionPrintScreen` and `AccordionStatusActions` to lookup and pass the active doctor's `freeReviewDays` directly into `WhatsAppEngine`.
+  - **FHD Counter Monitor Constraint Expansion (Invariant #5):** Expanded container constraints to `maxWidth: 1800` across `PatientDirectoryScreen`, `DoctorChamberScreen`, and `MedicineCatalogueScreen`, eliminating 260px–410px of dead blank margins on standard 1080p FHD clinic counter monitors.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 227 unit and widget tests passing green (1 new test in `test/whatsapp_engine_test.dart`).
+
+---
+
 ## [1.35.1] — 15-10-2026
 
 ### Cash Drawer vs. Digital UPI Reconciliation Segregation

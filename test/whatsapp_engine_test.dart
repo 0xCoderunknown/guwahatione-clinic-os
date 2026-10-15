@@ -125,5 +125,35 @@ void main() {
       expect(url, contains(Uri.encodeComponent('Hello GuwahatiOne Clinic')));
       expect(url, contains(Uri.encodeComponent('Next: 12-10-2026')));
     });
+
+    test('formatPrescriptionMessage adapts to doctor-configured freeReviewDays', () {
+      final consultation = Consultation(
+        id: 'c-102',
+        appointmentId: 'a-102',
+        patientPhone: '9876543210',
+        patientName: 'Test Patient',
+        patientAge: 30,
+        patientGender: 'Female',
+        doctorId: 'doc-1',
+        doctorName: 'Dr. A. Sharma',
+        createdAt: DateTime(2026, 10, 12),
+        nextFollowUpDate: DateTime(2026, 10, 19),
+      );
+
+      // Custom window (e.g. 7 days)
+      final msg7 = WhatsAppEngine.formatPrescriptionMessage(
+        consultation: consultation,
+        freeReviewDays: 7,
+      );
+      expect(msg7, contains('Within 7 days qualifies for Free Follow-Up Review'));
+
+      // Zero review days (specialist policy / no free review)
+      final msg0 = WhatsAppEngine.formatPrescriptionMessage(
+        consultation: consultation,
+        freeReviewDays: 0,
+      );
+      expect(msg0, contains('*Next Review Date:* 19-10-2026'));
+      expect(msg0, isNot(contains('qualifies for Free Follow-Up Review')));
+    });
   });
 }

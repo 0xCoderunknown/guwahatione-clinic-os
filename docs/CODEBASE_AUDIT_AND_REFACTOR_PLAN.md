@@ -30,11 +30,11 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 | **Special Focus: Prescribing IntelliSense** | 5 | - | - | 2 Remaining Gaps (Search Shipped `v1.35.0`) | 🔴 Urgent Clinical UX |
 | **Special Focus: Household / Paediatric Identity** | 4 | 4 | 0 | ✅ **Shipped `v1.34.0`** (Moved to Roadmap) | 🟢 Resolved |
 | **Special Focus: Prescription Snapshot & Immunity** | 3 | 3 | 0 | ✅ **Shipped `v1.34.1`** (Moved to Roadmap) | 🟢 Resolved |
-| **Batch 1: Engines (`core/engines/`)** | 5 | 4 | 0 | 2 Gaps | 🔴 High |
+| **Batch 1: Engines (`core/engines/`)** | 5 | 5 | 0 | 1 Gap | 🔴 High |
 | **Batch 1: Data Models (`models/`)** | 12 | 8 | 3 | 2 Gaps | 🟡 Medium |
 | **Batch 2: Services (`services/`)** | 9 | 6 | 2 | 2 Gaps | 🟡 Medium |
 | **Batch 2: Providers (`providers/`)** | 2 | 1 | 0 | 2 Gaps | 🔴 High |
-| **Batch 3: Screens (`screens/`)** | 13 | 8 | 0 | 4 Gaps | 🔴 High |
+| **Batch 3: Screens (`screens/`)** | 13 | 11 | 0 | 2 Gaps | 🔴 High |
 | **Batch 4: Reusable Widgets (`widgets/`)** | 44 | 39 | 1 | 3 Gaps | 🔴 High |
 
 > **📌 IMPORTANT NOTE ON PLAN STATUS & EVALUATION TAXONOMY:**  
@@ -118,17 +118,13 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 
 ---
 
-### 4. `whatsapp_engine.dart` (149 lines)
+### 4. `whatsapp_engine.dart` (180 lines)
 * **Layer:** Pure Communication Deep-Link Engine.
-* **Code Health & Invariant Adherence:** 🟡 **Good Formatting / Hardcoded Policy Invariant Flaw.**
-  - Generates zero-cost `wa.me` links with structured markdown prescriptions.
+* **Code Health & Invariant Adherence:** 🟢 **Exemplary (Resolved in `v1.35.2`).**
+  - Generates zero-cost `wa.me` links with structured markdown prescriptions and strictly Indian numerical dates (`DD-MM-YYYY`).
+  - Dynamically respects doctor's configured `freeReviewDays` policy (omitting the review note completely if `freeReviewDays == 0`).
 * **Micro-File Decision:** Keep standalone.
-* **Feature Completeness Check:**
-  - ⚠️ **Invariant Red Line Flaw (Hardcoded Review Policy):** Line 146 hardcodes `_(Within 14 days qualifies for Free Follow-Up Review)_` unconditionally! If a doctor has configured a 0-day, 7-day, 21-day, or 30-day review policy, the WhatsApp text directly contradicts the doctor's policy.
-  - 💡 **Scope Opportunity:** Add a 1-tap WhatsApp reminder generator for Reception to send token confirmation or follow-up booking alerts.
-* **Refactor Recommendation:**
-  - Accept `freeReviewDays` in `formatPrescriptionMessage` (or omit follow-up review note if policy is 0 days).
-* **Severity:** `🟡 Medium`
+* **Severity:** `🟢 Resolved`
 
 ---
 
@@ -270,7 +266,7 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 |:---:|:---|:---|:---|
 | 🟢 **Resolved** | `cash_handover_engine.dart` | UPI payments counted in physical cash drawer total. | ✅ **Shipped (`v1.35.1`)**: Segregated physical cash from UPI; drawer discrepancy evaluates physical notes only. |
 | 🔴 **High** | `medicine_engine.dart` | Zero allergy collision checking during prescribing. | Implement `detectAllergyCollisions(patientAllergies, medicine)` and flag warnings in encounter. |
-| 🟡 **Medium** | `whatsapp_engine.dart` | Hardcoded "14 days" review policy string. | Use doctor-configured `freeReviewDays` in prescription message template. |
+| 🟢 **Resolved** | `whatsapp_engine.dart` | Hardcoded "14 days" review policy string. | ✅ **Shipped (`v1.35.2`)**: Dynamically uses doctor-configured `freeReviewDays` (omits if 0 days). |
 | 🟡 **Medium** | `appointment_engine.dart` & `doctor.dart` | Orphaned `Doctor.blockedDates` field. | Enforce doctor leave in `isDateBlocked` and booking duplicate checks. |
 | 🟡 **Medium** | `patient_review_eligibility.dart` | 55-line micro-file satellite. | Consolidate into `appointment_engine.dart`. |
 | 🟢 **Low** | `diagnostic_investigation.dart` | Micro-model satellite. | Consolidate into `consultation.dart`. |
@@ -458,42 +454,35 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 
 ---
 
-### 3. `doctor_chamber_screen.dart` (434 lines)
+### 3. `doctor_chamber_screen.dart` (435 lines)
 * **Layer:** Doctor Chamber Patient Queue & Paced Handshake Workspace.
-* **Code Health & Invariant Adherence:** 🟡 **Strong Invariants / Responsive Desktop Bottleneck.**
+* **Code Health & Invariant Adherence:** 🟢 **Exemplary (Invariant #5 Resolved in `v1.35.2`).**
   - Strictly implements Invariant #7 (doctor-paced handshake: `notifyReadyForNext`), Invariant #8 (read-only archive mode on past dates), Invariant #9 (restricted door admission capped to 1–2 lobby checked-in, paid patients), and Invariant #11 (single occupant collision lock with `_isConsultationOpen`).
-* **Feature Completeness Check:**
-  - ⚠️ **Invariant #5 Violation (Desktop Bottleneck):** Line 355 hardcodes `BoxConstraints(maxWidth: 1100)`. On a standard FHD 1920×1080 counter monitor, this creates ~410px of dead blank margins on both sides.
-* **Refactor Recommendation:**
-  - Expand layout constraint up to `1800px` with a responsive two-column split on wide monitors (Queue on left, Chamber Control & Door Override on right).
-* **Severity:** `🟡 Medium`
+  - Container constraint expanded to `maxWidth: 1800` eliminating dead side margins on FHD 1080p counter displays.
+* **Severity:** `🟢 Low`
 
 ---
 
 ### 4. `patient_directory_screen.dart` (367 lines)
 * **Layer:** Patient Master Directory & Longitudinal History Viewer.
-* **Code Health & Invariant Adherence:** 🟡 **Clean Search / Invariant #5 Violation.**
+* **Code Health & Invariant Adherence:** 🟢 **Exemplary (Invariant #5 Resolved in `v1.35.2`).**
   - Zero Firestore reads on initial load.
   - Efficient phone and name prefix search.
   - 1-tap "Book Walk-In" passing `initialPatient` into `AddAppointmentDialog`.
-* **Feature Completeness Check:**
-  - ⚠️ **Invariant #5 Explicit Violation (1400px Cap):** Line 95 hardcodes `BoxConstraints(maxWidth: 1400)`. The `AGENTS.md` constitution explicitly states: *"Never bottleneck dashboard containers with small arbitrary caps like maxWidth: 1400 that leave 150px+ dead margins on the sides."*
-* **Refactor Recommendation:**
-  - Change `maxWidth` constraint from 1400 to 1800.
-* **Severity:** `🟡 Medium`
+  - Container constraint expanded to `maxWidth: 1800` strictly adhering to Invariant #5.
+* **Severity:** `🟢 Low`
 
 ---
 
 ### 5. `medicine_catalogue_screen.dart` (294 lines)
 * **Layer:** Medicine Catalogue & Form Filter Screen.
-* **Code Health & Invariant Adherence:** 🟡 **Functional / Responsive Bottleneck & Missing Rx Defaults.**
+* **Code Health & Invariant Adherence:** 🟡 **Functional (Invariant #5 Resolved in `v1.35.2`).**
   - Molecule count and form-based filtering (`Tablet`, `Capsule`, `Syrup`, etc.).
-  - Embedded in `OwnerShell` with clean body layout.
+  - Embedded in `OwnerShell` with clean body layout and `maxWidth: 1800` container constraint.
 * **Feature Completeness Check:**
-  - ⚠️ **Responsive Bottleneck:** Line 66 caps container at `maxWidth: 1100`, wasting desktop screen width.
   - ⚠️ **Missing Defaults in Add Modal:** "Add Medicine" button opens `AddMedicineDialog`, which lacks default dosage/frequency/timing/duration.
 * **Refactor Recommendation:**
-  - Expand container to `1800px` using a responsive 2- or 3-column card grid on counter PC monitors.
+  - Add input fields for default clinical regimen in `AddMedicineDialog`.
 * **Severity:** `🟡 Medium`
 
 ---
@@ -652,8 +641,7 @@ Every file in the repository is evaluated across 4 non-negotiable dimensions:
 | 🔴 **High** | `add_medicine_dialog.dart` | Missing default dosage/frequency/timing/duration inputs. | Add input fields for default clinical regimen. |
 | 🔴 **High** | `staged_medicine_form.dart` | Missing 1-key (Enter) "Verify & Next" rapid prescribing loop. | Support Enter keypress to confirm staging and auto-focus next medicine search. |
 | 🟢 **Resolved** | `daily_cash_handover_dialog.dart` | False cash shortage alert due to UPI revenue inclusion. | ✅ **Shipped (`v1.35.1`)**: Physical note counter discrepancy now evaluates strictly against physical cash revenue; UPI and total revenue displayed in dedicated cards & table columns. |
-| 🟡 **Medium** | `patient_directory_screen.dart` | Hardcoded `maxWidth: 1400` violates Invariant #5. | Expand container constraint to `1800px`. |
-| 🟡 **Medium** | `doctor_chamber_screen.dart` & `medicine_catalogue_screen.dart` | Hardcoded `maxWidth: 1100` leaves dead margins on FHD screens. | Expand container constraint to `1800px` or responsive multi-column layout. |
+| 🟢 **Resolved** | `patient_directory_screen.dart`, `doctor_chamber_screen.dart` & `medicine_catalogue_screen.dart` | Hardcoded maxWidth caps violate Invariant #5 on FHD monitors. | ✅ **Shipped (`v1.35.2`)**: Expanded container constraints to `maxWidth: 1800` across all three desktop screens. |
 | 🟡 **Medium** | `add_appointment_dialog.dart` | Does not check `Doctor.blockedDates` for doctor leave. | Enforce doctor leave in booking validation and show warning banner. |
 | 🟡 **Medium** | `add_doctor_screen.dart` | `Doctor.blockedDates` has no configuration UI. | Add leave date picker for doctor profile. |
 | 🟢 **Low** | `chamber_archive_banner.dart` | 34-line micro-file satellite. | Consolidate into `chamber_queue_header.dart`. |

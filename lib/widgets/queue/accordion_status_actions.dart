@@ -109,9 +109,13 @@ class AccordionStatusActions extends StatelessWidget {
                 );
                 String msg;
                 if (consult != null) {
+                  final doc = clinic.doctors
+                      .where((d) => d.id == appointment.doctorId)
+                      .firstOrNull;
                   msg = WhatsAppEngine.formatPrescriptionMessage(
                     consultation: consult,
                     queueNumber: appointment.queueNumber,
+                    freeReviewDays: doc?.freeReviewDays,
                   );
                 } else {
                   msg =

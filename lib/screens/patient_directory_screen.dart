@@ -92,7 +92,7 @@ class _PatientDirectoryScreenState extends State<PatientDirectoryScreen> {
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1400),
+          constraints: const BoxConstraints(maxWidth: 1800),
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: isDesktop ? 24.0 : 16.0,

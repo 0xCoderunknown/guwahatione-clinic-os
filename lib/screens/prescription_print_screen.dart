@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../core/engines/engines.dart';
 import '../models/appointment.dart';
 import '../models/consultation.dart';
+import '../providers/clinic_provider.dart';
 import '../utils/platform_print.dart';
 import '../utils/platform_url.dart';
 import '../widgets/widgets.dart';
@@ -63,9 +65,14 @@ class _PrescriptionPrintScreenState extends State<PrescriptionPrintScreen> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             onPressed: () {
+              final clinic = context.read<ClinicProvider>();
+              final doc = clinic.doctors
+                  .where((d) => d.id == widget.consultation.doctorId)
+                  .firstOrNull;
               final msg = WhatsAppEngine.formatPrescriptionMessage(
                 consultation: widget.consultation,
                 queueNumber: widget.appointment?.queueNumber,
+                freeReviewDays: doc?.freeReviewDays,
               );
               final link = WhatsAppEngine.buildDeepLink(
                 phone: widget.consultation.patientPhone,

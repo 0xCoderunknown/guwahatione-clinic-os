@@ -26,6 +26,7 @@ class WhatsAppEngine {
     required Consultation consultation,
     int? queueNumber,
     String clinicName = 'GuwahatiOne Clinic',
+    int? freeReviewDays,
   }) {
     final buffer = StringBuffer();
 
@@ -149,7 +150,12 @@ class WhatsAppEngine {
       final reviewDateStr = AppFormatters.date(consultation.nextFollowUpDate);
       buffer.writeln();
       buffer.writeln('🗓️ *Next Review Date:* $reviewDateStr');
-      buffer.writeln('_(Within 14 days qualifies for Free Follow-Up Review)_');
+      final reviewDays = freeReviewDays ?? 14;
+      if (reviewDays > 0) {
+        buffer.writeln(
+          '_(Within $reviewDays days qualifies for Free Follow-Up Review)_',
+        );
+      }
     }
 
     // 9. Footer
