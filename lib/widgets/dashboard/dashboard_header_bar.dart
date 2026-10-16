@@ -58,8 +58,7 @@ class _DashboardHeaderBarState extends State<DashboardHeaderBar> {
         isDense: true,
         filled: true,
         fillColor: Colors.white,
-        hintText:
-            'Instant Queue Search: Type 10-digit phone, patient name, or token #...',
+        hintText: 'Instant Queue Search: Type 10-digit phone, patient name, or token #...',
         hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
         prefixIcon: const Icon(
           Icons.search_rounded,
@@ -93,9 +92,7 @@ class _DashboardHeaderBarState extends State<DashboardHeaderBar> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: const Color(0xFFCBD5E1),
-                            ),
+                            border: Border.all(color: const Color(0xFFCBD5E1)),
                           ),
                           child: const Text(
                             '/',

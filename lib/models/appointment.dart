@@ -79,7 +79,8 @@ enum PaymentType {
 
 class Appointment {
   final String id;
-  final String patientId; // Unique patient ID (defaults to patientPhone for legacy records)
+  final String
+  patientId; // Unique patient ID (defaults to patientPhone for legacy records)
   final String patientPhone;
   final String patientName;
   final String? guardianName; // Optional parent / guardian name

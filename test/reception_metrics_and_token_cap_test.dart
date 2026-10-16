@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/core/engines/engines.dart';
 import 'package:appointment_app/models/models.dart';
 import 'package:appointment_app/providers/auth_provider.dart';
@@ -7,6 +5,8 @@ import 'package:appointment_app/providers/clinic_provider.dart';
 import 'package:appointment_app/widgets/booking/booking_payment_section.dart';
 import 'package:appointment_app/widgets/dashboard/dashboard_doctor_roster_card.dart';
 import 'package:appointment_app/widgets/dashboard/dashboard_kpi_strip.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -97,7 +97,8 @@ void main() {
           paymentType: PaymentType.paidCash,
           amountCollected: 500,
           queueNumber: 5,
-          scheduledDate: targetDate.add(const Duration(days: 1)), // Next day
+          scheduledDate: targetDate.add(const Duration(days: 1)),
+          // Next day
           doctorId: 'doc-1',
           doctorName: 'Dr. One',
         ),
@@ -124,95 +125,155 @@ void main() {
       expect(count, 12);
     });
 
-    test('evaluateTokenCapStatus transitions smoothly across all 4 thresholds', () {
-      const limit = 18;
+    test(
+      'evaluateTokenCapStatus transitions smoothly across all 4 thresholds',
+      () {
+        const limit = 18;
 
-      // Normal: booked < limit - 2 (< 16)
-      expect(
-        AppointmentEngine.evaluateTokenCapStatus(bookedCount: 0, limit: limit),
-        TokenCapStatus.normal,
-      );
-      expect(
-        AppointmentEngine.evaluateTokenCapStatus(bookedCount: 12, limit: limit),
-        TokenCapStatus.normal,
-      );
-      expect(
-        AppointmentEngine.evaluateTokenCapStatus(bookedCount: 15, limit: limit),
-        TokenCapStatus.normal,
-      );
+        // Normal: booked < limit - 2 (< 16)
+        expect(
+          AppointmentEngine.evaluateTokenCapStatus(
+            bookedCount: 0,
+            limit: limit,
+          ),
+          TokenCapStatus.normal,
+        );
+        expect(
+          AppointmentEngine.evaluateTokenCapStatus(
+            bookedCount: 12,
+            limit: limit,
+          ),
+          TokenCapStatus.normal,
+        );
+        expect(
+          AppointmentEngine.evaluateTokenCapStatus(
+            bookedCount: 15,
+            limit: limit,
+          ),
+          TokenCapStatus.normal,
+        );
 
-      // Runway Alert: limit - 2 <= booked < limit (16 and 17)
-      expect(
-        AppointmentEngine.evaluateTokenCapStatus(bookedCount: 16, limit: limit),
-        TokenCapStatus.runwayAlert,
-      );
-      expect(
-        AppointmentEngine.evaluateTokenCapStatus(bookedCount: 17, limit: limit),
-        TokenCapStatus.runwayAlert,
-      );
+        // Runway Alert: limit - 2 <= booked < limit (16 and 17)
+        expect(
+          AppointmentEngine.evaluateTokenCapStatus(
+            bookedCount: 16,
+            limit: limit,
+          ),
+          TokenCapStatus.runwayAlert,
+        );
+        expect(
+          AppointmentEngine.evaluateTokenCapStatus(
+            bookedCount: 17,
+            limit: limit,
+          ),
+          TokenCapStatus.runwayAlert,
+        );
 
-      // At Limit: booked == limit (18)
-      expect(
-        AppointmentEngine.evaluateTokenCapStatus(bookedCount: 18, limit: limit),
-        TokenCapStatus.atLimit,
-      );
+        // At Limit: booked == limit (18)
+        expect(
+          AppointmentEngine.evaluateTokenCapStatus(
+            bookedCount: 18,
+            limit: limit,
+          ),
+          TokenCapStatus.atLimit,
+        );
 
-      // Over Cap: booked > limit (> 18)
-      expect(
-        AppointmentEngine.evaluateTokenCapStatus(bookedCount: 19, limit: limit),
-        TokenCapStatus.overCap,
-      );
-      expect(
-        AppointmentEngine.evaluateTokenCapStatus(bookedCount: 22, limit: limit),
-        TokenCapStatus.overCap,
-      );
-    });
+        // Over Cap: booked > limit (> 18)
+        expect(
+          AppointmentEngine.evaluateTokenCapStatus(
+            bookedCount: 19,
+            limit: limit,
+          ),
+          TokenCapStatus.overCap,
+        );
+        expect(
+          AppointmentEngine.evaluateTokenCapStatus(
+            bookedCount: 22,
+            limit: limit,
+          ),
+          TokenCapStatus.overCap,
+        );
+      },
+    );
 
-    test('AppointmentEngine.isDoctorAvailableOnDate validates schedule correctly', () {
-      final docWithDays = Doctor(
-        id: 'doc-1',
-        name: 'Dr. A. Sharma',
-        specialty: 'General Medicine',
-        phone: '9876543210',
-        availableDays: ['Mon', 'Wed', 'Fri'],
-        blockedDates: [],
-        shiftTiming: '6:00 PM – 8:30 PM',
-        consultationFee: 500,
-        freeReviewDays: 14,
-        dailyTokenLimit: 18,
-      );
+    test(
+      'AppointmentEngine.isDoctorAvailableOnDate validates schedule correctly',
+      () {
+        final docWithDays = Doctor(
+          id: 'doc-1',
+          name: 'Dr. A. Sharma',
+          specialty: 'General Medicine',
+          phone: '9876543210',
+          availableDays: ['Mon', 'Wed', 'Fri'],
+          blockedDates: [],
+          shiftTiming: '6:00 PM – 8:30 PM',
+          consultationFee: 500,
+          freeReviewDays: 14,
+          dailyTokenLimit: 18,
+        );
 
-      final docAllDays = Doctor(
-        id: 'doc-2',
-        name: 'Dr. All Days',
-        specialty: 'Pediatrics',
-        phone: '9876543211',
-        availableDays: [],
-        blockedDates: [],
-        shiftTiming: '10:00 AM – 2:00 PM',
-        consultationFee: 400,
-        freeReviewDays: 14,
-        dailyTokenLimit: 18,
-      );
+        final docAllDays = Doctor(
+          id: 'doc-2',
+          name: 'Dr. All Days',
+          specialty: 'Pediatrics',
+          phone: '9876543211',
+          availableDays: [],
+          blockedDates: [],
+          shiftTiming: '10:00 AM – 2:00 PM',
+          consultationFee: 400,
+          freeReviewDays: 14,
+          dailyTokenLimit: 18,
+        );
 
-      // 12-10-2026 is Monday (Mon) -> true
-      final monday = DateTime(2026, 10, 12);
-      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: docWithDays, date: monday), isTrue);
+        // 12-10-2026 is Monday (Mon) -> true
+        final monday = DateTime(2026, 10, 12);
+        expect(
+          AppointmentEngine.isDoctorAvailableOnDate(
+            doctor: docWithDays,
+            date: monday,
+          ),
+          isTrue,
+        );
 
-      // 13-10-2026 is Tuesday (Tue) -> false
-      final tuesday = DateTime(2026, 10, 13);
-      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: docWithDays, date: tuesday), isFalse);
+        // 13-10-2026 is Tuesday (Tue) -> false
+        final tuesday = DateTime(2026, 10, 13);
+        expect(
+          AppointmentEngine.isDoctorAvailableOnDate(
+            doctor: docWithDays,
+            date: tuesday,
+          ),
+          isFalse,
+        );
 
-      // 14-10-2026 is Wednesday (Wed) -> true
-      final wednesday = DateTime(2026, 10, 14);
-      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: docWithDays, date: wednesday), isTrue);
+        // 14-10-2026 is Wednesday (Wed) -> true
+        final wednesday = DateTime(2026, 10, 14);
+        expect(
+          AppointmentEngine.isDoctorAvailableOnDate(
+            doctor: docWithDays,
+            date: wednesday,
+          ),
+          isTrue,
+        );
 
-      // Doctor with empty availableDays sits on all days
-      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: docAllDays, date: tuesday), isTrue);
+        // Doctor with empty availableDays sits on all days
+        expect(
+          AppointmentEngine.isDoctorAvailableOnDate(
+            doctor: docAllDays,
+            date: tuesday,
+          ),
+          isTrue,
+        );
 
-      // Null doctor returns true
-      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: null, date: tuesday), isTrue);
-    });
+        // Null doctor returns true
+        expect(
+          AppointmentEngine.isDoctorAvailableOnDate(
+            doctor: null,
+            date: tuesday,
+          ),
+          isTrue,
+        );
+      },
+    );
   });
 
   group('Token Cap Badge Widget Tests in BookingPaymentSection', () {
@@ -250,25 +311,35 @@ void main() {
       );
     }
 
-    testWidgets('Renders Normal badge [ 12/18 Booked ] when under threshold', (tester) async {
+    testWidgets('Renders Normal badge [ 12/18 Booked ] when under threshold', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildTestHarness(12));
       expect(find.text('12/18 Booked'), findsOneWidget);
     });
 
-    testWidgets('Renders Runway Alert badge [ ⚠️ 16/18 Booked • 2 Left ] at Limit - 2', (tester) async {
-      await tester.pumpWidget(buildTestHarness(16));
-      expect(find.text('⚠️ 16/18 Booked • 2 Left'), findsOneWidget);
-    });
+    testWidgets(
+      'Renders Runway Alert badge [ ⚠️ 16/18 Booked • 2 Left ] at Limit - 2',
+      (tester) async {
+        await tester.pumpWidget(buildTestHarness(16));
+        expect(find.text('⚠️ 16/18 Booked • 2 Left'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Renders At Limit badge [ ⚠️ 18/18 Full ] when at capacity', (tester) async {
+    testWidgets('Renders At Limit badge [ ⚠️ 18/18 Full ] when at capacity', (
+      tester,
+    ) async {
       await tester.pumpWidget(buildTestHarness(18));
       expect(find.text('⚠️ 18/18 Full'), findsOneWidget);
     });
 
-    testWidgets('Renders Over Cap badge [ 🔴 19/18 • Extra Token ] when exceeding limit', (tester) async {
-      await tester.pumpWidget(buildTestHarness(19));
-      expect(find.text('🔴 19/18 • Extra Token'), findsOneWidget);
-    });
+    testWidgets(
+      'Renders Over Cap badge [ 🔴 19/18 • Extra Token ] when exceeding limit',
+      (tester) async {
+        await tester.pumpWidget(buildTestHarness(19));
+        expect(find.text('🔴 19/18 • Extra Token'), findsOneWidget);
+      },
+    );
   });
 
   group('Doctor Chamber Roster Live Status & Schedule Display Tests', () {
@@ -283,153 +354,162 @@ void main() {
       dailyTokenLimit: 18,
     );
 
-    testWidgets('Displays formatted schedule in subtitle and Consulting: [patient_name] badge', (tester) async {
-      final fakeSession = ChamberSession(
-        doctorId: 'doc-test-1',
-        date: DateTime.now(),
-        status: 'in_consultation',
-        activeAppointmentId: 'appt-123',
-        activeQueueNumber: 5,
-        patientName: 'Kaushik Talukdar',
-      );
+    testWidgets(
+      'Displays formatted schedule in subtitle and Consulting: [patient_name] badge',
+      (tester) async {
+        final fakeSession = ChamberSession(
+          doctorId: 'doc-test-1',
+          date: DateTime.now(),
+          status: 'in_consultation',
+          activeAppointmentId: 'appt-123',
+          activeQueueNumber: 5,
+          patientName: 'Kaushik Talukdar',
+        );
 
-      final authProvider = AuthProvider();
+        final authProvider = AuthProvider();
 
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider.value(value: authProvider),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              body: DashboardDoctorRosterCard(
-                provider: _FakeClinicProvider(testDoctor, fakeSession),
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [ChangeNotifierProvider.value(value: authProvider)],
+            child: MaterialApp(
+              home: Scaffold(
+                body: DashboardDoctorRosterCard(
+                  provider: _FakeClinicProvider(testDoctor, fakeSession),
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      // Check doctor title
-      expect(find.text('Dr. Kaushik'), findsOneWidget);
+        // Check doctor title
+        expect(find.text('Dr. Kaushik'), findsOneWidget);
 
-      // Check schedule in subtitle replacing fee
-      expect(
-        find.text('Cardiology • Mon, Wed, Fri • 6:00 PM – 8:30 PM'),
-        findsOneWidget,
-      );
+        // Check schedule in subtitle replacing fee
+        expect(
+          find.text('Cardiology • Mon, Wed, Fri • 6:00 PM – 8:30 PM'),
+          findsOneWidget,
+        );
 
-      // Check live status indicator preserving Consulting: [patient_name]
-      expect(find.text('Consulting: Kaushik Talukdar'), findsOneWidget);
+        // Check live status indicator preserving Consulting: [patient_name]
+        expect(find.text('Consulting: Kaushik Talukdar'), findsOneWidget);
 
-      // Check token indicator
-      expect(find.text('Token #5'), findsOneWidget);
-    });
+        // Check token indicator
+        expect(find.text('Token #5'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Displays NOT ARRIVED status and schedule when scheduled doctor has not started chamber yet', (tester) async {
-      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      final todayName = dayNames[DateTime.now().weekday - 1];
-      final scheduledDoctor = Doctor(
-        id: 'doc-scheduled-1',
-        name: 'Dr. Kaushik',
-        specialty: 'Cardiology',
-        phone: '9998887776',
-        availableDays: [todayName],
-        blockedDates: [],
-        shiftTiming: '6:00 PM – 8:30 PM',
-        dailyTokenLimit: 18,
-      );
-      final fakeSession = ChamberSession.empty('doc-scheduled-1', DateTime.now());
-      final authProvider = AuthProvider();
+    testWidgets(
+      'Displays NOT ARRIVED status and schedule when scheduled doctor has not started chamber yet',
+      (tester) async {
+        const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        final todayName = dayNames[DateTime.now().weekday - 1];
+        final scheduledDoctor = Doctor(
+          id: 'doc-scheduled-1',
+          name: 'Dr. Kaushik',
+          specialty: 'Cardiology',
+          phone: '9998887776',
+          availableDays: [todayName],
+          blockedDates: [],
+          shiftTiming: '6:00 PM – 8:30 PM',
+          dailyTokenLimit: 18,
+        );
+        final fakeSession = ChamberSession.empty(
+          'doc-scheduled-1',
+          DateTime.now(),
+        );
+        final authProvider = AuthProvider();
 
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider.value(value: authProvider),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              body: DashboardDoctorRosterCard(
-                provider: _FakeClinicProvider(scheduledDoctor, fakeSession),
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [ChangeNotifierProvider.value(value: authProvider)],
+            child: MaterialApp(
+              home: Scaffold(
+                body: DashboardDoctorRosterCard(
+                  provider: _FakeClinicProvider(scheduledDoctor, fakeSession),
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.text('NOT ARRIVED'), findsOneWidget);
-    });
+        expect(find.text('NOT ARRIVED'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Displays NO OPD TODAY status when doctor does not sit on current weekday', (tester) async {
-      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      // Pick a weekday that is definitely not today
-      final offDayName = dayNames[DateTime.now().weekday % 7];
-      final offDoctor = Doctor(
-        id: 'doc-off-1',
-        name: 'Dr. Off Duty',
-        specialty: 'Dermatology',
-        phone: '9998887776',
-        availableDays: [offDayName],
-        blockedDates: [],
-        shiftTiming: '10:00 AM – 1:00 PM',
-        dailyTokenLimit: 18,
-      );
-      final fakeSession = ChamberSession.empty('doc-off-1', DateTime.now());
-      final authProvider = AuthProvider();
+    testWidgets(
+      'Displays NO OPD TODAY status when doctor does not sit on current weekday',
+      (tester) async {
+        const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        // Pick a weekday that is definitely not today
+        final offDayName = dayNames[DateTime.now().weekday % 7];
+        final offDoctor = Doctor(
+          id: 'doc-off-1',
+          name: 'Dr. Off Duty',
+          specialty: 'Dermatology',
+          phone: '9998887776',
+          availableDays: [offDayName],
+          blockedDates: [],
+          shiftTiming: '10:00 AM – 1:00 PM',
+          dailyTokenLimit: 18,
+        );
+        final fakeSession = ChamberSession.empty('doc-off-1', DateTime.now());
+        final authProvider = AuthProvider();
 
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider.value(value: authProvider),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              body: DashboardDoctorRosterCard(
-                provider: _FakeClinicProvider(offDoctor, fakeSession),
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [ChangeNotifierProvider.value(value: authProvider)],
+            child: MaterialApp(
+              home: Scaffold(
+                body: DashboardDoctorRosterCard(
+                  provider: _FakeClinicProvider(offDoctor, fakeSession),
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.text('NO OPD TODAY'), findsOneWidget);
-    });
+        expect(find.text('NO OPD TODAY'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Displays IN CHAMBER status when doctor signals ready for patients', (tester) async {
-      final readySession = ChamberSession(
-        doctorId: 'doc-test-1',
-        date: DateTime.now(),
-        status: 'ready_for_next',
-      );
-      final authProvider = AuthProvider();
+    testWidgets(
+      'Displays IN CHAMBER status when doctor signals ready for patients',
+      (tester) async {
+        final readySession = ChamberSession(
+          doctorId: 'doc-test-1',
+          date: DateTime.now(),
+          status: 'ready_for_next',
+        );
+        final authProvider = AuthProvider();
 
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider.value(value: authProvider),
-          ],
-          child: MaterialApp(
-            home: Scaffold(
-              body: DashboardDoctorRosterCard(
-                provider: _FakeClinicProvider(testDoctor, readySession),
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [ChangeNotifierProvider.value(value: authProvider)],
+            child: MaterialApp(
+              home: Scaffold(
+                body: DashboardDoctorRosterCard(
+                  provider: _FakeClinicProvider(testDoctor, readySession),
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.text('IN CHAMBER'), findsOneWidget);
-    });
+        expect(find.text('IN CHAMBER'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Displays ABSENT status when doctor is on leave today', (tester) async {
+    testWidgets('Displays ABSENT status when doctor is on leave today', (
+      tester,
+    ) async {
       final today = DateTime.now();
       final absentDoctor = Doctor(
         id: 'doc-absent-1',
@@ -445,9 +525,7 @@ void main() {
 
       await tester.pumpWidget(
         MultiProvider(
-          providers: [
-            ChangeNotifierProvider.value(value: authProvider),
-          ],
+          providers: [ChangeNotifierProvider.value(value: authProvider)],
           child: MaterialApp(
             home: Scaffold(
               body: DashboardDoctorRosterCard(
@@ -465,49 +543,52 @@ void main() {
   });
 
   group('Top Metrics Row (4-Stage Pipeline) Tests', () {
-    testWidgets('DashboardKpiStrip renders Total Booked, In Lobby, Completed, and No-Show', (tester) async {
-      final doctor = Doctor(
-        id: 'doc-1',
-        name: 'Dr. One',
-        specialty: 'General',
-        phone: '123',
-        availableDays: ['Mon'],
-        blockedDates: [],
-      );
+    testWidgets(
+      'DashboardKpiStrip renders Total Booked, In Lobby, Completed, and No-Show',
+      (tester) async {
+        final doctor = Doctor(
+          id: 'doc-1',
+          name: 'Dr. One',
+          specialty: 'General',
+          phone: '123',
+          availableDays: ['Mon'],
+          blockedDates: [],
+        );
 
-      final fakeProvider = _FakeClinicProviderWithMetrics(
-        doctor: doctor,
-        totalBooked: 24,
-        inLobby: 6,
-        completed: 15,
-        absent: 3,
-      );
+        final fakeProvider = _FakeClinicProviderWithMetrics(
+          doctor: doctor,
+          totalBooked: 24,
+          inLobby: 6,
+          completed: 15,
+          absent: 3,
+        );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DashboardKpiStrip(
-              provider: fakeProvider,
-              screenWidth: 1200,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: DashboardKpiStrip(
+                provider: fakeProvider,
+                screenWidth: 1200,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.text('Total Booked'), findsOneWidget);
-      expect(find.text('24'), findsOneWidget);
+        expect(find.text('Total Booked'), findsOneWidget);
+        expect(find.text('24'), findsOneWidget);
 
-      expect(find.text('In Lobby'), findsOneWidget);
-      expect(find.text('6'), findsOneWidget);
+        expect(find.text('In Lobby'), findsOneWidget);
+        expect(find.text('6'), findsOneWidget);
 
-      expect(find.text('Completed'), findsOneWidget);
-      expect(find.text('15'), findsOneWidget);
+        expect(find.text('Completed'), findsOneWidget);
+        expect(find.text('15'), findsOneWidget);
 
-      expect(find.text('No-Show'), findsOneWidget);
-      expect(find.text('3'), findsOneWidget);
-    });
+        expect(find.text('No-Show'), findsOneWidget);
+        expect(find.text('3'), findsOneWidget);
+      },
+    );
   });
 }
 
@@ -537,7 +618,8 @@ class _FakeClinicProvider extends ChangeNotifier implements ClinicProvider {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _FakeClinicProviderWithMetrics extends ChangeNotifier implements ClinicProvider {
+class _FakeClinicProviderWithMetrics extends ChangeNotifier
+    implements ClinicProvider {
   final Doctor doctor;
   final int totalBooked;
   final int inLobby;
@@ -554,21 +636,21 @@ class _FakeClinicProviderWithMetrics extends ChangeNotifier implements ClinicPro
 
   @override
   List<Appointment> get todayAppointments => List.generate(
-        totalBooked,
-        (i) => Appointment(
-          id: 'appt-$i',
-          patientPhone: '111',
-          patientName: 'P$i',
-          status: AppointmentStatus.pending,
-          visitStatus: VisitStatus.waitingInLobby,
-          paymentType: PaymentType.paidCash,
-          amountCollected: 500,
-          queueNumber: i + 1,
-          scheduledDate: DateTime.now(),
-          doctorId: doctor.id,
-          doctorName: doctor.name,
-        ),
-      );
+    totalBooked,
+    (i) => Appointment(
+      id: 'appt-$i',
+      patientPhone: '111',
+      patientName: 'P$i',
+      status: AppointmentStatus.pending,
+      visitStatus: VisitStatus.waitingInLobby,
+      paymentType: PaymentType.paidCash,
+      amountCollected: 500,
+      queueNumber: i + 1,
+      scheduledDate: DateTime.now(),
+      doctorId: doctor.id,
+      doctorName: doctor.name,
+    ),
+  );
 
   @override
   int get waitingInLobbyCount => inLobby;

@@ -150,7 +150,10 @@ void main() {
       expect(summary.totalPhysicalCash, 1100); // 500 (doc1) + 600 (doc2 cash)
       expect(summary.totalUpiRevenue, 600); // 600 (doc2 upi)
       expect(summary.totalRevenue, 1700); // 1100 cash + 600 upi
-      expect(summary.totalRealizedCash, 1100); // Drawer reconciliation evaluates physical cash
+      expect(
+        summary.totalRealizedCash,
+        1100,
+      ); // Drawer reconciliation evaluates physical cash
       expect(summary.totalPaidCount, 3);
       expect(summary.totalFreeReviewCount, 1);
       expect(summary.totalFreeFamilyCount, 1);

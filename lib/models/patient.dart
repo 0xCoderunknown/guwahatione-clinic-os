@@ -12,7 +12,8 @@ class Patient {
   final DateTime? lastVisitDate;
   final String phoneNumber; // Primary contact / household phone number
   final String? guardianName; // Optional parent / guardian name
-  final String? guardianRelation; // e.g., 'Mother', 'Father', 'Spouse', 'Son', 'Guardian'
+  final String?
+  guardianRelation; // e.g., 'Mother', 'Father', 'Spouse', 'Son', 'Guardian'
   final bool isLegacy; // Indicates un-disambiguated legacy phone-keyed record
 
   Patient({

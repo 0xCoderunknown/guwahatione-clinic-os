@@ -126,10 +126,7 @@ class OwnerShellAppBar extends StatelessWidget implements PreferredSizeWidget {
               icon: const Icon(Icons.lock_outline, size: 16),
               label: const Text(
                 'Lock to Reception',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               ),
             ),
             const SizedBox(width: 14),
@@ -159,10 +156,7 @@ class OwnerShellAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
                 label: const Text(
                   'Cash Handover',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
             ),

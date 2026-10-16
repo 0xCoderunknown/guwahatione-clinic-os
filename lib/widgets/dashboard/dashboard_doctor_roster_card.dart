@@ -101,10 +101,11 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                   itemBuilder: (ctx, i) {
                     final doc = doctors[i];
                     final session = sessionMap[doc.id];
-                    final patientCount = AppointmentEngine.countDoctorAppointments(
-                      appointments: provider.todayAppointments,
-                      doctorId: doc.id,
-                    );
+                    final patientCount =
+                        AppointmentEngine.countDoctorAppointments(
+                          appointments: provider.todayAppointments,
+                          doctorId: doc.id,
+                        );
                     final isReady = session?.isReadyForNext ?? false;
                     final isCalling = session?.isCalling ?? false;
                     final isInConsultation = session?.isInConsultation ?? false;
@@ -122,12 +123,13 @@ class DashboardDoctorRosterCard extends StatelessWidget {
 
                     final isScheduledToday =
                         AppointmentEngine.isDoctorAvailableOnDate(
-                      doctor: doc,
-                      date: DateTime.now(),
-                    );
+                          doctor: doc,
+                          date: DateTime.now(),
+                        );
 
                     // Doctor has arrived and signaled ready / taken patient today
-                    final hasArrived = session != null &&
+                    final hasArrived =
+                        session != null &&
                         (!session.isIdle ||
                             session.lastCompletedQueueNumber != null);
 
@@ -141,8 +143,8 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       final activePatient = session?.patientName?.trim();
                       statusLabel =
                           (activePatient != null && activePatient.isNotEmpty)
-                              ? 'Consulting: $activePatient'
-                              : 'CONSULTING';
+                          ? 'Consulting: $activePatient'
+                          : 'CONSULTING';
                     } else if (hasArrived) {
                       statusBadgeBg = const Color(0xFFDCFCE7);
                       statusBadgeFg = const Color(0xFF15803D);
@@ -267,8 +269,8 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                                 color: isReady
                                     ? const Color(0xFF86EFAC)
                                     : (isInConsultation || isCalling
-                                        ? const Color(0xFF93C5FD)
-                                        : Colors.transparent),
+                                          ? const Color(0xFF93C5FD)
+                                          : Colors.transparent),
                               ),
                             ),
                             child: Text(
@@ -290,7 +292,10 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (ClinicConfig.current.features.enableBulkSessionClose &&
+                          if (ClinicConfig
+                                  .current
+                                  .features
+                                  .enableBulkSessionClose &&
                               isOwner &&
                               patientCount > 0) ...[
                             const SizedBox(width: 4),

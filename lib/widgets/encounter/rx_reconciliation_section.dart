@@ -44,13 +44,11 @@ class RxReconciliationSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final activeConfig = config ?? ClinicConfig.current;
     final searchQuery = form.medSearchController.text.trim();
-    final isQueryLongEnough = searchQuery.length >= 3 ||
+    final isQueryLongEnough =
+        searchQuery.length >= 3 ||
         (searchQuery.length == 2 && RegExp(r'\d').hasMatch(searchQuery));
     final searchResults = isQueryLongEnough
-        ? MedicineEngine.searchAndGroup(
-            catalog: catalog,
-            query: searchQuery,
-          )
+        ? MedicineEngine.searchAndGroup(catalog: catalog, query: searchQuery)
         : const <CompositionGroupResult>[];
 
     return SectionCard(
@@ -102,7 +100,9 @@ class RxReconciliationSection extends StatelessWidget {
                   const SizedBox(height: 16),
                 ],
 
-                if (activeConfig.features.enablePrescriptionTemplatePresets) ...[
+                if (activeConfig
+                    .features
+                    .enablePrescriptionTemplatePresets) ...[
                   RxTemplatePresetsBar(
                     form: form,
                     uuidGenerator: uuidGenerator,
@@ -124,8 +124,7 @@ class RxReconciliationSection extends StatelessWidget {
                   controller: form.medSearchController,
                   focusNode: form.medSearchFocusNode,
                   decoration: InputDecoration(
-                    hintText:
-                        'Type medicine name or composition (min 3 letters, e.g., Tel, Dolo, Pan)...',
+                    hintText: 'Type medicine name or composition (min 3 letters, e.g., Tel, Dolo, Pan)...',
                     prefixIcon: const Icon(Icons.search, size: 20),
                     suffixIcon: form.medSearchController.text.isNotEmpty
                         ? IconButton(

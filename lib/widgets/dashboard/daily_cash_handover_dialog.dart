@@ -159,9 +159,7 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                         const SizedBox(width: 10),
                         _buildSummaryCard(
                           title: 'Total Revenue',
-                          value: AppFormatters.currency(
-                            summary.totalRevenue,
-                          ),
+                          value: AppFormatters.currency(summary.totalRevenue),
                           color: const Color(0xFF4F46E5),
                           bgColor: const Color(0xFFEEF2FF),
                           icon: Icons.account_balance_wallet_rounded,

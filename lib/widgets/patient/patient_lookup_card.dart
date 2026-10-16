@@ -52,9 +52,7 @@ class PatientLookupCard extends StatelessWidget {
       style: FilledButton.styleFrom(
         backgroundColor: Colors.teal,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       onPressed: () {
         if (onBookWalkIn != null) {
@@ -198,10 +196,7 @@ class PatientLookupCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (!isMobile) ...[
-              const SizedBox(width: 12),
-              bookingButton,
-            ],
+            if (!isMobile) ...[const SizedBox(width: 12), bookingButton],
           ],
         ),
         if (isMobile) ...[

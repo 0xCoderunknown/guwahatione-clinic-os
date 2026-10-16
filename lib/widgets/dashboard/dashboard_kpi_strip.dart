@@ -23,7 +23,8 @@ class DashboardKpiStrip extends StatelessWidget {
         value: '${provider.todayAppointments.length}',
         subtitle: 'Advance & walk-in bookings',
         icon: Icons.calendar_today_rounded,
-        color: const Color(0xFF2563EB), // Blue
+        color: const Color(0xFF2563EB),
+        // Blue
         bgColor: const Color(0xFFEFF6FF),
         onTap: () => Navigator.push(
           context,
@@ -35,7 +36,8 @@ class DashboardKpiStrip extends StatelessWidget {
         value: '${provider.waitingInLobbyCount}',
         subtitle: 'Physically at desk / paid',
         icon: Icons.hourglass_top_rounded,
-        color: const Color(0xFFD97706), // Amber
+        color: const Color(0xFFD97706),
+        // Amber
         bgColor: const Color(0xFFFFFBEB),
         onTap: () => Navigator.push(
           context,
@@ -47,7 +49,8 @@ class DashboardKpiStrip extends StatelessWidget {
         value: '${provider.completedCount}',
         subtitle: 'Consultations finished',
         icon: Icons.check_circle_outline_rounded,
-        color: const Color(0xFF059669), // Green
+        color: const Color(0xFF059669),
+        // Green
         bgColor: const Color(0xFFECFDF5),
         onTap: () => Navigator.push(
           context,
@@ -59,7 +62,8 @@ class DashboardKpiStrip extends StatelessWidget {
         value: '${provider.absentCount}',
         subtitle: 'Absent / cancelled visits',
         icon: Icons.person_off_outlined,
-        color: const Color(0xFF64748B), // Slate
+        color: const Color(0xFF64748B),
+        // Slate
         bgColor: const Color(0xFFF8FAFC),
         onTap: () => Navigator.push(
           context,

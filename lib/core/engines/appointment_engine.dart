@@ -631,11 +631,12 @@ abstract class AppointmentEngine {
     final target = DateTime(date.year, date.month, date.day);
 
     // Normalize, deduplicate, and sort all blocked dates
-    final normalized = doctor!.blockedDates
-        .map((d) => DateTime(d.year, d.month, d.day))
-        .toSet()
-        .toList()
-      ..sort((a, b) => a.compareTo(b));
+    final normalized =
+        doctor!.blockedDates
+            .map((d) => DateTime(d.year, d.month, d.day))
+            .toSet()
+            .toList()
+          ..sort((a, b) => a.compareTo(b));
 
     // Group into contiguous clusters where adjacent elements are exactly 1 day apart
     final clusters = <List<DateTime>>[];

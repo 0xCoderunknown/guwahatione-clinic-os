@@ -64,7 +64,9 @@ class Consultation {
     this.orderedTests = const [],
     this.adviceNotes,
     this.nextFollowUpDate,
-  }) : patientId = (patientId == null || patientId == '') ? patientPhone : patientId;
+  }) : patientId = (patientId == null || patientId == '')
+           ? patientPhone
+           : patientId;
 
   /// Medications that are active for today's visit (START + CONTINUE)
   List<PrescriptionItem> get activePrescriptions =>

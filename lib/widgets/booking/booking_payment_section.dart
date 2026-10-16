@@ -87,63 +87,68 @@ class BookingPaymentSection extends StatelessWidget {
             labelText: 'Payment Type',
             border: OutlineInputBorder(),
           ),
-          items: const [
-            PaymentType.paidCash,
-            PaymentType.paidUpi,
-            PaymentType.freeReview,
-            PaymentType.freeFamily,
-            PaymentType.unpaid,
-            PaymentType.postPay,
-          ].map((type) {
-            String label;
-            bool enabled = true;
-            final fee =
-                selectedDoctor?.consultationFee ??
-                AppConstants.defaultConsultationFee;
-            switch (type) {
-              case PaymentType.paidCash:
-                label = 'Paid (Cash) — ₹$fee';
-                break;
-              case PaymentType.paidUpi:
-                label = 'Paid (UPI) — ₹$fee';
-                break;
-              case PaymentType.freeReview:
-                if (!reviewEligibility.hasVisitedDoctorEarlier) {
-                  enabled = false;
-                  label = 'FREE (Review) — Returning patients only';
-                } else if (reviewEligibility.isWithinReviewPeriod) {
-                  label =
-                      'FREE (Review) — Within ${reviewEligibility.allowedReviewDays} days';
-                } else {
-                  label =
-                      'FREE (Review) — ⚠️ >${reviewEligibility.allowedReviewDays} days passed';
+          items:
+              const [
+                PaymentType.paidCash,
+                PaymentType.paidUpi,
+                PaymentType.freeReview,
+                PaymentType.freeFamily,
+                PaymentType.unpaid,
+                PaymentType.postPay,
+              ].map((type) {
+                String label;
+                bool enabled = true;
+                final fee =
+                    selectedDoctor?.consultationFee ??
+                    AppConstants.defaultConsultationFee;
+                switch (type) {
+                  case PaymentType.paidCash:
+                    label = 'Paid (Cash) — ₹$fee';
+                    break;
+                  case PaymentType.paidUpi:
+                    label = 'Paid (UPI) — ₹$fee';
+                    break;
+                  case PaymentType.freeReview:
+                    if (!reviewEligibility.hasVisitedDoctorEarlier) {
+                      enabled = false;
+                      label = 'FREE (Review) — Returning patients only';
+                    } else if (reviewEligibility.isWithinReviewPeriod) {
+                      label =
+                          'FREE (Review) — Within ${reviewEligibility.allowedReviewDays} days';
+                    } else {
+                      label =
+                          'FREE (Review) — ⚠️ >${reviewEligibility.allowedReviewDays} days passed';
+                    }
+                    break;
+                  case PaymentType.freeFamily:
+                    label = 'Family / Complimentary';
+                    break;
+                  case PaymentType.unpaid:
+                    label = 'Unpaid (Phone Reservation)';
+                    break;
+                  case PaymentType.postPay:
+                    label = 'Post-Pay (Exit Collect — Use with Caution)';
+                    break;
                 }
-                break;
-              case PaymentType.freeFamily:
-                label = 'Family / Complimentary';
-                break;
-              case PaymentType.unpaid:
-                label = 'Unpaid (Phone Reservation)';
-                break;
-              case PaymentType.postPay:
-                label = 'Post-Pay (Exit Collect — Use with Caution)';
-                break;
-            }
 
-            return DropdownMenuItem<PaymentType>(
-              value: type,
-              enabled: enabled,
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: enabled
-                      ? (type == PaymentType.postPay ? Colors.amber.shade900 : null)
-                      : Colors.grey.shade500,
-                  fontWeight: type == PaymentType.postPay ? FontWeight.w600 : null,
-                ),
-              ),
-            );
-          }).toList(),
+                return DropdownMenuItem<PaymentType>(
+                  value: type,
+                  enabled: enabled,
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: enabled
+                          ? (type == PaymentType.postPay
+                                ? Colors.amber.shade900
+                                : null)
+                          : Colors.grey.shade500,
+                      fontWeight: type == PaymentType.postPay
+                          ? FontWeight.w600
+                          : null,
+                    ),
+                  ),
+                );
+              }).toList(),
           onChanged: onPaymentChanged,
         ),
 

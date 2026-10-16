@@ -413,10 +413,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(
-        find.text('Doctor on Break (Waiting for Doctor)'),
-        findsOneWidget,
-      );
+      expect(find.text('Doctor on Break (Waiting for Doctor)'), findsOneWidget);
       expect(find.textContaining('is on a break'), findsOneWidget);
 
       final button = tester.widget<FilledButton>(find.byType(FilledButton));

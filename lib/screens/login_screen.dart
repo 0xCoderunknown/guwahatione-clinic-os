@@ -222,7 +222,9 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _handleDoctorLogin() async {
     if (_isLoading) return;
     final clinic = Provider.of<ClinicProvider>(context, listen: false);
-    final doc = _selectedDoctor ?? (clinic.doctors.isNotEmpty ? clinic.doctors.first : null);
+    final doc =
+        _selectedDoctor ??
+        (clinic.doctors.isNotEmpty ? clinic.doctors.first : null);
     if (doc == null) {
       setState(() => _errorMessage = 'Please select a doctor.');
       return;
@@ -245,9 +247,7 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _isLoading = false);
 
     if (!success) {
-      setState(
-        () => _errorMessage = 'Incorrect PIN for ${doc.name}.',
-      );
+      setState(() => _errorMessage = 'Incorrect PIN for ${doc.name}.');
     }
   }
 

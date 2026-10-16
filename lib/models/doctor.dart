@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../utils/formatters.dart';
 
 class Doctor {
@@ -12,7 +13,8 @@ class Doctor {
   final int consultationFee; // Default consultation fee in INR
   final int freeReviewDays; // Free review policy window in days (0 to 30; 0 = no free review)
   final String searchPreference; // 'brandFirst' | 'compositionFirst'
-  final String? medicalRegNumber; // State Medical Council / NMC Reg No. (e.g. 'AMC-24891')
+  final String?
+  medicalRegNumber; // State Medical Council / NMC Reg No. (e.g. 'AMC-24891')
   final String shiftTiming; // e.g. '6:00 PM – 8:30 PM'
   final int dailyTokenLimit; // Daily token cap (default: 18)
 

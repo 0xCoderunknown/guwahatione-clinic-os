@@ -47,6 +47,9 @@ export 'encounter/rx/rx_search_results_view.dart';
 export 'encounter/rx/staged_medicine_form.dart';
 export 'encounter/rx_reconciliation_section.dart';
 export 'encounter/vitals_and_exam_section.dart';
+// Patient Directory Widgets
+export 'patient/doctor_consultation_accordion.dart';
+export 'patient/patient_lookup_card.dart';
 // Prescription Print Widgets
 export 'print/print_header_and_demographics.dart';
 export 'print/print_medications_table.dart';
@@ -57,6 +60,3 @@ export 'queue/accordion_status_actions.dart';
 export 'queue/appointment_accordion.dart';
 export 'queue/completed_consultations_accordion.dart';
 export 'queue/queue_chamber_dispatch_action.dart';
-// Patient Directory Widgets
-export 'patient/doctor_consultation_accordion.dart';
-export 'patient/patient_lookup_card.dart';

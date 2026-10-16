@@ -106,9 +106,7 @@ class _PatientDirectoryScreenState extends State<PatientDirectoryScreen> {
                 const SizedBox(height: 16),
 
                 // 2. Main Content Area (Initial Zero-Egress State vs Results vs Empty State)
-                Expanded(
-                  child: _buildBody(),
-                ),
+                Expanded(child: _buildBody()),
               ],
             ),
           ),
@@ -144,10 +142,11 @@ class _PatientDirectoryScreenState extends State<PatientDirectoryScreen> {
                 isDense: true,
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
-                hintText:
-                    'Search patient by 10-digit mobile number or name...',
-                hintStyle:
-                    TextStyle(fontSize: 13.5, color: Colors.grey.shade500),
+                hintText: 'Search patient by 10-digit mobile number or name...',
+                hintStyle: TextStyle(
+                  fontSize: 13.5,
+                  color: Colors.grey.shade500,
+                ),
                 prefixIcon: const Icon(
                   Icons.person_search_rounded,
                   color: Colors.teal,
@@ -203,7 +202,10 @@ class _PatientDirectoryScreenState extends State<PatientDirectoryScreen> {
                 : const Icon(Icons.search_rounded, size: 18),
             label: Text(
               _isSearching ? 'Searching...' : 'Search',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13.5,
+              ),
             ),
           ),
         ],
@@ -311,17 +313,16 @@ class _PatientDirectoryScreenState extends State<PatientDirectoryScreen> {
               const SizedBox(height: 6),
               Text(
                 'Double-check the phone number or name, or register a new walk-in.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.teal,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),

@@ -67,9 +67,7 @@ class ChamberAppBar extends StatelessWidget implements PreferredSizeWidget {
                         decoration: BoxDecoration(
                           color: Colors.purple.shade50,
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: Colors.purple.shade200,
-                          ),
+                          border: Border.all(color: Colors.purple.shade200),
                         ),
                         child: Text(
                           'PREVIEW',

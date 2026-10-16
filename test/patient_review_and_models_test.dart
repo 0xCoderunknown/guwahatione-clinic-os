@@ -597,33 +597,36 @@ void main() {
   });
 
   group('Appointment.paymentSummary Tests', () {
-    test('formats paid cash and upi cleanly with rupee amount and Paid label', () {
-      final cashAppt = Appointment(
-        id: 'appt-1',
-        patientPhone: '9876543210',
-        patientName: 'Test Patient',
-        paymentType: PaymentType.paidCash,
-        amountCollected: 500,
-        queueNumber: 1,
-        scheduledDate: DateTime.now(),
-        doctorId: 'doc-1',
-        doctorName: 'Dr. Das',
-      );
-      final upiAppt = Appointment(
-        id: 'appt-2',
-        patientPhone: '9876543210',
-        patientName: 'Test Patient',
-        paymentType: PaymentType.paidUpi,
-        amountCollected: 700,
-        queueNumber: 2,
-        scheduledDate: DateTime.now(),
-        doctorId: 'doc-1',
-        doctorName: 'Dr. Das',
-      );
+    test(
+      'formats paid cash and upi cleanly with rupee amount and Paid label',
+      () {
+        final cashAppt = Appointment(
+          id: 'appt-1',
+          patientPhone: '9876543210',
+          patientName: 'Test Patient',
+          paymentType: PaymentType.paidCash,
+          amountCollected: 500,
+          queueNumber: 1,
+          scheduledDate: DateTime.now(),
+          doctorId: 'doc-1',
+          doctorName: 'Dr. Das',
+        );
+        final upiAppt = Appointment(
+          id: 'appt-2',
+          patientPhone: '9876543210',
+          patientName: 'Test Patient',
+          paymentType: PaymentType.paidUpi,
+          amountCollected: 700,
+          queueNumber: 2,
+          scheduledDate: DateTime.now(),
+          doctorId: 'doc-1',
+          doctorName: 'Dr. Das',
+        );
 
-      expect(cashAppt.paymentSummary, '₹500 Paid');
-      expect(upiAppt.paymentSummary, '₹700 Paid');
-    });
+        expect(cashAppt.paymentSummary, '₹500 Paid');
+        expect(upiAppt.paymentSummary, '₹700 Paid');
+      },
+    );
 
     test('formats free waivers, post-pay, and unpaid without brackets', () {
       final freeReview = Appointment(
@@ -678,4 +681,3 @@ void main() {
     });
   });
 }
-

@@ -95,10 +95,7 @@ class TokenReceiptDialog extends StatelessWidget {
                   Text(
                     config.address,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey.shade500,
-                    ),
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
                   ),
                 ],
 
@@ -153,7 +150,11 @@ class TokenReceiptDialog extends StatelessWidget {
                 const SizedBox(height: 12),
 
                 // 3. Consultation & Patient Key Facts
-                _buildFactRow('Doctor', AppFormatters.doctorTitle(appointment.doctorName), isBold: true),
+                _buildFactRow(
+                  'Doctor',
+                  AppFormatters.doctorTitle(appointment.doctorName),
+                  isBold: true,
+                ),
                 const SizedBox(height: 6),
                 _buildFactRow('Patient', appointment.patientName, isBold: true),
                 const SizedBox(height: 6),

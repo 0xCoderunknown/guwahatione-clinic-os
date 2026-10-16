@@ -4,7 +4,8 @@ import '../../models/models.dart';
 class CompositionGroupResult {
   final String compositionLabel; // e.g., 'Telmisartan 40mg'
   final String composition; // e.g., 'Telmisartan 40mg'
-  final List<Medicine> associatedBrands; // e.g., [Telma 40 tablet, Telmikind 40 tablet]
+  final List<Medicine>
+  associatedBrands; // e.g., [Telma 40 tablet, Telmikind 40 tablet]
   final int score;
   final bool isCompositionMatch;
 
@@ -370,13 +371,15 @@ abstract class MedicineEngine {
   }) {
     final cleanQuery = query.trim().toLowerCase();
     final filtered = catalog.where((m) {
-      final matchesQuery = cleanQuery.isEmpty ||
+      final matchesQuery =
+          cleanQuery.isEmpty ||
           m.productName.toLowerCase().contains(cleanQuery) ||
           m.composition.toLowerCase().contains(cleanQuery) ||
           (m.manufacturer != null &&
               m.manufacturer!.toLowerCase().contains(cleanQuery));
 
-      final matchesForm = formFilter == 'All' ||
+      final matchesForm =
+          formFilter == 'All' ||
           m.productName.toLowerCase().contains(formFilter.toLowerCase());
 
       return matchesQuery && matchesForm;

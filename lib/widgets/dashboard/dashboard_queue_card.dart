@@ -387,10 +387,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
     BuildContext context,
   ) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 8,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
       leading: TokenBadge(
         queueNumber: appt.queueNumber,
         doctorTag: _selectedDoctorId == null
@@ -416,10 +413,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
           const SizedBox(width: 8),
           Text(
             '(${appt.patientPhone})',
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF64748B),
-            ),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
           ),
           const SizedBox(width: 10),
           _buildVisitStatusBadge(appt),
@@ -433,10 +427,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
           children: [
             Text(
               "${AppFormatters.doctorTitle(appt.doctorName)} • ${appt.paymentSummary}",
-              style: const TextStyle(
-                fontSize: 12.5,
-                color: Color(0xFF475569),
-              ),
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
             ),
             if (appt.status == AppointmentStatus.pending) ...[
               const SizedBox(height: 5),
@@ -494,10 +485,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
   Widget _buildVisitStatusBadge(Appointment appt) {
     if (appt.visitStatus == VisitStatus.booked) {
       return Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 8,
-          vertical: 3,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: const Color(0xFFFEF3C7),
           borderRadius: BorderRadius.circular(6),
@@ -514,10 +502,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
       );
     } else if (appt.visitStatus == VisitStatus.waitingInLobby) {
       return Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 8,
-          vertical: 3,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: const Color(0xFFDCFCE7),
           borderRadius: BorderRadius.circular(6),
@@ -563,10 +548,7 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
     }
 
     if (appt.status == AppointmentStatus.pending) {
-      return QueueChamberDispatchAction(
-        appointment: appt,
-        isMobile: isMobile,
-      );
+      return QueueChamberDispatchAction(appointment: appt, isMobile: isMobile);
     }
 
     if (isMobile) {

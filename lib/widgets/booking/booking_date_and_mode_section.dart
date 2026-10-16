@@ -29,9 +29,7 @@ class BookingDateAndModeSection extends StatelessWidget {
           title: Text("Date: ${AppFormatters.date(selectedDate)}"),
           trailing: const Icon(Icons.calendar_today),
           tileColor: Colors.grey.shade100,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           onTap: onPickDate,
         ),
         const SizedBox(height: 12),
@@ -43,10 +41,7 @@ class BookingDateAndModeSection extends StatelessWidget {
             segments: const [
               ButtonSegment<VisitStatus>(
                 value: VisitStatus.waitingInLobby,
-                icon: Icon(
-                  Icons.person_pin_circle_outlined,
-                  size: 16,
-                ),
+                icon: Icon(Icons.person_pin_circle_outlined, size: 16),
                 label: Text(
                   'Walk-In (Desk Check-In)',
                   style: TextStyle(fontSize: 12),
@@ -55,10 +50,7 @@ class BookingDateAndModeSection extends StatelessWidget {
               ButtonSegment<VisitStatus>(
                 value: VisitStatus.booked,
                 icon: Icon(Icons.phone_in_talk_outlined, size: 16),
-                label: Text(
-                  'Phone / Advance',
-                  style: TextStyle(fontSize: 12),
-                ),
+                label: Text('Phone / Advance', style: TextStyle(fontSize: 12)),
               ),
             ],
             selected: {selectedVisitStatus},

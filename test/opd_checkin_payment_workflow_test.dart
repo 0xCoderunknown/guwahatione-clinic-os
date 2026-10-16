@@ -311,19 +311,25 @@ void main() {
       ];
 
       final waitingInLobby = appointments
-          .where((a) =>
-              a.visitStatus == VisitStatus.waitingInLobby &&
-              a.status != AppointmentStatus.absent)
+          .where(
+            (a) =>
+                a.visitStatus == VisitStatus.waitingInLobby &&
+                a.status != AppointmentStatus.absent,
+          )
           .length;
       final expectedBooked = appointments
-          .where((a) =>
-              a.visitStatus == VisitStatus.booked &&
-              a.status != AppointmentStatus.absent)
+          .where(
+            (a) =>
+                a.visitStatus == VisitStatus.booked &&
+                a.status != AppointmentStatus.absent,
+          )
           .length;
       final inConsultation = appointments
-          .where((a) =>
-              a.visitStatus == VisitStatus.inConsultation &&
-              a.status != AppointmentStatus.absent)
+          .where(
+            (a) =>
+                a.visitStatus == VisitStatus.inConsultation &&
+                a.status != AppointmentStatus.absent,
+          )
           .length;
       final completed = appointments
           .where((a) => a.status == AppointmentStatus.completed)

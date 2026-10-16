@@ -99,8 +99,9 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       _phoneController.text = p.phoneNumber;
       _nameController.text = p.name;
       _ageController.text = p.age > 0 ? p.age.toString() : '';
-      _selectedGender =
-          ['Male', 'Female', 'Other'].contains(p.gender) ? p.gender : null;
+      _selectedGender = ['Male', 'Female', 'Other'].contains(p.gender)
+          ? p.gender
+          : null;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _searchPatient(p.phoneNumber);
       });
@@ -389,12 +390,12 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
             focusNode: _submitFocusNode,
             onPressed:
                 (_isLoading ||
-                 _isBooking ||
-                 _duplicateAppointment != null ||
-                 AppointmentEngine.isDoctorOnLeave(
-                   doctor: _selectedDoctor,
-                   date: _selectedDate,
-                 ))
+                    _isBooking ||
+                    _duplicateAppointment != null ||
+                    AppointmentEngine.isDoctorOnLeave(
+                      doctor: _selectedDoctor,
+                      date: _selectedDate,
+                    ))
                 ? null
                 : _saveAppointment,
             style: ElevatedButton.styleFrom(
@@ -539,10 +540,9 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
           _ageUnit = 'Yrs';
           _ageController.text = patient.age > 0 ? patient.age.toString() : '';
         }
-        _selectedGender =
-            ['Male', 'Female', 'Other'].contains(patient.gender)
-                ? patient.gender
-                : null;
+        _selectedGender = ['Male', 'Female', 'Other'].contains(patient.gender)
+            ? patient.gender
+            : null;
         _guardianNameController.text = patient.guardianName ?? '';
         _guardianRelationController.text = patient.guardianRelation ?? '';
         _genderHasError = false;
@@ -765,7 +765,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       doctor: _selectedDoctor,
       date: _selectedDate,
     )) {
-      final summary = AppointmentEngine.formatDoctorLeaveSummary(
+      final summary =
+          AppointmentEngine.formatDoctorLeaveSummary(
             doctor: _selectedDoctor,
             date: _selectedDate,
           ) ??
@@ -809,30 +810,28 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     setState(() => _isBooking = true);
 
     try {
-      final newAppt = await Provider.of<ClinicProvider>(
-        context,
-        listen: false,
-      ).bookAppointment(
-        patientId: _selectedPatientId,
-        phoneNumber: _phoneController.text.trim(),
-        name: _nameController.text.trim(),
-        age: parsedAge,
-        ageMonths: ageMonths,
-        ageDays: ageDays,
-        guardianName: _guardianNameController.text.trim().isNotEmpty
-            ? _guardianNameController.text.trim()
-            : null,
-        guardianRelation: _guardianRelationController.text.trim().isNotEmpty
-            ? _guardianRelationController.text.trim()
-            : null,
-        gender: _selectedGender!,
-        visitStatus: _selectedVisitStatus,
-        paymentType: _selectedPayment,
-        amountCollected: int.parse(_amountController.text.trim()),
-        scheduledDate: _selectedDate,
-        selectedDoctor: _selectedDoctor!,
-        isNewPatient: _isNewPatient,
-      );
+      final newAppt = await Provider.of<ClinicProvider>(context, listen: false)
+          .bookAppointment(
+            patientId: _selectedPatientId,
+            phoneNumber: _phoneController.text.trim(),
+            name: _nameController.text.trim(),
+            age: parsedAge,
+            ageMonths: ageMonths,
+            ageDays: ageDays,
+            guardianName: _guardianNameController.text.trim().isNotEmpty
+                ? _guardianNameController.text.trim()
+                : null,
+            guardianRelation: _guardianRelationController.text.trim().isNotEmpty
+                ? _guardianRelationController.text.trim()
+                : null,
+            gender: _selectedGender!,
+            visitStatus: _selectedVisitStatus,
+            paymentType: _selectedPayment,
+            amountCollected: int.parse(_amountController.text.trim()),
+            scheduledDate: _selectedDate,
+            selectedDoctor: _selectedDoctor!,
+            isNewPatient: _isNewPatient,
+          );
       if (mounted) {
         Navigator.pop(context, newAppt);
         if (ClinicConfig.current.features.enableTokenReceiptPrint) {

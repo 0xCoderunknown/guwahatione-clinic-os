@@ -422,7 +422,8 @@ class ClinicProvider with ChangeNotifier {
         doctor: selectedDoctor,
         date: scheduledDate,
       )) {
-        final summary = AppointmentEngine.formatDoctorLeaveSummary(
+        final summary =
+            AppointmentEngine.formatDoctorLeaveSummary(
               doctor: selectedDoctor,
               date: scheduledDate,
             ) ??

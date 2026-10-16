@@ -245,10 +245,10 @@ class _DoctorFormState extends State<DoctorForm> {
 
     _blockedDates = d != null
         ? (d.blockedDates
-            .map((dt) => DateTime(dt.year, dt.month, dt.day))
-            .toSet()
-            .toList()
-          ..sort((a, b) => a.compareTo(b)))
+              .map((dt) => DateTime(dt.year, dt.month, dt.day))
+              .toSet()
+              .toList()
+            ..sort((a, b) => a.compareTo(b)))
         : [];
   }
 
@@ -396,7 +396,10 @@ class _DoctorFormState extends State<DoctorForm> {
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text('to', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(
+                  'to',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
               Expanded(
                 child: DropdownButtonFormField<String>(
@@ -457,10 +460,9 @@ class _DoctorFormState extends State<DoctorForm> {
               prefixIcon: Icon(Icons.confirmation_number_outlined),
             ),
             keyboardType: TextInputType.number,
-            validator: (v) =>
-                v == null || int.tryParse(v.trim()) == null
-                    ? 'Number required'
-                    : null,
+            validator: (v) => v == null || int.tryParse(v.trim()) == null
+                ? 'Number required'
+                : null,
           ),
           const SizedBox(height: 16),
 
@@ -760,10 +762,7 @@ class _DoctorFormState extends State<DoctorForm> {
       setState(() {
         for (final nd in newDates) {
           if (!_blockedDates.any(
-            (d) =>
-                d.year == nd.year &&
-                d.month == nd.month &&
-                d.day == nd.day,
+            (d) => d.year == nd.year && d.month == nd.month && d.day == nd.day,
           )) {
             _blockedDates.add(nd);
           }

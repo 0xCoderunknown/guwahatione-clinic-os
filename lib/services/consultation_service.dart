@@ -110,7 +110,10 @@ class ConsultationService {
     String patientId, {
     String? phone,
   }) async {
-    final latest = await getLatestConsultationForPatient(patientId, phone: phone);
+    final latest = await getLatestConsultationForPatient(
+      patientId,
+      phone: phone,
+    );
     if (latest == null) return [];
     return latest.activePrescriptions;
   }

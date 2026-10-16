@@ -79,10 +79,7 @@ void main() {
     });
 
     test('cleanDoctorName extracts stripped name without title', () {
-      expect(
-        AppFormatters.cleanDoctorName('Bhaskar Baruah'),
-        'Bhaskar Baruah',
-      );
+      expect(AppFormatters.cleanDoctorName('Bhaskar Baruah'), 'Bhaskar Baruah');
       expect(
         AppFormatters.cleanDoctorName('Dr. Bhaskar Baruah'),
         'Bhaskar Baruah',

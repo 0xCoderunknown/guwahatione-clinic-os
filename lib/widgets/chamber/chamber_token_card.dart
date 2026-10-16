@@ -289,7 +289,8 @@ class ChamberTokenCard extends StatelessWidget {
                           statusBadgeWidget,
                         ],
                       ),
-                      if (paymentSubtitle.isNotEmpty || actionWidget != null) ...[
+                      if (paymentSubtitle.isNotEmpty ||
+                          actionWidget != null) ...[
                         const SizedBox(height: 10),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,

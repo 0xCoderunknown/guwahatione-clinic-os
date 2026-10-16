@@ -31,9 +31,27 @@ void main() {
       // 14-10-2026 is Wednesday
       final wednesday = DateTime(2026, 10, 14);
 
-      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: sampleDoctor, date: monday), isTrue);
-      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: sampleDoctor, date: tuesday), isFalse);
-      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: sampleDoctor, date: wednesday), isTrue);
+      expect(
+        AppointmentEngine.isDoctorAvailableOnDate(
+          doctor: sampleDoctor,
+          date: monday,
+        ),
+        isTrue,
+      );
+      expect(
+        AppointmentEngine.isDoctorAvailableOnDate(
+          doctor: sampleDoctor,
+          date: tuesday,
+        ),
+        isFalse,
+      );
+      expect(
+        AppointmentEngine.isDoctorAvailableOnDate(
+          doctor: sampleDoctor,
+          date: wednesday,
+        ),
+        isTrue,
+      );
 
       final docNoDays = Doctor(
         id: 'doc-all',
@@ -43,52 +61,62 @@ void main() {
         availableDays: const [],
         blockedDates: const [],
       );
-      expect(AppointmentEngine.isDoctorAvailableOnDate(doctor: docNoDays, date: tuesday), isTrue);
-    });
-
-    testWidgets('TokenReceiptDialog renders token hero, Indian date, and patient details', (tester) async {
-      final appt = Appointment(
-        id: 'appt-receipt-1',
-        patientPhone: '9864099999',
-        patientName: 'Anindita Das',
-        visitStatus: VisitStatus.waitingInLobby,
-        paymentType: PaymentType.paidCash,
-        amountCollected: 500,
-        queueNumber: 15,
-        scheduledDate: DateTime(2026, 10, 14),
-        doctorId: sampleDoctor.id,
-        doctorName: sampleDoctor.name,
-        checkedInAt: DateTime(2026, 10, 14, 18, 30),
-      );
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: TokenReceiptDialog(appointment: appt),
-          ),
+      expect(
+        AppointmentEngine.isDoctorAvailableOnDate(
+          doctor: docNoDays,
+          date: tuesday,
         ),
+        isTrue,
       );
-
-      await tester.pumpAndSettle();
-
-      // Check Header & Hero Token
-      expect(find.text('TOKEN RECEIPT SLIP'), findsNothing); // Dialog title has standard casing
-      expect(find.text('Token Receipt Slip'), findsOneWidget);
-      expect(find.text('#15'), findsOneWidget);
-      expect(find.text('OPD QUEUE TOKEN'), findsOneWidget);
-
-      // Check Indian Date format DD-MM-YYYY
-      expect(find.text('Date: 14-10-2026'), findsOneWidget);
-
-      // Check Patient and Doctor details
-      expect(find.text('Anindita Das'), findsOneWidget);
-      expect(find.text('9864099999'), findsOneWidget);
-      expect(find.text('Dr. Bhaskar Baruah'), findsOneWidget);
-      expect(find.text('₹500 (Paid (Cash))'), findsOneWidget);
-
-      // Check Print and Close buttons
-      expect(find.text('Print Slip'), findsOneWidget);
-      expect(find.text('Close'), findsOneWidget);
     });
+
+    testWidgets(
+      'TokenReceiptDialog renders token hero, Indian date, and patient details',
+      (tester) async {
+        final appt = Appointment(
+          id: 'appt-receipt-1',
+          patientPhone: '9864099999',
+          patientName: 'Anindita Das',
+          visitStatus: VisitStatus.waitingInLobby,
+          paymentType: PaymentType.paidCash,
+          amountCollected: 500,
+          queueNumber: 15,
+          scheduledDate: DateTime(2026, 10, 14),
+          doctorId: sampleDoctor.id,
+          doctorName: sampleDoctor.name,
+          checkedInAt: DateTime(2026, 10, 14, 18, 30),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: TokenReceiptDialog(appointment: appt)),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Check Header & Hero Token
+        expect(
+          find.text('TOKEN RECEIPT SLIP'),
+          findsNothing,
+        ); // Dialog title has standard casing
+        expect(find.text('Token Receipt Slip'), findsOneWidget);
+        expect(find.text('#15'), findsOneWidget);
+        expect(find.text('OPD QUEUE TOKEN'), findsOneWidget);
+
+        // Check Indian Date format DD-MM-YYYY
+        expect(find.text('Date: 14-10-2026'), findsOneWidget);
+
+        // Check Patient and Doctor details
+        expect(find.text('Anindita Das'), findsOneWidget);
+        expect(find.text('9864099999'), findsOneWidget);
+        expect(find.text('Dr. Bhaskar Baruah'), findsOneWidget);
+        expect(find.text('₹500 (Paid (Cash))'), findsOneWidget);
+
+        // Check Print and Close buttons
+        expect(find.text('Print Slip'), findsOneWidget);
+        expect(find.text('Close'), findsOneWidget);
+      },
+    );
   });
 }

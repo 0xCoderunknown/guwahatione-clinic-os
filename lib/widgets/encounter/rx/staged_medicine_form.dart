@@ -145,8 +145,15 @@ class StagedMedicineForm extends StatelessWidget {
     final String currentDurationPreset;
     if (stagedIsChronic) {
       currentDurationPreset = 'To continue';
-    } else if (['30', '15', '14', '10', '7', '5', '3']
-        .contains(stagedDurationController.text.trim())) {
+    } else if ([
+      '30',
+      '15',
+      '14',
+      '10',
+      '7',
+      '5',
+      '3',
+    ].contains(stagedDurationController.text.trim())) {
       currentDurationPreset = '${stagedDurationController.text.trim()} days';
     } else {
       currentDurationPreset = 'Custom';
@@ -294,8 +301,10 @@ class StagedMedicineForm extends StatelessWidget {
                       onChronicChanged(true);
                     } else if (val != null && val.endsWith(' days')) {
                       onChronicChanged(false);
-                      stagedDurationController.text =
-                          val.replaceAll(' days', '');
+                      stagedDurationController.text = val.replaceAll(
+                        ' days',
+                        '',
+                      );
                     } else {
                       onChronicChanged(false);
                     }

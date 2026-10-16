@@ -11,10 +11,7 @@ import '../../utils/formatters.dart';
 class BookingDuplicateWarningBanner extends StatelessWidget {
   final Appointment duplicate;
 
-  const BookingDuplicateWarningBanner({
-    super.key,
-    required this.duplicate,
-  });
+  const BookingDuplicateWarningBanner({super.key, required this.duplicate});
 
   @override
   Widget build(BuildContext context) {
@@ -140,11 +137,7 @@ class BookingOffDayWarningBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.event_busy,
-            color: Color(0xFFB45309),
-            size: 18,
-          ),
+          const Icon(Icons.event_busy, color: Color(0xFFB45309), size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -176,7 +169,8 @@ class BookingDoctorLeaveWarningBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final leaveSummary = AppointmentEngine.formatDoctorLeaveSummary(
+    final leaveSummary =
+        AppointmentEngine.formatDoctorLeaveSummary(
           doctor: doctor,
           date: date,
         ) ??
@@ -193,11 +187,7 @@ class BookingDoctorLeaveWarningBanner extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.block,
-            color: Color(0xFFDC2626),
-            size: 18,
-          ),
+          const Icon(Icons.block, color: Color(0xFFDC2626), size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

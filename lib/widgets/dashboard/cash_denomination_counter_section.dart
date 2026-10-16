@@ -42,10 +42,7 @@ class CashDenominationCounterSection extends StatelessWidget {
             ),
             TextButton.icon(
               icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text(
-                'Reset Counts',
-                style: TextStyle(fontSize: 12),
-              ),
+              label: const Text('Reset Counts', style: TextStyle(fontSize: 12)),
               onPressed: onReset,
             ),
           ],
@@ -86,10 +83,7 @@ class CashDenominationCounterSection extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Text(
-                            '×',
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                          const Text('×', style: TextStyle(color: Colors.grey)),
                           const SizedBox(width: 8),
                           Expanded(
                             child: SizedBox(
@@ -125,10 +119,7 @@ class CashDenominationCounterSection extends StatelessWidget {
                       children: [
                         const Text(
                           'Counted Physical Total:',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                         Text(
                           AppFormatters.currency(physicalTotal),
@@ -183,10 +174,12 @@ class CashDenominationCounterSection extends StatelessWidget {
     }
 
     final isShortage = discrepancy < 0;
-    final color =
-        isShortage ? const Color(0xFFB91C1C) : const Color(0xFFD97706);
-    final bgColor =
-        isShortage ? const Color(0xFFFEE2E2) : const Color(0xFFFEF3C7);
+    final color = isShortage
+        ? const Color(0xFFB91C1C)
+        : const Color(0xFFD97706);
+    final bgColor = isShortage
+        ? const Color(0xFFFEE2E2)
+        : const Color(0xFFFEF3C7);
     final text = isShortage
         ? 'Shortage: -${AppFormatters.currency(discrepancy.abs())}'
         : 'Surplus: +${AppFormatters.currency(discrepancy)}';

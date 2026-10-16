@@ -94,19 +94,24 @@ class CatalogueMedicineCard extends StatelessWidget {
                     color: Colors.grey.shade700,
                   ),
                 ),
-                if (item.defaultFrequency != null || item.defaultDosage != null) ...[
+                if (item.defaultFrequency != null ||
+                    item.defaultDosage != null) ...[
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFECFDF5),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(color: const Color(0xFFA7F3D0)),
                         ),
                         child: Text(
-                          'OPD Default: ${item.defaultDosage ?? ''} ${item.defaultFrequency ?? ''} • ${item.defaultTiming ?? ''} • ${item.durationLabel}'.trim(),
+                          'OPD Default: ${item.defaultDosage ?? ''} ${item.defaultFrequency ?? ''} • ${item.defaultTiming ?? ''} • ${item.durationLabel}'
+                              .trim(),
                           style: const TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,

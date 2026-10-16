@@ -120,18 +120,13 @@ class RxSearchResultsView extends StatelessWidget {
           children: [
             // Composition Header Banner: e.g. [TELMISARTAN 40mg]
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 6,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.teal.shade50,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(7),
                 ),
-                border: Border(
-                  bottom: BorderSide(color: Colors.teal.shade100),
-                ),
+                border: Border(bottom: BorderSide(color: Colors.teal.shade100)),
               ),
               child: Row(
                 children: [
@@ -159,9 +154,7 @@ class RxSearchResultsView extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.purple.shade50,
                           borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: Colors.purple.shade200,
-                          ),
+                          border: Border.all(color: Colors.purple.shade200),
                         ),
                         child: Text(
                           'Generic',
@@ -243,8 +236,9 @@ class RxSearchResultsView extends StatelessWidget {
     }
 
     return flattenedBrands.take(8).map((brand) {
-      final isProductMatch =
-          brand.productName.toLowerCase().contains(cleanQuery);
+      final isProductMatch = brand.productName.toLowerCase().contains(
+        cleanQuery,
+      );
       return InkWell(
         onTap: () => onStageMedicine(brand),
         borderRadius: BorderRadius.circular(6),

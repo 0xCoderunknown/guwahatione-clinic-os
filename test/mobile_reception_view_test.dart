@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:appointment_app/models/models.dart';
 import 'package:appointment_app/providers/auth_provider.dart';
 import 'package:appointment_app/providers/clinic_provider.dart';
@@ -7,9 +5,12 @@ import 'package:appointment_app/screens/dashboard_screen.dart';
 import 'package:appointment_app/screens/owner_shell.dart';
 import 'package:appointment_app/services/sound_service.dart';
 import 'package:appointment_app/widgets/dashboard/dashboard_queue_card.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-class _FakeMobileClinicProvider extends ChangeNotifier implements ClinicProvider {
+class _FakeMobileClinicProvider extends ChangeNotifier
+    implements ClinicProvider {
   final List<Appointment> _appts;
   final List<Doctor> _docs;
   final ChamberSession _session;
@@ -63,9 +64,7 @@ class _FakeMobileClinicProvider extends ChangeNotifier implements ClinicProvider
 
   @override
   Stream<Map<String, ChamberSession>> streamAllChamberSessions(DateTime date) {
-    return Stream.value({
-      if (_docs.isNotEmpty) _docs.first.id: _session,
-    });
+    return Stream.value({if (_docs.isNotEmpty) _docs.first.id: _session});
   }
 
   @override
@@ -112,7 +111,8 @@ void main() {
   }) {
     final authProvider = AuthProvider();
     final soundService = SoundService.create(initialMuted: false);
-    final fakeClinic = clinicProvider ??
+    final fakeClinic =
+        clinicProvider ??
         _FakeMobileClinicProvider(
           appts: [testAppt],
           docs: [testDoctor],
@@ -135,80 +135,83 @@ void main() {
   }
 
   group('Mobile Reception Dashboard & Queue Card Tests', () {
-    testWidgets('OwnerShell on mobile renders FloatingActionButton for Walk-In booking', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
+    testWidgets(
+      'OwnerShell on mobile renders FloatingActionButton for Walk-In booking',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
 
-      await tester.pumpWidget(
-        createWidget(
-          child: const OwnerShell(),
-          screenSize: const Size(390, 844),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // Mobile FAB must be rendered
-      expect(find.byKey(const Key('mobile_book_walkin_fab')), findsOneWidget);
-      expect(find.text('Book Walk-In'), findsWidgets);
-    });
-
-    testWidgets('DashboardScreen on mobile displays sleek header without duplicate Walk-In header button', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      await tester.pumpWidget(
-        createWidget(
-          child: const DashboardScreen(),
-          screenSize: const Size(390, 844),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.text('GuwahatiOne Clinic'), findsOneWidget);
-      expect(find.byKey(const Key('dashboard_mobile_walkin_button')), findsNothing);
-    });
-
-    testWidgets('DashboardTodayQueueCard on mobile renders mobile patient card without overflow', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(360, 720); // Small Android phone
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() => tester.view.resetPhysicalSize());
-
-      final clinicProvider = _FakeMobileClinicProvider(
-        appts: [testAppt],
-        docs: [testDoctor],
-        session: chamberSession,
-      );
-
-      await tester.pumpWidget(
-        createWidget(
-          child: Scaffold(
-            body: SingleChildScrollView(
-              child: DashboardTodayQueueCard(provider: clinicProvider),
-            ),
+        await tester.pumpWidget(
+          createWidget(
+            child: const OwnerShell(),
+            screenSize: const Size(390, 844),
           ),
-          screenSize: const Size(360, 720),
-          clinicProvider: clinicProvider,
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // Verify patient details and mobile action button render cleanly without overflow
-      expect(find.text('Pranab Bordoloi Long Patient Name'), findsOneWidget);
-      expect(find.textContaining('9876543210'), findsOneWidget);
-      expect(find.text('In Lobby'), findsOneWidget);
-      expect(
-        find.text('Send Token #1 into Chamber'),
-        findsOneWidget,
-      );
-      expect(tester.takeException(), isNull);
-    });
+        // Mobile FAB must be rendered
+        expect(find.byKey(const Key('mobile_book_walkin_fab')), findsOneWidget);
+        expect(find.text('Book Walk-In'), findsWidgets);
+      },
+    );
+
+    testWidgets(
+      'DashboardScreen on mobile displays sleek header without duplicate Walk-In header button',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        await tester.pumpWidget(
+          createWidget(
+            child: const DashboardScreen(),
+            screenSize: const Size(390, 844),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('GuwahatiOne Clinic'), findsOneWidget);
+        expect(
+          find.byKey(const Key('dashboard_mobile_walkin_button')),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets(
+      'DashboardTodayQueueCard on mobile renders mobile patient card without overflow',
+      (tester) async {
+        tester.view.physicalSize = const Size(360, 720); // Small Android phone
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(() => tester.view.resetPhysicalSize());
+
+        final clinicProvider = _FakeMobileClinicProvider(
+          appts: [testAppt],
+          docs: [testDoctor],
+          session: chamberSession,
+        );
+
+        await tester.pumpWidget(
+          createWidget(
+            child: Scaffold(
+              body: SingleChildScrollView(
+                child: DashboardTodayQueueCard(provider: clinicProvider),
+              ),
+            ),
+            screenSize: const Size(360, 720),
+            clinicProvider: clinicProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Verify patient details and mobile action button render cleanly without overflow
+        expect(find.text('Pranab Bordoloi Long Patient Name'), findsOneWidget);
+        expect(find.textContaining('9876543210'), findsOneWidget);
+        expect(find.text('In Lobby'), findsOneWidget);
+        expect(find.text('Send Token #1 into Chamber'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

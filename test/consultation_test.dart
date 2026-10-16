@@ -73,25 +73,31 @@ void main() {
   });
 
   group('Medicine Master Catalogue Tests', () {
-    test('Streamlined product name with form and composition with strength', () {
-      const med = Medicine(
-        id: 'med-dolo',
-        productName: 'Dolo 650 tablet',
-        composition: 'Paracetamol 650mg',
-        manufacturer: 'Micro Labs',
-      );
+    test(
+      'Streamlined product name with form and composition with strength',
+      () {
+        const med = Medicine(
+          id: 'med-dolo',
+          productName: 'Dolo 650 tablet',
+          composition: 'Paracetamol 650mg',
+          manufacturer: 'Micro Labs',
+        );
 
-      expect(med.fullCompositionLabel, 'Paracetamol 650mg');
-      expect(med.displayName, 'Dolo 650 tablet (Paracetamol 650mg) [Micro Labs]');
+        expect(med.fullCompositionLabel, 'Paracetamol 650mg');
+        expect(
+          med.displayName,
+          'Dolo 650 tablet (Paracetamol 650mg) [Micro Labs]',
+        );
 
-      final json = med.toJson();
-      final fromJson = Medicine.fromJson(json);
+        final json = med.toJson();
+        final fromJson = Medicine.fromJson(json);
 
-      expect(fromJson.id, 'med-dolo');
-      expect(fromJson.productName, 'Dolo 650 tablet');
-      expect(fromJson.composition, 'Paracetamol 650mg');
-      expect(fromJson.manufacturer, 'Micro Labs');
-    });
+        expect(fromJson.id, 'med-dolo');
+        expect(fromJson.productName, 'Dolo 650 tablet');
+        expect(fromJson.composition, 'Paracetamol 650mg');
+        expect(fromJson.manufacturer, 'Micro Labs');
+      },
+    );
   });
 
   group('PrescriptionItem Lifecycle State Machine Tests', () {

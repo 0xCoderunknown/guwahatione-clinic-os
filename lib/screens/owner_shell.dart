@@ -41,9 +41,7 @@ class _OwnerShellState extends State<OwnerShell> {
           auth.stepDownToReception();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                '🔒 Session locked to reception after inactivity.',
-              ),
+              content: Text('🔒 Session locked to reception after inactivity.'),
               backgroundColor: Colors.amber,
               duration: Duration(seconds: 4),
             ),
@@ -166,7 +164,12 @@ class _OwnerShellState extends State<OwnerShell> {
                   pages,
                   desktopDestinations,
                 )
-              : _buildMobileShell(context, safeIndex, pages, mobileDestinations),
+              : _buildMobileShell(
+                  context,
+                  safeIndex,
+                  pages,
+                  mobileDestinations,
+                ),
         ),
       ),
     );

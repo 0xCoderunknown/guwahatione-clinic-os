@@ -131,8 +131,9 @@ class BookingPatientFields extends StatelessWidget {
                         '${member.name} (${member.formattedAge})',
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                       onSelected: (_) => onSelectPatient(member),

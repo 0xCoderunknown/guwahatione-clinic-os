@@ -52,8 +52,9 @@ class QueueChamberDispatchAction extends StatelessWidget {
             ),
             child: Row(
               mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
-              mainAxisAlignment:
-                  isMobile ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment: isMobile
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
               children: [
                 const Icon(
                   Icons.meeting_room_rounded,
@@ -94,8 +95,9 @@ class QueueChamberDispatchAction extends StatelessWidget {
             ),
             child: Row(
               mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
-              mainAxisAlignment:
-                  isMobile ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment: isMobile
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
               children: [
                 Icon(
                   Icons.lock_clock_rounded,
@@ -134,8 +136,9 @@ class QueueChamberDispatchAction extends StatelessWidget {
             ),
             child: Row(
               mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
-              mainAxisAlignment:
-                  isMobile ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment: isMobile
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
               children: [
                 const Icon(
                   Icons.coffee_rounded,
@@ -176,8 +179,9 @@ class QueueChamberDispatchAction extends StatelessWidget {
             ),
             child: Row(
               mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
-              mainAxisAlignment:
-                  isMobile ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment: isMobile
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
               children: [
                 Icon(
                   Icons.hourglass_top_rounded,

@@ -286,7 +286,9 @@ void main() {
         final form = EncounterFormState();
         form.isMedicineExpanded = true;
         const config = ClinicConfig(
-          features: ClinicFeatureFlags(enablePrescriptionTemplatePresets: false),
+          features: ClinicFeatureFlags(
+            enablePrescriptionTemplatePresets: false,
+          ),
         );
 
         await tester.pumpWidget(

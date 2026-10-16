@@ -21,7 +21,9 @@ class DoctorConsultationAccordion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeMeds = latestConsultation.activePrescriptions;
-    final doctorTitle = AppFormatters.doctorTitle(latestConsultation.doctorName);
+    final doctorTitle = AppFormatters.doctorTitle(
+      latestConsultation.doctorName,
+    );
     final visitDate = AppFormatters.date(latestConsultation.createdAt);
 
     return Container(
@@ -81,10 +83,7 @@ class DoctorConsultationAccordion extends StatelessWidget {
             padding: const EdgeInsets.only(top: 2),
             child: Text(
               'Last Encounter: $visitDate • ${activeMeds.length} ${activeMeds.length == 1 ? 'Active Med' : 'Active Meds'}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade700,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
             ),
           ),
           children: [
@@ -142,7 +141,9 @@ class DoctorConsultationAccordion extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  latestConsultation.provisionalDiagnosis.join(', '),
+                                  latestConsultation.provisionalDiagnosis.join(
+                                    ', ',
+                                  ),
                                   style: const TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w600,
@@ -245,7 +246,8 @@ class DoctorConsultationAccordion extends StatelessWidget {
                             builder: (_) => PrescriptionPrintScreen(
                               consultation: latestConsultation,
                               patientAllergies: patientAllergies,
-                              doctorRegNumber: latestConsultation.doctorRegNumber,
+                              doctorRegNumber:
+                                  latestConsultation.doctorRegNumber,
                             ),
                           ),
                         );
@@ -310,10 +312,7 @@ class DoctorConsultationAccordion extends StatelessWidget {
               item.frequency.isNotEmpty
                   ? '${item.frequency} (${item.timing})'
                   : item.timing,
-              style: const TextStyle(
-                fontSize: 11.5,
-                color: Color(0xFF334155),
-              ),
+              style: const TextStyle(fontSize: 11.5, color: Color(0xFF334155)),
             ),
           ),
           Text(
@@ -339,8 +338,8 @@ class DoctorConsultationAccordion extends StatelessWidget {
                 fontSize: 9.5,
                 fontWeight: FontWeight.bold,
                 color: item.action == MedicationAction.start
-                  ? const Color(0xFF15803D)
-                  : const Color(0xFF1D4ED8),
+                    ? const Color(0xFF15803D)
+                    : const Color(0xFF1D4ED8),
               ),
             ),
           ),

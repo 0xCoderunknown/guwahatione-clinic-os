@@ -46,96 +46,101 @@ void main() {
       expect(fromJson.manufacturer, 'Micro Labs Ltd');
     });
 
-    testWidgets('Editing and purging a catalogue medicine never alters or breaks a saved prescription or printout', (tester) async {
-      // 1. Catalogue contains original drug
-      final catalogue = <String, Medicine>{
-        'med_azith_500': const Medicine(
-          id: 'med_azith_500',
-          productName: 'Azithral 500 tablet',
-          composition: 'Azithromycin 500mg',
-          manufacturer: 'Alembic Pharmaceuticals',
-        ),
-      };
-
-      final originalDrug = catalogue['med_azith_500']!;
-
-      // 2. Doctor prescribes the medicine in a consultation
-      final consultation = Consultation(
-        id: 'c_test_snapshot',
-        appointmentId: 'appt_test_snapshot',
-        patientId: 'pat_test_1',
-        patientPhone: '9876543210',
-        patientName: 'Test Patient',
-        patientAge: 40,
-        patientGender: 'Male',
-        doctorId: 'doc_1',
-        doctorName: 'Dr. Physician',
-        createdAt: DateTime(2026, 10, 15, 10, 0),
-        prescriptionItems: [
-          PrescriptionItem(
-            id: 'item_1',
-            action: MedicationAction.start,
-            medicineId: originalDrug.id,
-            medicineName: originalDrug.productName,
-            composition: originalDrug.composition,
-            manufacturer: originalDrug.manufacturer,
-            dosage: '1 Tablet',
-            frequency: '1-0-0 (OD)',
-            timing: 'After Food',
-            durationDays: 3,
-            instructions: 'Take at fixed time',
+    testWidgets(
+      'Editing and purging a catalogue medicine never alters or breaks a saved prescription or printout',
+      (tester) async {
+        // 1. Catalogue contains original drug
+        final catalogue = <String, Medicine>{
+          'med_azith_500': const Medicine(
+            id: 'med_azith_500',
+            productName: 'Azithral 500 tablet',
+            composition: 'Azithromycin 500mg',
+            manufacturer: 'Alembic Pharmaceuticals',
           ),
-        ],
-      );
+        };
 
-      // Serialize consultation as stored in Firestore
-      final savedConsultationJson = consultation.toJson();
+        final originalDrug = catalogue['med_azith_500']!;
 
-      // 3. Catalogue mutation: Edit the drug
-      catalogue['med_azith_500'] = const Medicine(
-        id: 'med_azith_500',
-        productName: 'Azithral Super 1000 capsule',
-        composition: 'Azithromycin 1000mg',
-        manufacturer: 'New Chemical Corp',
-      );
+        // 2. Doctor prescribes the medicine in a consultation
+        final consultation = Consultation(
+          id: 'c_test_snapshot',
+          appointmentId: 'appt_test_snapshot',
+          patientId: 'pat_test_1',
+          patientPhone: '9876543210',
+          patientName: 'Test Patient',
+          patientAge: 40,
+          patientGender: 'Male',
+          doctorId: 'doc_1',
+          doctorName: 'Dr. Physician',
+          createdAt: DateTime(2026, 10, 15, 10, 0),
+          prescriptionItems: [
+            PrescriptionItem(
+              id: 'item_1',
+              action: MedicationAction.start,
+              medicineId: originalDrug.id,
+              medicineName: originalDrug.productName,
+              composition: originalDrug.composition,
+              manufacturer: originalDrug.manufacturer,
+              dosage: '1 Tablet',
+              frequency: '1-0-0 (OD)',
+              timing: 'After Food',
+              durationDays: 3,
+              instructions: 'Take at fixed time',
+            ),
+          ],
+        );
 
-      // 4. Catalogue mutation: Complete purge (deletion)
-      catalogue.remove('med_azith_500');
-      expect(catalogue.containsKey('med_azith_500'), isFalse);
+        // Serialize consultation as stored in Firestore
+        final savedConsultationJson = consultation.toJson();
 
-      // 5. Reopen the saved consultation from database
-      final reopenedConsultation = Consultation.fromJson(savedConsultationJson);
-      final rxItem = reopenedConsultation.prescriptionItems.first;
+        // 3. Catalogue mutation: Edit the drug
+        catalogue['med_azith_500'] = const Medicine(
+          id: 'med_azith_500',
+          productName: 'Azithral Super 1000 capsule',
+          composition: 'Azithromycin 1000mg',
+          manufacturer: 'New Chemical Corp',
+        );
 
-      // Assert: Snapshot in consultation is 100% immune to catalogue purge
-      expect(rxItem.medicineName, equals('Azithral 500 tablet'));
-      expect(rxItem.composition, equals('Azithromycin 500mg'));
-      expect(rxItem.manufacturer, equals('Alembic Pharmaceuticals'));
+        // 4. Catalogue mutation: Complete purge (deletion)
+        catalogue.remove('med_azith_500');
+        expect(catalogue.containsKey('med_azith_500'), isFalse);
 
-      // 6. Verify WhatsApp text summary uses snapshot data
-      final waSummary = WhatsAppEngine.formatPrescriptionMessage(
-        consultation: reopenedConsultation,
-        queueNumber: 1,
-      );
-      expect(waSummary, contains('Azithral 500 tablet'));
-      expect(waSummary, isNot(contains('Azithral Super 1000')));
+        // 5. Reopen the saved consultation from database
+        final reopenedConsultation = Consultation.fromJson(
+          savedConsultationJson,
+        );
+        final rxItem = reopenedConsultation.prescriptionItems.first;
 
-      // 7. Verify printout renders the original snapshotted medicine
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PrintMedicationsTable(
-              activeMeds: reopenedConsultation.activePrescriptions,
-              stoppedMeds: reopenedConsultation.stoppedPrescriptions,
+        // Assert: Snapshot in consultation is 100% immune to catalogue purge
+        expect(rxItem.medicineName, equals('Azithral 500 tablet'));
+        expect(rxItem.composition, equals('Azithromycin 500mg'));
+        expect(rxItem.manufacturer, equals('Alembic Pharmaceuticals'));
+
+        // 6. Verify WhatsApp text summary uses snapshot data
+        final waSummary = WhatsAppEngine.formatPrescriptionMessage(
+          consultation: reopenedConsultation,
+          queueNumber: 1,
+        );
+        expect(waSummary, contains('Azithral 500 tablet'));
+        expect(waSummary, isNot(contains('Azithral Super 1000')));
+
+        // 7. Verify printout renders the original snapshotted medicine
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: PrintMedicationsTable(
+                activeMeds: reopenedConsultation.activePrescriptions,
+                stoppedMeds: reopenedConsultation.stoppedPrescriptions,
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.textContaining('Azithral 500 tablet'), findsOneWidget);
-      expect(find.textContaining('Azithromycin 500mg'), findsOneWidget);
-      expect(find.textContaining('Azithral Super 1000'), findsNothing);
-      expect(find.textContaining('New Chemical Corp'), findsNothing);
-    });
+        expect(find.textContaining('Azithral 500 tablet'), findsOneWidget);
+        expect(find.textContaining('Azithromycin 500mg'), findsOneWidget);
+        expect(find.textContaining('Azithral Super 1000'), findsNothing);
+        expect(find.textContaining('New Chemical Corp'), findsNothing);
+      },
+    );
   });
 }

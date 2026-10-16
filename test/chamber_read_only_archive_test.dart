@@ -48,10 +48,7 @@ void main() {
         ),
       );
 
-      expect(
-        find.text('🔒 Viewing Past Records (Read-Only)'),
-        findsOneWidget,
-      );
+      expect(find.text('🔒 Viewing Past Records (Read-Only)'), findsOneWidget);
       // Repetition of date and verbose explanation removed
       expect(find.textContaining('10-10-2026'), findsNothing);
       expect(
@@ -239,42 +236,42 @@ void main() {
   });
 
   group('ChamberQueueHeader Audit & Dynamic Label Tests', () {
-    testWidgets(
-      'Renders Previous Session and Past Queue on past dates',
-      (tester) async {
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: ChamberQueueHeader(totalBooked: 15, isPastDate: true),
-            ),
-          ),
-        );
-
-        expect(find.text('Previous Session'), findsOneWidget);
-        expect(find.text('Past Queue'), findsOneWidget);
-        expect(find.text("Today's Patient Queue"), findsNothing);
-        expect(find.text('Live Updates'), findsNothing);
-        expect(find.text('15 issued'), findsOneWidget);
-      },
-    );
-
-    testWidgets('Renders Today Patient Queue and Live Updates on current date', (
+    testWidgets('Renders Previous Session and Past Queue on past dates', (
       tester,
     ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: ChamberQueueHeader(totalBooked: 15, isPastDate: false),
+            body: ChamberQueueHeader(totalBooked: 15, isPastDate: true),
           ),
         ),
       );
 
-      expect(find.text("Today's Patient Queue"), findsOneWidget);
-      expect(find.text('Live Updates'), findsOneWidget);
-      expect(find.text('Previous Session'), findsNothing);
-      expect(find.text('Past Queue'), findsNothing);
+      expect(find.text('Previous Session'), findsOneWidget);
+      expect(find.text('Past Queue'), findsOneWidget);
+      expect(find.text("Today's Patient Queue"), findsNothing);
+      expect(find.text('Live Updates'), findsNothing);
       expect(find.text('15 issued'), findsOneWidget);
     });
+
+    testWidgets(
+      'Renders Today Patient Queue and Live Updates on current date',
+      (tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: ChamberQueueHeader(totalBooked: 15, isPastDate: false),
+            ),
+          ),
+        );
+
+        expect(find.text("Today's Patient Queue"), findsOneWidget);
+        expect(find.text('Live Updates'), findsOneWidget);
+        expect(find.text('Previous Session'), findsNothing);
+        expect(find.text('Past Queue'), findsNothing);
+        expect(find.text('15 issued'), findsOneWidget);
+      },
+    );
 
     testWidgets(
       'ChamberQueueHeader renders without overflow on mobile (width 390)',

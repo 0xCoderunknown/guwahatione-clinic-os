@@ -2,11 +2,13 @@ class Medicine {
   final String id;
   final String productName; // Brand name with dosage form (e.g., 'Telma 40 tablet', 'Dolo 650 tablet')
   final String composition; // Generic molecule with strength (e.g., 'Telmisartan 40mg', 'Paracetamol 650mg')
-  final String? manufacturer; // Pharmaceutical manufacturer (e.g., 'Glenmark', 'Micro Labs')
+  final String?
+  manufacturer; // Pharmaceutical manufacturer (e.g., 'Glenmark', 'Micro Labs')
   final String? defaultDosage; // e.g., '1 Tablet', '5 ml'
   final String? defaultFrequency; // e.g., '1-0-0 (OD)', '1-0-1 (BD)'
   final String? defaultTiming; // e.g., 'After Food', 'Before Food'
-  final int? defaultDurationDays; // e.g., 30 (or null for chronic / to continue)
+  final int?
+  defaultDurationDays; // e.g., 30 (or null for chronic / to continue)
 
   const Medicine({
     required this.id,
@@ -23,14 +25,13 @@ class Medicine {
   String get fullCompositionLabel => composition;
 
   /// Prominent uppercase bracketed composition header (e.g. `[TELMISARTAN 40MG]`).
-  String get formattedCompositionHeader =>
-      '[${composition.toUpperCase()}]';
+  String get formattedCompositionHeader => '[${composition.toUpperCase()}]';
 
   /// Standard duration display string ('To continue' for chronic or 'X days').
   String get durationLabel =>
       (defaultDurationDays == null || defaultDurationDays! <= 0)
-          ? 'To continue'
-          : '$defaultDurationDays days';
+      ? 'To continue'
+      : '$defaultDurationDays days';
 
   /// Descriptive display string.
   String get displayName => manufacturer != null && manufacturer!.isNotEmpty

@@ -266,7 +266,10 @@ class BookingService {
 
     final snapshot = await _appointmentsRef
         .where('doctorId', isEqualTo: doctorId)
-        .where('scheduledDate', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .where(
+          'scheduledDate',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(start),
+        )
         .where('scheduledDate', isLessThan: Timestamp.fromDate(end))
         .get();
 

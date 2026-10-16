@@ -17,13 +17,13 @@ void main() {
         DateTime(2026, 10, 18), // Single isolated day
         DateTime(2026, 10, 22), // 2-day leave part 1
         DateTime(2026, 10, 23), // 2-day leave part 2
-        DateTime(2026, 11, 1),  // Week-long extended leave part 1
-        DateTime(2026, 11, 2),  // part 2
-        DateTime(2026, 11, 3),  // part 3
-        DateTime(2026, 11, 4),  // part 4
-        DateTime(2026, 11, 5),  // part 5
-        DateTime(2026, 11, 6),  // part 6
-        DateTime(2026, 11, 7),  // part 7
+        DateTime(2026, 11, 1), // Week-long extended leave part 1
+        DateTime(2026, 11, 2), // part 2
+        DateTime(2026, 11, 3), // part 3
+        DateTime(2026, 11, 4), // part 4
+        DateTime(2026, 11, 5), // part 5
+        DateTime(2026, 11, 6), // part 6
+        DateTime(2026, 11, 7), // part 7
       ],
     );
 
@@ -95,73 +95,74 @@ void main() {
       expect(summaryEnd, 'Doctor is on leave from 01-11-2026 to 07-11-2026');
     });
 
-    test('formatDoctorLeaveSummary returns null when doctor is not on leave', () {
-      final summary = AppointmentEngine.formatDoctorLeaveSummary(
-        doctor: leaveDoc,
-        date: DateTime(2026, 10, 20),
-      );
-      expect(summary, isNull);
-    });
+    test(
+      'formatDoctorLeaveSummary returns null when doctor is not on leave',
+      () {
+        final summary = AppointmentEngine.formatDoctorLeaveSummary(
+          doctor: leaveDoc,
+          date: DateTime(2026, 10, 20),
+        );
+        expect(summary, isNull);
+      },
+    );
 
-    testWidgets('BookingDoctorLeaveWarningBanner displays custom leave summary and blocked indicator',
-        (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BookingDoctorLeaveWarningBanner(
-              doctor: leaveDoc,
-              date: DateTime(2026, 11, 3),
+    testWidgets(
+      'BookingDoctorLeaveWarningBanner displays custom leave summary and blocked indicator',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: BookingDoctorLeaveWarningBanner(
+                doctor: leaveDoc,
+                date: DateTime(2026, 11, 3),
+              ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(
-        find.text(
-          '🚫 Doctor is on leave from 01-11-2026 to 07-11-2026. Appointments cannot be booked on doctor leave dates.',
-        ),
-        findsOneWidget,
-      );
-      expect(find.byIcon(Icons.block), findsOneWidget);
-    });
+        expect(
+          find.text(
+            '🚫 Doctor is on leave from 01-11-2026 to 07-11-2026. Appointments cannot be booked on doctor leave dates.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.byIcon(Icons.block), findsOneWidget);
+      },
+    );
 
-    testWidgets('DoctorForm displays Planned Leave & Blocked Dates section with Add buttons and chips',
-        (tester) async {
-      tester.view.physicalSize = const Size(1080, 1920);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'DoctorForm displays Planned Leave & Blocked Dates section with Add buttons and chips',
+      (tester) async {
+        tester.view.physicalSize = const Size(1080, 1920);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      final doctorWithLeaves = Doctor(
-        id: 'doc-leave-ui',
-        name: 'Dr. Leave Test',
-        specialty: 'General Medicine / Physician',
-        phone: '9876543210',
-        availableDays: ['Mon', 'Tue'],
-        blockedDates: [
-          DateTime(2026, 10, 25),
-          DateTime(2026, 10, 26),
-        ],
-      );
+        final doctorWithLeaves = Doctor(
+          id: 'doc-leave-ui',
+          name: 'Dr. Leave Test',
+          specialty: 'General Medicine / Physician',
+          phone: '9876543210',
+          availableDays: ['Mon', 'Tue'],
+          blockedDates: [DateTime(2026, 10, 25), DateTime(2026, 10, 26)],
+        );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DoctorForm(
-              doctor: doctorWithLeaves,
-              onSaved: () {},
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: DoctorForm(doctor: doctorWithLeaves, onSaved: () {}),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Planned Leave & Blocked Dates'), findsOneWidget);
-      expect(find.text('Add Day'), findsOneWidget);
-      expect(find.text('Add Week / Range'), findsOneWidget);
-      expect(find.text('25-10-2026'), findsOneWidget);
-      expect(find.text('26-10-2026'), findsOneWidget);
-    });
+        expect(find.text('Planned Leave & Blocked Dates'), findsOneWidget);
+        expect(find.text('Add Day'), findsOneWidget);
+        expect(find.text('Add Week / Range'), findsOneWidget);
+        expect(find.text('25-10-2026'), findsOneWidget);
+        expect(find.text('26-10-2026'), findsOneWidget);
+      },
+    );
   });
 }

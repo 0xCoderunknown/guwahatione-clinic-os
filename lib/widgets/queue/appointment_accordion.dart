@@ -236,7 +236,10 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                     _buildChoiceChip(PaymentType.paidCash, 'Paid (Cash)'),
                     _buildChoiceChip(PaymentType.paidUpi, 'Paid (UPI)'),
                     _buildChoiceChip(PaymentType.freeReview, 'Free Review'),
-                    _buildChoiceChip(PaymentType.freeFamily, 'Family / Complimentary'),
+                    _buildChoiceChip(
+                      PaymentType.freeFamily,
+                      'Family / Complimentary',
+                    ),
                     _buildChoiceChip(PaymentType.unpaid, 'Unpaid'),
                     _buildChoiceChip(PaymentType.postPay, 'Post-Pay (Exit)'),
                   ],
@@ -321,7 +324,10 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                                 foregroundColor: Colors.white,
                                 visualDensity: VisualDensity.compact,
                               ),
-                              icon: const Icon(Icons.how_to_reg_rounded, size: 16),
+                              icon: const Icon(
+                                Icons.how_to_reg_rounded,
+                                size: 16,
+                              ),
                               label: const Text('Check In'),
                               onPressed: () => QuickCheckInDialog.show(
                                 context,
@@ -362,12 +368,13 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                       icon: const Icon(Icons.receipt_long, size: 16),
                       label: const Text(
                         'Print Token Slip',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      onPressed: () => TokenReceiptDialog.show(
-                        context,
-                        widget.appointment,
-                      ),
+                      onPressed: () =>
+                          TokenReceiptDialog.show(context, widget.appointment),
                     ),
                   ),
                 ],

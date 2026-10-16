@@ -104,7 +104,8 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
                     labelText: 'Active Composition & Strength',
                     hintText: 'e.g., Telmisartan 40mg, Paracetamol 650mg, Cefixime 200mg',
                     border: OutlineInputBorder(),
-                    helperText: 'Include molecule strength directly in composition',
+                    helperText:
+                        'Include molecule strength directly in composition',
                   ),
                   validator: (val) => val == null || val.trim().isEmpty
                       ? 'Composition is required'
@@ -117,7 +118,8 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
                   controller: _mfgCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Manufacturer / Pharma Brand (Optional)',
-                    hintText: 'e.g., Glenmark, Micro Labs, GSK, Cipla, Sun Pharma',
+                    hintText:
+                        'e.g., Glenmark, Micro Labs, GSK, Cipla, Sun Pharma',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -125,10 +127,15 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
 
                 // 4. Regimen Defaults Expansion Tile
                 InkWell(
-                  onTap: () => setState(() => _showRegimenDefaults = !_showRegimenDefaults),
+                  onTap: () => setState(
+                    () => _showRegimenDefaults = !_showRegimenDefaults,
+                  ),
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(8),
@@ -137,7 +144,9 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
                     child: Row(
                       children: [
                         Icon(
-                          _showRegimenDefaults ? Icons.tune : Icons.tune_outlined,
+                          _showRegimenDefaults
+                              ? Icons.tune
+                              : Icons.tune_outlined,
                           size: 18,
                           color: Colors.teal.shade800,
                         ),
@@ -191,7 +200,15 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
                             isDense: true,
                           ),
                           items: _frequencyOptions
-                              .map((f) => DropdownMenuItem(value: f, child: Text(f, style: const TextStyle(fontSize: 12))))
+                              .map(
+                                (f) => DropdownMenuItem(
+                                  value: f,
+                                  child: Text(
+                                    f,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                              )
                               .toList(),
                           onChanged: (val) {
                             if (val != null) setState(() => _frequency = val);
@@ -213,7 +230,15 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
                             isDense: true,
                           ),
                           items: _timingOptions
-                              .map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 12))))
+                              .map(
+                                (t) => DropdownMenuItem(
+                                  value: t,
+                                  child: Text(
+                                    t,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                              )
                               .toList(),
                           onChanged: (val) {
                             if (val != null) setState(() => _timing = val);
@@ -231,10 +256,20 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
                             isDense: true,
                           ),
                           items: _durationOptions
-                              .map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(fontSize: 12))))
+                              .map(
+                                (d) => DropdownMenuItem(
+                                  value: d,
+                                  child: Text(
+                                    d,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                              )
                               .toList(),
                           onChanged: (val) {
-                            if (val != null) setState(() => _durationPreset = val);
+                            if (val != null) {
+                              setState(() => _durationPreset = val);
+                            }
                           },
                         ),
                       ),
@@ -299,15 +334,20 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
     } else if (_durationPreset == 'Custom') {
       durationDays = int.tryParse(_customDurationCtrl.text.trim());
     } else {
-      durationDays = int.tryParse(_durationPreset.replaceAll(' days', '').trim());
+      durationDays = int.tryParse(
+        _durationPreset.replaceAll(' days', '').trim(),
+      );
     }
 
     try {
       await Provider.of<ClinicProvider>(context, listen: false).addMedicine(
         productName: _brandCtrl.text.trim(),
         composition: _compCtrl.text.trim(),
-        manufacturer: _mfgCtrl.text.trim().isNotEmpty ? _mfgCtrl.text.trim() : null,
-        defaultDosage: _showRegimenDefaults && _dosageCtrl.text.trim().isNotEmpty
+        manufacturer: _mfgCtrl.text.trim().isNotEmpty
+            ? _mfgCtrl.text.trim()
+            : null,
+        defaultDosage:
+            _showRegimenDefaults && _dosageCtrl.text.trim().isNotEmpty
             ? _dosageCtrl.text.trim()
             : null,
         defaultFrequency: _showRegimenDefaults ? _frequency : null,

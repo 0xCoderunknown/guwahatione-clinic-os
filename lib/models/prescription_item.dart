@@ -34,8 +34,7 @@ class PrescriptionItem {
   final MedicationAction action;
   final String? medicineId; // Catalog reference if selected from master
   final String medicineName; // Trade name (e.g., 'Dolo 650' or entered name)
-  final String
-  composition; // Generic chemical molecule (e.g., 'Paracetamol')
+  final String composition; // Generic chemical molecule (e.g., 'Paracetamol')
   final String? strength; // Molecule strength snapshot (e.g., '650 mg')
   final String? form; // Dosage form snapshot (e.g., 'Tablet', 'Syrup')
   final String? manufacturer; // Manufacturer snapshot (e.g., 'Micro Labs Ltd')
