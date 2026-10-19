@@ -309,3 +309,14 @@
   - `hidePrescriptionComposition` (`bool`, default: `false`): When enabled, suppresses generic chemical composition and renders trade brand names exclusively on prescriptions.
   - `enforceSingleActiveDoctor` (`bool`, default: `false`): When false (default), multi-chamber polyclinic consulting is allowed. When true, restricts the clinic to a single active consulting doctor at a time.
 
+### F. Reception Queue Partitioning Contract (`ReceptionQueueView`)
+- **Source:** `lib/core/engines/appointment_engine.dart`.
+- **Purpose:** Pure domain model partitioning live appointments for reception ledger and live dispatch.
+- **Properties:**
+  - `completed` (`List<Appointment>`): Consultations completed on target date, sorted descending by token.
+  - `inChamberPatients` (`List<Appointment>`): Patients currently admitted or being called into active doctor chambers across all concurrent practitioners.
+  - `inChamber` (`Appointment?`): Convenience accessor returning `inChamberPatients.firstOrNull`.
+  - `waiting` (`List<Appointment>`): Lobby waiting patients sorted strictly in sequential FIFO token order. Uncalled waiting patients are never branded with arbitrary "bypassed" or "late" flags when emergency walk-ins or relatives are admitted out of turn.
+  - `booked` (`List<Appointment>`): Advance reservations awaiting lobby check-in.
+  - `absent` (`List<Appointment>`): Unattended or cancelled tokens preserved with ₹0 collected per Invariant #1 (Audit-Proof Ledger).
+

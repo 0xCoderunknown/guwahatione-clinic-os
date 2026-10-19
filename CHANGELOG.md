@@ -8,6 +8,24 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.37.0] — 19-10-2026
+
+### Multi-Chamber Live Queue Partitioning, Upcoming Advance Bookings & Bypassed Tag Retirement
+- **Retirement of Arbitrary `BYPASSED` Badge & Clean FIFO Lobby Queue:**
+  - Completely eliminated the `bypassed` badge, calculation, and amber styling from `AppointmentEngine.partitionQueueForReception` and `AppointmentAccordion` per real-world OPD operational realities.
+  - When doctors admit relatives, emergency walk-ins, or elderly patients out of strict sequential order, uncalled patients in the lobby remain in clean, unpenalized FIFO queue order without being arbitrarily labeled "Late" or "Bypassed".
+- **Multi-Chamber Queue Partitioning (`inChamberPatients`):**
+  - Enhanced `ReceptionQueueView` to support `inChamberPatients` list (`List<Appointment> inChamberPatients` with `Appointment? get inChamber => inChamberPatients.firstOrNull`).
+  - Supports concurrent multi-doctor clinics where multiple practitioners are in session simultaneously (e.g., Dr. A consulting Token #8 in Chamber 1, Dr. B consulting Token #3 in Chamber 2). Both patients render prominently in top active chamber cards, and neither leaks into the waiting list.
+- **Date-Specific Doctor Filter Chips on Live Ledger (`AppointmentListScreen`):**
+  - Updated doctor filter chips to dynamically show strictly doctors who have an OPD schedule on the selected calendar date (and are not on planned leave) OR who have existing appointments booked for that date.
+  - Clinics with 10 registered physicians displaying a 3-doctor OPD day will now only render chips for the 3 active doctors, eliminating visual clutter.
+- **Upcoming Advance Bookings on Reception Dashboard (`DashboardTodayQueueCard`):**
+  - Added `BookingService.getUpcomingAppointments({int daysAhead = 7})` and exposed stream method in `ClinicProvider.streamUpcomingAppointments()`.
+  - Added a responsive segmented toggle in `DashboardTodayQueueCard` allowing receptionists to seamlessly switch between `"Today's Queue (N)"` and `"Upcoming Bookings"`.
+  - Upcoming bookings are grouped by calendar date adhering strictly to Indian formatting (`DD-MM-YYYY`) with booking count chips, displaying patient name, age, phone number, doctor name, and advance payment status (`Paid ₹X` vs `Pay at Desk`).
+  - Added horizontal scroll wrapping to the segmented tab bar to guarantee zero RenderFlex overflow across compact mobile viewports (320px–360px).
+
 ---
 
 ## [1.36.0 – 1.36.9] — 15-10-2026 to 19-10-2026

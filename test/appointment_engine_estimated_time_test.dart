@@ -182,18 +182,14 @@ void main() {
       expect(view.completed.length, 1);
       expect(view.completed.first.id, 'appt_11');
       expect(view.inChamber?.id, 'appt_13');
+      expect(view.inChamberPatients.map((a) => a.id).toList(), ['appt_13']);
 
-      // Waiting list should have 12, 14, 15
+      // Waiting list should have 12, 14, 15 in FIFO queue
       expect(view.waiting.map((a) => a.queueNumber).toList(), [12, 14, 15]);
-
-      // Token 12 was bypassed because 12 < 13
-      expect(view.isBypassed('appt_12'), isTrue);
-      expect(view.isBypassed('appt_14'), isFalse);
-      expect(view.isBypassed('appt_15'), isFalse);
     });
 
     test(
-      'When VIP is admitted out of order, earlier waiting tokens are bypassed',
+      'When VIP is admitted out of order, earlier waiting tokens remain in clean FIFO queue without bypassed flags',
       () {
         final appts = [
           createAppt('appt_12', 12, AppointmentStatus.pending),
@@ -210,17 +206,38 @@ void main() {
         );
 
         expect(view.inChamber?.id, 'appt_15');
+        expect(view.inChamberPatients.map((a) => a.id).toList(), ['appt_15']);
         expect(view.waiting.map((a) => a.queueNumber).toList(), [12, 13, 14]);
-
-        // All 12, 13, 14 are bypassed
-        expect(view.isBypassed('appt_12'), isTrue);
-        expect(view.isBypassed('appt_13'), isTrue);
-        expect(view.isBypassed('appt_14'), isTrue);
       },
     );
 
     test(
-      'When doctor is idle (no inChamber), no tokens are flagged as bypassed',
+      'When multiple doctors consult concurrently, inChamberPatients isolates all active tokens and keeps waiting list clean',
+      () {
+        final appts = [
+          createAppt('appt_3', 3, AppointmentStatus.pending),
+          createAppt('appt_4', 4, AppointmentStatus.pending),
+          createAppt('appt_8', 8, AppointmentStatus.pending),
+          createAppt('appt_9', 9, AppointmentStatus.pending),
+        ];
+
+        // Dr. A has Token 3 in Chamber 1, Dr. B has Token 8 in Chamber 2
+        final view = AppointmentEngine.partitionQueueForReception(
+          appointments: appts,
+          activeAppointmentIds: {'appt_3', 'appt_8'},
+        );
+
+        expect(view.inChamberPatients.length, 2);
+        expect(view.inChamberPatients.map((a) => a.id).toList(), [
+          'appt_3',
+          'appt_8',
+        ]);
+        expect(view.waiting.map((a) => a.id).toList(), ['appt_4', 'appt_9']);
+      },
+    );
+
+    test(
+      'When doctor is idle (no inChamber), all pending patients are in waiting list',
       () {
         final appts = [
           createAppt('appt_12', 12, AppointmentStatus.pending),
@@ -232,9 +249,8 @@ void main() {
         );
 
         expect(view.inChamber, isNull);
+        expect(view.inChamberPatients, isEmpty);
         expect(view.waiting.length, 2);
-        expect(view.isBypassed('appt_12'), isFalse);
-        expect(view.isBypassed('appt_13'), isFalse);
       },
     );
 

@@ -743,6 +743,10 @@ class ClinicProvider with ChangeNotifier {
     return _chamberService.streamChamberSession(doctorId, date);
   }
 
+  Stream<List<Appointment>> streamUpcomingAppointments({int daysAhead = 7}) {
+    return _bookingService.getUpcomingAppointments(daysAhead: daysAhead);
+  }
+
   Future<void> updateDoctorSearchPreference(
     String doctorId,
     String searchPreference,

@@ -76,16 +76,16 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
   Wrapped `ConsultationEncounterScreen` in `PopScope(canPop: false)`. Intercepts back navigation (Android back, browser back, or "Pause / Step Out" dock button) with an explicit modal dialog. Provides "Pause & Save Draft" (frees chamber with `notifyConsultationPaused`, returning chamber to `ready_for_next`, and marks appointment `isPaused: true` in waiting lobby) or "Discard" (clears draft, notifies chamber `ready_for_next`). Zero frozen chambers or stuck locks.
 - **Severity:** 🚨 **Total Chamber Operational Freeze** $\to$ **CLEARED**.
 
-#### 7. Multi-Doctor Queue Partitioning Breakdown & False Bypassed Badges
+#### 7. Multi-Doctor Queue Partitioning Breakdown & False Bypassed Badges ✅ [RESOLVED]
 - **Affected Files:**
-  - [AppointmentEngine.partitionReceptionQueue](lib/core/engines/appointment_engine.dart#L305-L337)
-  - [ReceptionQueueView](lib/core/engines/appointment_engine.dart#L22-L41)
-- **Failure Mode:**
-  `ReceptionQueueView` holds a single `final Appointment? inChamber;`. When two doctors consult simultaneously:
-  - Doctor A is consulting Patient #8.
-  - Doctor B is consulting Patient #3.
-  Line 313 matches Doctor A's patient, leaving `inChamber` filled. Doctor B's active patient is dumped into the `waiting` list. Line 333 marks any waiting token smaller than `inChamber.queueNumber` as bypassed. Since Token #3 < Token #8, **Doctor B's patient, who is actively sitting in Chamber B, is branded with a red `[BYPASSED / LATE]` badge on reception screens**.
-- **Severity:** 🚨 **Multi-Doctor Queue Corruption**.
+  - [AppointmentEngine.partitionQueueForReception](lib/core/engines/appointment_engine.dart)
+  - [ReceptionQueueView](lib/core/engines/appointment_engine.dart)
+  - [AppointmentAccordion](lib/widgets/queue/appointment_accordion.dart)
+  - [AppointmentListScreen](lib/screens/appointment_list_screen.dart)
+  - [DashboardTodayQueueCard](lib/widgets/dashboard/dashboard_queue_card.dart)
+- **Resolution:**
+  Refactored `ReceptionQueueView` to support `final List<Appointment> inChamberPatients` and getter `Appointment? get inChamber => inChamberPatients.firstOrNull`. When viewing multiple concurrent doctors, all active patients are isolated in `inChamberPatients`, rendering at the top of the queue with zero displacement into waiting. Per Product Manager directive, the arbitrary `[BYPASSED / LATE]` badge, calculation, and amber styling were completely eliminated across engine and UI. In clinical reality, doctors take relatives, walk-in emergencies, or elderly patients out of strict FIFO order; uncalled waiting patients in the lobby are never falsely branded "Late" or "Bypassed". Doctor filter chips on `AppointmentListScreen` dynamically filter to doctors scheduled/active on that specific date. Added Upcoming Advance Bookings view on reception dashboard with Indian date formatting (`DD-MM-YYYY`).
+- **Severity:** 🚨 **Multi-Doctor Queue Corruption** $\to$ **CLEARED**.
 
 #### 8. Zombie State Corruption on Door Admission Collision ✅ [RESOLVED]
 - **Affected Files:**
@@ -307,8 +307,11 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
    - **`[END SHIFT]` / `[Close Shift]` (Doctor Chamber):** Added `ChamberStatus.shiftEnded` (`'shift_ended'`) state. Doctors conclude OPD sessions on their own schedule from `ChamberControlBanner` (`consultationEnded`, `readyForNext`, `idle`) with confirmation dialogs. Chamber renders calm slate/indigo `[OPD Shift Concluded for Today]` banner with 1-tap `[RE-OPEN SHIFT]` action.
    - **Reception Visibility & Auto-Lock:** `DashboardDoctorRosterCard` renders explicit `[SHIFT ENDED]` badge; `QueueChamberDispatchAction` and `AccordionDispatchSection` display disabled state `"Doctor Shift Ended for Today"`. Door admits are locked.
    - **`[Emergency Release Chamber Lock]` (Reception Desk):** Receptionist can enter PIN `0000` (or Owner Master PIN) to emergency-release stuck or abandoned chambers, returning the room to `idle` via `clearChamberSession` without deleting appointment records (Invariant #1).
-4. **Multi-Doctor Queue Partitioning Fix (Finding #7):**
-   Refactor `ReceptionQueueView` to support `Map<String, Appointment> inChamberByDoctorId`. Prevent active patients of Doctor B from being dumped into lobby waiting or branded as bypassed.
+4. **Multi-Doctor Queue Partitioning & Upcoming Advance Bookings (Finding #7) ✅ [CLEARED]:**
+   - Refactored `ReceptionQueueView` to support `final List<Appointment> inChamberPatients` and getter `Appointment? get inChamber => inChamberPatients.firstOrNull`. Isolates all active patients across concurrent consulting doctors, displaying all active tokens at the top of the queue with zero displacement into waiting.
+   - Completely retired arbitrary `[BYPASSED / LATE]` badge and calculations across engine and UI. Waiting patients remain in their clean, respectful FIFO queue.
+   - Filtered `AppointmentListScreen` doctor filter chips to show strictly doctors with OPD scheduled on that date (or with existing appointments), eliminating clutter.
+   - Added Upcoming Advance Bookings view on reception dashboard (`DashboardTodayQueueCard`) streaming advance reservations up to 7 days in the future, grouped by date adhering strictly to Indian formatting (`DD-MM-YYYY`). Wrapped tab selector in horizontal scroll to prevent mobile overflow.
 5. **Midnight Rollover & Clock Observer (Finding #10):**
    Implement `DateChangeObserver` in `ClinicProvider` that automatically switches active listening stream and date counters when midnight crosses.
 6. **Same-Day Return Visits & Lab Reviews (Finding #11):**

@@ -25,7 +25,6 @@ class AppointmentAccordion extends StatefulWidget {
   final bool? isExpanded;
   final ValueChanged<bool>? onExpansionChanged;
   final bool isInChamber;
-  final bool isBypassed;
   final bool showDoctorTag;
 
   const AppointmentAccordion({
@@ -34,7 +33,6 @@ class AppointmentAccordion extends StatefulWidget {
     this.isExpanded,
     this.onExpansionChanged,
     this.isInChamber = false,
-    this.isBypassed = false,
     this.showDoctorTag = false,
   });
 
@@ -81,9 +79,6 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
     } else if (widget.appointment.isPaused) {
       cardBg = const Color(0xFFFAF5FF); // Purple 50
       cardBorder = const BorderSide(color: Color(0xFFD8B4FE), width: 1.2);
-    } else if (widget.isBypassed) {
-      cardBg = const Color(0xFFFFFBEB); // Amber 50
-      cardBorder = const BorderSide(color: Color(0xFFFCD34D), width: 1.2);
     }
 
     return Card(
@@ -186,39 +181,6 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
                               color: Color(0xFF7E22CE),
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else if (widget.isBypassed) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF3C7),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: const Color(0xFFF59E0B)),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.schedule_rounded,
-                            size: 11,
-                            color: Color(0xFFB45309),
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'BYPASSED / LATE',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFFB45309),
                               letterSpacing: 0.3,
                             ),
                           ),

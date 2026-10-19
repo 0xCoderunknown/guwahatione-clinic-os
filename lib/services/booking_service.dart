@@ -190,6 +190,34 @@ class BookingService {
     });
   }
 
+  /// Streams upcoming advance appointments from tomorrow up to [daysAhead] days in the future.
+  /// Strictly adheres to Indian date handling and excludes cancelled/absent appointments.
+  Stream<List<Appointment>> getUpcomingAppointments({
+    int daysAhead = 7,
+    DateTime? fromDate,
+  }) {
+    final base = fromDate ?? DateTime.now();
+    final tomorrow = DateTime(base.year, base.month, base.day).add(const Duration(days: 1));
+    final futureEnd = tomorrow.add(Duration(days: daysAhead));
+
+    return _appointmentsRef
+        .where(
+          'scheduledDate',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(tomorrow),
+        )
+        .where('scheduledDate', isLessThan: Timestamp.fromDate(futureEnd))
+        .orderBy('scheduledDate')
+        .snapshots()
+        .map((snapshot) {
+          final list = snapshot.docs
+              .map((doc) => Appointment.fromJson(doc.data()))
+              .toList();
+          return list
+              .where((a) => a.status != AppointmentStatus.absent)
+              .toList();
+        });
+  }
+
   /// Retrieves historical appointments for a given patient identity or phone number.
   Future<List<Appointment>> getAppointmentsForPatient(
     String patientId, {

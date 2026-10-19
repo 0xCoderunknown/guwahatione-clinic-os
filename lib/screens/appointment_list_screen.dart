@@ -14,7 +14,7 @@ import '../widgets/widgets.dart';
 /// - Active in-chamber patient isolation with real-time chamber synchronization.
 /// - Single-expansion accordion behavior across waiting tokens.
 /// - Discretionary [SEND IN] chamber calling with occupancy collision protection.
-/// - Clear visual tagging for bypassed/late patients without destructive state changes.
+/// - Multi-chamber concurrent patient tracking and date-specific doctor filters.
 class AppointmentListScreen extends StatefulWidget {
   const AppointmentListScreen({super.key});
 
@@ -35,10 +35,6 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
     final showAppBar = !isDesktop || canPop;
     final clinicProvider = Provider.of<ClinicProvider>(context);
     final doctors = clinicProvider.doctors;
-
-    // If only 1 doctor exists in clinic, automatically select that doctor for live chamber sync
-    final effectiveDoctorId =
-        _selectedDoctorId ?? (doctors.length == 1 ? doctors.first.id : null);
 
     return Scaffold(
       appBar: showAppBar
@@ -97,56 +93,7 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
             ),
           ),
 
-          // Doctor Filter Chips (when multiple doctors exist)
-          if (doctors.length > 1) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              color: const Color(0xFFF8FAFC),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    FilterChip(
-                      selected: _selectedDoctorId == null,
-                      label: const Text('All Doctors'),
-                      onSelected: (_) {
-                        setState(() {
-                          _selectedDoctorId = null;
-                          _expandedAppointmentId = null;
-                        });
-                      },
-                      selectedColor: Colors.teal.shade100,
-                      checkmarkColor: Colors.teal.shade800,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    const SizedBox(width: 8),
-                    ...doctors.map((doc) {
-                      final isSelected = _selectedDoctorId == doc.id;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: FilterChip(
-                          selected: isSelected,
-                          label: Text(doc.titleName),
-                          onSelected: (_) {
-                            setState(() {
-                              _selectedDoctorId = doc.id;
-                              _expandedAppointmentId = null;
-                            });
-                          },
-                          selectedColor: Colors.teal.shade100,
-                          checkmarkColor: Colors.teal.shade800,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-              ),
-            ),
-            const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
-          ],
-
-          // Main Queue Content
+          // Main Queue Content with dynamically filtered Doctor chips for _selectedDate
           Expanded(
             child: StreamBuilder<List<Appointment>>(
               stream: _bookingService.getAppointmentsForDate(_selectedDate),
@@ -159,79 +106,178 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                 }
 
                 final allAppointments = apptSnapshot.data ?? [];
-                final filtered = _selectedDoctorId == null
+
+                // Filter doctors for this specific calendar date:
+                // Doctor must have OPD scheduled on this date (and not on leave), OR have existing appointments on this date.
+                final activeDoctorsForDate = doctors.where((doc) {
+                  final isScheduled = AppointmentEngine.isDoctorAvailableOnDate(
+                    doctor: doc,
+                    date: _selectedDate,
+                  );
+                  final isOnLeave = AppointmentEngine.isDoctorOnLeave(
+                    doctor: doc,
+                    date: _selectedDate,
+                  );
+                  final hasAppts = allAppointments.any(
+                    (a) => a.doctorId == doc.id,
+                  );
+                  return (isScheduled && !isOnLeave) || hasAppts;
+                }).toList();
+
+                // If currently selected doctor is no longer in the active doctor list for this date, reset
+                final effectiveDoctorFilter =
+                    (_selectedDoctorId != null &&
+                            activeDoctorsForDate.any(
+                              (d) => d.id == _selectedDoctorId,
+                            ))
+                        ? _selectedDoctorId
+                        : null;
+
+                final currentEffectiveDoctorId =
+                    effectiveDoctorFilter ??
+                    (activeDoctorsForDate.length == 1
+                        ? activeDoctorsForDate.first.id
+                        : (doctors.length == 1 ? doctors.first.id : null));
+
+                final filtered = effectiveDoctorFilter == null
                     ? allAppointments
                     : allAppointments
-                          .where((a) => a.doctorId == _selectedDoctorId)
+                          .where((a) => a.doctorId == effectiveDoctorFilter)
                           .toList();
 
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.event_available_rounded,
-                          size: 56,
-                          color: Colors.grey.shade400,
+                return Column(
+                  children: [
+                    // Doctor Filter Chips (when multiple doctors are scheduled/present for this date)
+                    if (activeDoctorsForDate.length > 1) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No appointments scheduled for this date.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade700,
+                        color: const Color(0xFFF8FAFC),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              FilterChip(
+                                selected: effectiveDoctorFilter == null,
+                                label: Text(
+                                  'All Doctors (${allAppointments.length})',
+                                ),
+                                onSelected: (_) {
+                                  setState(() {
+                                    _selectedDoctorId = null;
+                                    _expandedAppointmentId = null;
+                                  });
+                                },
+                                selectedColor: Colors.teal.shade100,
+                                checkmarkColor: Colors.teal.shade800,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              const SizedBox(width: 8),
+                              ...activeDoctorsForDate.map((doc) {
+                                final isSelected =
+                                    effectiveDoctorFilter == doc.id;
+                                final docCount = allAppointments
+                                    .where((a) => a.doctorId == doc.id)
+                                    .length;
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: FilterChip(
+                                    selected: isSelected,
+                                    label: Text('${doc.titleName} ($docCount)'),
+                                    onSelected: (_) {
+                                      setState(() {
+                                        _selectedDoctorId = doc.id;
+                                        _expandedAppointmentId = null;
+                                      });
+                                    },
+                                    selectedColor: Colors.teal.shade100,
+                                    checkmarkColor: Colors.teal.shade800,
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                );
+                              }),
+                            ],
                           ),
                         ),
-                      ],
+                      ),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Color(0xFFE2E8F0),
+                      ),
+                    ],
+
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.event_available_rounded,
+                                    size: 56,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'No appointments scheduled for this date.',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : (currentEffectiveDoctorId != null
+                              ? StreamBuilder<ChamberSession>(
+                                  stream: clinicProvider.streamChamberSession(
+                                    currentEffectiveDoctorId,
+                                    _selectedDate,
+                                  ),
+                                  builder: (context, chamberSnap) {
+                                    final session = chamberSnap.data;
+
+                                    final queueView =
+                                        AppointmentEngine.partitionQueueForReception(
+                                          appointments: filtered,
+                                          activeAppointmentId:
+                                              session?.activeAppointmentId,
+                                          activeQueueNumber:
+                                              session?.activeQueueNumber,
+                                        );
+
+                                    return _buildQueueListView(queueView);
+                                  },
+                                )
+                              : StreamBuilder<Map<String, ChamberSession>>(
+                                  stream: clinicProvider
+                                      .streamAllChamberSessions(_selectedDate),
+                                  builder: (context, allSessionsSnap) {
+                                    final sessions =
+                                        allSessionsSnap.data ?? {};
+                                    final activeIds = sessions.values
+                                        .map((s) => s.activeAppointmentId)
+                                        .where(
+                                          (id) => id != null && id.isNotEmpty,
+                                        )
+                                        .cast<String>()
+                                        .toSet();
+
+                                    final queueView =
+                                        AppointmentEngine.partitionQueueForReception(
+                                          appointments: filtered,
+                                          activeAppointmentIds: activeIds,
+                                        );
+
+                                    return _buildQueueListView(queueView);
+                                  },
+                                )),
                     ),
-                  );
-                }
-
-                // If effectiveDoctorId is known, stream their chamber session doc for chamber sync
-                if (effectiveDoctorId != null) {
-                  return StreamBuilder<ChamberSession>(
-                    stream: clinicProvider.streamChamberSession(
-                      effectiveDoctorId,
-                      _selectedDate,
-                    ),
-                    builder: (context, chamberSnap) {
-                      final session = chamberSnap.data;
-
-                      final queueView =
-                          AppointmentEngine.partitionQueueForReception(
-                            appointments: filtered,
-                            activeAppointmentId: session?.activeAppointmentId,
-                            activeQueueNumber: session?.activeQueueNumber,
-                          );
-
-                      return _buildQueueListView(queueView);
-                    },
-                  );
-                }
-
-                // Streaming all chamber sessions across multiple practitioners when viewing "All Doctors"
-                return StreamBuilder<Map<String, ChamberSession>>(
-                  stream: clinicProvider.streamAllChamberSessions(
-                    _selectedDate,
-                  ),
-                  builder: (context, allSessionsSnap) {
-                    final sessions = allSessionsSnap.data ?? {};
-                    final activeIds = sessions.values
-                        .map((s) => s.activeAppointmentId)
-                        .where((id) => id != null && id.isNotEmpty)
-                        .cast<String>()
-                        .toSet();
-
-                    final queueView =
-                        AppointmentEngine.partitionQueueForReception(
-                          appointments: filtered,
-                          activeAppointmentIds: activeIds,
-                        );
-
-                    return _buildQueueListView(queueView);
-                  },
+                  ],
                 );
               },
             ),
@@ -252,23 +298,23 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
             showDoctorTag: _selectedDoctorId == null,
           ),
 
-        // 2. Active In-Chamber Patient Banner / Card
-        if (queueView.inChamber != null) ...[
-          AppointmentAccordion(
-            key: ValueKey(queueView.inChamber!.id),
-            appointment: queueView.inChamber!,
-            isInChamber: true,
-            isBypassed: false,
-            isExpanded: _expandedAppointmentId == queueView.inChamber!.id,
-            showDoctorTag: _selectedDoctorId == null,
-            onExpansionChanged: (expanded) {
-              setState(() {
-                _expandedAppointmentId = expanded
-                    ? queueView.inChamber!.id
-                    : null;
-              });
-            },
-          ),
+        // 2. Active In-Chamber Patient(s) Banner / Card
+        if (queueView.inChamberPatients.isNotEmpty) ...[
+          ...queueView.inChamberPatients.map((activeAppt) {
+            return AppointmentAccordion(
+              key: ValueKey(activeAppt.id),
+              appointment: activeAppt,
+              isInChamber: true,
+              isExpanded: _expandedAppointmentId == activeAppt.id,
+              showDoctorTag: _selectedDoctorId == null,
+              onExpansionChanged: (expanded) {
+                setState(() {
+                  _expandedAppointmentId =
+                      expanded ? activeAppt.id : null;
+                });
+              },
+            );
+          }),
         ],
 
         // 3. Waiting Queue Header & Count
@@ -305,14 +351,12 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
           ),
 
           ...queueView.waiting.map((appt) {
-            final isBypassed = queueView.isBypassed(appt.id);
             final isExpanded = _expandedAppointmentId == appt.id;
 
             return AppointmentAccordion(
               key: ValueKey(appt.id),
               appointment: appt,
               isInChamber: false,
-              isBypassed: isBypassed,
               isExpanded: isExpanded,
               showDoctorTag: _selectedDoctorId == null,
               onExpansionChanged: (expanded) {
@@ -363,7 +407,6 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
               key: ValueKey(appt.id),
               appointment: appt,
               isInChamber: false,
-              isBypassed: false,
               isExpanded: isExpanded,
               showDoctorTag: _selectedDoctorId == null,
               onExpansionChanged: (expanded) {
@@ -376,7 +419,7 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
         ],
         if (queueView.waiting.isEmpty &&
             queueView.booked.isEmpty &&
-            queueView.inChamber == null &&
+            queueView.inChamberPatients.isEmpty &&
             queueView.completed.isNotEmpty) ...[
           Container(
             margin: const EdgeInsets.only(top: 24),
