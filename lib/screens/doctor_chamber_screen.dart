@@ -128,10 +128,12 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final message =
+            e is StateError ? e.message : 'Error signaling reception: $e';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error signaling reception: $e'),
-            backgroundColor: Colors.red,
+            content: Text(message),
+            backgroundColor: Colors.red.shade800,
           ),
         );
       }
@@ -334,10 +336,12 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
       await _openConsultation(appt);
     } catch (e) {
       if (mounted) {
+        final message =
+            e is StateError ? e.message : 'Error admitting patient: $e';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error admitting patient: $e'),
-            backgroundColor: Colors.red,
+            content: Text(message),
+            backgroundColor: Colors.red.shade800,
           ),
         );
       }

@@ -307,4 +307,5 @@
   - `enableBulkSessionClose` (`bool`, default: `true`): Enables Owner-PIN-gated bulk "Close Session (Doctor Absent)" batch action marking un-consulted tokens as absent with ₹0 collection.
   - `enableGroupedCompositionCards` (`bool`, default: `true`): Renders grouped composition cards [COMPOSITION] with associated trade brand pills in medicine search.
   - `hidePrescriptionComposition` (`bool`, default: `false`): When enabled, suppresses generic chemical composition and renders trade brand names exclusively on prescriptions.
+  - `enforceSingleActiveDoctor` (`bool`, default: `false`): When false (default), multi-chamber polyclinic consulting is allowed. When true, restricts the clinic to a single active consulting doctor at a time.
 

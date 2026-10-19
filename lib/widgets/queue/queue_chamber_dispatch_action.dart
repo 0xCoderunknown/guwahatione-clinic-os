@@ -279,25 +279,38 @@ class QueueChamberDispatchAction extends StatelessWidget {
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
           ),
           onPressed: () async {
-            await provider.callTokenIntoChamber(
-              doctorId: appointment.doctorId,
-              date: appointment.scheduledDate,
-              appointment: appointment,
-            );
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isPaused
-                        ? 'Resumed Token #${appointment.queueNumber} (${appointment.patientName}) to ${AppFormatters.doctorTitle(appointment.doctorName)} chamber'
-                        : 'Dispatched Token #${appointment.queueNumber} (${appointment.patientName}) to ${AppFormatters.doctorTitle(appointment.doctorName)} chamber',
-                  ),
-                  backgroundColor: isPaused
-                      ? const Color(0xFF7E22CE)
-                      : const Color(0xFF15803D),
-                  duration: const Duration(seconds: 3),
-                ),
+            try {
+              await provider.callTokenIntoChamber(
+                doctorId: appointment.doctorId,
+                date: appointment.scheduledDate,
+                appointment: appointment,
               );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isPaused
+                          ? 'Resumed Token #${appointment.queueNumber} (${appointment.patientName}) to ${AppFormatters.doctorTitle(appointment.doctorName)} chamber'
+                          : 'Dispatched Token #${appointment.queueNumber} (${appointment.patientName}) to ${AppFormatters.doctorTitle(appointment.doctorName)} chamber',
+                    ),
+                    backgroundColor: isPaused
+                        ? const Color(0xFF7E22CE)
+                        : const Color(0xFF15803D),
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              }
+            } catch (e) {
+              if (context.mounted) {
+                final message =
+                    e is StateError ? e.message : 'Error dispatching token: $e';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(message),
+                    backgroundColor: Colors.red.shade800,
+                  ),
+                );
+              }
             }
           },
         );

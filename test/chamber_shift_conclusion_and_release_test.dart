@@ -1,3 +1,4 @@
+import 'package:appointment_app/config/clinic_config.dart';
 import 'package:appointment_app/models/chamber_session.dart';
 import 'package:appointment_app/providers/auth_provider.dart';
 import 'package:appointment_app/widgets/chamber/chamber_control_banner.dart';
@@ -117,6 +118,10 @@ void main() {
       await tester.pump();
 
       expect(endShiftCalled, isTrue);
+    });
+
+    test('enforceSingleActiveDoctor flag is disabled by default to support multi-chamber polyclinics', () {
+      expect(ClinicConfig.current.features.enforceSingleActiveDoctor, isFalse);
     });
   });
 }

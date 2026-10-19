@@ -92,6 +92,11 @@ class ClinicFeatureFlags {
   /// e.g. "Telma 40 tablet".
   final bool hidePrescriptionComposition;
 
+  /// 🧪 EXPERIMENT FLAG: Whether the clinic enforces single-active-doctor mode.
+  /// When false (default), multi-chamber concurrent consulting is allowed.
+  /// When true, a second doctor cannot signal ready or admit patients if another doctor is active.
+  final bool enforceSingleActiveDoctor;
+
   const ClinicFeatureFlags({
     this.enableLetterheadToggle = true,
     this.enableDoctorChamberOverride = true,
@@ -102,5 +107,6 @@ class ClinicFeatureFlags {
     this.enableBulkSessionClose = true,
     this.enableGroupedCompositionCards = true,
     this.hidePrescriptionComposition = false,
+    this.enforceSingleActiveDoctor = false,
   });
 }

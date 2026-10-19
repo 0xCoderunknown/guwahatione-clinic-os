@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../config/clinic_config.dart';
 import '../models/appointment.dart';
 import '../models/chamber_session.dart';
 import 'firestore_paths.dart';
@@ -28,6 +29,29 @@ class ChamberService {
 
     await _firestore.runTransaction((transaction) async {
       if (!forceOverride) {
+        if (ClinicConfig.current.features.enforceSingleActiveDoctor) {
+          final dateKey = FirestorePaths.dateKey(date);
+          final allChambersSnap = await _countersRef
+              .where('date', isEqualTo: dateKey)
+              .get();
+          for (final doc in allChambersSnap.docs) {
+            final data = doc.data();
+            final otherDoctorId = data['doctorId'] as String?;
+            final otherStatus = data['status'] as String?;
+            final otherActiveId = data['activeAppointmentId'] as String?;
+            if (otherDoctorId != null &&
+                otherDoctorId != doctorId &&
+                otherActiveId != null &&
+                otherActiveId.isNotEmpty &&
+                (otherStatus == 'calling' ||
+                    otherStatus == 'in_consultation')) {
+              throw StateError(
+                'Single-Doctor Mode: Another doctor is currently consulting Token #${data['activeQueueNumber']} (${data['patientName'] ?? 'Patient'}). Only one doctor may consult at a time.',
+              );
+            }
+          }
+        }
+
         final snap = await transaction.get(docRef);
         if (snap.exists) {
           final currentData = snap.data();
@@ -121,6 +145,27 @@ class ChamberService {
     required String doctorId,
     required DateTime date,
   }) async {
+    if (ClinicConfig.current.features.enforceSingleActiveDoctor) {
+      final dateKey = FirestorePaths.dateKey(date);
+      final allChambersSnap = await _countersRef
+          .where('date', isEqualTo: dateKey)
+          .get();
+      for (final doc in allChambersSnap.docs) {
+        final data = doc.data();
+        final otherDoctorId = data['doctorId'] as String?;
+        final otherStatus = data['status'] as String?;
+        if (otherDoctorId != null &&
+            otherDoctorId != doctorId &&
+            (otherStatus == 'in_consultation' ||
+                otherStatus == 'calling' ||
+                otherStatus == 'ready_for_next')) {
+          throw StateError(
+            'Single-Doctor Mode: Another doctor is currently active in consultation. Only one doctor may consult at a time.',
+          );
+        }
+      }
+    }
+
     final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);
     await _countersRef.doc(chamberDocId).set({
       'doctorId': doctorId,
