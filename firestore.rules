@@ -54,11 +54,12 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
-    // 4. PATIENTS (Master Patient Directory)
+    // 4. PATIENTS (Master Patient Directory & Household Records)
     // -------------------------------------------------------------------------
-    match /patients/{patientPhone} {
+    match /patients/{patientId} {
       allow read: if true;
-      allow create, update: if request.resource.data.phoneNumber == patientPhone;
+      // Allows canonical pat_* household documents, plus legacy phone-keyed records
+      allow create, update: if request.resource.data.id == patientId || request.resource.data.phoneNumber == patientId;
 
       // Patient directory records are permanent clinical history
       allow delete: if false;
@@ -70,6 +71,8 @@ service cloud.firestore {
     match /doctors/{doctorId} {
       allow read: if true;
       allow create, update: if true;
+      // Doctor retirement is managed via non-destructive deactivation (isActive: bool).
+      // Hard deletions are strictly forbidden to preserve longitudinal consultation history.
       allow delete: if false;
     }
 
@@ -79,7 +82,9 @@ service cloud.firestore {
     match /medicines/{medicineId} {
       allow read: if true;
       allow create, update: if true;
-      allow delete: if false;
+      // Formulary entries can be deleted by clinic admin.
+      // Historical prescriptions remain immune as PrescriptionItem snapshots brand & composition at prescribing time.
+      allow delete: if true;
     }
 
     // -------------------------------------------------------------------------

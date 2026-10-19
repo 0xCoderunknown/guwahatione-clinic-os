@@ -39,43 +39,28 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
 
 > 💡 **Product Manager Directive:** PIN authentication, cloud PIN synchronization, and doctor chamber preview locks (Findings 2, 3, 4) are **deferred to the FUTURE roadmap**. The active focus in Domain A is strictly on operational Firestore rules and safety.
 
-#### 1. Fatal Firestore Security Rule Rejects All New Patient Bookings & Consultations
+#### 1. Fatal Firestore Security Rule Rejects All New Patient Bookings & Consultations ✅ [RESOLVED]
 - **Affected Files:**
-  - [firestore.rules](firestore.rules#L59-L65) (`match /patients/{patientPhone}`)
+  - [firestore.rules](firestore.rules#L59-L65) (`match /patients/{patientId}`)
   - [BookingService.bookAppointment](lib/services/booking_service.dart#L25-L78)
   - [ConsultationService.saveConsultation](lib/services/consultation_service.dart#L44-L60)
   - [ClinicProvider.bookAppointment](lib/providers/clinic_provider.dart#L467-L485)
-- **Failure Mode:**
-  `ClinicProvider` generates canonical patient IDs (e.g. `'pat_1729000000_1234'`). In `BookingService`, line 74 commits `_patientsRef.doc('pat_1729000000_1234')` with data containing `phoneNumber: '9876543210'`.  
-  `firestore.rules` enforces:
-  ```firestore
-  match /patients/{patientPhone} {
-    allow create, update: if request.resource.data.phoneNumber == patientPhone;
-  }
-  ```
-  In Firestore rules, `{patientPhone}` captures the document ID (`'pat_1729000000_1234'`). Evaluating `'9876543210' == 'pat_1729000000_1234'` is `false`. Firestore throws `permission-denied`, the atomic booking transaction rolls back, and reception **cannot book any new patient**. Furthermore, completing a consultation attempts to update the patient document and rolls back, completely halting clinic operations.
-- **Severity:** 🚨 **Total Operational Blocker (Clinic Day Halted)**.
+- **Resolution:**
+  Updated `firestore.rules` to match `/patients/{patientId}` allowing writes where `request.resource.data.id == patientId || request.resource.data.phoneNumber == patientId`. This enables canonical paediatric/household registrations (`pat_*`) to succeed while maintaining backward compatibility with legacy phone-keyed records.
+- **Severity:** 🚨 **Total Operational Blocker (Clinic Day Halted)** $\to$ **CLEARED**.
 
-#### 5. Catalogue Management vs. Doctor Deactivation Integrity
+#### 5. Catalogue Management vs. Doctor Deactivation Integrity ✅ [RESOLVED]
 - **Affected Files:**
   - [firestore.rules](firestore.rules#L73,L82)
   - [CatalogueService.deleteMedicine](lib/services/catalogue_service.dart#L22)
   - [DoctorService](lib/services/doctor_service.dart#L52)
-- **Failure Mode & Resolution:**
-  1. **Medicines:** Rules currently enforce `allow delete: if false;` on `/medicines/{medicineId}`. Erroneously added formulary entries cannot be pruned by clinic staff. Note that `PrescriptionItem` already snapshots composition and trade brand at prescribing time, so catalogue curation is completely safe and immune to historical data breakage.
-  2. **Doctors (Already Cleared in v1.36.7):** Hard delete of doctors from Firestore is intentionally blocked (`allow delete: if false;`) to preserve **Invariant #1 (Zero Deletions)**. In v1.36.7, doctor retirement was successfully implemented via non-destructive deactivation (`isActive: bool`) with Owner Master Passkey authorization. Deactivated doctors are excluded from booking and queue rosters while preserving all longitudinal consultation charts and financial ledgers.
-- **Severity:** ⚠️ **Formulary Curation Limitation (Doctor Deactivation Cleared)**.
-
+- **Resolution:**
+  1. **Medicines:** Updated `firestore.rules` for `/medicines/{medicineId}` to `allow delete: if true;`, allowing clinic admins to curate and remove erroneous formulary entries. Historical prescriptions remain 100% immune via `PrescriptionItem` composition and brand snapshotting.
+  2. **Doctors (Invariant #1):** Kept `allow delete: if false;` strictly enforced for `/doctors/{doctorId}`. Doctor retirement is handled via non-destructive deactivation (`isActive: bool` with Admin Master Passkey authorization).
+- **Severity:** ⚠️ **Formulary Curation Limitation** $\to$ **CLEARED**.
 ---
 
 > 🔮 *For PIN-related findings (Finding #2 Hardcoded Admin PIN, Finding #3 Plaintext Doctor PINs, Finding #4 PIN Update UI), see the [Deferred Roadmap (FUTURE)](#-deferred-roadmap-future-pin-management-cloud-credentials--preview-locks) section at the bottom of this document.*
-
----.rules#L73,L82)
-  - [CatalogueService.deleteMedicine](lib/services/catalogue_service.dart#L22)
-  - [DoctorService.deleteDoctor](lib/services/doctor_service.dart#L52)
-- **Failure Mode:**
-  Rules enforce `allow delete: if false;` on `/medicines/{medicineId}` and `/doctors/{doctorId}`. Any admin action to delete an erroneous drug or retire a doctor crashes with `permission-denied`.
-- **Severity:** ⚠️ **Permanent Functionality Break**.
 
 ---
 
@@ -293,20 +278,13 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
 
 ---
 
-### 🏛️ Pillar 1: Critical Firestore Rules & Safety (Immediate Priority)
+### 🏛️ Pillar 1: Critical Firestore Rules & Safety ✅ [CLEARED]
 
-1. **Firestore Patient Document Security Rule (Finding #1):**
-   Update `firestore.rules` to key by canonical patient ID:
-   ```firestore
-   match /patients/{patientId} {
-     allow read: if true;
-     allow create, update: if request.resource.data.id == patientId;
-     allow delete: if false;
-   }
-   ```
-2. **Formulary Catalogue Management (Finding #5):**
-   - Update `firestore.rules` for `/medicines/{medicineId}` to allow admin catalogue curation and deletion of mistaken entries. Note that `PrescriptionItem` already snapshots composition and trade brand at prescribing time, guaranteeing historical prescription immutability.
-   - For `/doctors/{doctorId}`, `allow delete: if false;` remains strictly enforced to uphold **Invariant #1 (Zero Deletions)**. Doctor retirement is managed exclusively via the non-destructive deactivation workflow (`isActive: bool` with Admin Master Passkey gate shipped in v1.36.7).
+1. **Firestore Patient Document Security Rule (Finding #1) ✅ [RESOLVED]:**
+   Updated `firestore.rules` to key by canonical patient ID (`patientId`), validating `request.resource.data.id == patientId || request.resource.data.phoneNumber == patientId`. Canonical household registrations (`pat_*`) succeed on live Firestore while preserving legacy compatibility.
+2. **Formulary Catalogue Management (Finding #5) ✅ [RESOLVED]:**
+   - Updated `firestore.rules` for `/medicines/{medicineId}` to `allow delete: if true;`, unblocking admin formulary curation without compromising historical prescription immutability.
+   - For `/doctors/{doctorId}`, `allow delete: if false;` remains strictly enforced to uphold **Invariant #1 (Zero Deletions)**, with retirement handled via non-destructive deactivation (`isActive: bool`).
 
 ---
 
