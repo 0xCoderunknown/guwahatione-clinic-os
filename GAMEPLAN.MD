@@ -303,9 +303,10 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
    - Provides "Pause & Save Draft": saves draft locally in `SharedPreferences` (`draft_encounter_${appointmentId}`), marks appointment `isPaused: true` in waiting lobby, and frees doctor chamber (`ready_for_next`).
    - Reception queue renders `[PAUSED / RESUMABLE]` badge and dynamic purple `[RESUME IN]` dispatch button. Door override bar renders `[PAUSED]` chip and `[Resume]` button.
    - On resume, `_loadInitialData` automatically restores typed vitals, observations, staged medications, and orders. Zero lost notes, zero chamber deadlocks.
-3. **Doctor Shift Conclusion & Emergency Chamber Release Protocol:**
-   - **`[END CONSULTATION FOR TODAY]` (Doctor Chamber):** Transitions chamber to `shift_ended` and updates reception badge to `Dr. [Name] — Shift Ended`.
-   - **`[RELEASE CHAMBER - FORCED]` (Reception Desk):** Receptionist enters PIN `0000` to emergency-release stuck chambers.
+3. **Doctor Shift Conclusion & Emergency Chamber Release Protocol ✅ [CLEARED]:**
+   - **`[END SHIFT]` / `[Close Shift]` (Doctor Chamber):** Added `ChamberStatus.shiftEnded` (`'shift_ended'`) state. Doctors conclude OPD sessions on their own schedule from `ChamberControlBanner` (`consultationEnded`, `readyForNext`, `idle`) with confirmation dialogs. Chamber renders calm slate/indigo `[OPD Shift Concluded for Today]` banner with 1-tap `[RE-OPEN SHIFT]` action.
+   - **Reception Visibility & Auto-Lock:** `DashboardDoctorRosterCard` renders explicit `[SHIFT ENDED]` badge; `QueueChamberDispatchAction` and `AccordionDispatchSection` display disabled state `"Doctor Shift Ended for Today"`. Door admits are locked.
+   - **`[Emergency Release Chamber Lock]` (Reception Desk):** Receptionist can enter PIN `0000` (or Owner Master PIN) to emergency-release stuck or abandoned chambers, returning the room to `idle` via `clearChamberSession` without deleting appointment records (Invariant #1).
 4. **Multi-Doctor Queue Partitioning Fix (Finding #7):**
    Refactor `ReceptionQueueView` to support `Map<String, Appointment> inChamberByDoctorId`. Prevent active patients of Doctor B from being dumped into lobby waiting or branded as bypassed.
 5. **Midnight Rollover & Clock Observer (Finding #10):**

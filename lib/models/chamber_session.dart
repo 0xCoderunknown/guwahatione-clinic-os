@@ -4,7 +4,8 @@ enum ChamberStatus {
   readyForNext,
   calling,
   inConsultation,
-  consultationEnded;
+  consultationEnded,
+  shiftEnded;
 
   static ChamberStatus fromString(String? val) {
     switch (val) {
@@ -16,6 +17,8 @@ enum ChamberStatus {
         return ChamberStatus.inConsultation;
       case 'consultation_ended':
         return ChamberStatus.consultationEnded;
+      case 'shift_ended':
+        return ChamberStatus.shiftEnded;
       case 'idle':
       default:
         return ChamberStatus.idle;
@@ -32,6 +35,8 @@ enum ChamberStatus {
         return 'in_consultation';
       case ChamberStatus.consultationEnded:
         return 'consultation_ended';
+      case ChamberStatus.shiftEnded:
+        return 'shift_ended';
       case ChamberStatus.idle:
         return 'idle';
     }
@@ -116,6 +121,8 @@ class ChamberSession {
   bool get isInConsultation => status == 'in_consultation';
 
   bool get isIdle => status == 'idle' || status.isEmpty;
+
+  bool get isShiftEnded => status == 'shift_ended';
 
   /// True if a patient is currently active (calling or in consultation).
   bool get hasActivePatient =>

@@ -683,6 +683,18 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
+  Future<void> notifyShiftEnded({
+    required String doctorId,
+    required DateTime date,
+  }) async {
+    try {
+      await _chamberService.notifyShiftEnded(doctorId: doctorId, date: date);
+    } catch (e) {
+      debugPrint('Error notifying shift ended: $e');
+      rethrow;
+    }
+  }
+
   Future<void> notifyConsultationStarted({
     required String doctorId,
     required DateTime date,

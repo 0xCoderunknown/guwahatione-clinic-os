@@ -137,6 +137,10 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                       statusBadgeBg = const Color(0xFFFEE2E2);
                       statusBadgeFg = const Color(0xFFDC2626);
                       statusLabel = 'ABSENT';
+                    } else if (session?.isShiftEnded ?? false) {
+                      statusBadgeBg = const Color(0xFFF1F5F9);
+                      statusBadgeFg = const Color(0xFF475569);
+                      statusLabel = 'SHIFT ENDED';
                     } else if (isCalling || isInConsultation) {
                       statusBadgeBg = const Color(0xFFDBEAFE);
                       statusBadgeFg = const Color(0xFF1D4ED8);
@@ -259,36 +263,44 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: isReady
-                                  ? const Color(0xFFDCFCE7)
-                                  : (isInConsultation || isCalling
-                                        ? const Color(0xFFDBEAFE)
-                                        : Colors.grey.shade100),
+                              color: (session?.isShiftEnded ?? false)
+                                  ? const Color(0xFFF1F5F9)
+                                  : (isReady
+                                      ? const Color(0xFFDCFCE7)
+                                      : (isInConsultation || isCalling
+                                            ? const Color(0xFFDBEAFE)
+                                            : Colors.grey.shade100)),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: isReady
-                                    ? const Color(0xFF86EFAC)
-                                    : (isInConsultation || isCalling
-                                          ? const Color(0xFF93C5FD)
-                                          : Colors.transparent),
+                                color: (session?.isShiftEnded ?? false)
+                                    ? const Color(0xFFCBD5E1)
+                                    : (isReady
+                                        ? const Color(0xFF86EFAC)
+                                        : (isInConsultation || isCalling
+                                              ? const Color(0xFF93C5FD)
+                                              : Colors.transparent)),
                               ),
                             ),
                             child: Text(
-                              isReady
-                                  ? '▶ CALL NEXT'
-                                  : ((isInConsultation || isCalling)
-                                        ? 'Token #${session?.activeQueueNumber ?? '--'}'
-                                        : (patientCount == 1
-                                              ? '1 token'
-                                              : '$patientCount tokens')),
+                              (session?.isShiftEnded ?? false)
+                                  ? 'SHIFT ENDED'
+                                  : (isReady
+                                      ? '▶ CALL NEXT'
+                                      : ((isInConsultation || isCalling)
+                                            ? 'Token #${session?.activeQueueNumber ?? '--'}'
+                                            : (patientCount == 1
+                                                  ? '1 token'
+                                                  : '$patientCount tokens'))),
                               style: TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.bold,
-                                color: isReady
-                                    ? const Color(0xFF15803D)
-                                    : ((isInConsultation || isCalling)
-                                          ? const Color(0xFF1D4ED8)
-                                          : Colors.grey.shade800),
+                                color: (session?.isShiftEnded ?? false)
+                                    ? const Color(0xFF475569)
+                                    : (isReady
+                                        ? const Color(0xFF15803D)
+                                        : ((isInConsultation || isCalling)
+                                              ? const Color(0xFF1D4ED8)
+                                              : Colors.grey.shade800)),
                               ),
                             ),
                           ),

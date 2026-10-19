@@ -113,7 +113,7 @@
 |---|---|---|---|
 | `doctorId` | `String` | Yes | Doctor identifier. Deserialized by `ChamberSession.fromMap`. |
 | `date` | `String` | Yes | Calendar date key (`yyyy-MM-dd`) for multi-doctor daily queue indexing. |
-| `status` | `String` | Yes | `'idle'`, `'ready_for_next'`, `'calling'`, `'in_consultation'`, `'consultation_ended'`. |
+| `status` | `String` | Yes | `'idle'`, `'ready_for_next'`, `'calling'`, `'in_consultation'`, `'consultation_ended'`, `'shift_ended'`. |
 | `activeAppointmentId` | `String?` | No | Appointment ID currently called into the chamber. |
 | `activeQueueNumber` | `int?` | No | Token number currently called into the chamber. |
 | `patientName` | `String?` | No | Name of the patient called or consulting. |
@@ -123,6 +123,7 @@
 | `calledAt` | `Timestamp?` | No | Server timestamp recorded when patient is called into chamber. |
 | `readyAt` | `Timestamp?` | No | Server timestamp recorded when doctor signals readiness for next token. |
 | `endedAt` | `Timestamp?` | No | Server timestamp recorded when doctor completes encounter (breather). |
+| `shiftEndedAt` | `Timestamp?` | No | Server timestamp recorded when doctor concludes consultations for the day. |
 | `clearedAt` | `Timestamp?` | No | Server timestamp recorded when chamber session resets to idle. |
 
 ---

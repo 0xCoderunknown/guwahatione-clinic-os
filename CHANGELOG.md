@@ -10,9 +10,14 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
-## [1.36.0 – 1.36.8] — 15-10-2026 to 19-10-2026
+## [1.36.0 – 1.36.9] — 15-10-2026 to 19-10-2026
 
-### Consultation Pause & Step-Out Protocol, Local Draft Recovery, & Admin Passkey Gate
+### Doctor Shift Conclusion, Reception Emergency Release, Consultation Pause & Step-Out Protocol
+- **Doctor Shift Conclusion & Reception Emergency Chamber Release (v1.36.9):**
+  - **Doctor-Controlled Shift Conclusion:** Added `ChamberStatus.shiftEnded` (`'shift_ended'`) to the real-time chamber operational lifecycle. Doctors can formally conclude consultations for the day on their own schedule via dedicated `[END SHIFT]` / `[Close Shift]` actions in `ChamberControlBanner` (`consultationEnded`, `readyForNext`, or `idle` states) guarded by confirmation dialogs, rather than waiting for midnight cron jobs or date rollovers.
+  - **Re-Open Shift Capability:** Concluded chambers render an informative `[OPD Shift Concluded for Today]` card with a prominent `[RE-OPEN SHIFT]` button allowing the doctor to immediately resume OPD if unexpected walk-ins or urgent follow-ups arrive.
+  - **Reception & Roster Sync:** `DashboardDoctorRosterCard` renders an explicit `[SHIFT ENDED]` badge across both desktop tables and mobile cards. Reception dispatch actions (`QueueChamberDispatchAction` and `AccordionDispatchSection`) immediately switch to disabled state `"Doctor Shift Ended for Today"` and door override lists are locked.
+  - **Reception Emergency Chamber Release (PIN 0000 Guarded):** Added an `[Emergency Release Chamber Lock]` trigger in `AccordionDispatchSection` when a room is locked on break or marked occupied. Staff entering Reception PIN (`0000`) or Owner Master PIN can immediately clear the chamber sync state to `idle`, safely handling offline doctors or network glitches without deleting appointment documents (Invariant #1).
 - **Consultation Pause / Step-Out Protocol & Local Draft Recovery (v1.36.8):**
   - **Zero Data Loss Draft Caching:** Integrated draft serialization (`toDraftMap` / `restoreFromDraftMap`) and asynchronous local caching in `SharedPreferences` (`draft_encounter_${appointmentId}`) in `EncounterFormState`. When a doctor pauses an encounter or reloads, typed vitals, examination notes, complaints, provisional diagnoses, staged medications, and orders are automatically restored.
   - **Modal Exit & Chamber Unwind Guard:** Wrapped `ConsultationEncounterScreen` in `PopScope(canPop: false)`. Tapping Android back, browser back, or the new bottom dock **`[Pause / Step Out]`** button launches an operational modal with "Pause & Save Draft", "Keep Editing", and "Discard". Pausing broadcasts `notifyConsultationPaused`, resetting doctor chamber status to `ready_for_next` and freeing the room immediately.

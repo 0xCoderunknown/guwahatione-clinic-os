@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/appointment.dart';
 import '../../models/chamber_session.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
 
@@ -32,6 +33,7 @@ class AccordionDispatchSection extends StatelessWidget {
         final session = chamberSnap.data;
         final isDoctorReady = session?.isReadyForNext ?? false;
         final isDoctorOnBreak = session?.isConsultationEnded ?? false;
+        final isShiftEnded = session?.isShiftEnded ?? false;
         final activeApptId = session?.activeAppointmentId;
         final activeQueueNum = session?.activeQueueNumber;
         final activePatName = session?.patientName ?? 'Patient';
@@ -49,6 +51,10 @@ class AccordionDispatchSection extends StatelessWidget {
         if (isThisInChamber) {
           buttonLabel = 'Already in Chamber';
           buttonIcon = Icons.meeting_room_rounded;
+          onDispatch = null;
+        } else if (isShiftEnded) {
+          buttonLabel = 'Doctor Shift Ended for Today';
+          buttonIcon = Icons.nightlife_rounded;
           onDispatch = null;
         } else if (isAnotherPatientInChamber) {
           buttonLabel = 'Chamber Occupied (Token #$activeQueueNum Inside)';
@@ -125,6 +131,39 @@ class AccordionDispatchSection extends StatelessWidget {
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF15803D),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (isShiftEnded)
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.nightlife_rounded,
+                      size: 14,
+                      color: Color(0xFF475569),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '${AppFormatters.doctorTitle(appointment.doctorName)} has concluded consultations for today.',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF475569),
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -283,9 +322,127 @@ class AccordionDispatchSection extends StatelessWidget {
               ),
               onPressed: onDispatch,
             ),
+            if (isAnotherPatientInChamber || isDoctorOnBreak)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Center(
+                  child: TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFDC2626),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    icon: const Icon(Icons.lock_open_rounded, size: 14),
+                    label: const Text(
+                      'Emergency Release Chamber Lock',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    onPressed: () => _handleEmergencyRelease(context),
+                  ),
+                ),
+              ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _handleEmergencyRelease(BuildContext context) async {
+    final pinController = TextEditingController();
+    String? errorText;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626)),
+                  SizedBox(width: 8),
+                  Text('Emergency Release Chamber'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Clear active lock for ${AppFormatters.doctorTitle(appointment.doctorName)}\'s chamber? Use this if doctor left or chamber is stuck.\n\nEnter Reception PIN (0000) or Clinic Owner PIN to confirm.',
+                    style: const TextStyle(fontSize: 13, height: 1.4),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: pinController,
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: 'Staff PIN',
+                      hintText: 'Enter 0000',
+                      errorText: errorText,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx, false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626),
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    final enteredPin = pinController.text.trim();
+                    final auth = Provider.of<AuthProvider>(
+                      context,
+                      listen: false,
+                    );
+                    if (auth.verifyReceptionOrOwnerPin(enteredPin)) {
+                      Navigator.pop(dialogCtx, true);
+                    } else {
+                      setDialogState(() {
+                        errorText = 'Invalid PIN. Enter Reception PIN (0000)';
+                      });
+                    }
+                  },
+                  child: const Text('Release Lock'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed == true && context.mounted) {
+      final clinic = Provider.of<ClinicProvider>(context, listen: false);
+      await clinic.clearChamberSession(
+        appointment.doctorId,
+        appointment.scheduledDate,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Chamber lock released for ${AppFormatters.doctorTitle(appointment.doctorName)}.',
+            ),
+            backgroundColor: Colors.blueGrey.shade800,
+          ),
+        );
+      }
+    }
   }
 }

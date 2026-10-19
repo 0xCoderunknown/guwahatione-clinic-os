@@ -169,6 +169,47 @@ class QueueChamberDispatchAction extends StatelessWidget {
           );
         }
 
+        if (session?.isShiftEnded ?? false) {
+          final badge = Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFCBD5E1)),
+            ),
+            child: Row(
+              mainAxisSize: isMobile ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisAlignment: isMobile
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.nightlife_rounded,
+                  size: 14,
+                  color: Color(0xFF475569),
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    isMobile ? 'Doctor Shift Ended for Today' : 'Shift Ended',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF475569),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          );
+          return Tooltip(
+            message:
+                '${AppFormatters.doctorTitle(appointment.doctorName)} has concluded consultations for today.',
+            child: badge,
+          );
+        }
+
         if (!isDoctorReady) {
           final badge = Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

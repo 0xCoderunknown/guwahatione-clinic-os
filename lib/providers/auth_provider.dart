@@ -95,6 +95,16 @@ class AuthProvider with ChangeNotifier {
   bool get isCustomReceptionistPinSet =>
       _receptionistPinHash != _defaultReceptionistPinHash;
 
+  /// Verifies if a given PIN matches the clinic Reception PIN (0000) or Owner Master PIN.
+  bool verifyReceptionOrOwnerPin(String pin) {
+    final cleanPin = pin.trim();
+    final inputHash = hashPin(cleanPin);
+    return inputHash == _receptionistPinHash ||
+        inputHash == _defaultReceptionistPinHash ||
+        inputHash == _ownerMasterPinHash ||
+        inputHash == _defaultOwnerMasterPinHash;
+  }
+
   Future<void> initSession(List<Doctor> availableDoctors) async {
     final prefs = await SharedPreferences.getInstance();
 

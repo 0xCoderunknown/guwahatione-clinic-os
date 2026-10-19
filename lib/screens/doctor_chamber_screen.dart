@@ -140,6 +140,111 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
     }
   }
 
+  Future<void> _handleEndShift() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.nightlife_rounded, color: Color(0xFF475569)),
+            SizedBox(width: 8),
+            Text('Conclude OPD Shift for Today?'),
+          ],
+        ),
+        content: const Text(
+          'This will inform Reception that you have concluded consultations for today. New patient dispatches will be held.\n\nYou can reopen your shift at any time if needed.',
+          style: TextStyle(fontSize: 13, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF334155),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('End Shift'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isBusySignaling = true);
+    try {
+      await _chamberService.notifyShiftEnded(
+        doctorId: widget.doctor.id,
+        date: _selectedDate,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text('OPD Shift concluded for today. Reception notified.'),
+              ],
+            ),
+            backgroundColor: Color(0xFF475569),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error concluding shift: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBusySignaling = false);
+    }
+  }
+
+  Future<void> _handleReopenShift() async {
+    setState(() => _isBusySignaling = true);
+    try {
+      await _chamberService.notifyReadyForNext(
+        doctorId: widget.doctor.id,
+        date: _selectedDate,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text('Shift re-opened! Reception signaled chamber is ready.'),
+              ],
+            ),
+            backgroundColor: Colors.teal.shade800,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error re-opening shift: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBusySignaling = false);
+    }
+  }
+
   Future<void> _autoOpenConsultationForId(String appointmentId) async {
     _isAutoNavigating = true;
     try {
@@ -331,17 +436,20 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
               (_activeCallingApptId != null &&
                   _activeCallingApptId!.isNotEmpty);
 
-          final doorEligibleTokens = (!_isToday || isChamberOccupied)
-              ? <Appointment>[]
-              : appointments
-                    .where(
-                      (a) =>
-                          a.status == AppointmentStatus.pending &&
-                          a.visitStatus == VisitStatus.waitingInLobby &&
-                          a.paymentType != PaymentType.unpaid,
-                    )
-                    .take(2)
-                    .toList();
+          final isShiftEnded = _chamberStatus == ChamberStatus.shiftEnded;
+
+          final doorEligibleTokens =
+              (!_isToday || isChamberOccupied || isShiftEnded)
+                  ? <Appointment>[]
+                  : appointments
+                        .where(
+                          (a) =>
+                              a.status == AppointmentStatus.pending &&
+                              a.visitStatus == VisitStatus.waitingInLobby &&
+                              a.paymentType != PaymentType.unpaid,
+                        )
+                        .take(2)
+                        .toList();
 
           return RefreshIndicator(
             onRefresh: () async => setState(() {}),
@@ -390,6 +498,8 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
                                   _activeCallingApptId!,
                                 )
                               : null,
+                          onEndShift: _handleEndShift,
+                          onReopenShift: _handleReopenShift,
                         ),
                         if (doorEligibleTokens.isNotEmpty) ...[
                           const SizedBox(height: 16),

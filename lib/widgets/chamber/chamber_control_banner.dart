@@ -17,6 +17,8 @@ class ChamberControlBanner extends StatelessWidget {
   final bool isBusy;
   final VoidCallback onNextPatient;
   final VoidCallback? onOpenActivePatient;
+  final VoidCallback? onEndShift;
+  final VoidCallback? onReopenShift;
 
   const ChamberControlBanner({
     super.key,
@@ -28,6 +30,8 @@ class ChamberControlBanner extends StatelessWidget {
     this.isBusy = false,
     required this.onNextPatient,
     this.onOpenActivePatient,
+    this.onEndShift,
+    this.onReopenShift,
   });
 
   @override
@@ -44,6 +48,8 @@ class ChamberControlBanner extends StatelessWidget {
             return _buildCallingIncomingCard(context, isCompact);
           case ChamberStatus.inConsultation:
             return _buildInConsultationCard(context, isCompact);
+          case ChamberStatus.shiftEnded:
+            return _buildShiftEndedCard(context, isCompact);
           case ChamberStatus.idle:
             return _buildIdleCard(context, isCompact);
         }
@@ -127,6 +133,47 @@ class ChamberControlBanner extends StatelessWidget {
       onPressed: isBusy ? null : onNextPatient,
     );
 
+    final endShiftBtn = onEndShift != null
+        ? OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF92400E),
+              side: const BorderSide(color: Color(0xFFFBBF24)),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: const Icon(Icons.nightlife_rounded, size: 16),
+            label: const Text(
+              'END SHIFT',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            onPressed: isBusy ? null : onEndShift,
+          )
+        : null;
+
+    final actionsWidget = isCompact
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              buttonWidget,
+              if (endShiftBtn != null) ...[
+                const SizedBox(height: 8),
+                endShiftBtn,
+              ],
+            ],
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (endShiftBtn != null) ...[
+                endShiftBtn,
+                const SizedBox(width: 8),
+              ],
+              buttonWidget,
+            ],
+          );
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isCompact ? 16 : 20,
@@ -156,7 +203,7 @@ class ChamberControlBanner extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                SizedBox(width: double.infinity, child: buttonWidget),
+                actionsWidget,
               ],
             )
           : Row(
@@ -165,7 +212,7 @@ class ChamberControlBanner extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(child: textWidget),
                 const SizedBox(width: 16),
-                buttonWidget,
+                actionsWidget,
               ],
             ),
     );
@@ -229,6 +276,47 @@ class ChamberControlBanner extends StatelessWidget {
       onPressed: onNextPatient,
     );
 
+    final endShiftBtn = onEndShift != null
+        ? OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF475569),
+              side: const BorderSide(color: Color(0xFFCBD5E1)),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: const Icon(Icons.nightlife_rounded, size: 16),
+            label: const Text(
+              'End Shift',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            onPressed: isBusy ? null : onEndShift,
+          )
+        : null;
+
+    final actionsWidget = isCompact
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              buttonWidget,
+              if (endShiftBtn != null) ...[
+                const SizedBox(height: 8),
+                endShiftBtn,
+              ],
+            ],
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (endShiftBtn != null) ...[
+                endShiftBtn,
+                const SizedBox(width: 8),
+              ],
+              buttonWidget,
+            ],
+          );
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isCompact ? 16 : 20,
@@ -258,7 +346,7 @@ class ChamberControlBanner extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                SizedBox(width: double.infinity, child: buttonWidget),
+                actionsWidget,
               ],
             )
           : Row(
@@ -267,7 +355,7 @@ class ChamberControlBanner extends StatelessWidget {
                 const SizedBox(width: 16),
                 const Expanded(child: textWidget),
                 const SizedBox(width: 16),
-                buttonWidget,
+                actionsWidget,
               ],
             ),
     );
@@ -475,6 +563,47 @@ class ChamberControlBanner extends StatelessWidget {
       onPressed: isBusy ? null : onNextPatient,
     );
 
+    final endShiftBtn = onEndShift != null
+        ? OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF475569),
+              side: const BorderSide(color: Color(0xFFCBD5E1)),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: const Icon(Icons.nightlife_rounded, size: 16),
+            label: const Text(
+              'Close Shift',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            onPressed: isBusy ? null : onEndShift,
+          )
+        : null;
+
+    final actionsWidget = isCompact
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              buttonWidget,
+              if (endShiftBtn != null) ...[
+                const SizedBox(height: 8),
+                endShiftBtn,
+              ],
+            ],
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (endShiftBtn != null) ...[
+                endShiftBtn,
+                const SizedBox(width: 8),
+              ],
+              buttonWidget,
+            ],
+          );
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isCompact ? 16 : 20,
@@ -497,7 +626,7 @@ class ChamberControlBanner extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                SizedBox(width: double.infinity, child: buttonWidget),
+                actionsWidget,
               ],
             )
           : Row(
@@ -506,7 +635,132 @@ class ChamberControlBanner extends StatelessWidget {
                 const SizedBox(width: 14),
                 const Expanded(child: textWidget),
                 const SizedBox(width: 14),
-                buttonWidget,
+                actionsWidget,
+              ],
+            ),
+    );
+  }
+
+  Widget _buildShiftEndedCard(BuildContext context, bool isCompact) {
+    final iconWidget = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9), // Slate 100
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFF94A3B8)),
+      ),
+      child: const Icon(
+        Icons.nightlife_rounded,
+        color: Color(0xFF334155),
+        size: 24,
+      ),
+    );
+
+    final textWidget = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 8,
+          children: [
+            Text(
+              'OPD Shift Concluded for Today',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            Badge(
+              label: Text(
+                'SHIFT ENDED',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: Color(0xFF475569),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          lastCompletedQueueNumber != null
+              ? 'Concluded after Token #${lastCompletedQueueNumber?.toString().padLeft(2, '0')}. Reception desk notified that consultations are closed.'
+              : 'Consultation shift is ended. Reception desk notified.',
+          style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+        ),
+      ],
+    );
+
+    final buttonWidget = onReopenShift != null
+        ? OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF0F766E),
+              side: const BorderSide(color: Color(0xFF0F766E), width: 1.5),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: isBusy
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF0F766E),
+                    ),
+                  )
+                : const Icon(Icons.restart_alt_rounded, size: 18),
+            label: const Text(
+              'RE-OPEN SHIFT',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            onPressed: isBusy ? null : onReopenShift,
+          )
+        : null;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 16 : 20,
+        vertical: isCompact ? 14 : 16,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: isCompact
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    iconWidget,
+                    const SizedBox(width: 12),
+                    Expanded(child: textWidget),
+                  ],
+                ),
+                if (buttonWidget != null) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(width: double.infinity, child: buttonWidget),
+                ],
+              ],
+            )
+          : Row(
+              children: [
+                iconWidget,
+                const SizedBox(width: 16),
+                Expanded(child: textWidget),
+                if (buttonWidget != null) ...[
+                  const SizedBox(width: 16),
+                  buttonWidget,
+                ],
               ],
             ),
     );

@@ -130,6 +130,23 @@ class ChamberService {
     }, SetOptions(merge: true));
   }
 
+  /// Broadcasts doctor shift ended / OPD concluded event to reception desk.
+  /// Locks dispatch actions and clears active patient tokens from chamber channel.
+  Future<void> notifyShiftEnded({
+    required String doctorId,
+    required DateTime date,
+  }) async {
+    final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);
+    await _countersRef.doc(chamberDocId).set({
+      'doctorId': doctorId,
+      'date': FirestorePaths.dateKey(date),
+      'activeAppointmentId': null,
+      'activeQueueNumber': null,
+      'status': 'shift_ended',
+      'shiftEndedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   /// Broadcasts consultation paused event from doctor to reception desk.
   /// Frees active chamber so doctor can take next patient or reception can dispatch.
   Future<void> notifyConsultationPaused({
