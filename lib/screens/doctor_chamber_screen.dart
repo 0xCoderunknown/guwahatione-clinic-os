@@ -190,15 +190,15 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
     if (!_isToday) return;
     setState(() => _isBusySignaling = true);
     try {
-      // 1. Immediately update appointment visitStatus to inConsultation
-      await _bookingService.admitPatientToChamber(appt.id);
-
-      // 2. Broadcast chamber session sync to inform reception desk
+      // 1. Claim atomic chamber occupancy lock first (throws if chamber is occupied)
       await _chamberService.callTokenIntoChamber(
         doctorId: widget.doctor.id,
         date: _selectedDate,
         appointment: appt,
       );
+
+      // 2. Once atomic chamber lock is secured, admit patient to chamber in database
+      await _bookingService.admitPatientToChamber(appt.id);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

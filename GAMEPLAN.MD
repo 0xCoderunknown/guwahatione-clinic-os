@@ -87,20 +87,20 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
   Line 313 matches Doctor A's patient, leaving `inChamber` filled. Doctor B's active patient is dumped into the `waiting` list. Line 333 marks any waiting token smaller than `inChamber.queueNumber` as bypassed. Since Token #3 < Token #8, **Doctor B's patient, who is actively sitting in Chamber B, is branded with a red `[BYPASSED / LATE]` badge on reception screens**.
 - **Severity:** 🚨 **Multi-Doctor Queue Corruption**.
 
-#### 8. Zombie State Corruption on Door Admission Collision
+#### 8. Zombie State Corruption on Door Admission Collision ✅ [RESOLVED]
 - **Affected Files:**
-  - [DoctorChamberScreen._handleDoorAdmit](lib/screens/doctor_chamber_screen.dart#L189-L202)
-  - [ChamberService.callTokenIntoChamber](lib/services/chamber_service.dart#L28-L44)
-- **Failure Mode:**
-  Doctor clicks "Door Admit" on Patient B at the exact moment reception sends in Patient A. Step 1 mutates Patient B's `visitStatus` to `inConsultation`. In Step 2, `callTokenIntoChamber` detects Patient A and throws. Patient B is left permanently in `inConsultation` in the database, but is not in the chamber and is vanished from the lobby.
-- **Severity:** 🚨 **Data Corruption & Lost Token**.
+  - [DoctorChamberScreen._handleDoorAdmit](lib/screens/doctor_chamber_screen.dart)
+  - [ChamberService.callTokenIntoChamber](lib/services/chamber_service.dart)
+- **Resolution:**
+  Reordered door admission protocol: `DoctorChamberScreen._handleDoorAdmit` now claims the atomic chamber lock via `ChamberService.callTokenIntoChamber` *before* mutating appointment records. If reception concurrently called another patient into the chamber, `callTokenIntoChamber` throws inside its transaction, admission aborts cleanly, and the patient remains safely in `waitingInLobby` with zero zombie state corruption.
+- **Severity:** 🚨 **Data Corruption & Lost Token** $\to$ **CLEARED**.
 
-#### 9. Non-Transactional Chamber Handshake Race Condition
+#### 9. Non-Transactional Chamber Handshake Race Condition ✅ [RESOLVED]
 - **Affected Files:**
-  - [ChamberService.callTokenIntoChamber](lib/services/chamber_service.dart#L28-L56)
-- **Failure Mode:**
-  Despite documentation claiming atomic occupancy, `callTokenIntoChamber` executes a standard `get()` followed by a separate `set()`. Concurrent dispatches or double clicks both read `ready_for_next`, pass the occupancy check, and overwrite each other, admitting two patients into one room simultaneously.
-- **Severity:** 🚨 **Single-Occupancy Invariant Violation**.
+  - [ChamberService.callTokenIntoChamber](lib/services/chamber_service.dart)
+- **Resolution:**
+  Wrapped `ChamberService.callTokenIntoChamber` inside `FirebaseFirestore.instance.runTransaction()`. The chamber occupancy check (`transaction.get`) and calling state broadcast (`transaction.set`) now execute atomically. Concurrent admissions or double clicks trigger transaction conflict retries and are strictly rejected if the room is occupied (`StateError`).
+- **Severity:** 🚨 **Single-Occupancy Invariant Violation** $\to$ **CLEARED**.
 
 #### 10. Midnight Date Rollover & 8:00 AM Stale Dashboard Trap
 - **Affected Files:**
@@ -295,8 +295,9 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
 
 ### 🚪 Pillar 2: Chamber Concurrency, Queue & Multi-Doctor Engine
 
-1. **Transactional Chamber Occupancy (Finding #9):**
-   Wrap `ChamberService.callTokenIntoChamber` in `FirebaseFirestore.instance.runTransaction()`.
+1. **Transactional Chamber Occupancy & Collision Guard (Finding #8 & #9) ✅ [CLEARED]:**
+   - Wrapped `ChamberService.callTokenIntoChamber` inside `FirebaseFirestore.instance.runTransaction()`, guaranteeing atomic occupancy checking and calling state emission.
+   - Reordered door admission protocol in `DoctorChamberScreen._handleDoorAdmit`: claims atomic chamber occupancy lock *before* mutating appointment records, preventing zombie state corruption if reception concurrently calls another patient.
 2. **Safe Encounter Route Exit, Pause & Draft Recovery (Finding #6 & #13) ✅ [CLEARED]:**
    - Wrapped `ConsultationEncounterScreen` in `PopScope(canPop: false)`. Intercepts accidental back navigation or bottom dock "Pause / Step Out" with a protective modal dialog.
    - Provides "Pause & Save Draft": saves draft locally in `SharedPreferences` (`draft_encounter_${appointmentId}`), marks appointment `isPaused: true` in waiting lobby, and frees doctor chamber (`ready_for_next`).

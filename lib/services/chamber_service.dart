@@ -15,6 +15,7 @@ class ChamberService {
       _firestore.collection(FirestorePaths.counters);
 
   /// Broadcasts token calling event to doctor chamber screen.
+  /// Atomically verifies and claims chamber occupancy inside a Firestore transaction.
   /// Strictly rejects if chamber is already occupied by another active patient.
   Future<void> callTokenIntoChamber({
     required String doctorId,
@@ -25,35 +26,37 @@ class ChamberService {
     final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);
     final docRef = _countersRef.doc(chamberDocId);
 
-    if (!forceOverride) {
-      final snap = await docRef.get();
-      if (snap.exists) {
-        final currentData = snap.data();
-        final currentActiveId = currentData?['activeAppointmentId'] as String?;
-        final currentStatus = currentData?['status'] as String?;
-        final isOccupied =
-            currentActiveId != null &&
-            currentActiveId.isNotEmpty &&
-            currentActiveId != appointment.id &&
-            (currentStatus == 'calling' || currentStatus == 'in_consultation');
-        if (isOccupied) {
-          throw StateError(
-            'Chamber is already occupied by Token #${currentData?['activeQueueNumber']} (${currentData?['patientName']}). Conclude active consultation before admitting next patient.',
-          );
+    await _firestore.runTransaction((transaction) async {
+      if (!forceOverride) {
+        final snap = await transaction.get(docRef);
+        if (snap.exists) {
+          final currentData = snap.data();
+          final currentActiveId = currentData?['activeAppointmentId'] as String?;
+          final currentStatus = currentData?['status'] as String?;
+          final isOccupied =
+              currentActiveId != null &&
+              currentActiveId.isNotEmpty &&
+              currentActiveId != appointment.id &&
+              (currentStatus == 'calling' || currentStatus == 'in_consultation');
+          if (isOccupied) {
+            throw StateError(
+              'Chamber is already occupied by Token #${currentData?['activeQueueNumber']} (${currentData?['patientName']}). Conclude active consultation before admitting next patient.',
+            );
+          }
         }
       }
-    }
 
-    await docRef.set({
-      'doctorId': doctorId,
-      'date': FirestorePaths.dateKey(date),
-      'activeAppointmentId': appointment.id,
-      'activeQueueNumber': appointment.queueNumber,
-      'patientName': appointment.patientName,
-      'patientPhone': appointment.patientPhone,
-      'calledAt': FieldValue.serverTimestamp(),
-      'status': 'calling',
-    }, SetOptions(merge: true));
+      transaction.set(docRef, {
+        'doctorId': doctorId,
+        'date': FirestorePaths.dateKey(date),
+        'activeAppointmentId': appointment.id,
+        'activeQueueNumber': appointment.queueNumber,
+        'patientName': appointment.patientName,
+        'patientPhone': appointment.patientPhone,
+        'calledAt': FieldValue.serverTimestamp(),
+        'status': 'calling',
+      }, SetOptions(merge: true));
+    });
   }
 
   /// Streams active chamber session for a given doctor and date as a strongly typed domain model.
