@@ -33,7 +33,15 @@ class ClinicProvider with ChangeNotifier {
 
   DateTime? get offlineCacheTimestamp => _offlineCacheTimestamp;
 
-  List<Doctor> get doctors => _doctors;
+  /// Active doctors eligible for OPD scheduling, walk-in booking, live queue, and chamber login.
+  List<Doctor> get doctors => _doctors.where((d) => d.isActive).toList();
+
+  /// Full doctor roster including active and retired/inactive physicians (for Owner settings).
+  List<Doctor> get allDoctors => _doctors;
+
+  /// Deactivated / retired doctors.
+  List<Doctor> get inactiveDoctors =>
+      _doctors.where((d) => !d.isActive).toList();
 
   Doctor? getDoctorById(String doctorId) =>
       _doctors.where((d) => d.id == doctorId).firstOrNull;
@@ -291,6 +299,28 @@ class ClinicProvider with ChangeNotifier {
     _setLoading(true);
     try {
       await _doctorService.updateDoctorLeave(doctorId, blockedDates);
+    } catch (e) {
+      rethrow;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Sets doctor active/inactive operational status.
+  /// Strictly owner-authorized.
+  Future<void> setDoctorActiveStatus(
+    String doctorId,
+    bool isActive, {
+    UserRole? requestingRole,
+  }) async {
+    if (requestingRole != null && !requestingRole.isOwner) {
+      throw Exception(
+        'Permission Denied: Only clinic administrators (owner) can change doctor active status.',
+      );
+    }
+    _setLoading(true);
+    try {
+      await _doctorService.setDoctorActiveStatus(doctorId, isActive);
     } catch (e) {
       rethrow;
     } finally {

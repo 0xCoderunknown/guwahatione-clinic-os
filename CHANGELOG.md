@@ -10,9 +10,16 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
-## [1.36.0 – 1.36.6] — 15-10-2026 to 19-10-2026
+## [1.36.0 – 1.36.7] — 15-10-2026 to 19-10-2026
 
-### Universal Walk-In Booking Modal, Double-Modal Guard & Prescription Table Isolation
+### Doctor Deactivation & Admin Passkey Gate, Walk-In Booking Modal, & Prescription Table Isolation
+- **Doctor Deactivation, Inactive Filtering & Admin Passkey Gate (v1.36.7):**
+  - **Zero Deletions Guard (Invariant #1):** Replaced hard delete in `DoctorService` with non-destructive deactivation (`isActive: bool`). Inactive/retired doctors are preserved in Firestore so longitudinal consultations, patient prescription histories, and financial ledgers remain permanently intact.
+  - **Reception & Dashboard Isolation:** Filtered `ClinicProvider.doctors` to return strictly active doctors (`isActive == true`). Inactive doctors are completely excluded from dashboard rosters, walk-in booking modals, live queue tabs, and chamber login dropdowns.
+  - **Owner Roster Segregation:** Added segmented filter chips (`Active Doctors (N)` | `Inactive / Retired (M)`) in `DoctorListScreen` exclusively visible to Clinic Owners.
+  - **Inactive Card Styling & Overflow Protection:** Inactive doctors are rendered with soft slate backgrounds (`Color(0xFFF8FAFC)`), grey avatars, and an explicit `[INACTIVE]` badge built with responsive text spans to guarantee zero RenderFlex overflow.
+  - **Admin Master Passkey Authorization:** Toggling doctor active status (`Deactivate` or `Reactivate Doctor`) strictly prompts an authentication dialog requiring the Owner's 6-digit Master Passkey (`AuthProvider.verifyOwnerMasterPin`).
+  - **Chamber Login Guard:** Inactive doctors are barred from PIN authentication and direct chamber login in `AuthProvider.loginAsDoctor`.
 - **Universal Walk-In Booking Modal & Explicit LOGOUT Button (v1.36.6):**
   - Moved desktop walk-in booking trigger into the left `NavigationRail` with a prominent `Book Walk-In (F2)` button, freeing topbar desktop real estate.
   - Made mobile `FloatingActionButton.extended` persistently accessible across all navigation tabs (Dashboard, Queue, Patients, Schedules).

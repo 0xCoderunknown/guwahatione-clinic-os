@@ -7,8 +7,181 @@ import '../providers/clinic_provider.dart';
 import '../utils/formatters.dart';
 import 'screens.dart';
 
-class DoctorListScreen extends StatelessWidget {
+class DoctorListScreen extends StatefulWidget {
   const DoctorListScreen({super.key});
+
+  @override
+  State<DoctorListScreen> createState() => _DoctorListScreenState();
+}
+
+class _DoctorListScreenState extends State<DoctorListScreen> {
+  int _selectedSegment = 0; // 0: Active, 1: Inactive
+
+  Future<void> _promptPasskeyAndToggleActive(
+    BuildContext context,
+    Doctor doctor,
+  ) async {
+    final isDeactivating = doctor.isActive;
+    final pinController = TextEditingController();
+    String? errorText;
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final clinicProvider = Provider.of<ClinicProvider>(context, listen: false);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Row(
+                children: [
+                  Icon(
+                    isDeactivating
+                        ? Icons.pause_circle_outline
+                        : Icons.play_circle_outline,
+                    color: isDeactivating ? Colors.red.shade700 : Colors.teal,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isDeactivating ? 'Deactivate Doctor' : 'Reactivate Doctor',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isDeactivating
+                          ? 'Deactivating ${doctor.titleName} will remove them from the walk-in booking desk, live queue rosters, and chamber login.\n\nAll past consultations, prescriptions, and financial audit records will remain permanently intact.'
+                          : 'Reactivating ${doctor.titleName} will restore them to active OPD booking, queue rosters, and chamber login.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade800,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      'Enter 6-digit Owner Master Passkey to authorize:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      key: const Key('admin_passkey_input'),
+                      controller: pinController,
+                      obscureText: true,
+                      autofocus: true,
+                      maxLength: 6,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: '••••••',
+                        counterText: '',
+                        errorText: errorText,
+                        prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                      ),
+                      onSubmitted: (val) {
+                        final isValid = authProvider.verifyOwnerMasterPin(val);
+                        if (isValid) {
+                          Navigator.pop(dialogCtx, true);
+                        } else {
+                          setDialogState(() {
+                            errorText = 'Incorrect Owner Master Passkey';
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx, false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  key: const Key('confirm_passkey_action_btn'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDeactivating
+                        ? Colors.red.shade700
+                        : Colors.teal,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    final enteredPin = pinController.text.trim();
+                    final isValid = authProvider.verifyOwnerMasterPin(enteredPin);
+                    if (isValid) {
+                      Navigator.pop(dialogCtx, true);
+                    } else {
+                      setDialogState(() {
+                        errorText = 'Incorrect Owner Master Passkey';
+                      });
+                    }
+                  },
+                  child: Text(isDeactivating ? 'Deactivate' : 'Reactivate'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        await clinicProvider.setDoctorActiveStatus(
+          doctor.id,
+          !isDeactivating,
+          requestingRole: authProvider.currentRole,
+        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isDeactivating
+                    ? '${doctor.titleName} has been deactivated.'
+                    : '${doctor.titleName} has been reactivated.',
+              ),
+              backgroundColor: isDeactivating ? Colors.red.shade800 : Colors.teal,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update status: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,39 +202,112 @@ class DoctorListScreen extends StatelessWidget {
           : null,
       body: Consumer<ClinicProvider>(
         builder: (context, provider, child) {
-          final doctors = provider.doctors;
-          if (doctors.isEmpty) {
-            return const Center(child: Text('No doctors added yet.'));
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            itemCount: doctors.length,
-            itemBuilder: (context, index) {
-              final doctor = doctors[index];
-              return DoctorRosterCard(
-                doctor: doctor,
-                isOwner: isOwner,
-                onEdit: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AddDoctorScreen(doctor: doctor),
+          final activeDoctors = provider.doctors;
+          final inactiveDoctors = provider.inactiveDoctors;
+
+          final displayedDoctors = !isOwner
+              ? activeDoctors
+              : (_selectedSegment == 0 ? activeDoctors : inactiveDoctors);
+
+          return Column(
+            children: [
+              if (isOwner)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey.shade200),
                     ),
-                  );
-                },
-                onChamberView: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DoctorChamberScreen(
-                        doctor: doctor,
-                        isPreviewMode: true,
+                  ),
+                  child: Row(
+                    children: [
+                      ChoiceChip(
+                        key: const Key('segment_active_doctors'),
+                        selected: _selectedSegment == 0,
+                        label: Text('Active Doctors (${activeDoctors.length})'),
+                        selectedColor: Colors.teal.shade50,
+                        labelStyle: TextStyle(
+                          color: _selectedSegment == 0
+                              ? Colors.teal.shade900
+                              : Colors.grey.shade700,
+                          fontWeight: _selectedSegment == 0
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                        onSelected: (_) => setState(() => _selectedSegment = 0),
                       ),
-                    ),
-                  );
-                },
-              );
-            },
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        key: const Key('segment_inactive_doctors'),
+                        selected: _selectedSegment == 1,
+                        label: Text(
+                          'Inactive / Retired (${inactiveDoctors.length})',
+                        ),
+                        selectedColor: Colors.grey.shade200,
+                        labelStyle: TextStyle(
+                          color: _selectedSegment == 1
+                              ? Colors.grey.shade900
+                              : Colors.grey.shade700,
+                          fontWeight: _selectedSegment == 1
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                        onSelected: (_) => setState(() => _selectedSegment = 1),
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(
+                child: displayedDoctors.isEmpty
+                    ? Center(
+                        child: Text(
+                          _selectedSegment == 1
+                              ? 'No inactive doctors. All registered physicians are currently active.'
+                              : 'No active doctors added yet.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        itemCount: displayedDoctors.length,
+                        itemBuilder: (context, index) {
+                          final doctor = displayedDoctors[index];
+                          return DoctorRosterCard(
+                            doctor: doctor,
+                            isOwner: isOwner,
+                            onEdit: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AddDoctorScreen(doctor: doctor),
+                                ),
+                              );
+                            },
+                            onChamberView: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => DoctorChamberScreen(
+                                    doctor: doctor,
+                                    isPreviewMode: true,
+                                  ),
+                                ),
+                              );
+                            },
+                            onToggleActive: () =>
+                                _promptPasskeyAndToggleActive(context, doctor),
+                          );
+                        },
+                      ),
+              ),
+            ],
           );
         },
       ),
@@ -92,6 +338,7 @@ class DoctorRosterCard extends StatelessWidget {
   final bool isOwner;
   final VoidCallback? onEdit;
   final VoidCallback? onChamberView;
+  final VoidCallback? onToggleActive;
 
   const DoctorRosterCard({
     super.key,
@@ -99,11 +346,53 @@ class DoctorRosterCard extends StatelessWidget {
     required this.isOwner,
     this.onEdit,
     this.onChamberView,
+    this.onToggleActive,
   });
+
+  Widget _buildBadge({
+    required IconData icon,
+    required String label,
+    required Color iconColor,
+    required Color textColor,
+    required Color bgColor,
+    required Color borderColor,
+    FontWeight fontWeight = FontWeight.w600,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: borderColor),
+      ),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Icon(icon, size: 12, color: iconColor),
+              ),
+            ),
+            TextSpan(
+              text: label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: fontWeight,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+    final isActive = doctor.isActive;
 
     final actionButtons = Wrap(
       alignment: isMobile ? WrapAlignment.start : WrapAlignment.end,
@@ -111,7 +400,7 @@ class DoctorRosterCard extends StatelessWidget {
       spacing: 8,
       runSpacing: 6,
       children: [
-        if (isOwner)
+        if (isOwner && isActive)
           OutlinedButton.icon(
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.teal,
@@ -121,15 +410,38 @@ class DoctorRosterCard extends StatelessWidget {
             icon: const Icon(Icons.edit_outlined, size: 16),
             label: const Text('Edit'),
           ),
-        OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.teal,
-            side: const BorderSide(color: Colors.teal),
+        if (isActive)
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.teal,
+              side: const BorderSide(color: Colors.teal),
+            ),
+            onPressed: onChamberView,
+            icon: const Icon(Icons.visibility, size: 16),
+            label: const Text('Chamber View'),
           ),
-          onPressed: onChamberView,
-          icon: const Icon(Icons.visibility, size: 16),
-          label: const Text('Chamber View'),
-        ),
+        if (isOwner)
+          isActive
+              ? OutlinedButton.icon(
+                  key: Key('deactivate_btn_${doctor.id}'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade700,
+                    side: BorderSide(color: Colors.red.shade300),
+                  ),
+                  onPressed: onToggleActive,
+                  icon: const Icon(Icons.pause_circle_outline, size: 16),
+                  label: const Text('Deactivate'),
+                )
+              : ElevatedButton.icon(
+                  key: Key('reactivate_btn_${doctor.id}'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: onToggleActive,
+                  icon: const Icon(Icons.play_circle_outline, size: 16),
+                  label: const Text('Reactivate Doctor'),
+                ),
       ],
     );
 
@@ -138,125 +450,80 @@ class DoctorRosterCard extends StatelessWidget {
       children: [
         Text(
           AppFormatters.doctorTitle(doctor.name),
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
+            color: isActive ? null : const Color(0xFF475569),
           ),
         ),
         const SizedBox(height: 2),
         Text(
           '${AppFormatters.specialty(doctor.specialty)} • Fee: ₹${doctor.consultationFee}',
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+          style: TextStyle(
+            fontSize: 13,
+            color: isActive ? Colors.grey.shade700 : const Color(0xFF64748B),
+          ),
         ),
         const SizedBox(height: 6),
         Wrap(
           spacing: 8,
           runSpacing: 6,
           children: [
-            if (isOwner)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade50,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.amber.shade300),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.key,
-                      size: 12,
-                      color: Colors.amber,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Chamber PIN: ${doctor.pin}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.amber.shade900,
-                      ),
-                    ),
-                  ],
-                ),
+            if (!isActive)
+              _buildBadge(
+                icon: Icons.pause_circle_outline,
+                label: 'INACTIVE',
+                iconColor: const Color(0xFF64748B),
+                textColor: const Color(0xFF475569),
+                bgColor: const Color(0xFFE2E8F0),
+                borderColor: const Color(0xFFCBD5E1),
+                fontWeight: FontWeight.bold,
+              ),
+            if (isOwner && isActive)
+              _buildBadge(
+                icon: Icons.key,
+                label: 'Chamber PIN: ${doctor.pin}',
+                iconColor: Colors.amber,
+                textColor: Colors.amber.shade900,
+                bgColor: Colors.amber.shade50,
+                borderColor: Colors.amber.shade300,
+                fontWeight: FontWeight.bold,
               ),
             if (doctor.medicalRegNumber != null &&
                 doctor.medicalRegNumber!.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.teal.shade50,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.teal.shade200),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.verified_user_outlined,
-                      size: 12,
-                      color: Colors.teal.shade700,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Registration No. ${doctor.medicalRegNumber}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.teal.shade900,
-                      ),
-                    ),
-                  ],
-                ),
+              _buildBadge(
+                icon: Icons.verified_user_outlined,
+                label: 'Registration No. ${doctor.medicalRegNumber}',
+                iconColor: isActive ? Colors.teal.shade700 : const Color(0xFF64748B),
+                textColor: isActive ? Colors.teal.shade900 : const Color(0xFF475569),
+                bgColor: isActive ? Colors.teal.shade50 : const Color(0xFFF1F5F9),
+                borderColor: isActive ? Colors.teal.shade200 : const Color(0xFFCBD5E1),
               ),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 2,
-              ),
-              decoration: BoxDecoration(
-                color: doctor.freeReviewDays > 0
-                    ? Colors.blue.shade50
-                    : Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: doctor.freeReviewDays > 0
+            _buildBadge(
+              icon: Icons.event_repeat,
+              label: doctor.freeReviewDays > 0
+                  ? 'Review: ${doctor.freeReviewDays}d'
+                  : 'No Free Review',
+              iconColor: !isActive
+                  ? const Color(0xFF64748B)
+                  : (doctor.freeReviewDays > 0
+                      ? Colors.blue.shade700
+                      : Colors.orange.shade700),
+              textColor: !isActive
+                  ? const Color(0xFF475569)
+                  : (doctor.freeReviewDays > 0
+                      ? Colors.blue.shade900
+                      : Colors.orange.shade900),
+              bgColor: !isActive
+                  ? const Color(0xFFF1F5F9)
+                  : (doctor.freeReviewDays > 0
+                      ? Colors.blue.shade50
+                      : Colors.orange.shade50),
+              borderColor: !isActive
+                  ? const Color(0xFFCBD5E1)
+                  : (doctor.freeReviewDays > 0
                       ? Colors.blue.shade200
-                      : Colors.orange.shade200,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.event_repeat,
-                    size: 12,
-                    color: doctor.freeReviewDays > 0
-                        ? Colors.blue.shade700
-                        : Colors.orange.shade700,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    doctor.freeReviewDays > 0
-                        ? 'Review: ${doctor.freeReviewDays}d'
-                        : 'No Free Review',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: doctor.freeReviewDays > 0
-                          ? Colors.blue.shade900
-                          : Colors.orange.shade900,
-                    ),
-                  ),
-                ],
-              ),
+                      : Colors.orange.shade200),
             ),
             Text(
               doctor.availableDays.join(', '),
@@ -272,7 +539,13 @@ class DoctorRosterCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isActive ? Colors.white : const Color(0xFFF8FAFC),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isActive ? Colors.grey.shade200 : const Color(0xFFE2E8F0),
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: isMobile
@@ -284,13 +557,17 @@ class DoctorRosterCard extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 24,
-                        backgroundColor: Colors.teal.shade50,
+                        backgroundColor: isActive
+                            ? Colors.teal.shade50
+                            : const Color(0xFFE2E8F0),
                         child: Text(
                           AppFormatters.doctorInitials(doctor.name),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
-                            color: Colors.teal.shade800,
+                            color: isActive
+                                ? Colors.teal.shade800
+                                : const Color(0xFF64748B),
                           ),
                         ),
                       ),
@@ -306,13 +583,17 @@ class DoctorRosterCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: Colors.teal.shade50,
+                    backgroundColor: isActive
+                        ? Colors.teal.shade50
+                        : const Color(0xFFE2E8F0),
                     child: Text(
                       AppFormatters.doctorInitials(doctor.name),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: Colors.teal.shade800,
+                        color: isActive
+                            ? Colors.teal.shade800
+                            : const Color(0xFF64748B),
                       ),
                     ),
                   ),

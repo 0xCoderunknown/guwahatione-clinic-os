@@ -23,6 +23,12 @@ class _FakeClinicProvider extends ChangeNotifier implements ClinicProvider {
   ];
 
   @override
+  List<Doctor> get allDoctors => doctors;
+
+  @override
+  List<Doctor> get inactiveDoctors => [];
+
+  @override
   List<Appointment> get todayAppointments => [];
 
   @override

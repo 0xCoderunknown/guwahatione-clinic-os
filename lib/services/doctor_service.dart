@@ -48,7 +48,11 @@ class DoctorService {
     });
   }
 
-  Future<void> deleteDoctor(String doctorId) async {
-    await _doctorsRef.doc(doctorId).delete();
+  /// Toggles doctor active operational status.
+  /// When deactivated (isActive: false), doctor is hidden from reception desk,
+  /// walk-in booking, live queues, and chamber logins, while preserving all
+  /// longitudinal prescriptions, past appointments, and financial records.
+  Future<void> setDoctorActiveStatus(String doctorId, bool isActive) async {
+    await _doctorsRef.doc(doctorId).update({'isActive': isActive});
   }
 }

@@ -192,9 +192,9 @@ class AuthProvider with ChangeNotifier {
       return AuthResult.success(UserRole.receptionist);
     }
 
-    // 3. Check Doctor Chamber PINs via cryptographic hash
+    // 3. Check Doctor Chamber PINs via cryptographic hash (only active doctors)
     final matchedDoctors = doctors
-        .where((d) => hashPin(d.pin) == inputHash)
+        .where((d) => d.isActive && hashPin(d.pin) == inputHash)
         .toList();
     if (matchedDoctors.length == 1) {
       final doc = matchedDoctors.first;
@@ -287,6 +287,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> loginAsDoctor(Doctor doctor, String pin) async {
+    if (!doctor.isActive) return false;
     if (hashPin(doctor.pin) == hashPin(pin)) {
       _currentRole = UserRole.doctor;
       _currentDoctor = doctor;
@@ -299,6 +300,16 @@ class AuthProvider with ChangeNotifier {
       return true;
     }
     return false;
+  }
+
+  /// Verifies an entered PIN against the Owner Master Passkey hash.
+  /// Used for authorizing sensitive administrative actions like doctor deactivation/reactivation.
+  bool verifyOwnerMasterPin(String pin) {
+    final cleanPin = pin.trim();
+    if (cleanPin.isEmpty) return false;
+    final inputHash = hashPin(cleanPin);
+    return inputHash == _ownerMasterPinHash ||
+        inputHash == _defaultOwnerMasterPinHash;
   }
 
   Future<void> setOwnerMasterPin(String newPin) async {
