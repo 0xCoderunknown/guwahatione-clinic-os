@@ -221,18 +221,19 @@ void main() {
           ),
         );
 
-        // 1. Verify Active Rx table contains START and CONTINUE items
-        expect(find.text('Amlodipine 5'), findsOneWidget);
-        expect(find.text('Telmisartan 40'), findsOneWidget);
+        // 1. Verify 3-Column Isolated Rx table contains items with uppercase composition
+        expect(find.textContaining('Amlodipine 5'), findsWidgets);
+        expect(find.textContaining('Telmisartan 40'), findsWidgets);
         expect(find.text('30 Days'), findsOneWidget);
-        expect(find.text('Ongoing (Chronic)'), findsOneWidget);
+        expect(find.text('To Continue'), findsOneWidget);
 
-        // 2. Verify STOP item is in the Discontinued Warning section, NOT in table
+        // 2. Verify STOP item is in the table with To STOP and in Discontinued section
+        expect(find.text('To STOP'), findsOneWidget);
         expect(
           find.text('🛑 Discontinued / Stopped Medications This Visit:'),
           findsOneWidget,
         );
-        expect(find.textContaining('Atenolol 50'), findsOneWidget);
+        expect(find.textContaining('Atenolol 50'), findsWidgets);
         expect(
           find.textContaining('Replaced with Amlodipine due to bradycardia'),
           findsOneWidget,

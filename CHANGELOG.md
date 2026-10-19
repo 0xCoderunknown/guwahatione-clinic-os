@@ -8,6 +8,23 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Zero Backward-Compatibility Debt (Invariant #10):** Historical notes document evolution. Never revive deprecated models, legacy shims, or retired facades mentioned in older milestones.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.36.5] — 19-10-2026
+
+### Prescription Table: Strict 3-Column Isolation, Uppercase NMC Generic Formatting & Experimental Flag
+- **Operational & Presentation Impact:**
+  - **Strict 3-Column Prescription Table Isolation (Invariant #12):** Refactored `PrintMedicationsTable` into 3 dedicated, unmixed columns:
+    - **Column 1 (Medicine):** Strictly brand name and uppercase bracketed composition (`Telma 40 tablet [TELMISARTAN 40MG]`, conforming to National Medical Commission standards). Pure generics avoid redundant duplication. Removed badges like `[NEW]` and `[CONT]`.
+    - **Column 2 (Dosage & Timing):** Strictly dosage, frequency, timing, and optional patient notes (`1 tab • in morning • before food`).
+    - **Column 3 (Duration):** Strictly course duration (`X Days`), ongoing chronic therapy (`To Continue`), or explicit discontinuation (`To STOP`).
+  - **Single Unified Table with STOP Support:** Discontinued medications render in the table with `To STOP` in the Duration column alongside the active regimen.
+  - **🧪 Experimental Flag (`hidePrescriptionComposition`):** Added to `ClinicFeatureFlags` (default: `false`). When enabled, hides generic chemical compositions on prescriptions, rendering only trade brand names (`Telma 40 tablet`).
+  - **AI Constitution Lock:** Added permanent invariant Rule 12 and Red Line to `AGENTS.md` and `.agents/rules/clinic_os_rules.md` to prevent column mixing or badge regressions.
+- **Verification Gate:**
+  - `flutter analyze`: 0 errors, 0 warnings.
+  - `flutter test`: All 244 unit and widget tests passing green.
+
+---
+
 ## [1.36.4] — 15-10-2026
 
 ### Reception Dashboard Cleanups: Streamlined Mobile Header, Clean Fee Presentation & Refined Doctor Status Badges

@@ -137,7 +137,7 @@ void main() {
         );
 
         expect(find.textContaining('Azithral 500 tablet'), findsOneWidget);
-        expect(find.textContaining('Azithromycin 500mg'), findsOneWidget);
+        expect(find.textContaining('AZITHROMYCIN 500MG'), findsOneWidget);
         expect(find.textContaining('Azithral Super 1000'), findsNothing);
         expect(find.textContaining('New Chemical Corp'), findsNothing);
       },

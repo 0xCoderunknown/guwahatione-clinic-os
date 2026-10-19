@@ -83,6 +83,13 @@ class ClinicFeatureFlags {
   /// When disabled, renders a streamlined flat brand-first direct selection list.
   final bool enableGroupedCompositionCards;
 
+  /// 🧪 EXPERIMENT FLAG: Whether the generic chemical composition is hidden from the prescription.
+  /// When false (default), compositions are displayed alongside the brand name in uppercase brackets:
+  /// e.g. "Telma 40 tablet [TELMISARTAN 40MG]".
+  /// When true, composition is turned off, displaying only the trade brand name:
+  /// e.g. "Telma 40 tablet".
+  final bool hidePrescriptionComposition;
+
   const ClinicFeatureFlags({
     this.enableLetterheadToggle = true,
     this.enableDoctorChamberOverride = true,
@@ -92,5 +99,6 @@ class ClinicFeatureFlags {
     this.enableTokenReceiptPrint = true,
     this.enableBulkSessionClose = true,
     this.enableGroupedCompositionCards = true,
+    this.hidePrescriptionComposition = false,
   });
 }

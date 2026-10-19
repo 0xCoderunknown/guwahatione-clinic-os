@@ -1,20 +1,53 @@
 import 'package:flutter/material.dart';
 
+import '../../config/clinic_config.dart';
 import '../../models/prescription_item.dart';
 
-/// Printable medications section: structured active Rx table and segregated discontinued audit box.
+/// Printable medications section adhering strictly to the 3-Column Isolation rule:
+/// - Column 1 (Medicine): Trade brand name with uppercase bracketed composition [COMPOSITION]
+///   (or brand only if [hidePrescriptionComposition] is true). No badges like [NEW].
+/// - Column 2 (Dosage & Timing): Dosage, frequency, timing, and optional patient instructions.
+/// - Column 3 (Duration): Course duration (e.g. '5 Days'), 'To Continue', or 'To STOP'.
 class PrintMedicationsTable extends StatelessWidget {
   final List<PrescriptionItem> activeMeds;
   final List<PrescriptionItem> stoppedMeds;
+  final ClinicConfig? config;
 
   const PrintMedicationsTable({
     super.key,
     required this.activeMeds,
     required this.stoppedMeds,
+    this.config,
   });
+
+  /// Formats the medicine display text with uppercase bracketed composition.
+  /// Suppresses bracketed composition if [hideComposition] is enabled or if the
+  /// medicine name is already identical to or contains the composition.
+  static String formatMedicineName(
+    PrescriptionItem item, {
+    bool hideComposition = false,
+  }) {
+    final name = item.effectiveName.trim();
+    if (hideComposition || item.composition.trim().isEmpty) {
+      return name;
+    }
+    final comp = item.composition.trim();
+    final nameLower = name.toLowerCase();
+    final compLower = comp.toLowerCase();
+
+    // If already identical or already contains composition, do not redundantly duplicate
+    if (nameLower == compLower || nameLower.contains(compLower)) {
+      return name;
+    }
+    return '$name [${comp.toUpperCase()}]';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final activeConfig = config ?? ClinicConfig.current;
+    final hideComp = activeConfig.features.hidePrescriptionComposition;
+    final allMeds = [...activeMeds, ...stoppedMeds];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -29,8 +62,8 @@ class PrintMedicationsTable extends StatelessWidget {
         ),
         const SizedBox(height: 6),
 
-        // Active Rx Table
-        if (activeMeds.isEmpty)
+        // 3-Column Isolated Rx Table
+        if (allMeds.isEmpty)
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -38,7 +71,7 @@ class PrintMedicationsTable extends StatelessWidget {
             ),
             child: const Center(
               child: Text(
-                'No active medications prescribed for this visit.',
+                'No active or discontinued medications for this visit.',
                 style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
               ),
             ),
@@ -47,32 +80,19 @@ class PrintMedicationsTable extends StatelessWidget {
           Table(
             border: TableBorder.all(color: Colors.black87, width: 0.8),
             columnWidths: const {
-              0: FixedColumnWidth(30),
-              1: FlexColumnWidth(4.5),
-              2: FlexColumnWidth(2.2),
-              3: FlexColumnWidth(2.2),
-              4: FlexColumnWidth(2.2),
+              0: FlexColumnWidth(5.0), // Col 1: Medicine
+              1: FlexColumnWidth(3.5), // Col 2: Dosage & Timing
+              2: FlexColumnWidth(1.8), // Col 3: Duration
             },
             children: [
-              // Header Row
+              // Header Row (Strict 3 Columns)
               TableRow(
                 decoration: BoxDecoration(color: Colors.grey.shade200),
                 children: const [
                   Padding(
-                    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                     child: Text(
-                      '#',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-                    child: Text(
-                      'Medicine & Composition',
+                      'Medicine',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 11,
@@ -80,9 +100,9 @@ class PrintMedicationsTable extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                     child: Text(
-                      'Dose & Timing',
+                      'Dosage & Timing',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 11,
@@ -90,17 +110,7 @@ class PrintMedicationsTable extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                    child: Text(
-                      'Frequency',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
                     child: Text(
                       'Duration',
                       style: TextStyle(
@@ -112,108 +122,85 @@ class PrintMedicationsTable extends StatelessWidget {
                 ],
               ),
 
-              // Item Rows (Strictly START & CONTINUE items)
-              ...activeMeds.asMap().entries.map((entry) {
+              // Item Rows (Strict 3-Column Isolation)
+              ...allMeds.asMap().entries.map((entry) {
                 final idx = entry.key + 1;
                 final item = entry.value;
 
-                final durationLabel = item.durationDays != null
-                    ? "${item.durationDays} Days"
-                    : "Ongoing (Chronic)";
+                final String durationText;
+                final Color durationColor;
+                if (item.action == MedicationAction.stop) {
+                  durationText = 'To STOP';
+                  durationColor = Colors.red.shade800;
+                } else if (item.durationDays != null &&
+                    item.durationDays! > 0) {
+                  durationText = '${item.durationDays} Days';
+                  durationColor = Colors.black87;
+                } else {
+                  durationText = 'To Continue';
+                  durationColor = Colors.teal.shade900;
+                }
 
                 return TableRow(
                   children: [
+                    // Col 1: Dedicated to Medicine (Name + [COMPOSITION])
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         vertical: 6,
-                        horizontal: 4,
+                        horizontal: 8,
                       ),
                       child: Text(
-                        '$idx',
-                        style: const TextStyle(fontSize: 11),
-                        textAlign: TextAlign.center,
+                        '$idx. ${formatMedicineName(item, hideComposition: hideComp)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
+
+                    // Col 2: Dedicated to Dosage & Timing
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         vertical: 6,
-                        horizontal: 6,
+                        horizontal: 8,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Text(
-                                item.effectiveName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                item.action == MedicationAction.continueAction
-                                    ? '[CONT]'
-                                    : '[NEW]',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.grey.shade700,
-                                ),
-                              ),
-                            ],
-                          ),
                           Text(
-                            item.composition,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.grey.shade800,
-                            ),
+                            "${item.dosage} • ${item.frequency} • ${item.timing}",
+                            style: const TextStyle(fontSize: 11),
                           ),
                           if (item.instructions != null &&
-                              item.instructions!.isNotEmpty)
-                            Text(
-                              "Note: ${item.instructions}",
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontStyle: FontStyle.italic,
+                              item.instructions!.trim().isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                "Note: ${item.instructions!.trim()}",
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.black54,
+                                ),
                               ),
                             ),
                         ],
                       ),
                     ),
+
+                    // Col 3: Dedicated to Duration
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         vertical: 6,
-                        horizontal: 4,
+                        horizontal: 8,
                       ),
                       child: Text(
-                        "${item.dosage}\n${item.timing}",
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 6,
-                        horizontal: 4,
-                      ),
-                      child: Text(
-                        item.frequency,
-                        style: const TextStyle(
+                        durationText,
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
+                          color: durationColor,
                         ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 6,
-                        horizontal: 4,
-                      ),
-                      child: Text(
-                        durationLabel,
-                        style: const TextStyle(fontSize: 11),
                       ),
                     ),
                   ],
@@ -224,7 +211,10 @@ class PrintMedicationsTable extends StatelessWidget {
 
         if (stoppedMeds.isNotEmpty) ...[
           const SizedBox(height: 14),
-          PrintDiscontinuedMedicationsBox(stoppedMeds: stoppedMeds),
+          PrintDiscontinuedMedicationsBox(
+            stoppedMeds: stoppedMeds,
+            hideComposition: hideComp,
+          ),
         ],
       ],
     );
@@ -234,8 +224,13 @@ class PrintMedicationsTable extends StatelessWidget {
 /// Segregated audit box for discontinued / stopped chronic medications.
 class PrintDiscontinuedMedicationsBox extends StatelessWidget {
   final List<PrescriptionItem> stoppedMeds;
+  final bool hideComposition;
 
-  const PrintDiscontinuedMedicationsBox({super.key, required this.stoppedMeds});
+  const PrintDiscontinuedMedicationsBox({
+    super.key,
+    required this.stoppedMeds,
+    this.hideComposition = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -260,10 +255,14 @@ class PrintDiscontinuedMedicationsBox extends StatelessWidget {
           const SizedBox(height: 4),
           ...stoppedMeds.map((item) {
             final reason = item.stopReason ?? 'Stopped by doctor';
+            final medLabel = PrintMedicationsTable.formatMedicineName(
+              item,
+              hideComposition: hideComposition,
+            );
             return Padding(
               padding: const EdgeInsets.only(left: 6, bottom: 2),
               child: Text(
-                "• ${item.effectiveName} (${item.composition}) — Reason: $reason",
+                "• $medLabel — Reason: $reason",
                 style: const TextStyle(
                   fontSize: 10.5,
                   fontStyle: FontStyle.italic,

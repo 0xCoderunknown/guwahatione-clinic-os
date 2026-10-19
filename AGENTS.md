@@ -80,6 +80,13 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
     - `ConsultationEncounterScreen` must NEVER contain incoming patient switch alerts or route replacements. When an encounter is open, the doctor is in exclusive session with that patient until completion.
     - Emergency door admission lists (`ChamberDoorOverrideBar`) and reception dispatch actions (`AccordionDispatchSection`, `DashboardQueueCard`) are strictly locked whenever a chamber is occupied.
 
+12. **Prescription Table Architecture (Strict 3-Column Isolation & NMC Generic Standard):**
+    - The printed and preview prescription table must strictly maintain 3 separated, unmixed columns:
+      - **Column 1 (Medicine):** Dedicated purely to medicine trade brand name and generic chemical composition in uppercase brackets (`Brand [COMPOSITION]`, e.g., `Telma 40 tablet [TELMISARTAN 40MG]`, conforming to National Medical Commission uppercase prescribing standards). When the experimental flag `hidePrescriptionComposition` is enabled, only the trade brand name is rendered (`Telma 40 tablet`). Never add badges like `[NEW]` or mix dosage/timing/duration into this column.
+      - **Column 2 (Dosage & Timing):** Dedicated purely to dosage instructions, frequency, timing, and optional notes (e.g., `1 tab • in morning • before food`). Never mix medicine name or course duration into this column.
+      - **Column 3 (Duration / Status):** Dedicated purely to course duration or continuation/discontinuation status (`To Continue`, `X Days`, or `To STOP`).
+    - **Zero Mixing:** There must be zero mixing between these 3 columns across printed prescriptions or preview tables.
+
 ---
 
 ## 🏗️ 2. Architectural & Technical Stack Rules
@@ -168,4 +175,5 @@ docs/
 - ❌ **Stacking duplicate or secondary consultation encounter screens over an in-progress consultation.**
 - ❌ **Allowing live admissions, ready signals, or chamber operations on past historical dates.** (Must switch to immutable read-only mode).
 - ❌ **Exposing remote reservations (`VisitStatus.booked`) or uncollected dues (`PaymentType.unpaid`) in emergency door self-call lists.** (Strictly capped to top 1–2 verified lobby-checked-in patients).
+- ❌ **Mixing medicine names, dosages, or durations across prescription table columns, or adding badges like `[NEW]` (violating the strict 3-column isolation rule).**
 
