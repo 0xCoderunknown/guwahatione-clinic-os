@@ -66,14 +66,15 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
 
 ### 🚪 Domain B: Chamber Concurrency, Queue Engine & Multi-Doctor Collisions
 
-#### 6. Irrecoverable Chamber Deadlock on Encounter Route Exit / Pop
+#### 6. Irrecoverable Chamber Deadlock on Encounter Route Exit / Pop ✅ [RESOLVED]
 - **Affected Files:**
-  - [ConsultationEncounterScreen](lib/screens/consultation_encounter_screen.dart#L58-L67,L307)
-  - [DoctorChamberScreen](lib/screens/doctor_chamber_screen.dart#L265-L280)
-  - [ChamberService.callTokenIntoChamber](lib/services/chamber_service.dart#L28-L44)
-- **Failure Mode:**
-  When `ConsultationEncounterScreen` opens, `notifyConsultationStarted` sets the chamber document to `in_consultation`. If the patient steps out to the washroom, feels faint, or the doctor taps "Back" (`Navigator.pop`), no unwind notification is sent. The chamber remains permanently `in_consultation`. Reception's dispatch button is permanently locked, and `ChamberService.callTokenIntoChamber` throws `StateError('Chamber is already occupied...')`. **The doctor's queue is completely frozen for the rest of the day.**
-- **Severity:** 🚨 **Total Chamber Operational Freeze**.
+  - [ConsultationEncounterScreen](lib/screens/consultation_encounter_screen.dart)
+  - [DoctorChamberScreen](lib/screens/doctor_chamber_screen.dart)
+  - [ChamberService](lib/services/chamber_service.dart)
+  - [ClinicProvider](lib/providers/clinic_provider.dart)
+- **Resolution:**
+  Wrapped `ConsultationEncounterScreen` in `PopScope(canPop: false)`. Intercepts back navigation (Android back, browser back, or "Pause / Step Out" dock button) with an explicit modal dialog. Provides "Pause & Save Draft" (frees chamber with `notifyConsultationPaused`, returning chamber to `ready_for_next`, and marks appointment `isPaused: true` in waiting lobby) or "Discard" (clears draft, notifies chamber `ready_for_next`). Zero frozen chambers or stuck locks.
+- **Severity:** 🚨 **Total Chamber Operational Freeze** $\to$ **CLEARED**.
 
 #### 7. Multi-Doctor Queue Partitioning Breakdown & False Bypassed Badges
 - **Affected Files:**
@@ -129,13 +130,17 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
 
 ### 🩺 Domain C: Clinical Encounter, Prescribing & Medical Safety
 
-#### 13. Zero Encounter Draft Persistence (Total Data Loss on Refresh / Crash)
+#### 13. Zero Encounter Draft Persistence (Total Data Loss on Refresh / Crash) ✅ [RESOLVED]
 - **Affected Files:**
   - [EncounterFormState](lib/widgets/encounter/encounter_form_state.dart)
   - [ConsultationEncounterScreen](lib/screens/consultation_encounter_screen.dart)
-- **Failure Mode:**
-  A doctor spends 10 minutes recording comprehensive vitals, symptoms, exam notes, staged drugs, and test orders. There is **zero local draft caching** (`SharedPreferences`/IndexedDB). If the browser tab crashes, laptop sleeps, or doctor hits reload, all data is permanently lost.
-- **Severity:** 🚨 **Severe Clinical Data Loss & Doctor Friction**.
+  - [BookingService](lib/services/booking_service.dart)
+  - [AppointmentAccordion](lib/widgets/queue/appointment_accordion.dart)
+  - [QueueChamberDispatchAction](lib/widgets/queue/queue_chamber_dispatch_action.dart)
+  - [ChamberDoorOverrideBar](lib/widgets/chamber/chamber_door_override_bar.dart)
+- **Resolution:**
+  Implemented comprehensive consultation draft serialization (`toDraftMap` / `restoreFromDraftMap`) and asynchronous local draft caching in `SharedPreferences` (`draft_encounter_${appointmentId}`). On pause or reload, `_loadInitialData` automatically restores typed vitals, clinical exam notes, chief complaints, provisional diagnoses, staged medications, ordered tests, and advice notes. When a patient steps out for an hour, doctor pauses visit, chamber is freed for next patients, reception queue card displays `[PAUSED / RESUMABLE]` and `[RESUME IN]`, and upon return, encounter auto-restores cleanly. Completing & signing consultation removes draft.
+- **Severity:** 🚨 **Severe Clinical Data Loss & Doctor Friction** $\to$ **CLEARED**.
 
 #### 14. Passive Cosmetic Allergies (Zero Prescribing Cross-Check)
 - **Affected Files:**
@@ -292,8 +297,11 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
 
 1. **Transactional Chamber Occupancy (Finding #9):**
    Wrap `ChamberService.callTokenIntoChamber` in `FirebaseFirestore.instance.runTransaction()`.
-2. **Safe Encounter Route Exit & Unwind (Finding #6):**
-   Wrap `ConsultationEncounterScreen` in `PopScope`. On exit without completing, prompt for confirmation and cleanly reset chamber status to `ready_for_next` or `idle`.
+2. **Safe Encounter Route Exit, Pause & Draft Recovery (Finding #6 & #13) ✅ [CLEARED]:**
+   - Wrapped `ConsultationEncounterScreen` in `PopScope(canPop: false)`. Intercepts accidental back navigation or bottom dock "Pause / Step Out" with a protective modal dialog.
+   - Provides "Pause & Save Draft": saves draft locally in `SharedPreferences` (`draft_encounter_${appointmentId}`), marks appointment `isPaused: true` in waiting lobby, and frees doctor chamber (`ready_for_next`).
+   - Reception queue renders `[PAUSED / RESUMABLE]` badge and dynamic purple `[RESUME IN]` dispatch button. Door override bar renders `[PAUSED]` chip and `[Resume]` button.
+   - On resume, `_loadInitialData` automatically restores typed vitals, observations, staged medications, and orders. Zero lost notes, zero chamber deadlocks.
 3. **Doctor Shift Conclusion & Emergency Chamber Release Protocol:**
    - **`[END CONSULTATION FOR TODAY]` (Doctor Chamber):** Transitions chamber to `shift_ended` and updates reception badge to `Dr. [Name] — Shift Ended`.
    - **`[RELEASE CHAMBER - FORCED]` (Reception Desk):** Receptionist enters PIN `0000` to emergency-release stuck chambers.

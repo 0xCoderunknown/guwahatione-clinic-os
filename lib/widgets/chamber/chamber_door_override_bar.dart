@@ -140,15 +140,43 @@ class ChamberDoorOverrideBar extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  appt.patientName,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        appt.patientName,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (appt.isPaused) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3E8FF),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFF9333EA)),
+                        ),
+                        child: const Text(
+                          'PAUSED',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF7E22CE),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Row(
@@ -182,15 +210,22 @@ class ChamberDoorOverrideBar extends StatelessWidget {
           const SizedBox(width: 8),
           FilledButton.icon(
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.teal.shade800,
+              backgroundColor: appt.isPaused
+                  ? Colors.purple.shade800
+                  : Colors.teal.shade800,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               visualDensity: VisualDensity.compact,
             ),
-            icon: const Icon(Icons.login_rounded, size: 14),
-            label: const Text(
-              'Admit',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            icon: Icon(
+              appt.isPaused
+                  ? Icons.play_arrow_rounded
+                  : Icons.login_rounded,
+              size: 14,
+            ),
+            label: Text(
+              appt.isPaused ? 'Resume' : 'Admit',
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
             ),
             onPressed: isBusy ? null : () => _confirmAndAdmit(context, appt),
           ),

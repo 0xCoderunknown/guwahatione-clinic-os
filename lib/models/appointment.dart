@@ -94,6 +94,7 @@ class Appointment {
   final String doctorId;
   final String doctorName;
   final DateTime? checkedInAt;
+  final bool isPaused; // Indicates an in-progress consultation was paused/saved as draft
 
   AppointmentStatus get status {
     switch (visitStatus) {
@@ -143,6 +144,7 @@ class Appointment {
     required this.doctorId,
     required this.doctorName,
     this.checkedInAt,
+    this.isPaused = false,
   }) : patientId = patientId ?? patientPhone,
        visitStatus =
            visitStatus ??
@@ -178,6 +180,7 @@ class Appointment {
     String? doctorId,
     String? doctorName,
     DateTime? checkedInAt,
+    bool? isPaused,
   }) {
     return Appointment(
       id: id ?? this.id,
@@ -199,6 +202,7 @@ class Appointment {
       doctorId: doctorId ?? this.doctorId,
       doctorName: doctorName ?? this.doctorName,
       checkedInAt: checkedInAt ?? this.checkedInAt,
+      isPaused: isPaused ?? this.isPaused,
     );
   }
 
@@ -223,6 +227,7 @@ class Appointment {
       'doctorId': doctorId,
       'doctorName': doctorName,
       if (checkedInAt != null) 'checkedInAt': Timestamp.fromDate(checkedInAt!),
+      if (isPaused) 'isPaused': true,
     };
   }
 
@@ -249,6 +254,7 @@ class Appointment {
       'doctorId': doctorId,
       'doctorName': doctorName,
       if (checkedInAt != null) 'checkedInAt': checkedInAt!.toIso8601String(),
+      if (isPaused) 'isPaused': true,
     };
   }
 
@@ -317,6 +323,7 @@ class Appointment {
 
     final phone = json['patientPhone'] as String? ?? '';
     final patientId = json['patientId'] as String? ?? phone;
+    final isPaused = json['isPaused'] as bool? ?? false;
 
     return Appointment(
       id: json['id'] as String? ?? '',
@@ -334,6 +341,7 @@ class Appointment {
       doctorId: json['doctorId'] as String? ?? '',
       doctorName: json['doctorName'] as String? ?? '',
       checkedInAt: parsedCheckedInAt,
+      isPaused: isPaused,
     );
   }
 }

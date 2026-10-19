@@ -89,6 +89,7 @@
 | `doctorId` | `String` | Yes | Assigned doctor ID. |
 | `doctorName` | `String` | Yes | Assigned doctor display name. |
 | `checkedInAt` | `Timestamp?` | No | Timestamp recorded when patient arrives at desk and checks in to lobby. |
+| `isPaused` | `bool` | No | Whether an active consultation encounter was paused (draft saved) and returned to lobby queue. Default: `false`. |
 | `notes` | `String?` | No | Operational ledger audit note (e.g. cancellation or doctor absent session close reason). |
 
 ---

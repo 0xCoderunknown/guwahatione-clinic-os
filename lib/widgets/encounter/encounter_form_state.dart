@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/engines/engines.dart';
 import '../../models/consultation.dart';
@@ -377,6 +380,196 @@ class EncounterFormState {
         isInvestigationsExpanded = true;
       }
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Draft Serialization & Local Storage (Pause & Resume Handshake)
+  // ---------------------------------------------------------------------------
+
+  static const String _draftKeyPrefix = 'draft_encounter_';
+
+  Map<String, dynamic> toDraftMap() {
+    return {
+      'systolicBp': systolicBpController.text,
+      'diastolicBp': diastolicBpController.text,
+      'pulse': pulseController.text,
+      'temp': tempController.text,
+      'weight': weightController.text,
+      'spo2': spo2Controller.text,
+      'clinicalExamination': examController.text,
+      'chiefComplaints': List<String>.from(chiefComplaints),
+      'provisionalDiagnoses': List<String>.from(provisionalDiagnoses),
+      'allergies': List<String>.from(allergies),
+      'patientGender': patientGender,
+      'patientAge': patientAge,
+      'reviewedInvestigations':
+          reviewedInvestigations.map((r) => r.toJson()).toList(),
+      'reconciliationItems':
+          reconciliationItems.map((r) => r.toJson()).toList(),
+      'newPrescriptions': newPrescriptions.map((r) => r.toJson()).toList(),
+      'orderedTests': orderedTests.map((o) => o.toJson()).toList(),
+      'adviceNotes': adviceController.text,
+      'nextFollowUpDate': nextFollowUpDate?.toIso8601String(),
+      'stagedMedicine': stagedMedicine?.toJson(),
+      'stagedUnlistedName': stagedUnlistedName,
+      'stagedComposition': stagedComposition,
+      'stagedDosage': stagedDosageController.text,
+      'stagedDuration': stagedDurationController.text,
+      'stagedInstructions': stagedInstructionsController.text,
+      'stagedFrequency': stagedFrequency,
+      'stagedTiming': stagedTiming,
+      'stagedIsChronic': stagedIsChronic,
+      'isFindingsExpanded': isFindingsExpanded,
+      'isMedicineExpanded': isMedicineExpanded,
+      'isInvestigationsExpanded': isInvestigationsExpanded,
+    };
+  }
+
+  void restoreFromDraftMap(Map<String, dynamic> map) {
+    systolicBpController.text = (map['systolicBp'] as String?) ?? '';
+    diastolicBpController.text = (map['diastolicBp'] as String?) ?? '';
+    pulseController.text = (map['pulse'] as String?) ?? '';
+    tempController.text = (map['temp'] as String?) ?? '';
+    weightController.text = (map['weight'] as String?) ?? '';
+    spo2Controller.text = (map['spo2'] as String?) ?? '';
+    examController.text = (map['clinicalExamination'] as String?) ?? '';
+
+    chiefComplaints.clear();
+    if (map['chiefComplaints'] is List) {
+      chiefComplaints.addAll(
+        (map['chiefComplaints'] as List).map((e) => e.toString()),
+      );
+    }
+
+    provisionalDiagnoses.clear();
+    if (map['provisionalDiagnoses'] is List) {
+      provisionalDiagnoses.addAll(
+        (map['provisionalDiagnoses'] as List).map((e) => e.toString()),
+      );
+    }
+
+    allergies.clear();
+    if (map['allergies'] is List) {
+      allergies.addAll((map['allergies'] as List).map((e) => e.toString()));
+    }
+
+    if (map['patientGender'] != null) {
+      patientGender = map['patientGender'] as String;
+    }
+    if (map['patientAge'] != null) {
+      patientAge = (map['patientAge'] as num).toInt();
+    }
+
+    reviewedInvestigations.clear();
+    if (map['reviewedInvestigations'] is List) {
+      for (final item in map['reviewedInvestigations']) {
+        if (item is Map<String, dynamic>) {
+          reviewedInvestigations.add(
+            DiagnosticInvestigationReview.fromJson(item),
+          );
+        }
+      }
+    }
+
+    reconciliationItems.clear();
+    if (map['reconciliationItems'] is List) {
+      for (final item in map['reconciliationItems']) {
+        if (item is Map<String, dynamic>) {
+          reconciliationItems.add(PrescriptionItem.fromJson(item));
+        }
+      }
+    }
+
+    newPrescriptions.clear();
+    if (map['newPrescriptions'] is List) {
+      for (final item in map['newPrescriptions']) {
+        if (item is Map<String, dynamic>) {
+          newPrescriptions.add(PrescriptionItem.fromJson(item));
+        }
+      }
+    }
+
+    orderedTests.clear();
+    if (map['orderedTests'] is List) {
+      for (final item in map['orderedTests']) {
+        if (item is Map<String, dynamic>) {
+          orderedTests.add(OrderedTest.fromJson(item));
+        }
+      }
+    }
+
+    adviceController.text = (map['adviceNotes'] as String?) ?? '';
+
+    if (map['nextFollowUpDate'] != null) {
+      nextFollowUpDate = DateTime.tryParse(map['nextFollowUpDate'] as String);
+    }
+
+    if (map['stagedMedicine'] is Map<String, dynamic>) {
+      stagedMedicine = Medicine.fromJson(
+        map['stagedMedicine'] as Map<String, dynamic>,
+      );
+    }
+    stagedUnlistedName = map['stagedUnlistedName'] as String?;
+    stagedComposition = map['stagedComposition'] as String?;
+    if (map['stagedDosage'] != null) {
+      stagedDosageController.text = map['stagedDosage'] as String;
+    }
+    if (map['stagedDuration'] != null) {
+      stagedDurationController.text = map['stagedDuration'] as String;
+    }
+    if (map['stagedInstructions'] != null) {
+      stagedInstructionsController.text = map['stagedInstructions'] as String;
+    }
+    if (map['stagedFrequency'] != null) {
+      stagedFrequency = map['stagedFrequency'] as String;
+    }
+    if (map['stagedTiming'] != null) {
+      stagedTiming = map['stagedTiming'] as String;
+    }
+    if (map['stagedIsChronic'] != null) {
+      stagedIsChronic = map['stagedIsChronic'] as bool;
+    }
+
+    if (map['isFindingsExpanded'] != null) {
+      isFindingsExpanded = map['isFindingsExpanded'] as bool;
+    }
+    if (map['isMedicineExpanded'] != null) {
+      isMedicineExpanded = map['isMedicineExpanded'] as bool;
+    }
+    if (map['isInvestigationsExpanded'] != null) {
+      isInvestigationsExpanded = map['isInvestigationsExpanded'] as bool;
+    }
+  }
+
+  static Future<void> saveDraft(
+    String appointmentId,
+    Map<String, dynamic> data,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('$_draftKeyPrefix$appointmentId', jsonEncode(data));
+  }
+
+  static Future<Map<String, dynamic>?> loadDraft(String appointmentId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('$_draftKeyPrefix$appointmentId');
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+    } catch (e) {
+      debugPrint('Failed to decode draft for $appointmentId: $e');
+    }
+    return null;
+  }
+
+  static Future<void> clearDraft(String appointmentId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('$_draftKeyPrefix$appointmentId');
+  }
+
+  static Future<bool> hasDraft(String appointmentId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.containsKey('$_draftKeyPrefix$appointmentId');
   }
 
   // ---------------------------------------------------------------------------

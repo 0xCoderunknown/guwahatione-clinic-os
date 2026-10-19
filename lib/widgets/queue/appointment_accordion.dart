@@ -78,6 +78,9 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
     if (widget.isInChamber) {
       cardBg = const Color(0xFFF0FDF4); // Green 50
       cardBorder = const BorderSide(color: Color(0xFF16A34A), width: 1.5);
+    } else if (widget.appointment.isPaused) {
+      cardBg = const Color(0xFFFAF5FF); // Purple 50
+      cardBorder = const BorderSide(color: Color(0xFFD8B4FE), width: 1.2);
     } else if (widget.isBypassed) {
       cardBg = const Color(0xFFFFFBEB); // Amber 50
       cardBorder = const BorderSide(color: Color(0xFFFCD34D), width: 1.2);
@@ -150,6 +153,39 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
                               color: Color(0xFF15803D),
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (widget.appointment.isPaused) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3E8FF),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0xFF9333EA)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.pause_circle_outline_rounded,
+                            size: 11,
+                            color: Color(0xFF7E22CE),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'PAUSED / RESUMABLE',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF7E22CE),
                               letterSpacing: 0.3,
                             ),
                           ),

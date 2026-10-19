@@ -59,8 +59,12 @@ class AccordionDispatchSection extends StatelessWidget {
           buttonIcon = Icons.coffee_rounded;
           onDispatch = null;
         } else if (isDoctorReady) {
-          buttonLabel = 'SEND IN TO DOCTOR';
-          buttonIcon = Icons.check_circle_outline_rounded;
+          buttonLabel = appointment.isPaused
+              ? 'RESUME CONSULTATION IN CHAMBER'
+              : 'SEND IN TO DOCTOR';
+          buttonIcon = appointment.isPaused
+              ? Icons.play_arrow_rounded
+              : Icons.check_circle_outline_rounded;
           onDispatch = () async {
             final clinic = Provider.of<ClinicProvider>(context, listen: false);
             await clinic.callTokenIntoChamber(
@@ -72,9 +76,13 @@ class AccordionDispatchSection extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Dispatched Token #${appointment.queueNumber} (${appointment.patientName}) to ${AppFormatters.doctorTitle(appointment.doctorName)}',
+                    appointment.isPaused
+                        ? 'Resumed Token #${appointment.queueNumber} (${appointment.patientName}) to ${AppFormatters.doctorTitle(appointment.doctorName)}'
+                        : 'Dispatched Token #${appointment.queueNumber} (${appointment.patientName}) to ${AppFormatters.doctorTitle(appointment.doctorName)}',
                   ),
-                  backgroundColor: const Color(0xFF15803D),
+                  backgroundColor: appointment.isPaused
+                      ? const Color(0xFF7E22CE)
+                      : const Color(0xFF15803D),
                   duration: const Duration(seconds: 3),
                 ),
               );
@@ -257,7 +265,9 @@ class AccordionDispatchSection extends StatelessWidget {
               ),
             FilledButton.icon(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF15803D),
+                backgroundColor: appointment.isPaused
+                    ? const Color(0xFF7E22CE)
+                    : const Color(0xFF15803D),
                 foregroundColor: Colors.white,
                 disabledBackgroundColor: const Color(0xFFE2E8F0),
                 disabledForegroundColor: const Color(0xFF64748B),

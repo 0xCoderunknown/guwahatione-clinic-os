@@ -694,8 +694,28 @@ class ClinicProvider with ChangeNotifier {
         date: date,
         appointment: appointment,
       );
+      await _bookingService.admitPatientToChamber(appointment.id);
     } catch (e) {
       debugPrint('Error notifying consultation started: $e');
+    }
+  }
+
+  /// Pauses an active consultation encounter, marks appointment paused in waiting lobby,
+  /// and frees doctor's chamber so the next patient can be dispatched or called.
+  Future<void> pauseConsultation({
+    required String appointmentId,
+    required String doctorId,
+    required DateTime date,
+  }) async {
+    try {
+      await _bookingService.pauseAppointment(appointmentId);
+      await _chamberService.notifyConsultationPaused(
+        doctorId: doctorId,
+        date: date,
+      );
+    } catch (e) {
+      debugPrint('Error pausing consultation: $e');
+      rethrow;
     }
   }
 

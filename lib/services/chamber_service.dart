@@ -127,6 +127,23 @@ class ChamberService {
     }, SetOptions(merge: true));
   }
 
+  /// Broadcasts consultation paused event from doctor to reception desk.
+  /// Frees active chamber so doctor can take next patient or reception can dispatch.
+  Future<void> notifyConsultationPaused({
+    required String doctorId,
+    required DateTime date,
+  }) async {
+    final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);
+    await _countersRef.doc(chamberDocId).set({
+      'doctorId': doctorId,
+      'date': FirestorePaths.dateKey(date),
+      'activeAppointmentId': null,
+      'activeQueueNumber': null,
+      'status': 'ready_for_next',
+      'pausedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   /// Broadcasts that doctor has opened/started consultation encounter with the admitted patient.
   Future<void> notifyConsultationStarted({
     required String doctorId,

@@ -213,20 +213,28 @@ class QueueChamberDispatchAction extends StatelessWidget {
         }
 
         // ONLY reached when isDoctorReady == true (Doctor clicked "READY FOR FIRST PATIENT" / "NEXT PATIENT")
+        final isPaused = appointment.isPaused;
         final btn = FilledButton.icon(
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF15803D),
+            backgroundColor: isPaused
+                ? const Color(0xFF7E22CE)
+                : const Color(0xFF15803D),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          icon: const Icon(Icons.login_rounded, size: 16),
+          icon: Icon(
+            isPaused ? Icons.play_arrow_rounded : Icons.login_rounded,
+            size: 16,
+          ),
           label: Text(
             isMobile
-                ? 'Send Token #${appointment.queueNumber} into Chamber'
-                : 'Send In',
+                ? (isPaused
+                      ? 'Resume Token #${appointment.queueNumber} into Chamber'
+                      : 'Send Token #${appointment.queueNumber} into Chamber')
+                : (isPaused ? 'Resume In' : 'Send In'),
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
           ),
           onPressed: () async {
@@ -239,9 +247,13 @@ class QueueChamberDispatchAction extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Dispatched Token #${appointment.queueNumber} (${appointment.patientName}) to ${AppFormatters.doctorTitle(appointment.doctorName)} chamber',
+                    isPaused
+                        ? 'Resumed Token #${appointment.queueNumber} (${appointment.patientName}) to ${AppFormatters.doctorTitle(appointment.doctorName)} chamber'
+                        : 'Dispatched Token #${appointment.queueNumber} (${appointment.patientName}) to ${AppFormatters.doctorTitle(appointment.doctorName)} chamber',
                   ),
-                  backgroundColor: const Color(0xFF15803D),
+                  backgroundColor: isPaused
+                      ? const Color(0xFF7E22CE)
+                      : const Color(0xFF15803D),
                   duration: const Duration(seconds: 3),
                 ),
               );

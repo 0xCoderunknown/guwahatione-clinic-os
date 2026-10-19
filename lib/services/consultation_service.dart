@@ -37,6 +37,7 @@ class ConsultationService {
       batch.update(apptDoc, {
         'status': AppointmentStatus.completed.name,
         'visitStatus': VisitStatus.completed.name,
+        'isPaused': false,
       });
     }
 

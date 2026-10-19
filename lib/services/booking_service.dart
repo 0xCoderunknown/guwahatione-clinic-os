@@ -98,13 +98,33 @@ class BookingService {
     await apptDoc.update(data);
   }
 
-  /// Updates appointment visitStatus to inConsultation when entering chamber.
+  /// Updates appointment visitStatus to inConsultation when entering chamber and resets isPaused.
   Future<void> admitPatientToChamber(String appointmentId) async {
     final apptDoc = _appointmentsRef.doc(appointmentId);
 
     await apptDoc.update({
       'visitStatus': VisitStatus.inConsultation.name,
       'status': AppointmentStatus.pending.name,
+      'isPaused': false,
+    });
+  }
+
+  /// Pauses an active consultation encounter, setting visitStatus back to waitingInLobby
+  /// and marking isPaused: true. Zero queue or document deletion.
+  Future<void> pauseAppointment(String appointmentId) async {
+    final apptDoc = _appointmentsRef.doc(appointmentId);
+    await apptDoc.update({
+      'visitStatus': VisitStatus.waitingInLobby.name,
+      'isPaused': true,
+    });
+  }
+
+  /// Resumes a paused appointment directly into active chamber.
+  Future<void> resumeAppointment(String appointmentId) async {
+    final apptDoc = _appointmentsRef.doc(appointmentId);
+    await apptDoc.update({
+      'visitStatus': VisitStatus.inConsultation.name,
+      'isPaused': false,
     });
   }
 
