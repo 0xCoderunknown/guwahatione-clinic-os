@@ -10,9 +10,17 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
-## [1.36.0 – 1.36.7] — 15-10-2026 to 19-10-2026
+## [1.36.0 – 1.36.8] — 15-10-2026 to 19-10-2026
 
-### Doctor Deactivation & Admin Passkey Gate, Walk-In Booking Modal, & Prescription Table Isolation
+### Consultation Pause & Step-Out Protocol, Local Draft Recovery, & Admin Passkey Gate
+- **Consultation Pause / Step-Out Protocol & Local Draft Recovery (v1.36.8):**
+  - **Zero Data Loss Draft Caching:** Integrated draft serialization (`toDraftMap` / `restoreFromDraftMap`) and asynchronous local caching in `SharedPreferences` (`draft_encounter_${appointmentId}`) in `EncounterFormState`. When a doctor pauses an encounter or reloads, typed vitals, examination notes, complaints, provisional diagnoses, staged medications, and orders are automatically restored.
+  - **Modal Exit & Chamber Unwind Guard:** Wrapped `ConsultationEncounterScreen` in `PopScope(canPop: false)`. Tapping Android back, browser back, or the new bottom dock **`[Pause / Step Out]`** button launches an operational modal with "Pause & Save Draft", "Keep Editing", and "Discard". Pausing broadcasts `notifyConsultationPaused`, resetting doctor chamber status to `ready_for_next` and freeing the room immediately.
+  - **Reception Queue Visibility & 1-Tap Resume:**
+    - Renders a purple `[PAUSED / RESUMABLE]` chip and card highlight in `AppointmentAccordion`.
+    - Dynamic chamber dispatch in `QueueChamberDispatchAction` and `AccordionDispatchSection` displays a high-visibility purple **`[Resume In]`** / **`[RESUME CONSULTATION IN CHAMBER]`** button when doctor is ready.
+    - Emergency door override bar in `ChamberDoorOverrideBar` displays a `[PAUSED]` chip with a `[Resume]` button.
+  - **Firestore Audit-Proof Ledger (Invariant #1):** Pausing marks `Appointment.isPaused: true` and sets `visitStatus: waitingInLobby` without deleting any appointment document or queue counter. On encounter completion and sign, `isPaused` is reset to `false` and local draft is cleared.
 - **Doctor Deactivation, Inactive Filtering & Admin Passkey Gate (v1.36.7):**
   - **Zero Deletions Guard (Invariant #1):** Replaced hard delete in `DoctorService` with non-destructive deactivation (`isActive: bool`). Inactive/retired doctors are preserved in Firestore so longitudinal consultations, patient prescription histories, and financial ledgers remain permanently intact.
   - **Reception & Dashboard Isolation:** Filtered `ClinicProvider.doctors` to return strictly active doctors (`isActive == true`). Inactive doctors are completely excluded from dashboard rosters, walk-in booking modals, live queue tabs, and chamber login dropdowns.
