@@ -28,15 +28,18 @@ static const List<String> blockedDates = [
 ];
 ```
 
-### 2. `pubspec.yaml`
+### 2. `lib/config/clinic_config.dart`
+- `ClinicFeatureFlags` — Toggle runtime clinic operational flags and experiments (`enableTokenReceiptPrint`, `hidePrescriptionComposition`, `enableGroupedCompositionCards`).
+
+### 3. `pubspec.yaml`
 - `version` — Bump when releasing a new clinic build.
 - `name` / `description` — Rebranding metadata.
 
-### 3. `lib/firebase_options.dart`
+### 4. `lib/firebase_options.dart`
 - Generated automatically by `flutterfire configure`. Re-run when switching Firebase projects.
 - **Never commit secret Firebase credentials to version control.**
 
-### 4. `assets/`
+### 5. `assets/`
 - Replace `icon.png` to update launcher / favicon icons.
 
 ---

@@ -224,12 +224,13 @@ class AppConstants {
 
 ```text
 docs/
-├── PRODUCT_VISION_AND_WORKFLOW.md           # Master clinical encounter blueprint & real-world OPD intent
 ├── PRODUCT_ROADMAP.md                       # 4-state lifecycle roadmap with anti-goals & backlog
 └── SCHEMA_AND_MODELS.md                     # Master data dictionary for Firestore collections & models
 lib/
 ├── main.dart                                # Entry point, AuthGate, theme & MultiProvider setup
 ├── firebase_options.dart                    # 🔒 Secret — not in git (see .gitignore)
+├── config/
+│   └── clinic_config.dart                   # Feature flags & runtime clinic operational configurations
 ├── core/
 │   └── engines/
 │       ├── engines.dart                     # Central barrel export for all domain engines
@@ -285,13 +286,17 @@ lib/
 │   │   ├── appointment_status_chip.dart     # Standardized appointment status chips
 │   │   ├── clinic_date_nav_bar.dart         # Standardized date navigation header
 │   │   ├── metric_kpi_card.dart             # Unified vertical & horizontal KPI metrics tile
+│   │   ├── owner_shell_app_bar.dart         # Responsive top navigation bar with live stats & sound toggle
 │   │   ├── payment_badge.dart               # Visual payment type badges
 │   │   ├── section_card.dart                # Collapsible animated section cards with badges & actions
 │   │   └── token_badge.dart                 # Uniform token sequence badges
 │   ├── patient/                             # Patient lookup & directory card components
+│   │   ├── doctor_consultation_accordion.dart # Expandable consultation history card per doctor
 │   │   └── patient_lookup_card.dart         # Master patient card with doctor consultation accordions & walk-in shortcut
 │   ├── booking/                             # Reception appointment booking dialog components
 │   │   ├── add_appointment_dialog.dart      # Rapid booking modal with patient history search
+│   │   ├── booking_date_and_mode_section.dart # Date picker and walk-in vs advance booking toggle
+│   │   ├── booking_duplicate_warning_banner.dart # Same-day duplicate booking guard banner
 │   │   ├── booking_eligibility_banner.dart  # 14-day policy warning banner & static confirmation dialog
 │   │   ├── booking_patient_fields.dart      # Phone search, patient name, age, and gender fields
 │   │   ├── booking_payment_section.dart     # Paid, Free Review, and Family courtesy payment radio section
@@ -300,7 +305,8 @@ lib/
 │   │   ├── accordion_dispatch_section.dart  # Doctor ChamberSession stream, status banners & dispatch trigger
 │   │   ├── accordion_status_actions.dart    # Mark complete, audit-proof mark absent modal & WhatsApp digital Rx
 │   │   ├── appointment_accordion.dart       # Live token card coordinator with payment chips & check-in alert
-│   │   └── completed_consultations_accordion.dart # Collapsible archive for completed patient consultations
+│   │   ├── completed_consultations_accordion.dart # Collapsible archive for completed patient consultations
+│   │   └── queue_chamber_dispatch_action.dart # Action button to dispatch patient to doctor chamber
 │   ├── chamber/                             # Doctor chamber catalog screen components
 │   │   ├── chamber_app_bar.dart             # Header with live time, sync indicator, and PIN logout
 │   │   ├── chamber_archive_banner.dart      # Read-only shift closed archive banner for historical dates
@@ -310,6 +316,7 @@ lib/
 │   │   ├── chamber_queue_header.dart        # Queue header, empty state, and sequential token list
 │   │   └── chamber_token_card.dart          # Token tile with status badge & consultation launcher
 │   ├── dashboard/                           # Command center reception dashboard components
+│   │   ├── cash_denomination_counter_section.dart # Indian currency denomination input grid
 │   │   ├── daily_cash_handover_dialog.dart  # End-of-day closing reconciliation & note denomination counter
 │   │   ├── dashboard_header_bar.dart        # Reception header bar with quick action chips & cash handover
 │   │   ├── dashboard_kpi_strip.dart         # Responsive daily KPI cards with automatic breakpoints
@@ -324,14 +331,15 @@ lib/
 │   │   ├── rx_reconciliation_section.dart   # Step 4: Coordinator for Rx reconciliation, search, and staging
 │   │   ├── vitals_and_exam_section.dart     # Step 2: Vitals entry grid, collapsible findings pills & exam notes
 │   │   └── rx/                              # Specialized prescribing sub-components
-│   │       ├── rx_template_presets_bar.dart     # 1-tap OPD clinical bundle presets chip bar (P9)
+│   │       ├── rx_template_presets_bar.dart # 1-tap OPD clinical bundle presets chip bar (P9)
 │   │       ├── staged_medicine_form.dart    # Prefilled OPD defaults, dosage chips & chronic toggle
 │   │       ├── rx_search_results_view.dart  # Chemical salt + trade brand search pills & pickers
 │   │       └── reconciliation_item_row.dart # Active regimen row with 1-tap CONTINUE/STOP actions
 │   ├── print/                               # High-contrast monochrome A4/A5 prescription print components
 │   │   ├── print_header_and_demographics.dart # Header with clinic details, patient demographics & clinical vitals snapshot
 │   │   ├── print_medications_table.dart     # Active Rx table and discontinued medications audit box
-│   │   └── print_orders_and_footer.dart     # Diagnostic orders, lifestyle advice & doctor signature
+│   │   ├── print_orders_and_footer.dart     # Diagnostic orders, lifestyle advice & doctor signature
+│   │   └── token_receipt_dialog.dart        # Thermal receipt preview dialog for counter check-in
 │   └── catalogue/                           # Master medicine catalogue management
 │       ├── add_medicine_dialog.dart         # Modal dialog to add new formulary entries
 │       ├── catalogue_header_and_stats.dart  # Formulary metrics bar (total, brands, molecules)
@@ -363,7 +371,7 @@ The repository maintains an active automated testing suite covering domain busin
 flutter test
 ```
 
-- **209 Automated Unit & Widget Tests:** Sub-10s execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, doctor-configurable free review eligibility terms (0 to 30 days), prescription reconciliation (`START`/`CONTINUE`/`STOP`), prescription template preset evaluation & duplicate suppression, in-clinic sound chime mute/unmute persistence, chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, chamber collision locks & single-occupant integrity, print schedule segregation, reception token cap threshold transitions, mobile walk-in FAB & responsive queue cards, multi-doctor patient lookup with zero-egress search, doctor sitting day validations, counter token receipt slip rendering, and atomic bulk doctor absence session closures — all with 100% pass rate.
+- **258 Automated Unit & Widget Tests:** Sub-second execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, doctor-configurable free review eligibility terms (0 to 30 days), prescription reconciliation (`START`/`CONTINUE`/`STOP`), prescription template preset evaluation & duplicate suppression, in-clinic sound chime mute/unmute persistence, chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, chamber collision locks & single-occupant integrity, print schedule segregation, reception token cap threshold transitions, mobile walk-in FAB & responsive queue cards, multi-doctor patient lookup with zero-egress search, doctor sitting day validations, counter token receipt slip rendering, and atomic bulk doctor absence session closures — all with 100% pass rate.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---
@@ -373,8 +381,7 @@ flutter test
 This project is **100% coded and maintained by AI**, directed by the human Product Manager & Tester.
 - For AI maintenance workflows, developer setup, and configuration rules, see [CONTRIBUTING.md](CONTRIBUTING.md).
 - For clinical invariants, patient privacy, and operational ethics, see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
-- For product vision and clinical workflows, see [docs/PRODUCT_VISION_AND_WORKFLOW.md](docs/PRODUCT_VISION_AND_WORKFLOW.md).
-- For active sprint priorities and backlog, see [docs/PRODUCT_ROADMAP.md](docs/PRODUCT_ROADMAP.md).
+- For active sprint priorities, clinical encounter blueprint, and backlog, see [docs/PRODUCT_ROADMAP.md](docs/PRODUCT_ROADMAP.md).
 
 ---
 

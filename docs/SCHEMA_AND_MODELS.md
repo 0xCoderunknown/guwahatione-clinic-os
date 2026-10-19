@@ -301,6 +301,8 @@
   - `requireDoctorChamberPin` (`bool`, default: `true`): Enforces 4-digit numeric PIN authentication for chamber access.
 - **🧪 Experimental Flags (Tenant Configurable):**
   - `enablePrescriptionTemplatePresets` (`bool`, default: `false`): Enables generic GP prescribing bundle chips in clinical encounter.
-  - `enableTokenReceiptPrint` (`bool`, default: `true`): Enables counter token receipt slip dialog after walk-in registration and on queue accordion cards.
+  - `enableTokenReceiptPrint` (`bool`, default: `false`): Enables counter token receipt slip dialog after walk-in registration and on queue accordion cards.
   - `enableBulkSessionClose` (`bool`, default: `true`): Enables Owner-PIN-gated bulk "Close Session (Doctor Absent)" batch action marking un-consulted tokens as absent with ₹0 collection.
+  - `enableGroupedCompositionCards` (`bool`, default: `true`): Renders grouped composition cards [COMPOSITION] with associated trade brand pills in medicine search.
+  - `hidePrescriptionComposition` (`bool`, default: `false`): When enabled, suppresses generic chemical composition and renders trade brand names exclusively on prescriptions.
 
