@@ -19,7 +19,7 @@ void main() {
 
     test('ClinicFeatureFlags includes token receipt and bulk session close toggles', () {
       const flags = ClinicFeatureFlags();
-      expect(flags.enableTokenReceiptPrint, isTrue);
+      expect(flags.enableTokenReceiptPrint, isFalse);
       expect(flags.enableBulkSessionClose, isTrue);
     });
 

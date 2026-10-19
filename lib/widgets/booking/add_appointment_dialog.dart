@@ -216,6 +216,13 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       (p) => p.doctors,
     );
 
+    if (_selectedDoctor == null && doctors.length == 1) {
+      _selectedDoctor = doctors.first;
+      if (_amountController.text.isEmpty && _selectedPayment.isPaid) {
+        _amountController.text = "${_selectedDoctor!.consultationFee}";
+      }
+    }
+
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.enter): () {
@@ -848,6 +855,15 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                 },
               ),
               duration: const Duration(seconds: 6),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Token #${newAppt.queueNumber} booked for ${newAppt.patientName}',
+              ),
+              duration: const Duration(seconds: 4),
             ),
           );
         }

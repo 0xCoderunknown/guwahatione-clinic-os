@@ -19,6 +19,8 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
   - Replaced the unlabelled exit arrow in the sidebar with an explicit, high-visibility **`LOGOUT`** button and confirmation modal.
   - Implemented a re-entrancy latch (`_isBookingModalOpen`) preventing rapid double-clicks from launching duplicate or stacked booking modals.
   - Ensured booking always launches as an overlay modal (`AddAppointmentDialog`) rather than a route replacement, preventing state loss on the active screen.
+  - **Solo Doctor Booking Auto-Select:** When only 1 doctor is registered (`doctors.length == 1`), the booking panel automatically pre-selects that doctor and renders a clean summary tile, eliminating redundant dropdown interaction.
+  - **Thermal Token Slip Printing Flag:** Disabled printed token slips by default (`enableTokenReceiptPrint: false`) as an experimental flag for manual-ticket clinics while preserving printing capabilities intact.
   - Made `DoctorRosterCard` and booking payment dropdowns responsive on compact viewports to prevent RenderFlex overflow.
 - **Prescription Table Strict 3-Column Isolation (v1.36.5):**
   - Refactored `PrintMedicationsTable` into 3 dedicated, unmixed columns:

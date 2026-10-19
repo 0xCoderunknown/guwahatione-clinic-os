@@ -72,6 +72,8 @@ class ClinicFeatureFlags {
 
   /// 🧪 EXPERIMENT FLAG: Whether counter token receipt / paid slip printing is enabled
   /// after walk-in booking and inside the reception queue accordion.
+  /// When false (default), printed token slips are disabled as manual slips are used.
+  /// When true, enables thermal token receipt and paid slip printing.
   final bool enableTokenReceiptPrint;
 
   /// 🧪 EXPERIMENT FLAG: Whether bulk "Close Session (Doctor Absent)" action is enabled
@@ -96,7 +98,7 @@ class ClinicFeatureFlags {
     this.enableWhatsAppPrescriptionShare = true,
     this.requireDoctorChamberPin = true,
     this.enablePrescriptionTemplatePresets = false,
-    this.enableTokenReceiptPrint = true,
+    this.enableTokenReceiptPrint = false,
     this.enableBulkSessionClose = true,
     this.enableGroupedCompositionCards = true,
     this.hidePrescriptionComposition = false,

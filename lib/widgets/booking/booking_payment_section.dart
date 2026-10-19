@@ -47,28 +47,72 @@ class BookingPaymentSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 1. Doctor Picker Dropdown
-        DropdownButtonFormField<Doctor>(
-          initialValue: selectedDoctor,
-          focusNode: doctorFocusNode,
-          isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'Select Doctor',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.person_add),
+        // 1. Doctor Picker: Auto-Selected Card if single doctor, Dropdown if 2+ doctors
+        if (doctors.length == 1) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFCBD5E1)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.medical_services_outlined,
+                  size: 20,
+                  color: Colors.teal.shade700,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        doctors.first.titleName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Color(0xFF0F172A),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Fee: ₹${doctors.first.consultationFee} • Regular Consultation',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          items: doctors.map((doc) {
-            return DropdownMenuItem(
-              value: doc,
-              child: Text(
-                doc.titleName,
-                overflow: TextOverflow.ellipsis,
-              ),
-            );
-          }).toList(),
-          onChanged: onDoctorChanged,
-          validator: (val) => val == null ? 'Please select a doctor' : null,
-        ),
+        ] else ...[
+          DropdownButtonFormField<Doctor>(
+            initialValue: selectedDoctor,
+            focusNode: doctorFocusNode,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              labelText: 'Select Doctor',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.person_add),
+            ),
+            items: doctors.map((doc) {
+              return DropdownMenuItem(
+                value: doc,
+                child: Text(
+                  doc.titleName,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+            onChanged: onDoctorChanged,
+            validator: (val) => val == null ? 'Please select a doctor' : null,
+          ),
+        ],
         if (selectedDoctor != null) ...[
           const SizedBox(height: 6),
           Align(
