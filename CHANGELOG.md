@@ -10,9 +10,16 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
-## [1.36.0 – 1.36.5] — 15-10-2026 to 19-10-2026
+## [1.36.0 – 1.36.6] — 15-10-2026 to 19-10-2026
 
-### Prescription Table 3-Column Isolation, Doctor Handshake Integrity & Leave Management
+### Universal Walk-In Booking Modal, Double-Modal Guard & Prescription Table Isolation
+- **Universal Walk-In Booking Modal & Explicit LOGOUT Button (v1.36.6):**
+  - Moved desktop walk-in booking trigger into the left `NavigationRail` with a prominent `Book Walk-In (F2)` button, freeing topbar desktop real estate.
+  - Made mobile `FloatingActionButton.extended` persistently accessible across all navigation tabs (Dashboard, Queue, Patients, Schedules).
+  - Replaced the unlabelled exit arrow in the sidebar with an explicit, high-visibility **`LOGOUT`** button and confirmation modal.
+  - Implemented a re-entrancy latch (`_isBookingModalOpen`) preventing rapid double-clicks from launching duplicate or stacked booking modals.
+  - Ensured booking always launches as an overlay modal (`AddAppointmentDialog`) rather than a route replacement, preventing state loss on the active screen.
+  - Made `DoctorRosterCard` and booking payment dropdowns responsive on compact viewports to prevent RenderFlex overflow.
 - **Prescription Table Strict 3-Column Isolation (v1.36.5):**
   - Refactored `PrintMedicationsTable` into 3 dedicated, unmixed columns:
     - **Column 1 (Medicine):** Brand name and uppercase bracketed composition (`Telma 40 tablet [TELMISARTAN 40MG]`, conforming to National Medical Commission standards). Removed badges like `[NEW]` and `[CONT]`.

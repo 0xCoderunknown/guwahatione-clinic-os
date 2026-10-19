@@ -12,14 +12,14 @@ import '../dashboard/daily_cash_handover_dialog.dart';
 class OwnerShellAppBar extends StatelessWidget implements PreferredSizeWidget {
   final int selectedIndex;
   final bool isOwner;
-  final VoidCallback onWalkInBooking;
+  final VoidCallback? onWalkInBooking;
   final VoidCallback onStepDown;
 
   const OwnerShellAppBar({
     super.key,
     required this.selectedIndex,
     required this.isOwner,
-    required this.onWalkInBooking,
+    this.onWalkInBooking,
     required this.onStepDown,
   });
 
@@ -69,46 +69,52 @@ class OwnerShellAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0.5,
       title: Row(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _getTitleForIndex(selectedIndex, isOwner),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  if (selectedIndex == 0) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      '•  ${AppFormatters.dateWithDay(DateTime.now())}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: Color(0xFF64748B),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _getTitleForIndex(selectedIndex, isOwner),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Color(0xFF0F172A),
+                        ),
                       ),
                     ),
+                    if (selectedIndex == 0) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '•  ${AppFormatters.dateWithDay(DateTime.now())}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-              if (selectedIndex == 0)
-                const Text(
-                  'OPD Consultation Chamber & Reception Desk',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF94A3B8),
-                    fontWeight: FontWeight.w500,
-                  ),
                 ),
-            ],
+                if (selectedIndex == 0)
+                  const Text(
+                    'OPD Consultation Chamber & Reception Desk',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF94A3B8),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
+            ),
           ),
-          const Spacer(),
+          const SizedBox(width: 12),
 
           // Step-Down Security Button for Owner
           if (isOwner) ...[
@@ -198,45 +204,46 @@ class OwnerShellAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ),
           ),
-          const SizedBox(width: 14),
-
-          // Primary Single Walk-In Patient Entry Point (Hotkey: F2)
-          Tooltip(
-            message: 'Register Walk-In Patient (Hotkey: F2)',
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.teal.shade700,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: onWalkInBooking,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Book Walk-In',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+          // Primary Walk-In Patient Entry Point (Hotkey: F2) - shown if callback provided
+          if (onWalkInBooking != null) ...[
+            const SizedBox(width: 14),
+            Tooltip(
+              message: 'Register Walk-In Patient (Hotkey: F2)',
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.teal.shade700,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
-                  SizedBox(width: 6),
-                  Text(
-                    '(F2)',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.white70,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: onWalkInBooking,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Book Walk-In',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                  ),
-                ],
+                    SizedBox(width: 6),
+                    Text(
+                      '(F2)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

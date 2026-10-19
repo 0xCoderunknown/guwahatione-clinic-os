@@ -32,12 +32,15 @@ class CashDenominationCounterSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              '💵 Physical Cash Drawer Note Counter',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+            const Expanded(
+              child: Text(
+                '💵 Physical Cash Drawer Note Counter',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
               ),
             ),
             TextButton.icon(

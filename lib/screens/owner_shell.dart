@@ -18,6 +18,7 @@ class OwnerShell extends StatefulWidget {
 class _OwnerShellState extends State<OwnerShell> {
   int _selectedIndex = 0;
   Timer? _inactivityTimer;
+  bool _isBookingModalOpen = false;
 
   @override
   void initState() {
@@ -52,11 +53,22 @@ class _OwnerShellState extends State<OwnerShell> {
   }
 
   void _openWalkInBooking(BuildContext context) {
+    if (_isBookingModalOpen) return;
+    _isBookingModalOpen = true;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const AddAppointmentDialog(),
-    );
+    ).then((_) {
+      if (mounted) {
+        setState(() {
+          _isBookingModalOpen = false;
+        });
+      } else {
+        _isBookingModalOpen = false;
+      }
+    });
   }
 
   @override
@@ -183,6 +195,7 @@ class _OwnerShellState extends State<OwnerShell> {
     List<NavigationRailDestination> destinations,
   ) {
     final isOwner = auth.isOwner;
+    final isExtended = MediaQuery.of(context).size.width >= 1100;
 
     return Scaffold(
       body: Row(
@@ -198,59 +211,104 @@ class _OwnerShellState extends State<OwnerShell> {
             },
             minWidth: 72,
             minExtendedWidth: 220,
-            extended: MediaQuery.of(context).size.width >= 1100,
+            extended: isExtended,
             backgroundColor: Colors.white,
             elevation: 1,
             leading: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20.0),
-              child: Row(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isOwner
-                          ? Colors.amber.shade50
-                          : Colors.teal.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      isOwner
-                          ? Icons.admin_panel_settings_rounded
-                          : Icons.local_hospital_rounded,
-                      color: isOwner
-                          ? Colors.amber.shade800
-                          : Colors.teal.shade700,
-                      size: 24,
-                    ),
-                  ),
-                  if (MediaQuery.of(context).size.width >= 1100) ...[
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'GuwahatiOne',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isOwner
+                              ? Colors.amber.shade50
+                              : Colors.teal.shade50,
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        Text(
-                          isOwner ? '👑 Clinic Owner' : 'Reception Desk',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: isOwner
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: isOwner
-                                ? Colors.amber.shade900
-                                : Colors.grey,
-                          ),
+                        child: Icon(
+                          isOwner
+                              ? Icons.admin_panel_settings_rounded
+                              : Icons.local_hospital_rounded,
+                          color: isOwner
+                              ? Colors.amber.shade800
+                              : Colors.teal.shade700,
+                          size: 24,
+                        ),
+                      ),
+                      if (isExtended) ...[
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'GuwahatiOne',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            Text(
+                              isOwner ? '👑 Clinic Owner' : 'Reception Desk',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: isOwner
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isOwner
+                                    ? Colors.amber.shade900
+                                    : Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Persistent 1-Tap Booking Trigger (Desktop Sidebar)
+                  if (isExtended)
+                    SizedBox(
+                      width: 190,
+                      child: FilledButton.icon(
+                        key: const Key('sidebar_book_walkin_btn'),
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: const Text(
+                          'Book Walk-In (F2)',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.teal.shade700,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () => _openWalkInBooking(context),
+                      ),
+                    )
+                  else
+                    IconButton.filled(
+                      key: const Key('sidebar_book_walkin_btn_compact'),
+                      icon: const Icon(Icons.add_rounded),
+                      tooltip: 'Book Walk-In (F2)',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.teal.shade700,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () => _openWalkInBooking(context),
                     ),
-                  ],
                 ],
               ),
             ),
@@ -259,14 +317,65 @@ class _OwnerShellState extends State<OwnerShell> {
                 alignment: Alignment.bottomCenter,
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 20.0),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.logout_rounded,
-                      color: Colors.redAccent,
-                    ),
-                    tooltip: isOwner ? 'Logout (Owner)' : 'Logout of Reception',
-                    onPressed: () => _confirmLogout(context),
-                  ),
+                  child: isExtended
+                      ? SizedBox(
+                          width: 170,
+                          child: OutlinedButton.icon(
+                            key: const Key('sidebar_logout_btn'),
+                            icon: const Icon(
+                              Icons.logout_rounded,
+                              size: 16,
+                              color: Colors.redAccent,
+                            ),
+                            label: const Text(
+                              'LOGOUT',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.8,
+                                fontSize: 12,
+                                color: Colors.redAccent,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: Colors.red.shade300,
+                                width: 1.2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                            ),
+                            onPressed: () => _confirmLogout(context),
+                          ),
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              key: const Key('sidebar_logout_btn_compact'),
+                              icon: const Icon(
+                                Icons.logout_rounded,
+                                color: Colors.redAccent,
+                                size: 20,
+                              ),
+                              tooltip: 'LOGOUT',
+                              onPressed: () => _confirmLogout(context),
+                            ),
+                            const Text(
+                              'LOGOUT',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.redAccent,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
               ),
             ),
@@ -284,7 +393,6 @@ class _OwnerShellState extends State<OwnerShell> {
               appBar: OwnerShellAppBar(
                 selectedIndex: selectedIndex,
                 isOwner: isOwner,
-                onWalkInBooking: () => _openWalkInBooking(context),
                 onStepDown: () {
                   auth.stepDownToReception();
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -311,25 +419,20 @@ class _OwnerShellState extends State<OwnerShell> {
     List<Widget> pages,
     List<NavigationDestination> destinations,
   ) {
-    // Show prominent floating booking trigger on reception operational views (Dashboard = 0, Queue = 1)
-    final showFab = selectedIndex == 0 || selectedIndex == 1;
-
     return Scaffold(
       body: pages[selectedIndex],
-      floatingActionButton: showFab
-          ? FloatingActionButton.extended(
-              key: const Key('mobile_book_walkin_fab'),
-              onPressed: () => _openWalkInBooking(context),
-              backgroundColor: Colors.teal.shade700,
-              foregroundColor: Colors.white,
-              elevation: 4,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text(
-                'Book Walk-In',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-              ),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton.extended(
+        key: const Key('mobile_book_walkin_fab'),
+        onPressed: () => _openWalkInBooking(context),
+        backgroundColor: Colors.teal.shade700,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text(
+          'Book Walk-In',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: (int index) {
@@ -349,7 +452,7 @@ class _OwnerShellState extends State<OwnerShell> {
       builder: (ctx) => AlertDialog(
         title: const Text('End reception session?'),
         content: const Text(
-          'Are you sure you want to end this counter session?',
+          'Are you sure you want to log out of this counter session?',
         ),
         actions: [
           TextButton(
@@ -362,7 +465,10 @@ class _OwnerShellState extends State<OwnerShell> {
               Navigator.pop(ctx);
               Provider.of<AuthProvider>(context, listen: false).logout();
             },
-            child: const Text('Logout'),
+            child: const Text(
+              'LOGOUT',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),

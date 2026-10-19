@@ -51,13 +51,20 @@ class BookingPaymentSection extends StatelessWidget {
         DropdownButtonFormField<Doctor>(
           initialValue: selectedDoctor,
           focusNode: doctorFocusNode,
+          isExpanded: true,
           decoration: const InputDecoration(
             labelText: 'Select Doctor',
             border: OutlineInputBorder(),
             prefixIcon: Icon(Icons.person_add),
           ),
           items: doctors.map((doc) {
-            return DropdownMenuItem(value: doc, child: Text(doc.titleName));
+            return DropdownMenuItem(
+              value: doc,
+              child: Text(
+                doc.titleName,
+                overflow: TextOverflow.ellipsis,
+              ),
+            );
           }).toList(),
           onChanged: onDoctorChanged,
           validator: (val) => val == null ? 'Please select a doctor' : null,
@@ -83,6 +90,7 @@ class BookingPaymentSection extends StatelessWidget {
           key: ValueKey(selectedPayment),
           initialValue: selectedPayment,
           focusNode: paymentFocusNode,
+          isExpanded: true,
           decoration: const InputDecoration(
             labelText: 'Payment Type',
             border: OutlineInputBorder(),
@@ -136,6 +144,7 @@ class BookingPaymentSection extends StatelessWidget {
                   enabled: enabled,
                   child: Text(
                     label,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: enabled
                           ? (type == PaymentType.postPay
