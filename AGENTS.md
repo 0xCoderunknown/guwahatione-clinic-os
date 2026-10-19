@@ -87,6 +87,10 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
       - **Column 3 (Duration / Status):** Dedicated purely to course duration or continuation/discontinuation status (`To Continue`, `X Days`, or `To STOP`).
     - **Zero Mixing:** There must be zero mixing between these 3 columns across printed prescriptions or preview tables.
 
+13. **Changelog Optimization & Minor Version Consolidation:**
+    - **Never Add Verification Gates to `CHANGELOG.md`:** Do not include repetitive "Verification Gate" sections, test passing counts, or static analysis outputs in `CHANGELOG.md`. CI/verification metrics belong strictly in git commit messages and terminal runs.
+    - **Consolidate Patch Releases by Minor Series:** When advancing minor versions (e.g. from 1.35 to 1.36, or 1.4 to 1.5), intermediate patch milestones (e.g. `1.4.1`, `1.4.2`, etc.) must be merged into a consolidated range entry (e.g. `## [1.4.0 – 1.4.5] — DD-MM-YYYY`), preventing excessive vertical bloat and keeping the changelog concise and readable.
+
 ---
 
 ## 🏗️ 2. Architectural & Technical Stack Rules
