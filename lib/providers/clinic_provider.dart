@@ -6,138 +6,25 @@ import 'package:uuid/uuid.dart';
 import '../core/engines/engines.dart';
 import '../models/models.dart';
 import '../services/services.dart';
+import 'delegates/catalogue_delegate.dart';
+import 'delegates/doctor_state_delegate.dart';
+import 'delegates/live_queue_delegate.dart';
 
+/// Central state coordinator for GuwahatiOne Clinic OS.
+/// Functions as a lightweight, backward-compatible Facade over focused domain delegates:
+/// - [DoctorStateDelegate]: Master doctor roster, schedules, and active statuses.
+/// - [LiveQueueDelegate]: Live queue stream, offline cache, midnight rollover, and desk actions.
+/// - [CatalogueDelegate]: Master medicine formulary streams, searches, and curation.
 class ClinicProvider with ChangeNotifier {
-  final BookingService _bookingService;
-  final DoctorService _doctorService;
-  final CatalogueService _catalogueService;
   final ChamberService _chamberService;
   final ConsultationService _consultationService;
   final PatientService _patientService;
-  final Uuid _uuid;
 
-  StreamSubscription? _appointmentSub;
-  StreamSubscription? _doctorSub;
-  StreamSubscription? _medicineSub;
+  late final DoctorStateDelegate _doctorDelegate;
+  late final LiveQueueDelegate _queueDelegate;
+  late final CatalogueDelegate _catalogueDelegate;
 
-  List<Doctor> _doctors = [];
-  List<Appointment> _todayAppointments = [];
-  List<Medicine> _medicines = [];
-  bool _hasLoadedDoctors = false;
   bool _isLoading = false;
-  bool _isOfflineFallback = false;
-  DateTime? _offlineCacheTimestamp;
-  DateTime? _activeListeningDate;
-  Timer? _midnightObserverTimer;
-  bool _isCustomDateSelected = false;
-
-  bool get isOfflineFallback => _isOfflineFallback;
-
-  DateTime? get offlineCacheTimestamp => _offlineCacheTimestamp;
-
-  bool get isCustomDateSelected => _isCustomDateSelected;
-
-  DateTime? get activeListeningDate => _activeListeningDate;
-
-  /// Active doctors eligible for OPD scheduling, walk-in booking, live queue, and chamber login.
-  List<Doctor> get doctors => _doctors.where((d) => d.isActive).toList();
-
-  /// Full doctor roster including active and retired/inactive physicians (for Owner settings).
-  List<Doctor> get allDoctors => _doctors;
-
-  /// Deactivated / retired doctors.
-  List<Doctor> get inactiveDoctors =>
-      _doctors.where((d) => !d.isActive).toList();
-
-  Doctor? getDoctorById(String doctorId) =>
-      _doctors.where((d) => d.id == doctorId).firstOrNull;
-
-  bool get hasLoadedDoctors => _hasLoadedDoctors;
-
-  List<Appointment> get todayAppointments => _todayAppointments;
-
-  List<Medicine> get medicines => _medicines;
-
-  bool get isLoading => _isLoading;
-
-  int get pendingCount => _todayAppointments
-      .where((a) => a.status == AppointmentStatus.pending)
-      .length;
-
-  int get waitingCount => pendingCount;
-
-  /// Count of patients physically present at the clinic desk / lobby ready for chamber.
-  int get waitingInLobbyCount => _todayAppointments
-      .where(
-        (a) =>
-            a.visitStatus == VisitStatus.waitingInLobby &&
-            a.status != AppointmentStatus.absent,
-      )
-      .length;
-
-  /// Count of phone / advance reservations expected today but not yet physically checked in.
-  int get expectedBookedCount => _todayAppointments
-      .where(
-        (a) =>
-            a.visitStatus == VisitStatus.booked &&
-            a.status != AppointmentStatus.absent,
-      )
-      .length;
-
-  /// Count of patients currently in consultation across all active doctor chambers.
-  int get inConsultationCount => _todayAppointments
-      .where(
-        (a) =>
-            a.visitStatus == VisitStatus.inConsultation &&
-            a.status != AppointmentStatus.absent,
-      )
-      .length;
-
-  int get completedCount => _todayAppointments
-      .where((a) => a.status == AppointmentStatus.completed)
-      .length;
-
-  int get absentCount => _todayAppointments
-      .where((a) => a.status == AppointmentStatus.absent)
-      .length;
-
-  String _dashboardSearchQuery = '';
-
-  String get dashboardSearchQuery => _dashboardSearchQuery;
-
-  void setDashboardSearchQuery(String query) {
-    final clean = query.trim().toLowerCase();
-    if (_dashboardSearchQuery == clean) return;
-    _dashboardSearchQuery = clean;
-    notifyListeners();
-  }
-
-  void clearDashboardSearchQuery() {
-    if (_dashboardSearchQuery.isEmpty) return;
-    _dashboardSearchQuery = '';
-    notifyListeners();
-  }
-
-  /// Filters today's live queue by optional doctor selection and active search query.
-  List<Appointment> getFilteredAppointments({String? doctorId}) {
-    return _todayAppointments.where((a) {
-      if (doctorId != null && doctorId.isNotEmpty && a.doctorId != doctorId) {
-        return false;
-      }
-      if (_dashboardSearchQuery.isNotEmpty) {
-        final matchesPhone = a.patientPhone.contains(_dashboardSearchQuery);
-        final matchesName = a.patientName.toLowerCase().contains(
-          _dashboardSearchQuery,
-        );
-        final matchesToken = a.queueNumber.toString() == _dashboardSearchQuery;
-        if (!matchesPhone && !matchesName && !matchesToken) return false;
-      }
-      return true;
-    }).toList();
-  }
-
-  int get dailyRevenue =>
-      RevenueEngine.calculateRealizedRevenue(_todayAppointments);
 
   ClinicProvider({
     BookingService? bookingService,
@@ -148,121 +35,49 @@ class ClinicProvider with ChangeNotifier {
     PatientService? patientService,
     Uuid? uuid,
     bool enableMidnightObserver = true,
-  }) : _bookingService = bookingService ?? BookingService(),
-       _doctorService = doctorService ?? DoctorService(),
-       _catalogueService = catalogueService ?? CatalogueService(),
-       _chamberService = chamberService ?? ChamberService(),
+  }) : _chamberService = chamberService ?? ChamberService(),
        _consultationService = consultationService ?? ConsultationService(),
-       _patientService = patientService ?? PatientService(),
-       _uuid = uuid ?? const Uuid() {
-    _subscribeToDoctors();
-    _subscribeToMedicines();
-    if (enableMidnightObserver) {
-      _startMidnightDateObserver();
-    }
-  }
+       _patientService = patientService ?? PatientService() {
+    final effectiveUuid = uuid ?? const Uuid();
 
-  void _startMidnightDateObserver() {
-    _midnightObserverTimer?.cancel();
-    _midnightObserverTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => checkAndHandleMidnightRollover(),
+    _doctorDelegate = DoctorStateDelegate(
+      doctorService: doctorService,
+      uuid: effectiveUuid,
+      notifyListeners: notifyListeners,
+    );
+
+    _queueDelegate = LiveQueueDelegate(
+      bookingService: bookingService,
+      uuid: effectiveUuid,
+      enableMidnightObserver: enableMidnightObserver,
+      notifyListeners: notifyListeners,
+    );
+
+    _catalogueDelegate = CatalogueDelegate(
+      catalogueService: catalogueService,
+      uuid: effectiveUuid,
+      notifyListeners: notifyListeners,
     );
   }
 
-  /// Automatically checks if the calendar day has crossed midnight on counter PCs.
-  /// Seamlessly re-subscribes live queue streams to the new calendar day.
-  /// Operates strictly when observing "today" (suppressed if user explicitly picked a past historical date).
-  void checkAndHandleMidnightRollover([DateTime? currentTime]) {
-    final now = currentTime ?? DateTime.now();
-    if (_activeListeningDate != null &&
-        !_isCustomDateSelected &&
-        !DateUtils.isSameDay(_activeListeningDate, now)) {
-      _todayAppointments = [];
-      _appointmentSub?.cancel();
-      _appointmentSub = null;
-      _activeListeningDate = null;
-      startListeningToAppointments(now);
-      _isCustomDateSelected = false;
-      notifyListeners();
-    }
+  bool get isLoading => _isLoading;
+
+  void _setLoading(bool value) {
+    if (_isLoading == value) return;
+    _isLoading = value;
+    notifyListeners();
   }
 
-  void startListeningToAppointments([DateTime? specificDate]) {
-    _isCustomDateSelected = specificDate != null &&
-        !DateUtils.isSameDay(specificDate, DateTime.now());
-    final targetDate = specificDate ?? DateTime.now();
+  // ---------------------------------------------------------------------------
+  // Doctor Master Roster & Profiles (Delegated)
+  // ---------------------------------------------------------------------------
 
-    // Idempotent: avoid re-subscribing if already streaming this exact calendar day
-    if (_appointmentSub != null &&
-        _activeListeningDate != null &&
-        DateUtils.isSameDay(_activeListeningDate, targetDate)) {
-      return;
-    }
-    _activeListeningDate = targetDate;
-    _appointmentSub?.cancel();
-
-    // Check if offline cached queue exists for instant display if currently empty
-    if (_todayAppointments.isEmpty) {
-      OfflineQueueCacheService.getCachedQueue(targetDate).then((cached) {
-        if (cached != null && cached.isNotEmpty && _todayAppointments.isEmpty) {
-          OfflineQueueCacheService.getCacheTimestamp(targetDate).then((ts) {
-            _todayAppointments = cached;
-            _isOfflineFallback = true;
-            _offlineCacheTimestamp = ts;
-            notifyListeners();
-          });
-        }
-      });
-    }
-
-    _appointmentSub = _bookingService
-        .getAppointmentsForDate(targetDate)
-        .listen(
-          (appointments) {
-            _todayAppointments = appointments;
-            _isOfflineFallback = false;
-            _offlineCacheTimestamp = null;
-            notifyListeners();
-            // Silently persist to offline local cache
-            unawaited(
-              OfflineQueueCacheService.saveQueue(targetDate, appointments),
-            );
-          },
-          onError: (err) async {
-            // Broadband dropout or Firestore error: seamlessly fallback to offline cache
-            final cached = await OfflineQueueCacheService.getCachedQueue(
-              targetDate,
-            );
-            if (cached != null && cached.isNotEmpty) {
-              final ts = await OfflineQueueCacheService.getCacheTimestamp(
-                targetDate,
-              );
-              _todayAppointments = cached;
-              _isOfflineFallback = true;
-              _offlineCacheTimestamp = ts;
-              notifyListeners();
-            }
-          },
-        );
-  }
-
-  void _subscribeToDoctors() {
-    _doctorSub?.cancel();
-    _doctorSub = _doctorService.getDoctors().listen((doctors) {
-      _doctors = doctors;
-      _hasLoadedDoctors = true;
-      notifyListeners();
-    });
-  }
-
-  void _subscribeToMedicines() {
-    _medicineSub?.cancel();
-    _medicineSub = _catalogueService.getMedicines().listen((meds) {
-      _medicines = meds;
-      notifyListeners();
-    });
-  }
+  List<Doctor> get doctors => _doctorDelegate.doctors;
+  List<Doctor> get allDoctors => _doctorDelegate.allDoctors;
+  List<Doctor> get inactiveDoctors => _doctorDelegate.inactiveDoctors;
+  bool get hasLoadedDoctors => _doctorDelegate.hasLoadedDoctors;
+  Doctor? getDoctorById(String doctorId) =>
+      _doctorDelegate.getDoctorById(doctorId);
 
   Future<void> addDoctor(
     String name,
@@ -279,19 +94,13 @@ class ClinicProvider with ChangeNotifier {
     int doctorSharePercentage = 100,
     UserRole? requestingRole,
   }) async {
-    if (requestingRole != null && !requestingRole.isOwner) {
-      throw Exception(
-        'Permission Denied: Only clinic administrators (owner) can register new doctors.',
-      );
-    }
     _setLoading(true);
     try {
-      final newDoctor = Doctor(
-        id: _uuid.v4(),
-        name: name,
-        specialty: specialty,
-        phone: phone,
-        availableDays: days,
+      await _doctorDelegate.addDoctor(
+        name,
+        specialty,
+        phone,
+        days,
         blockedDates: blockedDates,
         pin: pin,
         consultationFee: consultationFee,
@@ -300,170 +109,105 @@ class ClinicProvider with ChangeNotifier {
         shiftTiming: shiftTiming,
         dailyTokenLimit: dailyTokenLimit,
         doctorSharePercentage: doctorSharePercentage,
+        requestingRole: requestingRole,
       );
-      await _doctorService.addDoctor(newDoctor);
-    } catch (e) {
-      rethrow;
     } finally {
       _setLoading(false);
     }
   }
 
   Future<void> updateDoctor(Doctor doctor, {UserRole? requestingRole}) async {
-    if (requestingRole != null && !requestingRole.isOwner) {
-      throw Exception(
-        'Permission Denied: Only clinic administrators (owner) can modify doctor profiles.',
-      );
-    }
     _setLoading(true);
     try {
-      await _doctorService.updateDoctor(doctor);
-    } catch (e) {
-      rethrow;
+      await _doctorDelegate.updateDoctor(
+        doctor,
+        requestingRole: requestingRole,
+      );
     } finally {
       _setLoading(false);
     }
   }
 
-  /// Updates planned leave dates for a physician.
   Future<void> updateDoctorLeave(
     String doctorId,
     List<DateTime> blockedDates, {
     UserRole? requestingRole,
   }) async {
-    if (requestingRole != null && !requestingRole.isOwner) {
-      throw Exception(
-        'Permission Denied: Only clinic administrators (owner) can modify doctor leave.',
-      );
-    }
     _setLoading(true);
     try {
-      await _doctorService.updateDoctorLeave(doctorId, blockedDates);
-    } catch (e) {
-      rethrow;
+      await _doctorDelegate.updateDoctorLeave(
+        doctorId,
+        blockedDates,
+        requestingRole: requestingRole,
+      );
     } finally {
       _setLoading(false);
     }
   }
 
-  /// Sets doctor active/inactive operational status.
-  /// Strictly owner-authorized.
   Future<void> setDoctorActiveStatus(
     String doctorId,
     bool isActive, {
     UserRole? requestingRole,
   }) async {
-    if (requestingRole != null && !requestingRole.isOwner) {
-      throw Exception(
-        'Permission Denied: Only clinic administrators (owner) can change doctor active status.',
+    _setLoading(true);
+    try {
+      await _doctorDelegate.setDoctorActiveStatus(
+        doctorId,
+        isActive,
+        requestingRole: requestingRole,
       );
-    }
-    _setLoading(true);
-    try {
-      await _doctorService.setDoctorActiveStatus(doctorId, isActive);
-    } catch (e) {
-      rethrow;
     } finally {
       _setLoading(false);
     }
   }
 
-  Future<Patient?> searchPatient(String phoneNumber) async {
-    _setLoading(true);
-    try {
-      return await _patientService.getPatient(phoneNumber);
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  /// Retrieves all patients registered under the given phone number (household members).
-  Future<List<Patient>> getPatientsForPhone(String phoneNumber) async {
-    return await _patientService.getPatientsForPhone(phoneNumber);
-  }
-
-  /// Saves or updates a patient demographic profile.
-  Future<void> savePatient(Patient patient) async {
-    await _patientService.savePatient(patient);
-  }
-
-  /// Searches patients by phone number (exact or prefix) or name.
-  Future<List<Patient>> searchPatients(String query) async {
-    return await _patientService.searchPatients(query);
-  }
-
-  /// Fetches appointment history for a given patient identity or phone.
-  Future<List<Appointment>> getAppointmentsForPatient(
-    String patientId, {
-    String? phone,
-  }) async {
-    return await _bookingService.getAppointmentsForPatient(
-      patientId,
-      phone: phone,
+  Future<void> updateDoctorSearchPreference(
+    String doctorId,
+    String searchPreference,
+  ) async {
+    await _doctorDelegate.updateDoctorSearchPreference(
+      doctorId,
+      searchPreference,
     );
   }
 
-  /// Evaluates free review eligibility for a patient with a specific doctor.
-  PatientReviewEligibility checkReviewEligibility({
-    required List<Appointment> patientAppointments,
-    required String? doctorId,
-    required DateTime scheduledDate,
-    String? doctorName,
-    int freeReviewDays = 14,
-  }) {
-    return AppointmentEngine.evaluateReviewEligibility(
-      patientHistory: patientAppointments,
-      doctorId: doctorId,
-      targetDate: scheduledDate,
-      doctorName: doctorName,
-      freeReviewDays: freeReviewDays,
-    );
-  }
+  // ---------------------------------------------------------------------------
+  // Live Queue & Appointments (Delegated)
+  // ---------------------------------------------------------------------------
 
-  /// Returns [PaymentType.freeReview] if the patient visited the same doctor within review window,
-  /// otherwise [PaymentType.paid].
-  PaymentType calculatePaymentType({
-    required List<Appointment> patientAppointments,
-    required String? doctorId,
-    required DateTime scheduledDate,
-    int freeReviewDays = 14,
-  }) {
-    return AppointmentEngine.suggestPaymentType(
-      patientHistory: patientAppointments,
-      doctorId: doctorId,
-      targetDate: scheduledDate,
-      freeReviewDays: freeReviewDays,
-    );
-  }
+  List<Appointment> get todayAppointments => _queueDelegate.todayAppointments;
+  bool get isOfflineFallback => _queueDelegate.isOfflineFallback;
+  DateTime? get offlineCacheTimestamp => _queueDelegate.offlineCacheTimestamp;
+  bool get isCustomDateSelected => _queueDelegate.isCustomDateSelected;
+  DateTime? get activeListeningDate => _queueDelegate.activeListeningDate;
+  String get dashboardSearchQuery => _queueDelegate.dashboardSearchQuery;
 
-  /// Returns the provisional next token number for a doctor on a target date.
-  int getProvisionalNextToken(String doctorId, {DateTime? targetDate}) {
-    return AppointmentEngine.calculateProvisionalNextToken(
-      appointments: _todayAppointments,
-      doctorId: doctorId,
-      targetDate: targetDate ?? DateTime.now(),
-    );
-  }
+  int get pendingCount => _queueDelegate.pendingCount;
+  int get waitingCount => _queueDelegate.waitingCount;
+  int get waitingInLobbyCount => _queueDelegate.waitingInLobbyCount;
+  int get expectedBookedCount => _queueDelegate.expectedBookedCount;
+  int get inConsultationCount => _queueDelegate.inConsultationCount;
+  int get completedCount => _queueDelegate.completedCount;
+  int get absentCount => _queueDelegate.absentCount;
+  int get lobbyWaitingCount => _queueDelegate.lobbyWaitingCount;
+  int get bookedCount => _queueDelegate.bookedCount;
+  int get dailyRevenue => _queueDelegate.dailyRevenue;
 
-  /// Returns the provisional estimated consultation window for a doctor on a target date.
-  EstimatedConsultationWindow getProvisionalEstimatedWindow(
-    String doctorId, {
-    DateTime? targetDate,
-  }) {
-    return AppointmentEngine.calculateProvisionalEstimatedWindow(
-      appointments: _todayAppointments,
-      doctorId: doctorId,
-      targetDate: targetDate ?? DateTime.now(),
-    );
-  }
+  void setDashboardSearchQuery(String query) =>
+      _queueDelegate.setDashboardSearchQuery(query);
 
-  int get lobbyWaitingCount => _todayAppointments
-      .where((a) => a.visitStatus == VisitStatus.waitingInLobby)
-      .length;
+  void clearDashboardSearchQuery() =>
+      _queueDelegate.clearDashboardSearchQuery();
 
-  int get bookedCount => _todayAppointments
-      .where((a) => a.visitStatus == VisitStatus.booked)
-      .length;
+  List<Appointment> getFilteredAppointments({String? doctorId}) =>
+      _queueDelegate.getFilteredAppointments(doctorId: doctorId);
+
+  void checkAndHandleMidnightRollover([DateTime? currentTime]) =>
+      _queueDelegate.checkAndHandleMidnightRollover(currentTime);
+
+  void startListeningToAppointments([DateTime? specificDate]) =>
+      _queueDelegate.startListeningToAppointments(specificDate);
 
   Future<Appointment> bookAppointment({
     String? patientId,
@@ -484,135 +228,40 @@ class ClinicProvider with ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
-      if (AppointmentEngine.isDateBlocked(scheduledDate)) {
-        throw Exception('Selected date is a clinic holiday.');
-      }
-
-      if (AppointmentEngine.isDoctorOnLeave(
-        doctor: selectedDoctor,
-        date: scheduledDate,
-      )) {
-        final summary =
-            AppointmentEngine.formatDoctorLeaveSummary(
-              doctor: selectedDoctor,
-              date: scheduledDate,
-            ) ??
-            'Doctor is on leave';
-        throw Exception('$summary on this date.');
-      }
-
-      final hasDuplicate = await _bookingService.hasAppointmentForDate(
-        phone: phoneNumber,
-        date: scheduledDate,
-        patientName: name,
-        doctorId: selectedDoctor.id,
+      return await _queueDelegate.bookAppointment(
         patientId: patientId,
-      );
-      if (hasDuplicate) {
-        throw Exception(
-          'Patient "$name" already has an active appointment with ${selectedDoctor.titleName} on this date.',
-        );
-      }
-
-      // Enforce: Only a patient who visited earlier with the same doctor can get a free review.
-      if (paymentType == PaymentType.freeReview) {
-        final patientAppts = await _bookingService.getAppointmentsForPatient(
-          patientId ?? phoneNumber,
-          phone: phoneNumber,
-        );
-        final eligibility = AppointmentEngine.evaluateReviewEligibility(
-          patientHistory: patientAppts,
-          doctorId: selectedDoctor.id,
-          targetDate: scheduledDate,
-          doctorName: selectedDoctor.name,
-        );
-        if (!eligibility.hasVisitedDoctorEarlier) {
-          throw Exception(
-            'Free Review is only allowed for patients who previously visited ${selectedDoctor.titleName}.',
-          );
-        }
-      }
-
-      final now = DateTime.now();
-      final effectivePatientId = (patientId != null && patientId.isNotEmpty)
-          ? patientId
-          : 'pat_${now.millisecondsSinceEpoch}_${phoneNumber.length >= 4 ? phoneNumber.substring(phoneNumber.length - 4) : phoneNumber}';
-
-      final patient = Patient(
-        id: effectivePatientId,
+        phoneNumber: phoneNumber,
         name: name,
         age: age,
         ageMonths: ageMonths,
         ageDays: ageDays,
-        gender: gender,
-        phoneNumber: phoneNumber,
         guardianName: guardianName,
         guardianRelation: guardianRelation,
-      );
-      final appointmentId = _uuid.v4();
-      final queueNumber = await _bookingService.bookAppointment(
-        appointmentId: appointmentId,
-        patient: patient,
+        gender: gender,
         visitStatus: visitStatus,
         paymentType: paymentType,
         amountCollected: amountCollected,
         scheduledDate: scheduledDate,
-        doctorId: selectedDoctor.id,
-        doctorName: selectedDoctor.name,
+        selectedDoctor: selectedDoctor,
+        isNewPatient: isNewPatient,
       );
-
-      final appointment = Appointment(
-        id: appointmentId,
-        patientId: patient.id,
-        patientPhone: phoneNumber,
-        patientName: name,
-        patientAgeDisplay: patient.formattedAge,
-        guardianName: patient.guardianName,
-        guardianRelation: patient.guardianRelation,
-        visitStatus: visitStatus,
-        paymentType: paymentType,
-        amountCollected: amountCollected,
-        queueNumber: queueNumber,
-        scheduledDate: scheduledDate,
-        doctorId: selectedDoctor.id,
-        doctorName: selectedDoctor.name,
-        checkedInAt: visitStatus == VisitStatus.waitingInLobby ? now : null,
-      );
-      return appointment;
-    } catch (e) {
-      rethrow;
     } finally {
       _setLoading(false);
     }
   }
 
-  /// 1-tap reception check-in & payment reconciliation from dashboard or queue view.
   Future<void> checkInPatient({
     required String appointmentId,
     required PaymentType paymentType,
     required int amountCollected,
-  }) async {
-    try {
-      await _bookingService.checkInPatient(
-        appointmentId: appointmentId,
-        paymentType: paymentType,
-        amountCollected: amountCollected,
-      );
-    } catch (e) {
-      debugPrint('Error checking in patient: $e');
-      rethrow;
-    }
-  }
+  }) => _queueDelegate.checkInPatient(
+    appointmentId: appointmentId,
+    paymentType: paymentType,
+    amountCollected: amountCollected,
+  );
 
-  /// Direct admission of patient from lobby into chamber, updating visitStatus to inConsultation.
-  Future<void> admitPatientToChamber(String appointmentId) async {
-    try {
-      await _bookingService.admitPatientToChamber(appointmentId);
-    } catch (e) {
-      debugPrint('Error admitting patient to chamber: $e');
-      rethrow;
-    }
-  }
+  Future<void> admitPatientToChamber(String appointmentId) =>
+      _queueDelegate.admitPatientToChamber(appointmentId);
 
   Future<void> updateAppointmentStatus(
     String id,
@@ -620,49 +269,46 @@ class ClinicProvider with ChangeNotifier {
     String paymentType,
     int amount, {
     VisitStatus? visitStatus,
+  }) => _queueDelegate.updateAppointmentStatus(
+    id,
+    status,
+    paymentType,
+    amount,
+    visitStatus: visitStatus,
+  );
+
+  Future<void> markAppointmentAbsent(Appointment appointment) =>
+      _queueDelegate.markAppointmentAbsent(appointment);
+
+  Stream<List<Appointment>> streamUpcomingAppointments({int daysAhead = 7}) =>
+      _queueDelegate.streamUpcomingAppointments(daysAhead: daysAhead);
+
+  Future<List<Appointment>> getAppointmentsForPatient(
+    String patientId, {
+    String? phone,
+  }) => _queueDelegate.getAppointmentsForPatient(patientId, phone: phone);
+
+  Future<int> closeDoctorSession({
+    required String doctorId,
+    required DateTime date,
+    UserRole? requestingRole,
+    String reason = 'Doctor absent / session closed',
   }) async {
+    _setLoading(true);
     try {
-      final pType = PaymentType.values.firstWhere(
-        (e) => e.name == paymentType,
-        orElse: () => PaymentType.paidCash,
+      return await _queueDelegate.closeDoctorSession(
+        doctorId: doctorId,
+        date: date,
+        requestingRole: requestingRole,
+        reason: reason,
       );
-
-      final statusEnum = AppointmentStatus.values.firstWhere(
-        (e) => e.name == status,
-        orElse: () => AppointmentStatus.pending,
-      );
-
-      await _bookingService.updateAppointmentStatus(
-        id,
-        statusEnum,
-        visitStatus: visitStatus,
-        collectedAmount: amount,
-        paymentType: pType,
-      );
-    } catch (e) {
-      debugPrint('Error updating status: $e');
-      rethrow;
-    }
-  }
-
-  /// 1-tap reception action to mark a patient absent (no-show), setting amount to 0
-  /// and strictly preserving the audit-proof token slot per Invariant #1.
-  Future<void> markAppointmentAbsent(Appointment appointment) async {
-    try {
-      await _bookingService.updateAppointmentStatus(
-        appointment.id,
-        AppointmentStatus.absent,
-        collectedAmount: 0,
-        paymentType: appointment.paymentType,
-      );
-    } catch (e) {
-      debugPrint('Error marking appointment absent: $e');
-      rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
   // ---------------------------------------------------------------------------
-  // Chamber Zero-Touch Real-Time Session
+  // Chamber Zero-Touch Real-Time Handshake
   // ---------------------------------------------------------------------------
 
   Future<void> callTokenIntoChamber({
@@ -746,21 +392,19 @@ class ClinicProvider with ChangeNotifier {
         date: date,
         appointment: appointment,
       );
-      await _bookingService.admitPatientToChamber(appointment.id);
+      await _queueDelegate.admitPatientToChamber(appointment.id);
     } catch (e) {
       debugPrint('Error notifying consultation started: $e');
     }
   }
 
-  /// Pauses an active consultation encounter, marks appointment paused in waiting lobby,
-  /// and frees doctor's chamber so the next patient can be dispatched or called.
   Future<void> pauseConsultation({
     required String appointmentId,
     required String doctorId,
     required DateTime date,
   }) async {
     try {
-      await _bookingService.pauseAppointment(appointmentId);
+      await _queueDelegate.pauseAppointment(appointmentId);
       await _chamberService.notifyConsultationPaused(
         doctorId: doctorId,
         date: date,
@@ -783,27 +427,105 @@ class ClinicProvider with ChangeNotifier {
     return _chamberService.streamChamberSession(doctorId, date);
   }
 
-  Stream<List<Appointment>> streamUpcomingAppointments({int daysAhead = 7}) {
-    return _bookingService.getUpcomingAppointments(daysAhead: daysAhead);
-  }
+  // ---------------------------------------------------------------------------
+  // Master Medicine Catalogue (Delegated)
+  // ---------------------------------------------------------------------------
 
-  Future<void> updateDoctorSearchPreference(
-    String doctorId,
-    String searchPreference,
-  ) async {
+  List<Medicine> get medicines => _catalogueDelegate.medicines;
+
+  Future<void> addMedicine({
+    required String productName,
+    required String composition,
+    String? manufacturer,
+    String? defaultDosage,
+    String? defaultFrequency,
+    String? defaultTiming,
+    int? defaultDurationDays,
+    String? defaultDuration,
+    UserRole? requestingRole,
+  }) async {
+    _setLoading(true);
     try {
-      await _doctorService.updateDoctorSearchPreference(
-        doctorId,
-        searchPreference,
+      await _catalogueDelegate.addMedicine(
+        productName: productName,
+        composition: composition,
+        manufacturer: manufacturer,
+        defaultDosage: defaultDosage,
+        defaultFrequency: defaultFrequency,
+        defaultTiming: defaultTiming,
+        defaultDurationDays: defaultDurationDays,
+        defaultDuration: defaultDuration,
+        requestingRole: requestingRole,
       );
-    } catch (e) {
-      debugPrint('Error updating doctor search preference: $e');
-      rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
+  Future<void> deleteMedicine(
+    String medicineId, {
+    UserRole? requestingRole,
+  }) async {
+    _setLoading(true);
+    try {
+      await _catalogueDelegate.deleteMedicine(
+        medicineId,
+        requestingRole: requestingRole,
+      );
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<int> deduplicateMedicines({UserRole? requestingRole}) async {
+    _setLoading(true);
+    try {
+      return await _catalogueDelegate.deduplicateMedicines(
+        requestingRole: requestingRole,
+      );
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> ensureDefaultMedicinesExist({UserRole? requestingRole}) async {
+    _setLoading(true);
+    try {
+      await _catalogueDelegate.ensureDefaultMedicinesExist(
+        requestingRole: requestingRole,
+      );
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<List<Medicine>> searchMedicines(String query) =>
+      _catalogueDelegate.searchMedicines(query);
+
   // ---------------------------------------------------------------------------
-  // Longitudinal Consultations
+  // Patient Directory Passthrough
+  // ---------------------------------------------------------------------------
+
+  Future<Patient?> searchPatient(String phoneNumber) async {
+    _setLoading(true);
+    try {
+      return await _patientService.getPatient(phoneNumber);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<List<Patient>> getPatientsForPhone(String phoneNumber) =>
+      _patientService.getPatientsForPhone(phoneNumber);
+
+  Future<void> savePatient(Patient patient) =>
+      _patientService.savePatient(patient);
+
+  Future<List<Patient>> searchPatients(String query) =>
+      _patientService.searchPatients(query);
+
+  // ---------------------------------------------------------------------------
+  // Longitudinal Consultations Passthrough
   // ---------------------------------------------------------------------------
 
   Future<void> saveConsultation(Consultation consultation) async {
@@ -818,12 +540,7 @@ class ClinicProvider with ChangeNotifier {
   Future<List<Consultation>> getPatientConsultations(
     String patientId, {
     String? phone,
-  }) async {
-    return await _consultationService.getConsultationsForPatient(
-      patientId,
-      phone: phone,
-    );
-  }
+  }) => _consultationService.getConsultationsForPatient(patientId, phone: phone);
 
   Future<Consultation?> getConsultationForAppointment(
     String appointmentId,
@@ -837,139 +554,62 @@ class ClinicProvider with ChangeNotifier {
   Future<List<PrescriptionItem>> getActiveMedicationsForPatient(
     String patientId, {
     String? phone,
-  }) async {
-    return await _consultationService.getLatestActiveMedications(
-      patientId,
-      phone: phone,
-    );
-  }
+  }) => _consultationService.getLatestActiveMedications(
+    patientId,
+    phone: phone,
+  );
 
   // ---------------------------------------------------------------------------
-  // Master Medicine Catalogue
+  // Pure Domain Calculations (Passthrough)
   // ---------------------------------------------------------------------------
 
-  Future<void> addMedicine({
-    required String productName,
-    required String composition,
-    String? manufacturer,
-    String? defaultDosage,
-    String? defaultFrequency,
-    String? defaultTiming,
-    int? defaultDurationDays,
-    String? defaultDuration,
-    UserRole? requestingRole,
-  }) async {
-    if (requestingRole != null && !requestingRole.isOwner) {
-      throw Exception(
-        'Permission Denied: Only clinic administrators (owner) can modify the master medicine catalogue.',
-      );
-    }
-    _setLoading(true);
-    try {
-      final med = Medicine(
-        id: _uuid.v4(),
-        productName: productName,
-        composition: composition,
-        manufacturer: manufacturer,
-        defaultDosage: defaultDosage,
-        defaultFrequency: defaultFrequency,
-        defaultTiming: defaultTiming,
-        defaultDurationDays: defaultDurationDays,
-        defaultDuration: defaultDuration,
-      );
-      await _catalogueService.addMedicine(med);
-    } finally {
-      _setLoading(false);
-    }
-  }
+  PatientReviewEligibility checkReviewEligibility({
+    required List<Appointment> patientAppointments,
+    required String? doctorId,
+    required DateTime scheduledDate,
+    String? doctorName,
+    int freeReviewDays = 14,
+  }) => AppointmentEngine.evaluateReviewEligibility(
+    patientHistory: patientAppointments,
+    doctorId: doctorId,
+    targetDate: scheduledDate,
+    doctorName: doctorName,
+    freeReviewDays: freeReviewDays,
+  );
 
-  Future<void> deleteMedicine(
-    String medicineId, {
-    UserRole? requestingRole,
-  }) async {
-    if (requestingRole != null && !requestingRole.isOwner) {
-      throw Exception(
-        'Permission Denied: Only clinic administrators (owner) can modify the master medicine catalogue.',
-      );
-    }
-    _setLoading(true);
-    try {
-      await _catalogueService.deleteMedicine(medicineId);
-    } finally {
-      _setLoading(false);
-    }
-  }
+  PaymentType calculatePaymentType({
+    required List<Appointment> patientAppointments,
+    required String? doctorId,
+    required DateTime scheduledDate,
+    int freeReviewDays = 14,
+  }) => AppointmentEngine.suggestPaymentType(
+    patientHistory: patientAppointments,
+    doctorId: doctorId,
+    targetDate: scheduledDate,
+    freeReviewDays: freeReviewDays,
+  );
 
-  Future<int> deduplicateMedicines({UserRole? requestingRole}) async {
-    if (requestingRole != null && !requestingRole.isOwner) {
-      throw Exception(
-        'Permission Denied: Only clinic administrators (owner) can modify the master medicine catalogue.',
-      );
-    }
-    _setLoading(true);
-    try {
-      return await _catalogueService.deduplicateMedicines();
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<void> ensureDefaultMedicinesExist({UserRole? requestingRole}) async {
-    if (requestingRole != null && !requestingRole.isOwner) {
-      throw Exception(
-        'Permission Denied: Only clinic administrators (owner) can modify the master medicine catalogue.',
-      );
-    }
-    _setLoading(true);
-    try {
-      await _catalogueService.ensureDefaultMedicinesExist();
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<List<Medicine>> searchMedicines(String query) async {
-    return await _catalogueService.searchMedicines(query);
-  }
-
-  /// Bulk closes today's OPD session for a given doctor when absent or on emergency leave.
-  /// Strictly owner-authorized. All un-consulted tokens are atomically marked absent with ₹0 collection.
-  Future<int> closeDoctorSession({
-    required String doctorId,
-    required DateTime date,
-    UserRole? requestingRole,
-    String reason = 'Doctor absent / session closed',
-  }) async {
-    if (requestingRole != null && !requestingRole.isOwner) {
-      throw Exception(
-        'Permission Denied: Only clinic administrators (owner) can close doctor sessions in bulk.',
-      );
-    }
-    _setLoading(true);
-    try {
-      final count = await _bookingService.closeDoctorSessionForDate(
+  int getProvisionalNextToken(String doctorId, {DateTime? targetDate}) =>
+      AppointmentEngine.calculateProvisionalNextToken(
+        appointments: _queueDelegate.todayAppointments,
         doctorId: doctorId,
-        date: date,
-        reason: reason,
+        targetDate: targetDate ?? DateTime.now(),
       );
-      return count;
-    } finally {
-      _setLoading(false);
-    }
-  }
 
-  void _setLoading(bool value) {
-    if (_isLoading == value) return;
-    _isLoading = value;
-    notifyListeners();
-  }
+  EstimatedConsultationWindow getProvisionalEstimatedWindow(
+    String doctorId, {
+    DateTime? targetDate,
+  }) => AppointmentEngine.calculateProvisionalEstimatedWindow(
+    appointments: _queueDelegate.todayAppointments,
+    doctorId: doctorId,
+    targetDate: targetDate ?? DateTime.now(),
+  );
 
   @override
   void dispose() {
-    _midnightObserverTimer?.cancel();
-    _appointmentSub?.cancel();
-    _doctorSub?.cancel();
-    _medicineSub?.cancel();
+    _doctorDelegate.dispose();
+    _queueDelegate.dispose();
+    _catalogueDelegate.dispose();
     super.dispose();
   }
 }
