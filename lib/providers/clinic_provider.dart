@@ -179,8 +179,8 @@ class ClinicProvider with ChangeNotifier {
       _appointmentSub?.cancel();
       _appointmentSub = null;
       _activeListeningDate = null;
-      _isCustomDateSelected = false;
       startListeningToAppointments(now);
+      _isCustomDateSelected = false;
       notifyListeners();
     }
   }
@@ -273,6 +273,7 @@ class ClinicProvider with ChangeNotifier {
     String? medicalRegNumber,
     String shiftTiming = '6:00 PM – 8:30 PM',
     int dailyTokenLimit = 18,
+    int doctorSharePercentage = 100,
     UserRole? requestingRole,
   }) async {
     if (requestingRole != null && !requestingRole.isOwner) {
@@ -295,6 +296,7 @@ class ClinicProvider with ChangeNotifier {
         medicalRegNumber: medicalRegNumber,
         shiftTiming: shiftTiming,
         dailyTokenLimit: dailyTokenLimit,
+        doctorSharePercentage: doctorSharePercentage,
       );
       await _doctorService.addDoctor(newDoctor);
     } catch (e) {

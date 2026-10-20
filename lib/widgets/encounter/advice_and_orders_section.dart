@@ -164,6 +164,14 @@ class AdviceAndOrdersSection extends StatelessWidget {
             spacing: 8,
             runSpacing: 6,
             children: [
+              ChoiceChip(
+                label: const Text('Not Needed / SOS', style: TextStyle(fontSize: 11)),
+                selected: nextFollowUpDate == null,
+                selectedColor: Colors.teal.shade100,
+                onSelected: (val) {
+                  if (val) onFollowUpDateChanged(null);
+                },
+              ),
               _buildIntervalChip('3 Days', 3),
               _buildIntervalChip('5 Days', 5),
               _buildIntervalChip('7 Days', 7),

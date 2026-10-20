@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../config/clinic_config.dart';
 import '../../core/engines/engines.dart';
+import '../../models/consultation.dart';
 import '../../models/medicine.dart';
 import '../../models/prescription_item.dart';
 import '../common/section_card.dart';
@@ -83,6 +84,87 @@ class RxReconciliationSection extends StatelessWidget {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (form.reconciliationItems.isEmpty &&
+                    form.pastConsultations.isNotEmpty) ...[
+                  Builder(
+                    builder: (context) {
+                      Consultation? lastRx;
+                      for (final c in form.pastConsultations) {
+                        if (c.activePrescriptions.isNotEmpty) {
+                          lastRx = c;
+                          break;
+                        }
+                      }
+                      if (lastRx == null) return const SizedBox.shrink();
+
+                      final count = lastRx.activePrescriptions.length;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.teal.shade300,
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.history_edu_rounded,
+                                size: 20,
+                                color: Colors.teal.shade700,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Prior Regimen Found: $count active medication${count > 1 ? 's' : ''} from last visit',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.teal.shade900,
+                                  ),
+                                ),
+                              ),
+                              FilledButton.tonalIcon(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.teal.shade700,
+                                  foregroundColor: Colors.white,
+                                  visualDensity: VisualDensity.compact,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                ),
+                                icon: const Icon(Icons.copy_rounded, size: 14),
+                                label: Text(
+                                  'CARRY FORWARD ($count)',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  form.carryForwardFromConsultation(
+                                    consultation: lastRx!,
+                                    uuidGenerator: uuidGenerator,
+                                  );
+                                  onUpdate();
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+
                 if (form.reconciliationItems.isNotEmpty) ...[
                   ReconciliationListCard(
                     items: form.reconciliationItems,
@@ -92,6 +174,15 @@ class RxReconciliationSection extends StatelessWidget {
                           .copyWith(
                             action: MedicationAction.continueAction,
                             stopReason: null,
+                          );
+                      onUpdate();
+                    },
+                    onStop: (idx) {
+                      form.reconciliationItems[idx] = form
+                          .reconciliationItems[idx]
+                          .copyWith(
+                            action: MedicationAction.stop,
+                            stopReason: 'Discontinued by doctor',
                           );
                       onUpdate();
                     },

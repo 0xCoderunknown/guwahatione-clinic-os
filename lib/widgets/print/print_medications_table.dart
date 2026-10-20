@@ -171,7 +171,7 @@ class PrintMedicationsTable extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "${item.dosage} • ${item.frequency} • ${item.timing}",
+                            item.formattedDosageTiming,
                             style: const TextStyle(fontSize: 11),
                           ),
                           if (item.instructions != null &&

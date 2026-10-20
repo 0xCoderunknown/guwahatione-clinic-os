@@ -135,11 +135,12 @@ class StagedMedicineForm extends StatelessWidget {
     }
 
     final timingOptions = [
-      'After Food',
-      'Before Food',
-      'After Food (Morning)',
-      'At Bedtime',
+      'After Food (PC)',
+      'Before Food / Khali Pet (AC)',
+      'At Bedtime (HS)',
       'With Food',
+      'After Food (Morning)',
+      'As Needed (SOS)',
     ];
     if (!timingOptions.contains(stagedTiming)) {
       timingOptions.insert(0, stagedTiming);
@@ -209,6 +210,63 @@ class StagedMedicineForm extends StatelessWidget {
                 icon: const Icon(Icons.close, size: 18),
                 tooltip: 'Cancel',
                 onPressed: onCancelStaging,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // 1-Tap Rapid Schedule Chips (Frequency + Timing In One Touch)
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              ActionChip(
+                avatar: const Icon(Icons.wb_sunny_outlined, size: 13, color: Colors.teal),
+                label: const Text('1-0-0 Khali Pet', style: TextStyle(fontSize: 11)),
+                onPressed: () {
+                  onFrequencyChanged('1-0-0');
+                  onTimingChanged('Before Food / Khali Pet (AC)');
+                },
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.wb_sunny, size: 13, color: Colors.orange),
+                label: const Text('1-0-0 After Food', style: TextStyle(fontSize: 11)),
+                onPressed: () {
+                  onFrequencyChanged('1-0-0');
+                  onTimingChanged('After Food (PC)');
+                },
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.repeat, size: 13, color: Colors.indigo),
+                label: const Text('1-0-1 (BD) After Food', style: TextStyle(fontSize: 11)),
+                onPressed: () {
+                  onFrequencyChanged('1-0-1');
+                  onTimingChanged('After Food (PC)');
+                },
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.rotate_right, size: 13, color: Colors.blue),
+                label: const Text('1-1-1 (TDS)', style: TextStyle(fontSize: 11)),
+                onPressed: () {
+                  onFrequencyChanged('1-1-1');
+                  onTimingChanged('After Food (PC)');
+                },
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.nightlight_round, size: 13, color: Colors.deepPurple),
+                label: const Text('0-0-1 Bedtime (HS)', style: TextStyle(fontSize: 11)),
+                onPressed: () {
+                  onFrequencyChanged('0-0-1');
+                  onTimingChanged('At Bedtime (HS)');
+                },
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.flash_on, size: 13, color: Colors.amber),
+                label: const Text('SOS (When Needed)', style: TextStyle(fontSize: 11)),
+                onPressed: () {
+                  onFrequencyChanged('SOS (As Needed)');
+                  onTimingChanged('As Needed (SOS)');
+                },
               ),
             ],
           ),

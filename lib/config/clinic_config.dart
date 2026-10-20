@@ -27,6 +27,9 @@ class ClinicConfig {
   /// Grace period in days for free follow-up review consultations.
   final int freeReviewValidityDays;
 
+  /// Default top margin reserved for physical pre-printed clinic letterheads (in millimeters).
+  final double defaultLetterheadTopMarginMm;
+
   /// Client-specific feature toggles.
   final ClinicFeatureFlags features;
 
@@ -39,6 +42,7 @@ class ClinicConfig {
     this.currencySymbol = '₹',
     this.defaultConsultationFee = 500,
     this.freeReviewValidityDays = 14,
+    this.defaultLetterheadTopMarginMm = 35.0,
     this.features = const ClinicFeatureFlags(),
   });
 

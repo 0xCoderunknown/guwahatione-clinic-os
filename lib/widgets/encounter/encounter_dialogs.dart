@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/consultation.dart';
 import '../../models/diagnostic_investigation.dart';
 import '../../models/prescription_item.dart';
 import '../../providers/clinic_provider.dart';
@@ -270,11 +271,12 @@ class EncounterDialogs {
     );
   }
 
-  /// Bottom sheet showing longitudinal consultation history.
+  /// Bottom sheet showing longitudinal consultation history with 1-click carry forward capability.
   static Future<void> showLongitudinalHistory(
     BuildContext context, {
     String? patientId,
     required String patientPhone,
+    void Function(Consultation record)? onCarryForward,
   }) async {
     final clinic = Provider.of<ClinicProvider>(context, listen: false);
     final history = await clinic.getPatientConsultations(
@@ -383,12 +385,46 @@ class EncounterDialogs {
                                 ),
                               const SizedBox(height: 6),
                               Text(
-                                "Rx: ${record.activePrescriptions.map((p) => p.effectiveName).join(', ')}",
+                                "Rx: ${record.activePrescriptions.isEmpty ? 'No medications prescribed' : record.activePrescriptions.map((p) => p.effectiveName).join(', ')}",
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey.shade700,
                                 ),
                               ),
+                              if (onCarryForward != null &&
+                                  record.activePrescriptions.isNotEmpty) ...[
+                                const SizedBox(height: 10),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.teal.shade800,
+                                      side: BorderSide(
+                                        color: Colors.teal.shade400,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.copy_rounded,
+                                      size: 14,
+                                    ),
+                                    label: Text(
+                                      'CARRY FORWARD (${record.activePrescriptions.length} Meds)',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                      onCarryForward(record);
+                                    },
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         );

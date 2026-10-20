@@ -7,14 +7,16 @@ class ReconciliationItemRow extends StatelessWidget {
   final PrescriptionItem item;
   final int index;
   final ValueChanged<int> onContinue;
-  final void Function(PrescriptionItem item, int index) onPromptStop;
+  final void Function(PrescriptionItem item, int index)? onPromptStop;
+  final ValueChanged<int>? onStop;
 
   const ReconciliationItemRow({
     super.key,
     required this.item,
     required this.index,
     required this.onContinue,
-    required this.onPromptStop,
+    this.onPromptStop,
+    this.onStop,
   });
 
   @override
@@ -54,7 +56,7 @@ class ReconciliationItemRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "${item.composition} • ${item.dosage} • ${item.frequency} • ${item.timing} • ${item.effectiveDuration}",
+                  "${item.composition} • ${item.formattedDosageTiming} • ${item.effectiveDuration}",
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                 ),
                 if (isStopped &&
@@ -87,7 +89,7 @@ class ReconciliationItemRow extends StatelessWidget {
           ),
           const SizedBox(width: 6),
 
-          // 1-Tap STOP Button
+          // 1-Tap STOP Button (Instant toggle, zero intrusive reason popups)
           ChoiceChip(
             label: const Text(
               'STOP',
@@ -96,7 +98,13 @@ class ReconciliationItemRow extends StatelessWidget {
             selected: isStopped,
             selectedColor: Colors.red.shade100,
             onSelected: (val) {
-              if (val) onPromptStop(item, index);
+              if (val) {
+                if (onStop != null) {
+                  onStop!(index);
+                } else if (onPromptStop != null) {
+                  onPromptStop!(item, index);
+                }
+              }
             },
           ),
         ],
@@ -158,7 +166,7 @@ class NewPrescriptionRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "${item.composition} • ${item.dosage} • ${item.frequency} • ${item.timing} • ${item.effectiveDuration}",
+                  "${item.composition} • ${item.formattedDosageTiming} • ${item.effectiveDuration}",
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                 ),
                 if (item.instructions != null && item.instructions!.isNotEmpty)
@@ -252,13 +260,15 @@ class CollapsedMedicineSummary extends StatelessWidget {
 class ReconciliationListCard extends StatelessWidget {
   final List<PrescriptionItem> items;
   final ValueChanged<int> onContinue;
-  final void Function(PrescriptionItem item, int index) onPromptStop;
+  final void Function(PrescriptionItem item, int index)? onPromptStop;
+  final ValueChanged<int>? onStop;
 
   const ReconciliationListCard({
     super.key,
     required this.items,
     required this.onContinue,
-    required this.onPromptStop,
+    this.onPromptStop,
+    this.onStop,
   });
 
   @override
@@ -310,6 +320,7 @@ class ReconciliationListCard extends StatelessWidget {
                 index: index,
                 onContinue: onContinue,
                 onPromptStop: onPromptStop,
+                onStop: onStop,
               );
             },
           ),

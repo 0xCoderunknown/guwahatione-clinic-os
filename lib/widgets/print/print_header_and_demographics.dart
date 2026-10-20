@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../config/clinic_config.dart';
 import '../../models/appointment.dart';
 import '../../models/consultation.dart';
 import '../../utils/formatters.dart';
@@ -11,6 +12,7 @@ class PrintHeaderAndDemographics extends StatelessWidget {
   final List<String> patientAllergies;
   final String? doctorSpecialty;
   final bool usePrePrintedLetterhead;
+  final double? letterheadTopMarginMm;
 
   const PrintHeaderAndDemographics({
     super.key,
@@ -19,16 +21,22 @@ class PrintHeaderAndDemographics extends StatelessWidget {
     this.patientAllergies = const [],
     this.doctorSpecialty,
     required this.usePrePrintedLetterhead,
+    this.letterheadTopMarginMm,
   });
 
   @override
   Widget build(BuildContext context) {
+    final marginMm =
+        letterheadTopMarginMm ??
+        ClinicConfig.current.defaultLetterheadTopMarginMm;
+    final heightPx = (marginMm * (130.0 / 35.0)).roundToDouble();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (usePrePrintedLetterhead)
           Container(
-            height: 130,
+            height: heightPx,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               border: Border.all(
@@ -38,7 +46,7 @@ class PrintHeaderAndDemographics extends StatelessWidget {
               color: Colors.grey.shade50,
             ),
             child: Text(
-              '--- [ RESERVED 130PX FOR PRE-PRINTED CLINIC LETTERHEAD ] ---',
+              '--- [ RESERVED ${heightPx.toInt()}PX FOR PRE-PRINTED CLINIC LETTERHEAD ] ---',
               style: TextStyle(
                 fontSize: 11,
                 fontStyle: FontStyle.italic,

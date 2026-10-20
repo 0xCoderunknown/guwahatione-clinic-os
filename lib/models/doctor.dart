@@ -18,6 +18,7 @@ class Doctor {
   final String shiftTiming; // e.g. '6:00 PM – 8:30 PM'
   final int dailyTokenLimit; // Daily token cap (default: 18)
   final bool isActive; // Operational status (true = active, false = retired/inactive)
+  final int doctorSharePercentage; // Revenue split percentage (0 to 100, default: 100)
 
   Doctor({
     required this.id,
@@ -34,6 +35,7 @@ class Doctor {
     this.shiftTiming = '6:00 PM – 8:30 PM',
     this.dailyTokenLimit = 18,
     this.isActive = true,
+    this.doctorSharePercentage = 100,
   });
 
   /// Canonical display title with prefix (e.g. 'Dr. Bhaskar Thakuria').
@@ -67,6 +69,7 @@ class Doctor {
       'shiftTiming': shiftTiming,
       'dailyTokenLimit': dailyTokenLimit,
       'isActive': isActive,
+      'doctorSharePercentage': doctorSharePercentage,
     };
   }
 
@@ -96,6 +99,8 @@ class Doctor {
       shiftTiming: json['shiftTiming'] as String? ?? '6:00 PM – 8:30 PM',
       dailyTokenLimit: (json['dailyTokenLimit'] as num?)?.toInt() ?? 18,
       isActive: json['isActive'] as bool? ?? true,
+      doctorSharePercentage:
+          (json['doctorSharePercentage'] as num?)?.toInt() ?? 100,
     );
   }
 
@@ -114,6 +119,7 @@ class Doctor {
     String? shiftTiming,
     int? dailyTokenLimit,
     bool? isActive,
+    int? doctorSharePercentage,
   }) {
     return Doctor(
       id: id ?? this.id,
@@ -130,6 +136,8 @@ class Doctor {
       shiftTiming: shiftTiming ?? this.shiftTiming,
       dailyTokenLimit: dailyTokenLimit ?? this.dailyTokenLimit,
       isActive: isActive ?? this.isActive,
+      doctorSharePercentage:
+          doctorSharePercentage ?? this.doctorSharePercentage,
     );
   }
 }

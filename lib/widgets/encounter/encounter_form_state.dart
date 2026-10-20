@@ -86,9 +86,40 @@ class EncounterFormState {
   String patientGender = 'Unspecified';
   int patientAge = 0;
 
+  // Longitudinal History & Carried-Forward Regimens
+  List<Consultation> pastConsultations = [];
+
   // Ergonomic Accordion Toggles
   bool isFindingsExpanded = true;
   bool isMedicineExpanded = true;
+
+  /// Clones active medications from a prior [consultation] into [reconciliationItems]
+  /// as `MedicationAction.continueAction` ("To continue"), skipping duplicates.
+  int carryForwardFromConsultation({
+    required Consultation consultation,
+    required String Function() uuidGenerator,
+  }) {
+    int addedCount = 0;
+    final existingNames = reconciliationItems
+        .map((r) => r.effectiveName.trim().toLowerCase())
+        .toSet();
+
+    for (final item in consultation.activePrescriptions) {
+      final name = item.effectiveName.trim().toLowerCase();
+      if (!existingNames.contains(name)) {
+        existingNames.add(name);
+        reconciliationItems.add(
+          item.copyWith(
+            id: uuidGenerator(),
+            action: MedicationAction.continueAction,
+            stopReason: null,
+          ),
+        );
+        addedCount++;
+      }
+    }
+    return addedCount;
+  }
 
   // ---------------------------------------------------------------------------
   // Chief Complaints & Provisional Diagnoses Handlers
@@ -375,7 +406,7 @@ class EncounterFormState {
       patientAge = patient.age;
     }
 
-    final pastConsultations = await clinic.getPatientConsultations(
+    pastConsultations = await clinic.getPatientConsultations(
       effectiveId,
       phone: patientPhone,
     );

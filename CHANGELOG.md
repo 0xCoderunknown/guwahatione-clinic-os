@@ -8,6 +8,33 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.0] — 20-10-2026
+
+### Longitudinal 1-Click Carry Forward, Natural Dosage Synthesis, Doctor Revenue Split & Letterhead Margin Ergonomics
+- **Longitudinal 1-Click `[CARRY FORWARD]` & Cross-Doctor Continuity (HK-1 #1):**
+  - Added 1-click `[CARRY FORWARD]` capability in `EncounterFormState`, `RxReconciliationSection`, and `EncounterDialogs.showLongitudinalHistory`.
+  - When reviewing a patient's historical visit (including visits originally conducted by other doctors in the clinic), clinicians can instantly copy past active regimens into the active encounter as `To continue` (`MedicationAction.continueAction`) items, skipping duplicates and maintaining zero data loss.
+  - Signing today's consultation permanently binds the unified prescription to the active consulting doctor's NMC registration while preserving previous consultation records as immutable audit-proof events.
+- **Natural Dosage & Timing Synthesis (`formattedDosageTiming`) & Rapid Schedule Chips (HK-1 #2):**
+  - Implemented `PrescriptionItem.formattedDosageTiming` to intelligently synthesize Column 2 on prescription prints and on-screen cards without repetitive or awkward wording (e.g. `1 tablet daily morning before food` or `1 Tablet • 1-0-1 • After Food (PC)`).
+  - Added 1-tap rapid schedule chips to `StagedMedicineForm` (`1-0-0 Khali Pet`, `1-0-0 After Food`, `1-0-1 After Food`, `1-1-1 TDS`, `0-0-1 Bedtime`, `SOS`), allowing doctors to configure frequency and timing in a single touch.
+  - Added Indian MBBS/MD timing options: `'Before Food / Khali Pet (AC)'`, `'After Food (PC)'`, `'At Bedtime (HS)'`, `'With Food'`, and `'As Needed (SOS)'`.
+- **Frictionless 1-Tap STOP Reconciliation (Zero Popup Friction):**
+  - Removed intrusive stop-reason modal dialogs per PM directive; clicking `STOP` on any chronic medication row instantly toggles its action to `MedicationAction.stop` without disrupting doctor flow.
+- **Next Follow-up Review with 1-Tap "Not Needed / SOS":**
+  - Added a dedicated 1-tap `Not Needed / SOS` chip in `AdviceAndOrdersSection`, allowing doctors to clear scheduled follow-up dates in one tap.
+- **Doctor Revenue Share Split & Fee Payout (Item 20.2):**
+  - Added `doctorSharePercentage` (0–100%, default 100%) to `Doctor` model with clean serialization.
+  - Integrated an owner-only configuration input in `DoctorForm` (accessible exclusively with Owner PIN session).
+  - Implemented pure Dart calculation `RevenueEngine.calculateDoctorPayout({required totalDoctorFees, required doctorSharePercentage})` for automated owner-physician fee split reconciliation.
+- **Configurable Letterhead Top Margin & Print Keyboard Shortcuts (Item 24):**
+  - Added `defaultLetterheadTopMarginMm` (default: 35.0 mm) to `ClinicConfig` so pre-printed letterhead reserved space is client-customizable.
+  - Added `CallbackShortcuts` and autofocus to `PrescriptionPrintScreen` for counter efficiency: `Enter` instantly triggers printing, `Esc` dismisses the preview.
+- **External Appointment Distraction Banner Excluded (Item 18):**
+  - Permanently dropped per PM directive to guarantee distraction-free clinical focus inside the chamber during active consultations.
+
+---
+
 ## [1.39.0] — 20-10-2026
 
 ### Pure Dart PatientSearchEngine, Same-Day Lab Reviews via Reception, Upfront Cash Drawer Accounting & Midnight Date Rollover

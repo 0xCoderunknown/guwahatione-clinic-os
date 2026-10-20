@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/models.dart';
 import '../providers/clinic_provider.dart';
+import '../utils/formatters.dart';
 import '../widgets/widgets.dart';
 import 'screens.dart';
 
@@ -394,6 +395,21 @@ class _ConsultationEncounterScreenState
               context,
               patientId: widget.appointment.patientId,
               patientPhone: widget.appointment.patientPhone,
+              onCarryForward: (record) {
+                final count = form.carryForwardFromConsultation(
+                  consultation: record,
+                  uuidGenerator: _uuid.v4,
+                );
+                setState(() {});
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Carried forward $count medication${count > 1 ? 's' : ''} from visit on ${AppFormatters.date(record.createdAt)}',
+                    ),
+                    backgroundColor: Colors.teal.shade800,
+                  ),
+                );
+              },
             ),
           ),
           IconButton(

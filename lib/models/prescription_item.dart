@@ -94,6 +94,30 @@ class PrescriptionItem {
     return 'To Continue';
   }
 
+  /// Natural human-readable synthesis for Column 2 (Dosage & Timing).
+  /// Prevents clumsy duplicate text if dosage already contains instructions
+  /// (e.g. "1 tablet daily morning before food") while neatly joining distinct parts.
+  String get formattedDosageTiming {
+    final parts = <String>[];
+    final d = dosage.trim();
+    final f = frequency.trim();
+    final t = timing.trim();
+
+    if (d.isNotEmpty) {
+      parts.add(d);
+    }
+    if (f.isNotEmpty && !d.toLowerCase().contains(f.toLowerCase())) {
+      parts.add(f);
+    }
+    if (t.isNotEmpty &&
+        !d.toLowerCase().contains(t.toLowerCase()) &&
+        !f.toLowerCase().contains(t.toLowerCase())) {
+      parts.add(t);
+    }
+
+    return parts.isEmpty ? '1 Tablet • 1-0-1 • After Food' : parts.join(' • ');
+  }
+
   /// Returns true if this medication is currently active on today's prescription schedule
   bool get isActive => action != MedicationAction.stop;
 

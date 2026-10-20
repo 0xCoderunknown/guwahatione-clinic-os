@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../core/engines/engines.dart';
@@ -47,12 +48,20 @@ class _PrescriptionPrintScreenState extends State<PrescriptionPrintScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFE2E8F0),
-      appBar: AppBar(
-        title: const Text('Prescription Print Preview'),
-        elevation: 0.5,
-        backgroundColor: Colors.white,
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.enter): () => printDocument(),
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            Navigator.pop(context),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          backgroundColor: const Color(0xFFE2E8F0),
+          appBar: AppBar(
+            title: const Text('Prescription Print Preview'),
+            elevation: 0.5,
+            backgroundColor: Colors.white,
         actions: [
           FilledButton.icon(
             style: FilledButton.styleFrom(
@@ -232,8 +241,10 @@ class _PrescriptionPrintScreenState extends State<PrescriptionPrintScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   Widget _buildPrintableDocument() {
     final c = widget.consultation;

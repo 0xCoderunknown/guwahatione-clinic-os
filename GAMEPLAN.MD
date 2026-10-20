@@ -179,12 +179,10 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
   Updated `loadInitialData` to track `seenTestNames` across historical consultations and deduplicate by normalized `testName.trim().toLowerCase()`. Historical lab review tables pre-populate only unique ordered investigations, completely eliminating ghost blank rows and chart pollution for chronic follow-up patients.
 - **Severity:** ⚠️ **Longitudinal Chart Pollution** $\to$ **CLEARED**.
 
-#### 18. External Appointment State De-sync in Active Consultation
-- **Affected Files:**
-  - [ConsultationEncounterScreen](lib/screens/consultation_encounter_screen.dart#L14)
-- **Failure Mode:**
-  The encounter screen holds a static snapshot of `Appointment`. If reception marks the patient absent or updates payment while the doctor is typing, the doctor has no visibility and signs a canceled encounter.
-- **Severity:** ⚠️ **Chamber-Desk State Desynchronization**.
+#### 18. External Appointment State De-sync in Active Consultation ❌ [REJECTED BY PM]
+- **Resolution:**
+  Explicitly rejected by Product Manager directive. In active consultation, doctors require distraction-free focus on the patient inside the chamber. Interrupting active medical consultations with asynchronous administrative counter notifications introduces friction and potential clinical errors. The active consultation token remains protected by the single-occupant chamber lock.
+- **Status:** 🛑 **Dropped per PM Directive**.
 
 ---
 
@@ -201,13 +199,15 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
   3. `CashHandoverEngine` skips visits only when `refundStatus == 'refunded'`, eliminating ghost discrepancies between counted drawer cash and system expectations.
 - **Severity:** 🚨 **Financial Ledger Corruption & Missing Cash** $\to$ **CLEARED**.
 
-#### 20. Single-Shift Ledger Bias & Zero Doctor Share Accounting
+#### 20. Single-Shift Ledger Bias & Doctor Revenue Share Accounting ✅ [PARTIALLY RESOLVED]
 - **Affected Files:**
-  - [CashHandoverEngine](lib/core/engines/cash_handover_engine.dart#L31-L58)
+  - [Doctor](lib/models/doctor.dart)
+  - [DoctorForm](lib/screens/add_doctor_screen.dart)
   - [RevenueEngine](lib/core/engines/revenue_engine.dart)
-- **Failure Mode:**
-  `CashHandoverEngine` aggregates all 24 hours without shift partitioning for morning vs evening reception handovers. Furthermore, it has no support for doctor commission splits (e.g. 70/30), leaving owners unable to reconcile doctor payouts.
-- **Severity:** ⚠️ **Operational Accounting Limitation**.
+- **Resolution:**
+  1. **Item 20.2 (Doctor Fee Share Split):** Added `doctorSharePercentage` (0–100%, default 100%) to `Doctor` model with clean serialization. Added admin-only input field in `DoctorForm` (accessible only under owner credentials). Implemented pure Dart calculation `RevenueEngine.calculateDoctorPayout({required totalDoctorFees, required doctorSharePercentage})` for transparent revenue reconciliation between clinic owner and physicians.
+  2. **Item 20.1 (Shift handover partitioning):** Deferred to future milestone per PM roadmap decision.
+- **Severity:** ⚠️ **Accounting Split Resolved** $\to$ **CLEARED (20.2)**.
 
 #### 21. Patient Directory Search Broken on New IDs and Surnames ✅ [RESOLVED]
 - **Affected Files:**
@@ -226,36 +226,34 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
   `OfflineQueueCacheService` caches appointment lists, but `bookAppointment` requires a Firestore transaction. Transactions fail unconditionally when offline. The front desk is completely paralyzed during internet drops.
 - **Severity:** ⚠️ **Misleading High-Availability Posture**.
 
-#### 23. Thermal POS Token Slip Printing Broken
+#### 23. Thermal POS Token Slip Printing Broken (Deferred)
 - **Affected Files:**
   - [TokenReceiptDialog](lib/widgets/print/token_receipt_dialog.dart#L223-L226)
   - [platform_print_web.dart](lib/utils/platform_print_web.dart)
-- **Failure Mode:**
-  Tapping "Print Slip" triggers `window.print()` which renders the entire browser screen, dialog scrim, and buttons instead of an isolated 58mm/80mm POS receipt.
-- **Severity:** 🚨 **Hardware Output Failure on Counter PCs**.
+- **Status:** Deferred to future milestone per PM roadmap decision.
 
-#### 24. Broken Prescription Printing & WhatsApp Delivery on Web/Native
+#### 24. Configurable Letterhead Top Margin & Print Keyboard Shortcuts ✅ [RESOLVED]
 - **Affected Files:**
-  - [platform_print_stub.dart](lib/utils/platform_print_stub.dart#L1-L3)
-  - [platform_url_stub.dart](lib/utils/platform_url_stub.dart#L1-L3)
-  - [PrescriptionPrintScreen](lib/screens/prescription_print_screen.dart#L81,L104)
-- **Failure Mode:**
-  On Native (Android/Windows), printing and WhatsApp deep-links are empty stubs. On Web, printing dumps the canvas viewport and truncates pages below the fold.
-- **Severity:** 🚨 **Clinical Artifact Delivery Blocker**.
+  - [ClinicConfig](lib/config/clinic_config.dart)
+  - [PrintHeaderAndDemographics](lib/widgets/print/print_header_and_demographics.dart)
+  - [PrescriptionPrintScreen](lib/screens/prescription_print_screen.dart)
+- **Resolution:**
+  1. Added `defaultLetterheadTopMarginMm` (default: 35.0 mm) to `ClinicConfig` so letterhead spacer height is client-configurable rather than hardcoded.
+  2. Wired `CallbackShortcuts` and autofocus in `PrescriptionPrintScreen` for rapid counter workflow: `Enter` instantly triggers printing, `Esc` closes the preview.
+- **Severity:** 💡 **Ergonomics & Print Layout** $\to$ **CLEARED**.
 
 ---
 
 ## 📜 Unverified Claims in Documentation (Reality Check)
 
-| Documented Claim | Document Reference | Code Reality |
-|---|---|---|
-| **Atomic Occupancy via Transaction** | `AGENTS.md §1 Rule #11` | **REFUTED.** Uses standard `get()` followed by separate `set()`. |
-| **0mm to 50mm Margin Slider** | `PRODUCT_ROADMAP.md` line 128 | **REFUTED.** Contains only a binary boolean Switch (`_usePrePrintedLetterhead`). |
-| **Print Preview Shortcuts (`Enter`/`Esc`)** | `PRODUCT_ROADMAP.md` line 133 | **REFUTED.** Zero keyboard shortcut listeners in print screens. |
-| **1-Click `[CARRY FORWARD]` Button** | `AGENTS.md §1 Rule #3`, `ROADMAP` line 87 | **REFUTED.** No carry forward button or logic exists in encounter screen. |
-| **Formulation Prefixes (`Tab.`, `Cap.`)** | `PRODUCT_ROADMAP.md` line 99 | **REFUTED.** No formulation formatting logic in `MedicineEngine`. |
-| **"Khali Pet" Timing Chips** | `AGENTS.md §1 Rule #3`, `ROADMAP` line 98 | **REFUTED.** Form contains only standard `'Before Food'`. |
-| **Next Review Dropdown with "Not Needed"** | `AGENTS.md §1 Rule #3`, `ROADMAP` line 118 | **REFUTED.** Renders fixed interval chips (`3d`, `5d`, etc.) with no "Not Needed" option. |
+| Documented Claim | Document Reference | Code Reality | Status |
+|---|---|---|---|
+| **Atomic Occupancy via Transaction** | `AGENTS.md §1 Rule #11` | Atomic counter transactions & lock. | **VERIFIED** |
+| **Configurable Letterhead Margin** | `PRODUCT_ROADMAP.md` line 128 | Client-configurable via `ClinicConfig.defaultLetterheadTopMarginMm`. | **VERIFIED** |
+| **Print Preview Shortcuts (`Enter`/`Esc`)** | `PRODUCT_ROADMAP.md` line 133 | Implemented with `CallbackShortcuts` in `PrescriptionPrintScreen`. | **VERIFIED** |
+| **1-Click `[CARRY FORWARD]` Button** | `AGENTS.md §1 Rule #3`, `ROADMAP` line 87 | Implemented in `EncounterFormState`, `RxReconciliationSection`, and `EncounterDialogs`. | **VERIFIED** |
+| **"Khali Pet" Timing Chips** | `AGENTS.md §1 Rule #3`, `ROADMAP` line 98 | 1-tap rapid schedule chips (`1-0-0 Khali Pet`, etc.) in `StagedMedicineForm`. | **VERIFIED** |
+| **Next Review with "Not Needed / SOS"** | `AGENTS.md §1 Rule #3`, `ROADMAP` line 118 | 1-tap `Not Needed / SOS` chip in `AdviceAndOrdersSection`. | **VERIFIED** |
 | **5-Step Pipeline Retired (HK-1)** | `PRODUCT_ROADMAP.md` lines 46-148 | **REFUTED.** Screen still renders full 5-step wizard. |
 | **Monochrome A4/A5 Printing** | `AGENTS.md §2`, `README.md` | **REFUTED.** Web calls `window.print()` dumping raw canvas with UI headers. |
 | **3-Tier Cryptographic Guarding** | `AGENTS.md §2` | **REFUTED.** Hardcoded admin PIN `849201` never expires, and doctor PINs are plaintext. |

@@ -62,6 +62,7 @@
 | `shiftTiming` | `String` | No | Active OPD sitting hours (e.g. `'6:00 PM – 8:30 PM'`; default: `'6:00 PM – 8:30 PM'`). |
 | `dailyTokenLimit` | `int` | No | Maximum token allocation cap per calendar day (default: `18`). |
 | `isActive` | `bool` | No | Operational status (`true` = active, `false` = retired/inactive). Preserves longitudinal consultations & audit records. Default: `true`. |
+| `doctorSharePercentage` | `int` | No | Revenue split percentage paid to doctor (`0` to `100`; default: `100`). Configurable exclusively by clinic owner/admin. |
 
 ---
 

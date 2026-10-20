@@ -101,6 +101,16 @@ abstract class RevenueEngine {
         .fold(0, (sum, a) => sum + a.amountCollected);
   }
 
+  /// Calculates doctor payout share based on agreed split percentage (0 to 100%).
+  static int calculateDoctorPayout({
+    required int totalDoctorFees,
+    required int doctorSharePercentage,
+  }) {
+    if (doctorSharePercentage <= 0) return 0;
+    if (doctorSharePercentage >= 100) return totalDoctorFees;
+    return ((totalDoctorFees * doctorSharePercentage) / 100).round();
+  }
+
   /// Computes reception-level daily metrics in a single pass.
   static DailyRevenueMetrics calculateDailyMetrics(
     List<Appointment> appointments,

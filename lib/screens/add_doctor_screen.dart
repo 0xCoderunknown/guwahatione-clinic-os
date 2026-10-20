@@ -51,6 +51,7 @@ class _DoctorFormState extends State<DoctorForm> {
   late final TextEditingController _pinController;
   late final TextEditingController _regNumberController;
   late final TextEditingController _tokenLimitController;
+  late final TextEditingController _sharePercentageController;
 
   late String _selectedSpecialty;
   late String _selectedStartTime;
@@ -200,6 +201,9 @@ class _DoctorFormState extends State<DoctorForm> {
     _tokenLimitController = TextEditingController(
       text: (d?.dailyTokenLimit ?? 18).toString(),
     );
+    _sharePercentageController = TextEditingController(
+      text: (d?.doctorSharePercentage ?? 100).toString(),
+    );
 
     // 1. Specialty Resolution
     final docSpecialty = d?.specialty.trim() ?? '';
@@ -262,6 +266,7 @@ class _DoctorFormState extends State<DoctorForm> {
     _pinController.dispose();
     _regNumberController.dispose();
     _tokenLimitController.dispose();
+    _sharePercentageController.dispose();
     super.dispose();
   }
 
@@ -373,6 +378,29 @@ class _DoctorFormState extends State<DoctorForm> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+
+          // 4b. Doctor Revenue Share Split (Admin Only)
+          TextFormField(
+            controller: _sharePercentageController,
+            decoration: const InputDecoration(
+              labelText: 'Doctor Revenue Share Split (%)',
+              hintText: '100',
+              prefixIcon: Icon(Icons.pie_chart_outline),
+              suffixText: '%',
+              helperText:
+                  'Percentage of consultation fee paid to doctor (0 to 100%; admin-only)',
+            ),
+            keyboardType: TextInputType.number,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Required';
+              final val = int.tryParse(v.trim());
+              if (val == null || val < 0 || val > 100) {
+                return 'Enter a percentage between 0 and 100';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 12),
 
@@ -802,6 +830,8 @@ class _DoctorFormState extends State<DoctorForm> {
       final regNumber = _regNumberController.text.trim();
       final shiftTiming = '$_selectedStartTime – $_selectedEndTime';
       final tokenLimit = int.tryParse(_tokenLimitController.text.trim()) ?? 18;
+      final doctorShare =
+          int.tryParse(_sharePercentageController.text.trim()) ?? 100;
 
       final specialtyRaw = _selectedSpecialty == 'Other (Custom)...'
           ? _customSpecialtyController.text.trim()
@@ -827,6 +857,7 @@ class _DoctorFormState extends State<DoctorForm> {
           medicalRegNumber: regNumber.isNotEmpty ? regNumber : null,
           shiftTiming: shiftTiming,
           dailyTokenLimit: tokenLimit,
+          doctorSharePercentage: doctorShare,
         );
         await clinicProvider.updateDoctor(
           updatedDoctor,
@@ -845,6 +876,7 @@ class _DoctorFormState extends State<DoctorForm> {
           medicalRegNumber: regNumber.isNotEmpty ? regNumber : null,
           shiftTiming: shiftTiming,
           dailyTokenLimit: tokenLimit,
+          doctorSharePercentage: doctorShare,
           requestingRole: authProvider.currentRole,
         );
       }
