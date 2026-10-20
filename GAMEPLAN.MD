@@ -218,13 +218,17 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
   2. Fixed `PatientService.searchPatients` to query the `phoneNumber` field instead of `FieldPath.documentId` (which failed on `pat_*` IDs), added dedicated `pat_*` lookup, and integrated recent patient pool token matching so searching by surname (e.g. "Devi", "Baruah", "Sharma") or canonical ID immediately returns ranked matches.
 - **Severity:** ⚠️ **Duplicate Patient Profile Creation** $\to$ **CLEARED**.
 
-#### 22. The "Offline Queue Cache" Fallback Myth
+#### 22. The "Offline Queue Cache" Fallback Myth ✅ [RESOLVED]
 - **Affected Files:**
-  - [ClinicProvider.bookAppointment](lib/providers/clinic_provider.dart#L186-L200)
-  - [BookingService.bookAppointment](lib/services/booking_service.dart#L47-L75)
-- **Failure Mode:**
-  `OfflineQueueCacheService` caches appointment lists, but `bookAppointment` requires a Firestore transaction. Transactions fail unconditionally when offline. The front desk is completely paralyzed during internet drops.
-- **Severity:** ⚠️ **Misleading High-Availability Posture**.
+  - [AddAppointmentDialog](lib/widgets/booking/add_appointment_dialog.dart)
+  - [OwnerShell](lib/screens/owner_shell.dart)
+  - [OfflineQueueCacheService](lib/services/offline_queue_cache_service.dart)
+- **Resolution:**
+  Replaced misleading offline booking expectations with clear, graceful degradation:
+  1. In `OwnerShell` (desktop & mobile), persistent amber notification strips alert front-desk staff when running on local cached queue data during broadband outages.
+  2. In `AddAppointmentDialog`, an offline warning banner informs staff that token allocation requires active cloud synchronization to guarantee consecutive token counter integrity (Invariant #1), preventing silent submission failures.
+  3. Booking errors during network dropouts display human-friendly connectivity guidance instead of cryptic database exception traces.
+- **Severity:** ⚠️ **Operational Clarity & Graceful Degradation** $\to$ **CLEARED**.
 
 #### 23. Thermal POS Token Slip Printing Broken (Deferred)
 - **Affected Files:**

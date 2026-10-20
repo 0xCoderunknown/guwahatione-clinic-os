@@ -30,6 +30,10 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 - **Configurable Letterhead Top Margin & Print Keyboard Shortcuts (Item 24):**
   - Added `defaultLetterheadTopMarginMm` (default: 35.0 mm) to `ClinicConfig` so pre-printed letterhead reserved space is client-customizable.
   - Added `CallbackShortcuts` and autofocus to `PrescriptionPrintScreen` for counter efficiency: `Enter` instantly triggers printing, `Esc` dismisses the preview.
+- **Broadband Outage Offline Fallback & Network Error Handling (Item 22):**
+  - Integrated persistent amber offline indicators in `OwnerShell` (desktop header and mobile top strip) alerting front-desk staff whenever the system falls back to `OfflineQueueCacheService` local cache.
+  - Added an offline warning banner to `AddAppointmentDialog` clarifying that walk-in token allocation requires active cloud synchronization to maintain consecutive atomic counter integrity (Invariant #1).
+  - Enhanced booking exception handling with human-friendly guidance when broadband is interrupted rather than cryptic database error traces.
 - **External Appointment Distraction Banner Excluded (Item 18):**
   - Permanently dropped per PM directive to guarantee distraction-free clinical focus inside the chamber during active consultations.
 

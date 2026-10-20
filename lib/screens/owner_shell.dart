@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/clinic_provider.dart';
 import '../widgets/widgets.dart';
 import 'screens.dart';
 
@@ -405,7 +406,40 @@ class _OwnerShellState extends State<OwnerShell> {
                   );
                 },
               ),
-              body: pages[selectedIndex],
+              body: Column(
+                children: [
+                  if (context.watch<ClinicProvider>().isOfflineFallback)
+                    Container(
+                      width: double.infinity,
+                      color: const Color(0xFFFEF3C7),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(
+                            Icons.cloud_off_rounded,
+                            size: 16,
+                            color: Color(0xFFB45309),
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '⚠️ Broadband connection lost. Viewing cached queue. Real-time updates paused; check internet to book tokens.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFB45309),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Expanded(child: pages[selectedIndex]),
+                ],
+              ),
             ),
           ),
         ],
@@ -420,7 +454,42 @@ class _OwnerShellState extends State<OwnerShell> {
     List<NavigationDestination> destinations,
   ) {
     return Scaffold(
-      body: pages[selectedIndex],
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (context.watch<ClinicProvider>().isOfflineFallback)
+              Container(
+                width: double.infinity,
+                color: const Color(0xFFFEF3C7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.cloud_off_rounded,
+                      size: 14,
+                      color: Color(0xFFB45309),
+                    ),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '⚠️ Offline. Viewing cached queue.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFB45309),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(child: pages[selectedIndex]),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('mobile_book_walkin_fab'),
         onPressed: () => _openWalkInBooking(context),

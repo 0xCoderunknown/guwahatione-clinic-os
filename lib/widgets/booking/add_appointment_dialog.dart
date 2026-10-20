@@ -246,6 +246,41 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (context.watch<ClinicProvider>().isOfflineFallback) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFF59E0B)),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(
+                            Icons.cloud_off_rounded,
+                            color: Color(0xFFB45309),
+                            size: 18,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Broadband Offline (Viewing Local Cache). Booking tokens requires active cloud connection.',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFB45309),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   // 1. Date Selector & Booking Mode
                   BookingDateAndModeSection(
                     selectedDate: _selectedDate,
@@ -871,8 +906,20 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isBooking = false);
+      final errorStr = e.toString().toLowerCase();
+      final isOffline = errorStr.contains('offline') ||
+          errorStr.contains('unavailable') ||
+          errorStr.contains('network') ||
+          errorStr.contains('connection');
+      final message = isOffline
+          ? '⚠️ Cannot allocate token offline: Cloud connection lost. Please verify clinic broadband and retry.'
+          : 'Error booking appointment: $e';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red.shade800,
+          duration: const Duration(seconds: 5),
+        ),
       );
     }
   }
