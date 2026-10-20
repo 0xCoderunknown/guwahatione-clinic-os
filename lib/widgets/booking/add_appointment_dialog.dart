@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../config/clinic_config.dart';
 import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
 import '../../models/doctor.dart';
@@ -10,12 +9,14 @@ import '../../models/patient.dart';
 import '../../models/patient_review_eligibility.dart';
 import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
-import '../print/token_receipt_dialog.dart';
 import 'booking_date_and_mode_section.dart';
+import 'booking_dialog_actions.dart';
 import 'booking_duplicate_warning_banner.dart';
 import 'booking_eligibility_banner.dart';
+import 'booking_offline_banner.dart';
 import 'booking_patient_fields.dart';
 import 'booking_payment_section.dart';
+import 'booking_success_snackbar.dart';
 
 /// Modal dialog for receptionist to register patient walk-ins and book appointments.
 /// Features 100% keyboard-first navigation, provisional token preview, and same-day duplicate booking prevention.
@@ -246,40 +247,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (context.watch<ClinicProvider>().isOfflineFallback) ...[
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 14),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF3C7),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFF59E0B)),
-                      ),
-                      child: Row(
-                        children: const [
-                          Icon(
-                            Icons.cloud_off_rounded,
-                            color: Color(0xFFB45309),
-                            size: 18,
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Broadband Offline (Viewing Local Cache). Booking tokens requires active cloud connection.',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFB45309),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  const BookingOfflineBanner(),
 
                   // 1. Date Selector & Booking Mode
                   BookingDateAndModeSection(
@@ -424,61 +392,17 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: _isBooking ? null : () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            focusNode: _submitFocusNode,
-            onPressed:
-                (_isLoading ||
-                    _isBooking ||
-                    _duplicateAppointment != null ||
-                    AppointmentEngine.isDoctorOnLeave(
-                      doctor: _selectedDoctor,
-                      date: _selectedDate,
-                    ))
-                ? null
-                : _saveAppointment,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.teal,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.grey.shade300,
-              disabledForegroundColor: Colors.grey.shade600,
-            ),
-            child: _isBooking
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Booking Token...'),
-                    ],
-                  )
-                : _isLoading
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.teal.shade700,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text('Searching Patient...'),
-                    ],
-                  )
-                : const Text('Book Appointment'),
+          BookingDialogActions(
+            isBooking: _isBooking,
+            isLoading: _isLoading,
+            isDisabled: _duplicateAppointment != null ||
+                AppointmentEngine.isDoctorOnLeave(
+                  doctor: _selectedDoctor,
+                  date: _selectedDate,
+                ),
+            submitFocusNode: _submitFocusNode,
+            onCancel: () => Navigator.pop(context),
+            onSubmit: _saveAppointment,
           ),
         ],
       ),
@@ -876,32 +800,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
           );
       if (mounted) {
         Navigator.pop(context, newAppt);
-        if (ClinicConfig.current.features.enableTokenReceiptPrint) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Token #${newAppt.queueNumber} booked for ${newAppt.patientName}',
-              ),
-              action: SnackBarAction(
-                label: 'PRINT SLIP',
-                textColor: const Color(0xFF5EEAD4),
-                onPressed: () {
-                  TokenReceiptDialog.show(context, newAppt);
-                },
-              ),
-              duration: const Duration(seconds: 6),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Token #${newAppt.queueNumber} booked for ${newAppt.patientName}',
-              ),
-              duration: const Duration(seconds: 4),
-            ),
-          );
-        }
+        BookingSuccessSnackbar.show(context, newAppt);
       }
     } catch (e) {
       if (!mounted) return;
