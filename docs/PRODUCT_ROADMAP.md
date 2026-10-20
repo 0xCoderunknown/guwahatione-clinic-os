@@ -1,7 +1,8 @@
-# 🗺️ GuwahatiOne Clinic OS — Master Product Roadmap & Lifecycle Matrix
+# 🗺️ GuwahatiOne Clinic OS — Master Product Roadmap: The March Towards 2.0
 
-> **Maintained by:** Senior Clinical Systems Architect & Product Manager  
-> **Audience:** All AI Agents, Coding Assistants, and Engineering Staff  
+> **Maintained by:** Product Manager & Clinical Systems Architect  
+> **Status:** **Active Hardening Runway (~1 Month to 2.0 Release Gate)**  
+> **Target:** Production deployment, physical counter validation, bug triage, and 2.0 release certification.  
 > **Companion Standards:** [`AGENTS.md`](../AGENTS.md) | [`docs/SCHEMA_AND_MODELS.md`](SCHEMA_AND_MODELS.md)
 
 ---
@@ -18,32 +19,53 @@ Any code, dependency, or feature proposal that introduces these is **instantly r
 
 ---
 
-## 🟢 2. Active Domain Capability Matrix
+## 🟢 2. Active Domain Capability Matrix (Current Pre-2.0 Build)
 
-The following capabilities are fully implemented, verified, and operational in production:
+The following capabilities are fully implemented, verified, and operational across **306 passing automated tests**:
 
 | Domain Module | Core Capabilities | Operational & Invariant Guarantee |
 |---|---|---|
+| **Architectural Core & State Delegation** | • Decomposed `ClinicProvider` facade orchestrating dedicated delegates: `DoctorStateDelegate`, `LiveQueueDelegate`, and `CatalogueDelegate`.<br>• Fine-grained `context.select` subscriptions preventing cascading re-renders across `OwnerShell`, `AuthGate`, and chamber screens. | **Sub-Second Performance:** Clean separation of concerns with zero UI bloat and zero breaking changes for existing screens. |
 | **Paediatric & Household Multi-Patient Identity** | • Decoupled canonical patient identity (`patientId`) from contact phone number; phone serves as non-unique household index.<br>• Reception family member picker chips (`[👤 Sunita]`, `[👶 Aarav]`, `[➕ Add Member]`) auto-populating contact numbers without demographic collision.<br>• Structured paediatric demographics (`ageMonths`, `ageDays`, `formattedAge`) eliminating misleading `"0 Years"` records.<br>• Guardian & caregiver attribution (`guardianName`, `guardianRelation`, e.g. `"c/o Sunita Sharma (Mother)"`) across appointments, letterheads, and WhatsApp summaries.<br>• Household-aware duplicate booking guard permitting multiple family members to see the same doctor on the same day.<br>• Isolated longitudinal clinical charts keyed strictly to `patientId`, preventing maternal/paediatric chart cross-contamination. | **Household Data Integrity:** Master directory merge never erases family dependents. Medical history across encounters is strictly partitioned per individual human patient. |
 | **Audit-Proof Queue & Registration Desk** | • Atomic consecutive daily tokens ($1 \dots N$ via `counters/queue_{doctorId}_{date}`).<br>• Keyboard-first walk-in booking (`F2` shortcut, Tab-order chaining, dedicated `M`/`F`/`O` sex toggles).<br>• Same-day duplicate booking guard `(Date + DoctorId + Name + Phone)` with family exception.<br>• 2-stage asynchronous OPD flow (`booked` $\to$ `QuickCheckInDialog` desk check-in $\to$ `waitingInLobby`).<br>• Offline queue fallback cache (`SharedPreferences`) during broadband hiccups. | **Zero Deletions Invariant:** Canceled or no-show tokens are permanently preserved as `AppointmentStatus.absent` with `₹0`. Zero token pre-emption or silent sequence deletion. |
 | **Doctor Chamber & Queue Handshake** | • 5-state synchronized handshake (`idle` $\to$ `ready_for_next` $\to$ `calling` $\to$ `in_consultation` $\to$ `consultation_ended`).<br>• Atomic single-occupancy chamber lock preventing concurrent admissions or token pre-emption.<br>• **Consultation Pause & Step-Out Protocol:** Safely pause in-progress visits (`isPaused: true`), freeing the room (`ready_for_next`) so doctor/reception can consult other patients while a patient steps out for lab tests or reports.<br>• **Reception Resume In Action:** High-visibility purple `[PAUSED / RESUMABLE]` chip, dynamic `[Resume In]` dispatch button, and door override resume chip for paused returning patients.<br>• Discretionary reception dispatch with late/bypassed tagging (`[BYPASSED / LATE]`) and completed visits accordion.<br>• Restricted emergency door override strictly limited to top 1–2 physically present, paid lobby patients.<br>• Historical date read-only archive mode (`ChamberArchiveBanner`) with consolidated no-show state. | **Doctor-Paced Pacing:** Reception cannot force patient admission during consultations or doctor breathers without explicit `ready_for_next` signal. Historical dates are immutable. |
-| **Clinical Encounter & Prescribing** | • Append-only consultations collection preserving medical-legal longitudinal integrity.<br>• **Local Draft Persistence & Auto-Recovery:** Encounter form state cached locally in `SharedPreferences` (`draft_encounter_${appointmentId}`), auto-restoring all typed vitals, notes, and staged prescriptions on pause or page reload with zero data loss.<br>• **Modal Exit Guard:** Wrapped encounter in `PopScope(canPop: false)` with `[Pause / Step Out]` dock action, preventing accidental data loss on browser/system back.<br>• 3-state medication reconciliation (`START`, `CONTINUE`, `STOP` with stop reason).<br>• **Prescription Snapshot & Catalogue Immunity:** Immutable snapshot (`name`, `composition`, `strength`, `form`, `manufacturer`) on `PrescriptionItem`, shielding past consultations and reprints from formulary edits or purges.<br>• **Unified 2-Column Search & Regimen Defaults:** Simultaneous Brand (`productName`) and Chemical (`composition`/`strength`) search in `MedicineEngine.searchAndGroup`, 3-char trigger with 2-char pharmacology allowance (`D3`, `O2`), pre-populated dosage/frequency/timing, and standardized duration dropdown.<br>• Master medicine catalogue with grouped composition cards and brand pills (🧪 Experiment).<br>• Prescription template presets with salt and brand deduplication (🧪 Experiment). | **Longitudinal Integrity:** Previous visits are never modified. Follow-ups record explicit reconciliation states. Historical prescriptions are immune to catalogue mutations. |
+| **Clinical Encounter & Prescribing** | • Append-only consultations collection preserving medical-legal longitudinal integrity.<br>• **Free-Form Modular Encounter (HK-1 Shipped):** Independent, collapsible clinical sections (`Clinical Observations`, `Past History`, `Rx Prescribing`, `Diagnostic Orders`) with 1-click `[CARRY FORWARD]`.<br>• **Local Draft Persistence & Auto-Recovery:** Encounter form state cached locally in `SharedPreferences` (`draft_encounter_${appointmentId}`), auto-restoring all typed vitals, notes, and staged prescriptions on pause or page reload with zero data loss.<br>• **Modal Exit Guard:** Wrapped encounter in `PopScope(canPop: false)` with `[Pause / Step Out]` dock action, preventing accidental data loss on browser/system back.<br>• 3-state medication reconciliation (`START`, `CONTINUE`, `STOP` with stop reason).<br>• **Prescription Snapshot & Catalogue Immunity:** Immutable snapshot (`name`, `composition`, `strength`, `form`, `manufacturer`) on `PrescriptionItem`, shielding past consultations and reprints from formulary edits or purges.<br>• **Unified 2-Column Search & Regimen Defaults:** Simultaneous Brand (`productName`) and Chemical (`composition`/`strength`) search in `MedicineEngine.searchAndGroup`, 3-char trigger with 2-char pharmacology allowance (`D3`, `O2`), pre-populated dosage/frequency/timing, and standardized duration dropdown.<br>• Master medicine catalogue with grouped composition cards and brand pills (🧪 Experiment).<br>• Prescription template presets with salt and brand deduplication (🧪 Experiment). | **Longitudinal Integrity:** Previous visits are never modified. Follow-ups record explicit reconciliation states. Historical prescriptions are immune to catalogue mutations. |
 | **3-Tier Security & Financial Ledger** | • Role-guarded access: Owner (6-digit Master PIN), Doctor (4-digit PIN), Receptionist (`0000`).<br>• Owner-exclusive settings: Doctor CRUD, fee scheduling, free review window configuration, and ledger audits.<br>• Doctor-configurable free review window (0–30 days) with strict 1:1 paid-to-review cycle enforcement.<br>• Daily cash handover reconciliation modal with Indian note denomination counter. | **Role Isolation:** Reception and chamber sessions cannot modify fee schedules or doctor profiles. Zero unearned review chaining. |
 | **Communications, Print & Sound** | • High-contrast monochrome A4 & A5 prescription printing with adjustable letterhead margins and medical registration number footer.<br>• Formatted WhatsApp clinical summary deep-links (`wa.me`) with Indian date standard (`DD-MM-YYYY`).<br>• Web Audio API dual-tone chime and SpeechSynthesis multi-chamber token announcer with AppBar mute toggle (🧪 Experiment). | **Monochrome & Privacy:** Zero ink/paper waste on pre-printed stationery. No patient data logged to public endpoints. |
-| **Pure Domain Engines & Test Suite** | • Pure Dart domain engines decoupled from UI ([RevenueEngine](../lib/core/engines/revenue_engine.dart), [AppointmentEngine](../lib/core/engines/appointment_engine.dart), [MedicineEngine](../lib/core/engines/medicine_engine.dart), [WhatsAppEngine](../lib/core/engines/whatsapp_engine.dart), [CashHandoverEngine](../lib/core/engines/cash_handover_engine.dart)).<br>• Comprehensive automated unit and widget test suite (258 passing tests). | **Zero Business Logic in UI:** Financial math, review eligibility, and pharmacological rules reside strictly in pure engines. |
+| **Pure Domain Engines & Test Suite** | • Pure Dart domain engines decoupled from UI ([RevenueEngine](../lib/core/engines/revenue_engine.dart), [AppointmentEngine](../lib/core/engines/appointment_engine.dart), [MedicineEngine](../lib/core/engines/medicine_engine.dart), [WhatsAppEngine](../lib/core/engines/whatsapp_engine.dart), [CashHandoverEngine](../lib/core/engines/cash_handover_engine.dart)).<br>• Comprehensive automated unit and widget test suite (**306 passing tests**). | **Zero Business Logic in UI:** Financial math, review eligibility, and pharmacological rules reside strictly in pure engines. |
 
-> 💡 *For granular version-by-version release history, PR commits, and detailed operational impact notes, see [CHANGELOG.md](../CHANGELOG.md) and [CHANGELOG_ARCHIVE.md](archive/CHANGELOG_ARCHIVE.md).*
-
-
----
-
-## 🔧 3. Active Housekeeping Goals (Near-Term, Non-Negotiable)
-
-These are **active goals**, not future backlog. They correct design decisions that were AI-proposed and shipped but proved to add friction in real-world clinical use. They are not optional enhancements — they represent what the product *should have been*.
+> 💡 *For granular version-by-version release history, PR commits, and detailed operational impact notes, see [CHANGELOG.md](../CHANGELOG.md).*
 
 ---
 
-### 🏥 HK-1: Encounter Screen Redesign — Replace the 5-Step Pipeline
+## 🧭 3. The 1-Month Hardening Runway Towards 2.0
+
+We are actively marching towards the official **2.0** milestone. Over the next month, the engineering focus is strictly on **real-world hardening, physical testing, and edge-case elimination**:
+
+```
+                       [ 1-MONTH MARCH TOWARDS 2.0 ]
+                                     │
+      ┌──────────────────────────────┼──────────────────────────────┐
+      ▼                              ▼                              ▼
+[ Stage 1: Physical Testing ]  [ Stage 2: Hardware Print ]    [ Stage 3: Stability & Beta ]
+• FHD 1920×1080 Counter PC     • Pre-printed letterhead       • Real clinic OPD beta runs
+• 1366×768 Laptop Vertical       margins (0–50mm)             • Receptionist feedback
+• Edge-to-edge Mobile          • Monochrome laser contrast    • Broadband drop simulations
+                               • Thermal receipt slips        • 306+ green test gate
+```
+
+### Active Focus Areas:
+1. **Physical Counter Form-Factor Verification:**
+   - Real-world validation on 21.5"-24" FHD monitors (ensuring side-by-side queue and roster fill up to 1800px without dead margins).
+   - Validation on 14"/15.6" laptops (1366×768 / 1536×864) verifying the live queue is visible above the fold without forced scrolling.
+2. **Hardware Printing Calibration:**
+   - Physical print test runs on pre-printed doctor letterhead stationery pads.
+   - Fine-tuning top margin presets (`ClinicConfig.defaultLetterheadTopMarginMm`) and thermal receipt roll alignment.
+3. **Operational Edge-Case Hardening:**
+   - Stress testing multi-doctor chamber dispatch and step-out pause workflows during peak OPD hours.
+   - Polishing end-of-day cash handover reconciliation for multi-doctor clinics with high cash/UPI transaction volume.
+4. **Final 2.0 Certification Gate:**
+   - Zero open blocker bugs, zero test regressions, and full operational validation by the Product Manager.
 
 > **Status:** Approved for implementation. Supersedes `AGENTS.md §1 Rule #3`.
 

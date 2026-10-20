@@ -1,6 +1,6 @@
 # 🏥 GuwahatiOne Clinic OS
 
-> **Open-source, web-first clinic & chamber management platform featuring an append-only longitudinal prescription architecture, audit-proof token ledgers, and real-time doctor chamber catalog boards.**
+> **Open-source, web-first clinic & chamber management platform featuring an append-only longitudinal prescription architecture, audit-proof token ledgers, and real-time doctor chamber synchronization. Marching towards 2.0 with active production hardening.**
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-blue?logo=flutter)](https://flutter.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -371,7 +371,7 @@ The repository maintains an active automated testing suite covering domain busin
 flutter test
 ```
 
-- **258 Automated Unit & Widget Tests:** Sub-second execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, doctor-configurable free review eligibility terms (0 to 30 days), prescription reconciliation (`START`/`CONTINUE`/`STOP`), prescription template preset evaluation & duplicate suppression, in-clinic sound chime mute/unmute persistence, chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, chamber collision locks & single-occupant integrity, print schedule segregation, reception token cap threshold transitions, mobile walk-in FAB & responsive queue cards, multi-doctor patient lookup with zero-egress search, doctor sitting day validations, counter token receipt slip rendering, and atomic bulk doctor absence session closures — all with 100% pass rate.
+- **306 Automated Unit & Widget Tests:** Sub-second execution covering realized revenue math, cash drawer handover & note denomination calculations, offline queue caching, WhatsApp clinical formatting & deep linking, doctor-configurable free review eligibility terms (0 to 30 days), prescription reconciliation (`START`/`CONTINUE`/`STOP`), prescription template preset evaluation & duplicate suppression, in-clinic sound chime mute/unmute persistence, chemical search scoring, asynchronous booking/check-in, emergency door runways, historical shift archiving, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, chamber collision locks & single-occupant integrity, print schedule segregation, reception token cap threshold transitions, mobile walk-in FAB & responsive queue cards, multi-doctor patient lookup with zero-egress search, doctor sitting day validations, counter token receipt slip rendering, and atomic bulk doctor absence session closures — all with 100% pass rate.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---
