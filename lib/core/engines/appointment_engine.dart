@@ -92,7 +92,8 @@ abstract class AppointmentEngine {
       targetDate.day,
     );
 
-    // Filter appointments for THIS doctor scheduled strictly before targetDay,
+    // Filter appointments for THIS doctor scheduled before targetDay,
+    // or completed on the exact same date (same-day return / lab review),
     // excluding absent/unattended records.
     final pastVisitsWithDoctor = patientHistory.where((a) {
       if (a.doctorId != doctorId) return false;
@@ -102,7 +103,12 @@ abstract class AppointmentEngine {
         a.scheduledDate.month,
         a.scheduledDate.day,
       );
-      return aDay.isBefore(targetDay);
+      if (aDay.isBefore(targetDay)) return true;
+      if (aDay.isAtSameMomentAs(targetDay) &&
+          a.status == AppointmentStatus.completed) {
+        return true;
+      }
+      return false;
     }).toList();
 
     final docLabel = doctorName != null
@@ -195,6 +201,10 @@ abstract class AppointmentEngine {
 
     final withinWindow = daysSincePaid <= freeReviewDays;
 
+    final String timeAgoLabel = daysSincePaid == 0
+        ? 'Same-day return / lab review'
+        : '$daysSincePaid day${daysSincePaid == 1 ? '' : 's'} ago';
+
     return PatientReviewEligibility(
       hasVisitedDoctorEarlier: true,
       lastVisitDate: latestPaidVisit.scheduledDate,
@@ -203,8 +213,8 @@ abstract class AppointmentEngine {
       isWithinReviewPeriod: withinWindow,
       isReviewAlreadyConsumed: false,
       message: withinWindow
-          ? 'Eligible for $freeReviewDays-day Free Review ($daysSincePaid day${daysSincePaid == 1 ? '' : 's'} ago)'
-          : '$freeReviewDays days have passed since paid visit ($daysSincePaid day${daysSincePaid == 1 ? '' : 's'} ago)',
+          ? 'Eligible for $freeReviewDays-day Free Review ($timeAgoLabel)'
+          : '$freeReviewDays days have passed since paid visit ($timeAgoLabel)',
     );
   }
 

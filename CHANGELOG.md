@@ -8,6 +8,29 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.39.0] — 20-10-2026
+
+### Pure Dart PatientSearchEngine, Same-Day Lab Reviews via Reception, Upfront Cash Drawer Accounting & Midnight Date Rollover
+- **Pure Dart `PatientSearchEngine` & Multi-Attribute Lookup (Finding #21):**
+  - Built pure Dart `PatientSearchEngine` with robust phone normalization (strips +91, 0, whitespace, formatting), multi-word name tokenization, and multi-tier relevance ranking (exact phone > exact name > surname prefix > partial matches).
+  - Fixed `PatientService.searchPatients` to query the `phoneNumber` field instead of `FieldPath.documentId` (which failed on canonical `pat_*` IDs).
+  - Added dedicated `pat_*` canonical ID lookup and integrated recent patient pool token matching so searching by surname (e.g. "Devi", "Baruah", "Sharma") or canonical ID immediately returns ranked matches.
+- **Same-Day Return Visits & Lab Review Tokens via Reception (Finding #11):**
+  - Updated `BookingService.hasAppointmentForDate` duplicate check to permit same-day re-booking when a prior appointment on the date has reached `AppointmentStatus.completed`. A patient consulted in the morning returning in the afternoon with lab results is routed via reception desk, receiving a valid queue token so doctors have complete operational clarity without unannounced chamber barging.
+  - Enhanced `AppointmentEngine.evaluateReviewEligibility` to recognize same-day return visits (`daysSincePaid == 0`) with descriptive status `'Same-day return / lab review'`, correctly unlocking doctor-configured free review waivers (`PaymentType.freeReview`).
+- **Upfront Desk Cash Drawer Accounting & Session Close Preservation (Finding #19):**
+  - Updated `CashHandoverEngine` to count physical cash collected upfront at the reception counter (`PaymentType.paidCash` with `amountCollected > 0`) regardless of whether the patient is in lobby, in consultation, or completed, perfectly mirroring real physical cash in drawer.
+  - Fixed `BookingService.closeDoctorSessionForDate` to NEVER destructively zero out `amountCollected` on doctor absence. Retains collected cash amounts in the audit trail and tags `refundStatus: 'pending_refund'`.
+  - Added `refundStatus` (`'none'`, `'pending_refund'`, `'refunded'`) on `Appointment` model and serialized to Firestore and offline cache.
+  - `CashHandoverEngine` skips visits only when `refundStatus == 'refunded'`, eliminating ghost discrepancies between counted drawer cash and system expectations.
+- **Automatic Midnight Date Rollover Observer (Finding #10):**
+  - Implemented periodic 30-second midnight rollover observer (`checkAndHandleMidnightRollover`) inside `ClinicProvider`. When counter PCs remain powered on overnight, the observer detects calendar day shift (`!DateUtils.isSameDay(_activeListeningDate, now)`), automatically cancels the previous day's stream, resets today's appointment list, and re-subscribes live queue streams to the new calendar day.
+  - Operates automatically for live queue sessions while preserving intentional user archive browsing when historical dates are explicitly selected.
+- **Soft Daily Token Cap Retained per PM Directive (Finding #12):**
+  - Retained soft visual quota warning badge per Product Manager directive. In clinical practice, strict hard modal locks paralyze front-desk operations during walk-in emergencies. If limits are reached, soft warnings display prominently on desk badges while doctors retain discretion to verbally coordinate with reception.
+
+---
+
 ## [1.38.0] — 20-10-2026
 
 ### Prescribing Safety Guardrails, Flexible Multi-Modal Duration System & Diagnostic Test Deduplication

@@ -1,14 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../core/engines/engines.dart';
 import '../models/patient.dart';
 import 'firestore_paths.dart';
 
 /// Service managing patient demographics lookup and retrieval.
 class PatientService {
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _customFirestore;
 
   PatientService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _customFirestore = firestore;
+
+  FirebaseFirestore get _firestore =>
+      _customFirestore ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _patientsRef =>
       _firestore.collection(FirestorePaths.patients);
@@ -82,18 +86,17 @@ class PatientService {
         .set(patient.toJson(), SetOptions(merge: true));
   }
 
-  /// Searches patients by phone number (exact or prefix) or by name.
+  /// Searches patients by phone number (exact or prefix), canonical ID (pat_*), or name/surname.
   /// Strictly zero Firestore queries when query is empty.
   Future<List<Patient>> searchPatients(String query) async {
     final clean = query.trim();
     if (clean.isEmpty) return [];
 
     final isNumeric = RegExp(r'^\d+$').hasMatch(clean);
+    final results = <String, Patient>{};
 
     if (isNumeric) {
-      final results = <String, Patient>{};
-
-      // 1. Direct phone document lookup (legacy)
+      // 1. Direct phone document lookup (legacy phone-keyed docs)
       final directDoc = await _patientsRef.doc(clean).get();
       if (directDoc.exists && directDoc.data() != null) {
         final data = Map<String, dynamic>.from(directDoc.data()!);
@@ -113,12 +116,12 @@ class PatientService {
         results[doc.id] = Patient.fromJson(data);
       }
 
-      // 3. Prefix query if 3+ digits on documentId
+      // 3. Prefix query if 3+ digits on phoneNumber field (not documentId which has pat_* prefix)
       if (clean.length >= 3) {
         final prefixSnap = await _patientsRef
-            .where(FieldPath.documentId, isGreaterThanOrEqualTo: clean)
-            .where(FieldPath.documentId, isLessThanOrEqualTo: '$clean\uf8ff')
-            .limit(15)
+            .where('phoneNumber', isGreaterThanOrEqualTo: clean)
+            .where('phoneNumber', isLessThanOrEqualTo: '$clean\uf8ff')
+            .limit(20)
             .get();
 
         for (final doc in prefixSnap.docs) {
@@ -128,15 +131,30 @@ class PatientService {
           results[doc.id] = Patient.fromJson(data);
         }
       }
+    } else if (clean.toLowerCase().startsWith('pat_')) {
+      // Canonical ID search
+      final directDoc = await _patientsRef.doc(clean).get();
+      if (directDoc.exists && directDoc.data() != null) {
+        final data = Map<String, dynamic>.from(directDoc.data()!);
+        data['id'] ??= directDoc.id;
+        results[directDoc.id] = Patient.fromJson(data);
+      }
 
-      return results.values.toList();
+      final prefixSnap = await _patientsRef
+          .where(FieldPath.documentId, isGreaterThanOrEqualTo: clean)
+          .where(FieldPath.documentId, isLessThanOrEqualTo: '$clean\uf8ff')
+          .limit(15)
+          .get();
+      for (final doc in prefixSnap.docs) {
+        final data = Map<String, dynamic>.from(doc.data());
+        data['id'] ??= doc.id;
+        results[doc.id] = Patient.fromJson(data);
+      }
     } else {
       // Name prefix search (case-normalized)
       final capitalized = clean.isNotEmpty
           ? '${clean[0].toUpperCase()}${clean.substring(1)}'
           : clean;
-
-      final results = <String, Patient>{};
 
       final snap1 = await _patientsRef
           .where('name', isGreaterThanOrEqualTo: clean)
@@ -166,7 +184,18 @@ class PatientService {
         }
       }
 
-      return results.values.toList();
+      // 4. Token & surname fallback: query recent patient pool to match tokens/surnames in-memory
+      final recentSnap = await _patientsRef.limit(50).get();
+      for (final doc in recentSnap.docs) {
+        final data = Map<String, dynamic>.from(doc.data());
+        data['id'] ??= doc.id;
+        final patient = Patient.fromJson(data);
+        if (PatientSearchEngine.matches(patient, clean)) {
+          results[doc.id] = patient;
+        }
+      }
     }
+
+    return PatientSearchEngine.filterAndRank(results.values.toList(), clean);
   }
 }

@@ -21,48 +21,65 @@ void main() {
       expect(summary.doctorBreakdown, isEmpty);
     });
 
-    test('Pending and absent appointments are strictly excluded from realized cash', () {
-      final appts = [
-        Appointment(
-          id: 'a1',
-          patientPhone: '9876543210',
-          patientName: 'Waiting Patient',
-          status: AppointmentStatus.pending,
-          paymentType: PaymentType.paidCash,
-          amountCollected: 500,
-          queueNumber: 1,
-          scheduledDate: today,
-          doctorId: 'doc-1',
-          doctorName: 'Dr. A. Sharma',
-        ),
-        Appointment(
-          id: 'a2',
-          patientPhone: '9876543211',
-          patientName: 'No Show Patient',
-          status: AppointmentStatus.absent,
-          paymentType: PaymentType.paidCash,
-          amountCollected: 0,
-          queueNumber: 2,
-          scheduledDate: today,
-          doctorId: 'doc-1',
-          doctorName: 'Dr. A. Sharma',
-        ),
-      ];
+    test(
+      'Upfront cash collected at reception is counted in drawer while absent/unpaid is excluded',
+      () {
+        final appts = [
+          Appointment(
+            id: 'a1',
+            patientPhone: '9876543210',
+            patientName: 'Waiting Patient',
+            status: AppointmentStatus.pending,
+            paymentType: PaymentType.paidCash,
+            amountCollected: 500,
+            queueNumber: 1,
+            scheduledDate: today,
+            doctorId: 'doc-1',
+            doctorName: 'Dr. A. Sharma',
+          ),
+          Appointment(
+            id: 'a2',
+            patientPhone: '9876543211',
+            patientName: 'No Show Patient',
+            status: AppointmentStatus.absent,
+            paymentType: PaymentType.paidCash,
+            amountCollected: 0,
+            queueNumber: 2,
+            scheduledDate: today,
+            doctorId: 'doc-1',
+            doctorName: 'Dr. A. Sharma',
+          ),
+          Appointment(
+            id: 'a3',
+            patientPhone: '9876543212',
+            patientName: 'Refunded Cancelled Patient',
+            status: AppointmentStatus.absent,
+            paymentType: PaymentType.paidCash,
+            amountCollected: 500,
+            refundStatus: 'refunded',
+            queueNumber: 3,
+            scheduledDate: today,
+            doctorId: 'doc-1',
+            doctorName: 'Dr. A. Sharma',
+          ),
+        ];
 
-      final summary = CashHandoverEngine.calculateCashHandover(
-        appointments: appts,
-        date: today,
-      );
+        final summary = CashHandoverEngine.calculateCashHandover(
+          appointments: appts,
+          date: today,
+        );
 
-      expect(summary.totalAppointments, 2);
-      expect(summary.totalCompleted, 0);
-      expect(summary.totalRealizedCash, 0);
-      expect(summary.doctorBreakdown.first.cashCollected, 0);
-    });
+        expect(summary.totalAppointments, 3);
+        expect(summary.totalCompleted, 0);
+        // Only a1 is counted in drawer (a2 is 0, a3 was refunded out of drawer)
+        expect(summary.totalRealizedCash, 500);
+        expect(summary.doctorBreakdown.first.cashCollected, 500);
+      },
+    );
 
     test('Accurately tallies Paid Cash, UPI, Free Review, and Free Family by doctor', () {
       final appts = [
-        // Doctor 1: 1 Paid, 1 Free Review, 1 Pending (ignored)
+        // Doctor 1: 1 Paid Completed, 1 Free Review, 1 Paid Pending in Lobby
         Appointment(
           id: 'a1',
           patientPhone: '9876543210',
@@ -147,14 +164,14 @@ void main() {
       // Overall totals (Cash vs UPI Segregation)
       expect(summary.totalAppointments, 6);
       expect(summary.totalCompleted, 5);
-      expect(summary.totalPhysicalCash, 1100); // 500 (doc1) + 600 (doc2 cash)
+      expect(summary.totalPhysicalCash, 1600); // 500 (a1) + 500 (a3) + 600 (b1)
       expect(summary.totalUpiRevenue, 600); // 600 (doc2 upi)
-      expect(summary.totalRevenue, 1700); // 1100 cash + 600 upi
+      expect(summary.totalRevenue, 2200); // 1600 cash + 600 upi
       expect(
         summary.totalRealizedCash,
-        1100,
+        1600,
       ); // Drawer reconciliation evaluates physical cash
-      expect(summary.totalPaidCount, 3);
+      expect(summary.totalPaidCount, 4);
       expect(summary.totalFreeReviewCount, 1);
       expect(summary.totalFreeFamilyCount, 1);
 
@@ -166,11 +183,11 @@ void main() {
       );
       expect(doc1.doctorName, 'Dr. A. Sharma');
       expect(doc1.completedCount, 2);
-      expect(doc1.paidCount, 1);
+      expect(doc1.paidCount, 2);
       expect(doc1.freeReviewCount, 1);
-      expect(doc1.cashCollected, 500);
+      expect(doc1.cashCollected, 1000);
       expect(doc1.upiCollected, 0);
-      expect(doc1.totalRevenue, 500);
+      expect(doc1.totalRevenue, 1000);
 
       final doc2 = summary.doctorBreakdown.firstWhere(
         (d) => d.doctorId == 'doc-2',
@@ -185,7 +202,7 @@ void main() {
 
       // Drawer discrepancy matches physical notes without UPI false deficit
       final drawerDiscrepancy = CashHandoverEngine.calculateDiscrepancy(
-        physicalCounted: 1100,
+        physicalCounted: 1600,
         expectedCash: summary.totalPhysicalCash,
       );
       expect(drawerDiscrepancy, 0); // Perfectly balanced drawer

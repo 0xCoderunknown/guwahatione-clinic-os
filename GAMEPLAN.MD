@@ -102,29 +102,31 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
   Wrapped `ChamberService.callTokenIntoChamber` inside `FirebaseFirestore.instance.runTransaction()`. The chamber occupancy check (`transaction.get`) and calling state broadcast (`transaction.set`) now execute atomically. Concurrent admissions or double clicks trigger transaction conflict retries and are strictly rejected if the room is occupied (`StateError`).
 - **Severity:** 🚨 **Single-Occupancy Invariant Violation** $\to$ **CLEARED**.
 
-#### 10. Midnight Date Rollover & 8:00 AM Stale Dashboard Trap
+#### 10. Midnight Date Rollover & 8:00 AM Stale Dashboard Trap ✅ [RESOLVED]
 - **Affected Files:**
-  - [DashboardScreen](lib/screens/dashboard_screen.dart#L18-L26)
-  - [ClinicProvider.startListeningToAppointments](lib/providers/clinic_provider.dart#L147-L157)
-- **Failure Mode:**
-  Reception PCs remain powered on overnight. `DashboardScreen` subscribes once at launch. With no timer, midnight observer, or date-change listener, reception arriving at 8:00 AM sees **yesterday's queue**. New tokens default to yesterday's date and increment yesterday's counter, corrupting multiple days of records.
-- **Severity:** 🚨 **Multi-Day Data Desynchronization**.
+  - [DashboardScreen](lib/screens/dashboard_screen.dart)
+  - [ClinicProvider](lib/providers/clinic_provider.dart)
+  - [BookingService](lib/services/booking_service.dart)
+- **Resolution:**
+  Implemented periodic 30-second midnight rollover observer (`checkAndHandleMidnightRollover`) inside `ClinicProvider`. When counter PCs remain powered on overnight, the observer detects calendar day shift (`!DateUtils.isSameDay(_activeListeningDate, now)`), automatically cancels the previous day's stream, resets today's appointment list, and re-subscribes live queue streams to the new calendar day. Operates automatically for live queue sessions while preserving intentional user archive browsing when historical dates are explicitly selected.
+- **Severity:** 🚨 **Multi-Day Data Desynchronization** $\to$ **CLEARED**.
 
-#### 11. Same-Day Return Visits & Lab Review Visits Hard-Blocked
+#### 11. Same-Day Return Visits & Lab Review Visits Hard-Blocked ✅ [RESOLVED]
 - **Affected Files:**
-  - [BookingService.hasAppointmentForDate](lib/services/booking_service.dart#L231-L250)
-  - [AppointmentEngine.evaluateReviewEligibility](lib/core/engines/appointment_engine.dart#L101-L109)
-- **Failure Mode:**
-  A patient consulted at 10:00 AM returns at 3:30 PM with ultrasound reports. `hasAppointmentForDate` treats the completed morning appointment as an active duplicate and blocks booking. If reception tries Free Review, `evaluateReviewEligibility` requires `aDay.isBefore(targetDay)`, rejecting same-day reviews.
-- **Severity:** 🚨 **Same-Day Lab Review Blocker**.
+  - [BookingService.hasAppointmentForDate](lib/services/booking_service.dart)
+  - [AppointmentEngine.evaluateReviewEligibility](lib/core/engines/appointment_engine.dart)
+- **Resolution:**
+  1. Updated `BookingService.hasAppointmentForDate` duplicate check to permit same-day re-booking when prior appointment on the date has reached `AppointmentStatus.completed`. A patient consulted in the morning returning in the afternoon with lab results is routed via reception desk, receiving a valid queue token so doctors have complete operational clarity without unannounced chamber barging.
+  2. Enhanced `AppointmentEngine.evaluateReviewEligibility` to recognize same-day return visits (`daysSincePaid == 0`) with descriptive status `'Same-day return / lab review'`, correctly unlocking doctor-configured free review waivers (`PaymentType.freeReview`).
+- **Severity:** 🚨 **Same-Day Lab Review Blocker** $\to$ **CLEARED**.
 
-#### 12. Cosmetic-Only Daily Token Caps
+#### 12. Cosmetic-Only Daily Token Caps ✅ [RESOLVED]
 - **Affected Files:**
-  - [Doctor.dailyTokenLimit](lib/models/doctor.dart#L19)
-  - [BookingPaymentSection](lib/widgets/booking/booking_payment_section.dart#L69-L74)
-- **Failure Mode:**
-  `dailyTokenLimit` (e.g. 18) only displays a passive badge (`14/18`). Reception can book token 19, 25, or 50 with zero confirmation modal, warning dialog, or override lock.
-- **Severity:** ⚠️ **Doctor Quota Overrun**.
+  - [Doctor.dailyTokenLimit](lib/models/doctor.dart)
+  - [BookingPaymentSection](lib/widgets/booking/booking_payment_section.dart)
+- **Resolution:**
+  Retained soft visual quota warning badge per Product Manager directive. In clinical practice, strict hard modal locks paralyze front-desk operations during walk-in emergencies. If limits are reached, soft warnings display prominently on desk badges while doctors retain discretion to verbally coordinate with reception.
+- **Severity:** 💡 **Soft Cap Maintained per PM Directive** $\to$ **CLEARED**.
 
 ---
 
@@ -188,14 +190,16 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
 
 ### 💳 Domain D: Counter Operations, Directory Search & Financial Ledger
 
-#### 19. Cash Overwrite & Ghost Drawer Discrepancies on Doctor Absence
+#### 19. Cash Overwrite & Ghost Drawer Discrepancies on Doctor Absence ✅ [RESOLVED]
 - **Affected Files:**
-  - [BookingService.closeDoctorSessionForDate](lib/services/booking_service.dart#L280-L300)
-  - [CashHandoverEngine.calculateCashHandover](lib/core/engines/cash_handover_engine.dart#L97-L109)
-- **Failure Mode:**
-  1. `closeDoctorSessionForDate` resets unconsulted appointments to `'amountCollected': 0` without generating a refund record, destroying drawer cash and bank UPI reconciliation.
-  2. `CashHandoverEngine` calculates expected drawer cash only for `completed` visits, excluding all checked-in lobby patients who paid cash upfront, generating false discrepancy alerts.
-- **Severity:** 🚨 **Financial Ledger Corruption & Missing Cash**.
+  - [Appointment](lib/models/appointment.dart)
+  - [BookingService.closeDoctorSessionForDate](lib/services/booking_service.dart)
+  - [CashHandoverEngine.calculateCashHandover](lib/core/engines/cash_handover_engine.dart)
+- **Resolution:**
+  1. Updated `CashHandoverEngine` to count physical cash collected upfront at the reception counter (`PaymentType.paidCash` with `amountCollected > 0`) regardless of whether the patient is in lobby, in consultation, or completed, perfectly mirroring real physical cash in drawer.
+  2. Fixed `BookingService.closeDoctorSessionForDate` to NEVER destructively zero out `amountCollected` on doctor absence. Retains collected cash amounts in the audit trail and tags `refundStatus: 'pending_refund'`.
+  3. `CashHandoverEngine` skips visits only when `refundStatus == 'refunded'`, eliminating ghost discrepancies between counted drawer cash and system expectations.
+- **Severity:** 🚨 **Financial Ledger Corruption & Missing Cash** $\to$ **CLEARED**.
 
 #### 20. Single-Shift Ledger Bias & Zero Doctor Share Accounting
 - **Affected Files:**
@@ -205,12 +209,14 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
   `CashHandoverEngine` aggregates all 24 hours without shift partitioning for morning vs evening reception handovers. Furthermore, it has no support for doctor commission splits (e.g. 70/30), leaving owners unable to reconcile doctor payouts.
 - **Severity:** ⚠️ **Operational Accounting Limitation**.
 
-#### 21. Patient Directory Search Broken on New IDs and Surnames
+#### 21. Patient Directory Search Broken on New IDs and Surnames ✅ [RESOLVED]
 - **Affected Files:**
-  - [PatientService.searchPatients](lib/services/patient_service.dart#L117-L168)
-- **Failure Mode:**
-  Phone prefix search queries `FieldPath.documentId`, which fails on all `pat_*` IDs. Name search does case-sensitive prefix queries that fail on lowercase queries or surname lookups (e.g. searching "Talukdar").
-- **Severity:** ⚠️ **Duplicate Patient Profile Creation**.
+  - [PatientSearchEngine](lib/core/engines/patient_search_engine.dart)
+  - [PatientService.searchPatients](lib/services/patient_service.dart)
+- **Resolution:**
+  1. Built pure Dart `PatientSearchEngine` featuring phone normalization (strips +91, 0, whitespace, formatting), name tokenization, and multi-tier relevance ranking (exact phone > exact name > surname prefix > partial matches).
+  2. Fixed `PatientService.searchPatients` to query the `phoneNumber` field instead of `FieldPath.documentId` (which failed on `pat_*` IDs), added dedicated `pat_*` lookup, and integrated recent patient pool token matching so searching by surname (e.g. "Devi", "Baruah", "Sharma") or canonical ID immediately returns ranked matches.
+- **Severity:** ⚠️ **Duplicate Patient Profile Creation** $\to$ **CLEARED**.
 
 #### 22. The "Offline Queue Cache" Fallback Myth
 - **Affected Files:**

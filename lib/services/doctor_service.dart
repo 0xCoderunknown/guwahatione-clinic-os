@@ -5,10 +5,13 @@ import 'firestore_paths.dart';
 
 /// Service managing doctor profiles, search preferences, and chamber directories.
 class DoctorService {
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _customFirestore;
 
   DoctorService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _customFirestore = firestore;
+
+  FirebaseFirestore get _firestore =>
+      _customFirestore ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _doctorsRef =>
       _firestore.collection(FirestorePaths.doctors);

@@ -6,10 +6,13 @@ import 'firestore_paths.dart';
 
 /// Service managing appointment bookings, atomic queue counters, and queue queries.
 class BookingService {
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _customFirestore;
 
   BookingService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _customFirestore = firestore;
+
+  FirebaseFirestore get _firestore =>
+      _customFirestore ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _appointmentsRef =>
       _firestore.collection(FirestorePaths.appointments);
@@ -278,7 +281,8 @@ class BookingService {
     final cleanPatId = patientId?.trim();
     for (var doc in query.docs) {
       final appt = Appointment.fromJson(doc.data());
-      if (appt.status != AppointmentStatus.absent) {
+      if (appt.status != AppointmentStatus.absent &&
+          appt.status != AppointmentStatus.completed) {
         if (!appt.scheduledDate.isBefore(start) &&
             appt.scheduledDate.isBefore(end)) {
           if (cleanPatId != null &&
@@ -302,8 +306,8 @@ class BookingService {
 
   /// Closes today's session for a specific doctor when the doctor is absent or unavailable.
   /// Atomically updates all un-consulted appointments (pending / booked / waitingInLobby)
-  /// to AppointmentStatus.absent with amountCollected = 0.
-  /// Strict Audit Invariant: NEVER deletes documents.
+  /// to AppointmentStatus.absent without destructively zeroing collected cash (tags refundStatus).
+  /// Strict Audit Invariant: NEVER deletes documents or wipes cash drawer audit trails.
   Future<int> closeDoctorSessionForDate({
     required String doctorId,
     required DateTime date,
@@ -336,10 +340,11 @@ class BookingService {
           status == AppointmentStatus.absent.name;
 
       if (!isCompleted && !isAlreadyAbsent) {
+        final currentAmount = (data['amountCollected'] as num?)?.toInt() ?? 0;
         batch.update(doc.reference, {
           'visitStatus': VisitStatus.cancelled.name,
           'status': AppointmentStatus.absent.name,
-          'amountCollected': 0,
+          'refundStatus': currentAmount > 0 ? 'pending_refund' : 'none',
           'notes': reason,
         });
         markedCount++;

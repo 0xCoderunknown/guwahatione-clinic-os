@@ -28,10 +28,16 @@ class ClinicProvider with ChangeNotifier {
   bool _isOfflineFallback = false;
   DateTime? _offlineCacheTimestamp;
   DateTime? _activeListeningDate;
+  Timer? _midnightObserverTimer;
+  bool _isCustomDateSelected = false;
 
   bool get isOfflineFallback => _isOfflineFallback;
 
   DateTime? get offlineCacheTimestamp => _offlineCacheTimestamp;
+
+  bool get isCustomDateSelected => _isCustomDateSelected;
+
+  DateTime? get activeListeningDate => _activeListeningDate;
 
   /// Active doctors eligible for OPD scheduling, walk-in booking, live queue, and chamber login.
   List<Doctor> get doctors => _doctors.where((d) => d.isActive).toList();
@@ -150,9 +156,38 @@ class ClinicProvider with ChangeNotifier {
        _uuid = uuid ?? const Uuid() {
     _subscribeToDoctors();
     _subscribeToMedicines();
+    _startMidnightDateObserver();
+  }
+
+  void _startMidnightDateObserver() {
+    _midnightObserverTimer?.cancel();
+    _midnightObserverTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => checkAndHandleMidnightRollover(),
+    );
+  }
+
+  /// Automatically checks if the calendar day has crossed midnight on counter PCs.
+  /// Seamlessly re-subscribes live queue streams to the new calendar day.
+  /// Operates strictly when observing "today" (suppressed if user explicitly picked a past historical date).
+  void checkAndHandleMidnightRollover([DateTime? currentTime]) {
+    final now = currentTime ?? DateTime.now();
+    if (_activeListeningDate != null &&
+        !_isCustomDateSelected &&
+        !DateUtils.isSameDay(_activeListeningDate, now)) {
+      _todayAppointments = [];
+      _appointmentSub?.cancel();
+      _appointmentSub = null;
+      _activeListeningDate = null;
+      _isCustomDateSelected = false;
+      startListeningToAppointments(now);
+      notifyListeners();
+    }
   }
 
   void startListeningToAppointments([DateTime? specificDate]) {
+    _isCustomDateSelected = specificDate != null &&
+        !DateUtils.isSameDay(specificDate, DateTime.now());
     final targetDate = specificDate ?? DateTime.now();
 
     // Idempotent: avoid re-subscribing if already streaming this exact calendar day
@@ -926,6 +961,7 @@ class ClinicProvider with ChangeNotifier {
 
   @override
   void dispose() {
+    _midnightObserverTimer?.cancel();
     _appointmentSub?.cancel();
     _doctorSub?.cancel();
     _medicineSub?.cancel();

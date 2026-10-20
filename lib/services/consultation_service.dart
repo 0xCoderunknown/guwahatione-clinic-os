@@ -7,10 +7,13 @@ import 'firestore_paths.dart';
 
 /// Service managing append-only clinical consultations and longitudinal medical timelines.
 class ConsultationService {
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _customFirestore;
 
   ConsultationService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _customFirestore = firestore;
+
+  FirebaseFirestore get _firestore =>
+      _customFirestore ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _consultationsRef =>
       _firestore.collection(FirestorePaths.consultations);

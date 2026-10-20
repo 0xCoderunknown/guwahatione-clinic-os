@@ -6,10 +6,13 @@ import 'firestore_paths.dart';
 
 /// Service managing the master clinic medicine catalogue, default seeds, and deduplication.
 class CatalogueService {
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _customFirestore;
 
   CatalogueService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _customFirestore = firestore;
+
+  FirebaseFirestore get _firestore =>
+      _customFirestore ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _medicinesRef =>
       _firestore.collection(FirestorePaths.medicines);

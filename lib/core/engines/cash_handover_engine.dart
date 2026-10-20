@@ -97,36 +97,51 @@ abstract class CashHandoverEngine {
         if (a.status == AppointmentStatus.completed) {
           docCompleted++;
           totalCompleted++;
+        }
 
-          switch (a.paymentType) {
-            case PaymentType.paidCash:
-            case PaymentType.postPay:
-              if (a.amountCollected > 0) {
-                docPaid++;
-                totalPaid++;
-                docCash += a.amountCollected;
-                totalPhysicalCash += a.amountCollected;
-              }
-              break;
-            case PaymentType.paidUpi:
-              if (a.amountCollected > 0) {
-                docPaid++;
-                totalPaid++;
-                docUpi += a.amountCollected;
-                totalUpiRevenue += a.amountCollected;
-              }
-              break;
-            case PaymentType.freeReview:
-              docFreeReview++;
-              totalFreeReview++;
-              break;
-            case PaymentType.freeFamily:
-              docFreeFamily++;
-              totalFreeFamily++;
-              break;
-            case PaymentType.unpaid:
-              break;
-          }
+        // If refunded, the cash was returned to the patient and is no longer in the drawer
+        if (a.refundStatus == 'refunded') {
+          continue;
+        }
+
+        switch (a.paymentType) {
+          case PaymentType.paidCash:
+            // Physical cash collected upfront at counter (lobby, in-consultation, or completed)
+            if (a.amountCollected > 0) {
+              docPaid++;
+              totalPaid++;
+              docCash += a.amountCollected;
+              totalPhysicalCash += a.amountCollected;
+            }
+            break;
+          case PaymentType.postPay:
+            // Post-pay is collected at desk upon consultation exit
+            if (a.amountCollected > 0 &&
+                a.status == AppointmentStatus.completed) {
+              docPaid++;
+              totalPaid++;
+              docCash += a.amountCollected;
+              totalPhysicalCash += a.amountCollected;
+            }
+            break;
+          case PaymentType.paidUpi:
+            if (a.amountCollected > 0) {
+              docPaid++;
+              totalPaid++;
+              docUpi += a.amountCollected;
+              totalUpiRevenue += a.amountCollected;
+            }
+            break;
+          case PaymentType.freeReview:
+            docFreeReview++;
+            totalFreeReview++;
+            break;
+          case PaymentType.freeFamily:
+            docFreeFamily++;
+            totalFreeFamily++;
+            break;
+          case PaymentType.unpaid:
+            break;
         }
       }
 

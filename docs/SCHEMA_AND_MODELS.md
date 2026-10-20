@@ -91,6 +91,7 @@
 | `checkedInAt` | `Timestamp?` | No | Timestamp recorded when patient arrives at desk and checks in to lobby. |
 | `isPaused` | `bool` | No | Whether an active consultation encounter was paused (draft saved) and returned to lobby queue. Default: `false`. |
 | `notes` | `String?` | No | Operational ledger audit note (e.g. cancellation or doctor absent session close reason). |
+| `refundStatus` | `String?` | No | Front desk cash drawer refund tracking: `'none'`, `'pending_refund'`, or `'refunded'`. Default: `'none'`. |
 
 ---
 

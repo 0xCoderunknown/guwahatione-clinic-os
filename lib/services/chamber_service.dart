@@ -7,10 +7,13 @@ import 'firestore_paths.dart';
 
 /// Service managing zero-touch real-time sync between Reception and Doctor Chamber screens.
 class ChamberService {
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _customFirestore;
 
   ChamberService({FirebaseFirestore? firestore})
-    : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _customFirestore = firestore;
+
+  FirebaseFirestore get _firestore =>
+      _customFirestore ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _countersRef =>
       _firestore.collection(FirestorePaths.counters);
