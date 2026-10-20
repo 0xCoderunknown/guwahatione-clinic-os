@@ -9,7 +9,10 @@ class BookingOfflineBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!context.watch<ClinicProvider>().isOfflineFallback) {
+    final isOffline = context.select<ClinicProvider, bool>(
+      (p) => p.isOfflineFallback,
+    );
+    if (!isOffline) {
       return const SizedBox.shrink();
     }
 

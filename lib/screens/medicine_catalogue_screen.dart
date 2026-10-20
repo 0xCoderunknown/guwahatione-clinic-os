@@ -41,10 +41,11 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final clinic = Provider.of<ClinicProvider>(context);
     final auth = Provider.of<AuthProvider>(context);
     final isDesktop = MediaQuery.of(context).size.width >= 850;
-    final allMeds = clinic.medicines;
+    final allMeds = context.select<ClinicProvider, List<Medicine>>(
+      (p) => p.medicines,
+    );
 
     final filtered = MedicineEngine.filterAndSortCatalogue(
       catalog: allMeds,

@@ -408,7 +408,9 @@ class _OwnerShellState extends State<OwnerShell> {
               ),
               body: Column(
                 children: [
-                  if (context.watch<ClinicProvider>().isOfflineFallback)
+                  if (context.select<ClinicProvider, bool>(
+                    (p) => p.isOfflineFallback,
+                  ))
                     Container(
                       width: double.infinity,
                       color: const Color(0xFFFEF3C7),
@@ -457,7 +459,9 @@ class _OwnerShellState extends State<OwnerShell> {
       body: SafeArea(
         child: Column(
           children: [
-            if (context.watch<ClinicProvider>().isOfflineFallback)
+            if (context.select<ClinicProvider, bool>(
+              (p) => p.isOfflineFallback,
+            ))
               Container(
                 width: double.infinity,
                 color: const Color(0xFFFEF3C7),

@@ -37,8 +37,9 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    final clinicProvider = Provider.of<ClinicProvider>(context);
-    final doctors = clinicProvider.doctors;
+    final doctors = context.select<ClinicProvider, List<Doctor>>(
+      (p) => p.doctors,
+    );
     final effectiveDoctor =
         _selectedDoctor ?? (doctors.isNotEmpty ? doctors.first : null);
 

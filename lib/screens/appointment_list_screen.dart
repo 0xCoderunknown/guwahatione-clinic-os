@@ -33,8 +33,10 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
     final isDesktop = MediaQuery.of(context).size.width >= 850;
     final canPop = Navigator.canPop(context);
     final showAppBar = !isDesktop || canPop;
-    final clinicProvider = Provider.of<ClinicProvider>(context);
-    final doctors = clinicProvider.doctors;
+    final clinicProvider = Provider.of<ClinicProvider>(context, listen: false);
+    final doctors = context.select<ClinicProvider, List<Doctor>>(
+      (p) => p.doctors,
+    );
 
     return Scaffold(
       appBar: showAppBar

@@ -200,10 +200,17 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
               ),
             )
           : null,
-      body: Consumer<ClinicProvider>(
-        builder: (context, provider, child) {
-          final activeDoctors = provider.doctors;
-          final inactiveDoctors = provider.inactiveDoctors;
+      body: Selector<
+        ClinicProvider,
+        ({List<Doctor> active, List<Doctor> inactive})
+      >(
+        selector: (_, clinic) => (
+          active: clinic.doctors,
+          inactive: clinic.inactiveDoctors,
+        ),
+        builder: (context, data, child) {
+          final activeDoctors = data.active;
+          final inactiveDoctors = data.inactive;
 
           final displayedDoctors = !isOwner
               ? activeDoctors

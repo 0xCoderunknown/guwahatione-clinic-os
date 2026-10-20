@@ -61,13 +61,16 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    final clinic = Provider.of<ClinicProvider>(context);
+    final hasLoadedDoctors = context.select<ClinicProvider, bool>(
+      (p) => p.hasLoadedDoctors,
+    );
     final auth = Provider.of<AuthProvider>(context);
 
     // Wait for the first doctor snapshot before validating a saved doctor session.
-    if (!_hasAttemptedInit && !auth.isInitialized && clinic.hasLoadedDoctors) {
+    if (!_hasAttemptedInit && !auth.isInitialized && hasLoadedDoctors) {
       _hasAttemptedInit = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        final clinic = Provider.of<ClinicProvider>(context, listen: false);
         clinic.startListeningToAppointments();
         auth.initSession(clinic.doctors);
       });

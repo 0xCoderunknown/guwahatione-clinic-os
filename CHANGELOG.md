@@ -34,7 +34,7 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
   - Integrated persistent amber offline indicators in `OwnerShell` (desktop header and mobile top strip) alerting front-desk staff whenever the system falls back to `OfflineQueueCacheService` local cache.
   - Added an offline warning banner to `AddAppointmentDialog` clarifying that walk-in token allocation requires active cloud synchronization to maintain consecutive atomic counter integrity (Invariant #1).
   - Enhanced booking exception handling with human-friendly guidance when broadband is interrupted rather than cryptic database error traces.
-- **Architectural Refactoring & God Object Decomposition (Phases 1 & 2):**
+- **Architectural Refactoring & God Object Decomposition (Phases 1, 2 & 3):**
   - **Decomposed Monolithic UI Widgets (Phase 1):**
     - Reduced `DashboardTodayQueueCard` from 913 lines down to 295 lines by extracting `UpcomingBookingsSection`, `QueueDoctorFilterBar`, and `DashboardQueueItemRow`.
     - Modularized `AddAppointmentDialog` by extracting `BookingOfflineBanner`, `BookingDialogActions`, and `BookingSuccessSnackbar`.
@@ -42,6 +42,9 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
   - **Decomposed `ClinicProvider` God Object (Phase 2):**
     - Refactored `ClinicProvider` into a lightweight, backward-compatible Facade over 3 dedicated domain controllers: `DoctorStateDelegate` (doctor roster & leave), `LiveQueueDelegate` (live queue, offline caching, and midnight rollover), and `CatalogueDelegate` (master formulary & curation).
     - Preserved 100% backward compatibility across all screen callers with zero breaking changes.
+  - **Fine-Grained Widget Rebuild Optimization (Phase 3):**
+    - Replaced broad `ClinicProvider` rebuild triggers with targeted `context.select` and `Selector` subscriptions in high-traffic widgets (`OwnerShell`, `AuthGate`, `ConsultationEncounterScreen`, `AppointmentListScreen`, `MedicineCatalogueScreen`, `LoginScreen`, `DoctorListScreen`, and `OwnerShellAppBar`).
+    - Eliminates cascading full-app re-renders on counter PCs during background appointment bookings and doctor queue mutations.
 - **External Appointment Distraction Banner Excluded (Item 18):**
   - Permanently dropped per PM directive to guarantee distraction-free clinical focus inside the chamber during active consultations.
 

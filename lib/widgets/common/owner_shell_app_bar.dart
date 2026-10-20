@@ -139,31 +139,35 @@ class OwnerShellAppBar extends StatelessWidget implements PreferredSizeWidget {
           ],
 
           // End-of-Day Cash Handover Button (Subtle Outline / Ghost)
-          Consumer<ClinicProvider>(
-            builder: (_, clinic, _) => Tooltip(
-              message: 'End-of-Day Cash Handover & Note Reconciliation',
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF475569),
-                  side: const BorderSide(color: Color(0xFFCBD5E1)),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 7,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+          Tooltip(
+            message: 'End-of-Day Cash Handover & Note Reconciliation',
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF475569),
+                side: const BorderSide(color: Color(0xFFCBD5E1)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
                 ),
-                onPressed: () => DailyCashHandoverDialog.show(context, clinic),
-                icon: const Icon(
-                  Icons.receipt_long_rounded,
-                  size: 15,
-                  color: Color(0xFF64748B),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                label: const Text(
-                  'Cash Handover',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                ),
+              ),
+              onPressed: () {
+                final clinic = Provider.of<ClinicProvider>(
+                  context,
+                  listen: false,
+                );
+                DailyCashHandoverDialog.show(context, clinic);
+              },
+              icon: const Icon(
+                Icons.receipt_long_rounded,
+                size: 15,
+                color: Color(0xFF64748B),
+              ),
+              label: const Text(
+                'Cash Handover',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
             ),
           ),

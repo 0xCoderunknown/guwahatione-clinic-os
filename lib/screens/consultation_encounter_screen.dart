@@ -465,7 +465,9 @@ class _ConsultationEncounterScreenState
                   const SizedBox(height: 16),
                   RxReconciliationSection.fromForm(
                     form: form,
-                    catalog: Provider.of<ClinicProvider>(context).medicines,
+                    catalog: context.select<ClinicProvider, List<Medicine>>(
+                      (p) => p.medicines,
+                    ),
                     uuidGenerator: _uuid.v4,
                     onPromptStopReason: (item, idx) =>
                         EncounterDialogs.promptStopReason(context, item, (
