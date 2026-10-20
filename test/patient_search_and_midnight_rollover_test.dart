@@ -191,6 +191,7 @@ void main() {
         bookingService: mockBooking,
         doctorService: mockDoctor,
         catalogueService: mockCatalogue,
+        enableMidnightObserver: false,
       );
 
       provider.startListeningToAppointments();

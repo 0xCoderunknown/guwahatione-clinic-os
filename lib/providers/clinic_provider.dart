@@ -147,6 +147,7 @@ class ClinicProvider with ChangeNotifier {
     ConsultationService? consultationService,
     PatientService? patientService,
     Uuid? uuid,
+    bool enableMidnightObserver = true,
   }) : _bookingService = bookingService ?? BookingService(),
        _doctorService = doctorService ?? DoctorService(),
        _catalogueService = catalogueService ?? CatalogueService(),
@@ -156,7 +157,9 @@ class ClinicProvider with ChangeNotifier {
        _uuid = uuid ?? const Uuid() {
     _subscribeToDoctors();
     _subscribeToMedicines();
-    _startMidnightDateObserver();
+    if (enableMidnightObserver) {
+      _startMidnightDateObserver();
+    }
   }
 
   void _startMidnightDateObserver() {

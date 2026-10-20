@@ -35,6 +35,9 @@ export 'dashboard/dashboard_doctor_roster_card.dart';
 export 'dashboard/dashboard_header_bar.dart';
 export 'dashboard/dashboard_kpi_strip.dart';
 export 'dashboard/dashboard_queue_card.dart';
+export 'dashboard/dashboard_queue_item_row.dart';
+export 'dashboard/queue_doctor_filter_bar.dart';
+export 'dashboard/upcoming_bookings_section.dart';
 // Clinical Encounter Widgets
 export 'encounter/advice_and_orders_section.dart';
 export 'encounter/diagnostic_review_section.dart';
