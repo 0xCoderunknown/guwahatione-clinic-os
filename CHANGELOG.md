@@ -8,6 +8,26 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.38.0] — 20-10-2026
+
+### Prescribing Safety Guardrails, Flexible Multi-Modal Duration System & Diagnostic Test Deduplication
+- **Flexible Multi-Modal Duration Engine & Pharmacological Validation (Finding #16):**
+  - Implemented `MedicineEngine.parseDuration` accepting acute numeric days (`1 to 300` days, e.g. `5`, `14`, `21 days`), as-needed (`SOS`, `SoS`, `s.o.s`), and ongoing chronic therapy (`To continue`, `cont`, `chronic`).
+  - Added inline pharmacological sanity checks strictly blocking negative (`<= 0`) or excessive (`> 300`) day values with clear feedback.
+  - Enhanced `StagedMedicineForm` with 1-tap quick preset chips (`[Cont]`, `[SOS]`, `[3d]`, `[5d]`, `[7d]`, `[14d]`, `[30d]`) alongside direct keyboard input.
+  - Integrated `effectiveDuration` getter in `PrescriptionItem` to guarantee strict 3-column isolation across print letterheads, preview tables, WhatsApp summaries, and consultation charts.
+  - Ensured formulary catalogue bundled defaults (e.g. *Telma 40 tablet* with `{Telmisartan 40mg, 1-0-1, to continue}`) populate intact into staging without clinical friction.
+- **Staged Medicine Discard Guard (Finding #15):**
+  - Added `hasStagedMedicine` and `stagedMedicineDisplayName` in `EncounterFormState`.
+  - In `ConsultationEncounterScreen`, intercept "Complete & Sign" when a medicine is actively staged without being added, offering doctors an interactive dialog with `[Add to Prescription & Sign]`, `[Discard & Sign]`, and `[Review / Cancel]`, eliminating silent drops of configured medications.
+- **Longitudinal Diagnostic Test Deduplication (Finding #17):**
+  - Updated `EncounterFormState.loadInitialData` to track `seenTestNames` across past consultations and deduplicate by normalized `testName.trim().toLowerCase()`.
+  - Eliminates exponential ghost blank row accumulation in chronic follow-up charts while ensuring all unique past investigations remain accessible for review.
+- **Documented Allergy Presentation Retained (Finding #14):**
+  - Retained passive allergy header chips in `PatientHeaderSection` per PM directive, avoiding administrative popup roadblocks while preserving clear clinical visibility.
+
+---
+
 ## [1.37.0] — 19-10-2026
 
 ### Multi-Chamber Live Queue Partitioning, Upcoming Advance Bookings & Bypassed Tag Retirement

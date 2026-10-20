@@ -9,6 +9,7 @@ class Medicine {
   final String? defaultTiming; // e.g., 'After Food', 'Before Food'
   final int?
   defaultDurationDays; // e.g., 30 (or null for chronic / to continue)
+  final String? defaultDuration; // e.g., 'To continue', 'SOS', '5 days'
 
   const Medicine({
     required this.id,
@@ -19,6 +20,7 @@ class Medicine {
     this.defaultFrequency,
     this.defaultTiming,
     this.defaultDurationDays,
+    this.defaultDuration,
   });
 
   /// The complete generic composition (strength is integral to composition).
@@ -27,11 +29,22 @@ class Medicine {
   /// Prominent uppercase bracketed composition header (e.g. `[TELMISARTAN 40MG]`).
   String get formattedCompositionHeader => '[${composition.toUpperCase()}]';
 
-  /// Standard duration display string ('To continue' for chronic or 'X days').
-  String get durationLabel =>
-      (defaultDurationDays == null || defaultDurationDays! <= 0)
-      ? 'To continue'
-      : '$defaultDurationDays days';
+  /// Standard duration display string ('To continue' for chronic, 'SOS', or 'X days').
+  String get durationLabel {
+    if (defaultDuration != null && defaultDuration!.trim().isNotEmpty) {
+      final dd = defaultDuration!.trim();
+      if (dd.toUpperCase() == 'SOS') return 'SOS';
+      if (dd.toLowerCase().startsWith('cont') ||
+          dd.toLowerCase() == 'to continue') {
+        return 'To continue';
+      }
+      return dd;
+    }
+    if (defaultDurationDays == null || defaultDurationDays! <= 0) {
+      return 'To continue';
+    }
+    return '$defaultDurationDays days';
+  }
 
   /// Descriptive display string.
   String get displayName => manufacturer != null && manufacturer!.isNotEmpty
@@ -53,6 +66,8 @@ class Medicine {
         'defaultTiming': defaultTiming,
       if (defaultDurationDays != null)
         'defaultDurationDays': defaultDurationDays,
+      if (defaultDuration != null && defaultDuration!.isNotEmpty)
+        'defaultDuration': defaultDuration,
     };
   }
 
@@ -75,6 +90,7 @@ class Medicine {
       defaultFrequency: json['defaultFrequency'] as String?,
       defaultTiming: json['defaultTiming'] as String?,
       defaultDurationDays: (json['defaultDurationDays'] as num?)?.toInt(),
+      defaultDuration: json['defaultDuration'] as String?,
     );
   }
 
@@ -87,6 +103,7 @@ class Medicine {
     String? defaultFrequency,
     String? defaultTiming,
     int? defaultDurationDays,
+    String? defaultDuration,
   }) {
     return Medicine(
       id: id ?? this.id,
@@ -97,6 +114,7 @@ class Medicine {
       defaultFrequency: defaultFrequency ?? this.defaultFrequency,
       defaultTiming: defaultTiming ?? this.defaultTiming,
       defaultDurationDays: defaultDurationDays ?? this.defaultDurationDays,
+      defaultDuration: defaultDuration ?? this.defaultDuration,
     );
   }
 }

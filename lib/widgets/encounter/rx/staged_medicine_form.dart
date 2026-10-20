@@ -80,12 +80,15 @@ class StagedMedicineForm extends StatelessWidget {
       onDurationPresetChanged: (val) {
         if (val == 'To continue') {
           form.stagedIsChronic = true;
-          form.stagedDurationController.text = '';
+          form.stagedDurationController.text = 'To continue';
+        } else if (val == 'SOS') {
+          form.stagedIsChronic = false;
+          form.stagedDurationController.text = 'SOS';
         } else if (val == 'Custom') {
           form.stagedIsChronic = false;
         } else if (val != null && val.endsWith(' days')) {
           form.stagedIsChronic = false;
-          form.stagedDurationController.text = val.replaceAll(' days', '');
+          form.stagedDurationController.text = val;
         }
         onUpdate();
       },
@@ -143,24 +146,31 @@ class StagedMedicineForm extends StatelessWidget {
     }
 
     final String currentDurationPreset;
-    if (stagedIsChronic) {
+    final durText = stagedDurationController.text.trim().toLowerCase();
+    if (stagedIsChronic ||
+        durText == 'to continue' ||
+        durText == 'cont' ||
+        durText == 'continue' ||
+        durText == 'chronic') {
       currentDurationPreset = 'To continue';
-    } else if ([
-      '30',
-      '15',
-      '14',
-      '10',
-      '7',
-      '5',
-      '3',
-    ].contains(stagedDurationController.text.trim())) {
-      currentDurationPreset = '${stagedDurationController.text.trim()} days';
+    } else if (durText == 'sos' ||
+        durText == 's.o.s' ||
+        durText == 'as needed' ||
+        durText.startsWith('sos ')) {
+      currentDurationPreset = 'SOS';
+    } else if (['30', '15', '14', '10', '7', '5', '3'].contains(
+      durText.replaceAll(' days', '').replaceAll('d', '').trim(),
+    )) {
+      final days =
+          durText.replaceAll(' days', '').replaceAll('d', '').trim();
+      currentDurationPreset = '$days days';
     } else {
       currentDurationPreset = 'Custom';
     }
 
     final durationOptions = [
       'To continue',
+      'SOS',
       '30 days',
       '15 days',
       '14 days',
@@ -288,7 +298,11 @@ class StagedMedicineForm extends StatelessWidget {
                         (d) => DropdownMenuItem(
                           value: d,
                           child: Text(
-                            d == 'To continue' ? 'To continue (Chronic)' : d,
+                            d == 'To continue'
+                                ? 'To continue (Chronic)'
+                                : d == 'SOS'
+                                    ? 'SOS (As needed)'
+                                    : d,
                             style: const TextStyle(fontSize: 12),
                           ),
                         ),
@@ -299,12 +313,13 @@ class StagedMedicineForm extends StatelessWidget {
                       onDurationPresetChanged!(val);
                     } else if (val == 'To continue') {
                       onChronicChanged(true);
+                      stagedDurationController.text = 'To continue';
+                    } else if (val == 'SOS') {
+                      onChronicChanged(false);
+                      stagedDurationController.text = 'SOS';
                     } else if (val != null && val.endsWith(' days')) {
                       onChronicChanged(false);
-                      stagedDurationController.text = val.replaceAll(
-                        ' days',
-                        '',
-                      );
+                      stagedDurationController.text = val;
                     } else {
                       onChronicChanged(false);
                     }
@@ -314,15 +329,14 @@ class StagedMedicineForm extends StatelessWidget {
               if (currentDurationPreset == 'Custom') ...[
                 const SizedBox(width: 8),
                 Expanded(
-                  flex: 2,
+                  flex: 3,
                   child: TextField(
                     controller: stagedDurationController,
-                    keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => onConfirmAddStaged(),
                     decoration: const InputDecoration(
-                      labelText: 'Days',
-                      hintText: 'e.g., 21',
+                      labelText: 'Custom Duration',
+                      hintText: '1-300, cont, SOS',
                       isDense: true,
                       filled: true,
                       fillColor: Colors.white,

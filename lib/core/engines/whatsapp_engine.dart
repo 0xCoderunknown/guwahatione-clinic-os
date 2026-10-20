@@ -100,9 +100,7 @@ class WhatsAppEngine {
         final actionTag = med.action == MedicationAction.continueAction
             ? ' _[Ongoing]_'
             : '';
-        final durationPart = med.durationDays != null
-            ? ' • ${med.durationDays} Days'
-            : ' • Chronic/Ongoing';
+        final durationPart = ' • ${med.effectiveDuration}';
 
         buffer.writeln('${i + 1}. *${med.medicineName}*$actionTag');
         buffer.writeln(

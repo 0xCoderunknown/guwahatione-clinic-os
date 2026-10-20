@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/engines/medicine_engine.dart';
 import '../../models/user_role.dart';
 import '../../providers/clinic_provider.dart';
 
@@ -48,6 +49,7 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
 
   final List<String> _durationOptions = const [
     'To continue (Chronic)',
+    'SOS',
     '30 days',
     '15 days',
     '14 days',
@@ -328,16 +330,13 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
 
-    int? durationDays;
-    if (_durationPreset == 'To continue (Chronic)') {
-      durationDays = null;
-    } else if (_durationPreset == 'Custom') {
-      durationDays = int.tryParse(_customDurationCtrl.text.trim());
-    } else {
-      durationDays = int.tryParse(
-        _durationPreset.replaceAll(' days', '').trim(),
-      );
-    }
+    final parsedDuration = MedicineEngine.parseDuration(
+      _durationPreset == 'To continue (Chronic)'
+          ? 'To continue'
+          : _durationPreset == 'Custom'
+              ? _customDurationCtrl.text.trim()
+              : _durationPreset,
+    );
 
     try {
       await Provider.of<ClinicProvider>(context, listen: false).addMedicine(
@@ -352,7 +351,10 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
             : null,
         defaultFrequency: _showRegimenDefaults ? _frequency : null,
         defaultTiming: _showRegimenDefaults ? _timing : null,
-        defaultDurationDays: _showRegimenDefaults ? durationDays : null,
+        defaultDurationDays:
+            _showRegimenDefaults ? parsedDuration.durationDays : null,
+        defaultDuration:
+            _showRegimenDefaults ? parsedDuration.durationText : null,
         requestingRole: widget.currentRole,
       );
       if (mounted) Navigator.pop(context);

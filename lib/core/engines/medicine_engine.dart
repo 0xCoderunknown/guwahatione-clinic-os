@@ -27,6 +27,7 @@ class ClinicalDefaultRegimen {
   final String frequency;
   final String timing;
   final int? durationDays;
+  final String? durationText;
   final String? instructions;
 
   const ClinicalDefaultRegimen({
@@ -34,8 +35,49 @@ class ClinicalDefaultRegimen {
     required this.frequency,
     required this.timing,
     this.durationDays,
+    this.durationText,
     this.instructions,
   });
+}
+
+/// Structured result from parsing clinical duration inputs (days, SOS, cont / continue).
+class ParsedDuration {
+  final int? durationDays;
+  final String durationText; // e.g. 'To Continue', 'SOS', '5 Days'
+  final bool isValid;
+  final String? errorMessage;
+
+  const ParsedDuration({
+    required this.durationDays,
+    required this.durationText,
+    required this.isValid,
+    this.errorMessage,
+  });
+
+  factory ParsedDuration.toContinue() => const ParsedDuration(
+        durationDays: null,
+        durationText: 'To Continue',
+        isValid: true,
+      );
+
+  factory ParsedDuration.sos() => const ParsedDuration(
+        durationDays: null,
+        durationText: 'SOS',
+        isValid: true,
+      );
+
+  factory ParsedDuration.days(int days) => ParsedDuration(
+        durationDays: days,
+        durationText: '$days Days',
+        isValid: true,
+      );
+
+  factory ParsedDuration.invalid(String message) => ParsedDuration(
+        durationDays: null,
+        durationText: '',
+        isValid: false,
+        errorMessage: message,
+      );
 }
 
 /// Segregated prescription items partitioned by reconciliation status.
@@ -174,16 +216,75 @@ abstract class MedicineEngine {
     return results;
   }
 
+  /// Parses clinical duration inputs flexibly:
+  /// - Numbers (1 to 300 days), e.g. '5', '5d', '5 days', '21' -> durationDays: N, durationText: 'N Days'
+  /// - SOS, e.g. 'sos', 'SoS', 'SOS', 's.o.s', 'as needed' -> durationDays: null, durationText: 'SOS'
+  /// - Continue, e.g. 'cont', 'continue', 'to continue', 'chronic', 'ongoing' or empty -> durationDays: null, durationText: 'To Continue'
+  /// - Rejects <= 0 days, > 300 days, or unparseable malformed text.
+  static ParsedDuration parseDuration(String? input) {
+    if (input == null || input.trim().isEmpty) {
+      return ParsedDuration.toContinue();
+    }
+    final clean = input.trim().toLowerCase();
+
+    // 1. SOS (As Needed) matching
+    if (clean == 'sos' ||
+        clean == 's.o.s' ||
+        clean == 's.o.s.' ||
+        clean == 'as needed' ||
+        clean.startsWith('sos ') ||
+        clean.startsWith('sos(')) {
+      return ParsedDuration.sos();
+    }
+
+    // 2. Chronic / Ongoing / To Continue matching
+    if (clean == 'cont' ||
+        clean == 'continue' ||
+        clean == 'to continue' ||
+        clean == 'chronic' ||
+        clean == 'ongoing' ||
+        clean.startsWith('cont ') ||
+        clean.startsWith('to continue')) {
+      return ParsedDuration.toContinue();
+    }
+
+    // 3. Acute course in days (1-300 days)
+    final numericMatch = RegExp(r'^-?\d+').firstMatch(clean);
+    if (numericMatch != null) {
+      final val = int.tryParse(numericMatch.group(0)!);
+      if (val != null) {
+        if (val <= 0) {
+          return ParsedDuration.invalid(
+            'Duration days must be greater than 0 (1 to 300 days).',
+          );
+        }
+        if (val > 300) {
+          return ParsedDuration.invalid('Duration cannot exceed 300 days.');
+        }
+        return ParsedDuration.days(val);
+      }
+    }
+
+    return ParsedDuration.invalid(
+      "Enter days (1-300), 'cont' (continue), or 'SOS'.",
+    );
+  }
+
   /// Provides clinical intelligence fallbacks for routine OPD medications.
   static ClinicalDefaultRegimen getDefaultsForMedicine(Medicine medicine) {
     if (medicine.defaultDosage != null &&
         medicine.defaultFrequency != null &&
         medicine.defaultTiming != null) {
+      final parsed = parseDuration(medicine.defaultDuration ??
+          (medicine.defaultDurationDays != null
+              ? '${medicine.defaultDurationDays} days'
+              : 'To continue'));
       return ClinicalDefaultRegimen(
         dosage: medicine.defaultDosage!,
         frequency: medicine.defaultFrequency!,
         timing: medicine.defaultTiming!,
-        durationDays: medicine.defaultDurationDays,
+        durationDays: parsed.durationDays,
+        durationText: parsed.durationText,
       );
     }
 

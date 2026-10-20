@@ -54,7 +54,7 @@ class ReconciliationItemRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "${item.composition} • ${item.dosage} • ${item.frequency} • ${item.timing}${item.durationDays != null ? ' (${item.durationDays}d)' : ' (Chronic)'}",
+                  "${item.composition} • ${item.dosage} • ${item.frequency} • ${item.timing} • ${item.effectiveDuration}",
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                 ),
                 if (isStopped &&
@@ -158,7 +158,7 @@ class NewPrescriptionRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "${item.composition} • ${item.dosage} • ${item.frequency} • ${item.timing} • ${item.durationDays != null ? '${item.durationDays} days' : 'Chronic'}",
+                  "${item.composition} • ${item.dosage} • ${item.frequency} • ${item.timing} • ${item.effectiveDuration}",
                   style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                 ),
                 if (item.instructions != null && item.instructions!.isNotEmpty)

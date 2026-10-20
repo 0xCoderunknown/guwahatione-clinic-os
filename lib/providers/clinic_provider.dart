@@ -816,6 +816,7 @@ class ClinicProvider with ChangeNotifier {
     String? defaultFrequency,
     String? defaultTiming,
     int? defaultDurationDays,
+    String? defaultDuration,
     UserRole? requestingRole,
   }) async {
     if (requestingRole != null && !requestingRole.isOwner) {
@@ -834,6 +835,7 @@ class ClinicProvider with ChangeNotifier {
         defaultFrequency: defaultFrequency,
         defaultTiming: defaultTiming,
         defaultDurationDays: defaultDurationDays,
+        defaultDuration: defaultDuration,
       );
       await _catalogueService.addMedicine(med);
     } finally {

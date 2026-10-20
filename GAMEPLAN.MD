@@ -142,36 +142,40 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
   Implemented comprehensive consultation draft serialization (`toDraftMap` / `restoreFromDraftMap`) and asynchronous local draft caching in `SharedPreferences` (`draft_encounter_${appointmentId}`). On pause or reload, `_loadInitialData` automatically restores typed vitals, clinical exam notes, chief complaints, provisional diagnoses, staged medications, ordered tests, and advice notes. When a patient steps out for an hour, doctor pauses visit, chamber is freed for next patients, reception queue card displays `[PAUSED / RESUMABLE]` and `[RESUME IN]`, and upon return, encounter auto-restores cleanly. Completing & signing consultation removes draft.
 - **Severity:** 🚨 **Severe Clinical Data Loss & Doctor Friction** $\to$ **CLEARED**.
 
-#### 14. Passive Cosmetic Allergies (Zero Prescribing Cross-Check)
+#### 14. Passive Allergy Presentation (Design Retained) ✅ [RESOLVED]
 - **Affected Files:**
-  - [EncounterFormState](lib/widgets/encounter/encounter_form_state.dart#L68)
-  - [MedicineEngine](lib/core/engines/medicine_engine.dart)
-- **Failure Mode:**
-  Allergies are rendered as a passive chip in the header. If a patient is marked allergic to `"Penicillin"`, and the doctor prescribes **Amoxicillin** or **Augmentin**, the engine performs zero string/composition matching and displays no warning alert.
-- **Severity:** 🚨 **Patient Safety & Clinical Liability Hazard**.
+  - [EncounterFormState](lib/widgets/encounter/encounter_form_state.dart#L71)
+  - [PatientHeaderSection](lib/widgets/encounter/patient_header_section.dart)
+- **Resolution:**
+  Per Product Manager directive, the clean, passive allergy chip in the encounter header is retained without introducing interrupting popups or prescribing blocking gates. Clinicians maintain full prescribing autonomy without forced administrative roadblocks.
+- **Severity:** 💡 **Design Retained per PM Directive** $\to$ **CLEARED**.
 
-#### 15. Staged Medicine Silent Drop on "Complete & Sign"
+#### 15. Staged Medicine Silent Drop on "Complete & Sign" ✅ [RESOLVED]
 - **Affected Files:**
-  - [EncounterFormState.confirmAddStagedMedicine](lib/widgets/encounter/encounter_form_state.dart#L200-L249)
-  - [ConsultationEncounterScreen._completeAndSignConsultation](lib/screens/consultation_encounter_screen.dart#L85-L102)
-- **Failure Mode:**
-  A doctor selects a medicine, configures the frequency/dosage, and immediately clicks "Complete & Sign" without tapping "Add Medicine". The staged drug is held only in transient form controllers; `buildConsultation` serializes only `newPrescriptions`. **The last drug is silently discarded from the signed prescription.**
-- **Severity:** 🚨 **Incomplete Clinical Prescriptions**.
+  - [EncounterFormState](lib/widgets/encounter/encounter_form_state.dart)
+  - [ConsultationEncounterScreen._completeAndSignConsultation](lib/screens/consultation_encounter_screen.dart)
+- **Resolution:**
+  Added `hasStagedMedicine` and `stagedMedicineDisplayName` getters in `EncounterFormState`. When a doctor attempts to "Complete & Sign" while a medicine is actively staged, an interactive dialog intercepts the action: "Unadded Staged Medicine: You have staged [Name] but haven't added it to the prescription yet." Provides 1-tap `[Add to Prescription & Sign]` (auto-commits staged item and signs), `[Discard & Sign]`, and `[Review / Cancel]`. Zero silent drops of staged drugs.
+- **Severity:** 🚨 **Incomplete Clinical Prescriptions** $\to$ **CLEARED**.
 
-#### 16. Negative and Zero Dosage / Duration Acceptance
+#### 16. Negative and Zero Dosage / Duration Acceptance & Flexible Duration System ✅ [RESOLVED]
 - **Affected Files:**
-  - [EncounterFormState.confirmAddStagedMedicine](lib/widgets/encounter/encounter_form_state.dart#L223)
+  - [MedicineEngine.parseDuration](lib/core/engines/medicine_engine.dart)
   - [PrescriptionItem](lib/models/prescription_item.dart)
-- **Failure Mode:**
-  Duration parsing uses unvalidated `int.tryParse(controller.text)`. A typo like `-5` or `0` days passes cleanly into the database and prints on the prescription.
-- **Severity:** ⚠️ **Pharmacological Validation Error**.
+  - [Medicine](lib/models/medicine.dart)
+  - [EncounterFormState](lib/widgets/encounter/encounter_form_state.dart)
+  - [StagedMedicineForm](lib/widgets/encounter/rx/staged_medicine_form.dart)
+  - [PrintMedicationsTable](lib/widgets/print/print_medications_table.dart)
+- **Resolution:**
+  Implemented pure Dart `MedicineEngine.parseDuration` supporting flexible multi-modal duration inputs: acute numbers (`1 to 300` days, e.g. `5`, `14`, `21 days`), as-needed (`SOS`, `SoS`), and ongoing therapy (`To continue`, `cont`, `chronic`). Strictly validates and rejects negative (`<= 0`) and excessive (`> 300`) values. Form supports 1-tap quick presets (`[Cont]`, `[SOS]`, `[3d]`, `[5d]`, `[7d]`, `[14d]`, `[30d]`) alongside free-text typing. Catalogue bundled package defaults (e.g. *Telma 40 tablet* with `{Telmisartan 40mg, 1-0-1, to continue}`) populate intact into staging without doctor friction. Column 3 isolation strictly maintained with `effectiveDuration`.
+- **Severity:** ⚠️ **Pharmacological Validation Error** $\to$ **CLEARED**.
 
-#### 17. Exponential Accumulation of Blank Ghost Diagnostic Tests
+#### 17. Exponential Accumulation of Blank Ghost Diagnostic Tests ✅ [RESOLVED]
 - **Affected Files:**
-  - [EncounterFormState.loadInitialData](lib/widgets/encounter/encounter_form_state.dart#L363-L375)
-- **Failure Mode:**
-  `loadInitialData` iterates through all lifetime consultations for chronic patients and blindly appends every past test ordered with `resultValue: ''`. By visit 8, 20+ duplicate blank rows pollute the encounter form and are committed back to Firestore.
-- **Severity:** ⚠️ **Longitudinal Chart Pollution**.
+  - [EncounterFormState.loadInitialData](lib/widgets/encounter/encounter_form_state.dart)
+- **Resolution:**
+  Updated `loadInitialData` to track `seenTestNames` across historical consultations and deduplicate by normalized `testName.trim().toLowerCase()`. Historical lab review tables pre-populate only unique ordered investigations, completely eliminating ghost blank rows and chart pollution for chronic follow-up patients.
+- **Severity:** ⚠️ **Longitudinal Chart Pollution** $\to$ **CLEARED**.
 
 #### 18. External Appointment State De-sync in Active Consultation
 - **Affected Files:**
@@ -333,14 +337,14 @@ Fixing these defects is not a routine patch. Resolving these 24 issues alongside
    - Next review dropdown with `Not Needed` option.
 2. **Encounter Local Draft Autosave (Finding #13):**
    Serialize `EncounterFormState` to local storage every 5 seconds. Restore draft automatically if browser reloads or crashes.
-3. **Active Allergy Safety Cross-Check (Finding #14):**
-   Match staged medicine brand names and active compositions against patient allergies; display prominent red safety warning banner on conflict.
-4. **Staged Medicine Discard Guard (Finding #15):**
-   Alert doctor or auto-commit staged drug if "Complete & Sign" is tapped while a medicine is staged.
-5. **Pharmacological Sanity Validation (Finding #16):**
-   Enforce `durationDays > 0` and standard dosage formats.
-6. **Deduplicate Lab Reviews (Finding #17):**
-   Limit pre-population strictly to the most recent prior consultation, deduplicated by `testName`.
+3. **Passive Allergy Presentation (Finding #14) ✅ [RESOLVED]:**
+   Clean header allergy chip design retained per PM directive with zero clinical roadblocks.
+4. **Staged Medicine Discard Guard (Finding #15) ✅ [RESOLVED]:**
+   Interactive modal intercepts "Complete & Sign" if a staged medicine is pending, with 1-tap `[Add to Prescription & Sign]` or `[Discard & Sign]`.
+5. **Flexible Duration System & Pharmacological Sanity (Finding #16) ✅ [RESOLVED]:**
+   Pure Dart `MedicineEngine.parseDuration` validates 1-300 days, SOS, and Continue/Chronic, while fully preserving packaged catalogue defaults (e.g. *Telma 40*).
+6. **Deduplicate Longitudinal Lab Investigations (Finding #17) ✅ [RESOLVED]:**
+   Pre-populates only unique ordered tests across historical visits, eliminating ghost blank rows.
 
 ---
 

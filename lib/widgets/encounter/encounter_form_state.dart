@@ -45,11 +45,25 @@ class EncounterFormState {
   String? stagedUnlistedName;
   String? stagedComposition;
 
+  /// Returns true if a medicine has been selected and is actively staged
+  bool get hasStagedMedicine =>
+      stagedMedicine != null ||
+      stagedGenericGroup != null ||
+      stagedUnlistedName != null;
+
+  /// Descriptive trade name or composition of currently staged medicine
+  String get stagedMedicineDisplayName {
+    if (stagedMedicine != null) return stagedMedicine!.productName;
+    if (stagedGenericGroup != null) return stagedGenericGroup!.compositionLabel;
+    if (stagedUnlistedName != null) return stagedUnlistedName!;
+    return '';
+  }
+
   final TextEditingController stagedDosageController = TextEditingController(
     text: '1 Tablet',
   );
   final TextEditingController stagedDurationController = TextEditingController(
-    text: '30',
+    text: '30 days',
   );
   final TextEditingController stagedInstructionsController =
       TextEditingController();
@@ -144,10 +158,14 @@ class EncounterFormState {
     stagedDosageController.text = defaults.dosage;
     stagedFrequency = defaults.frequency;
     stagedTiming = defaults.timing;
-    stagedIsChronic = defaults.durationDays == null;
-    stagedDurationController.text = defaults.durationDays != null
-        ? '${defaults.durationDays}'
-        : '30';
+    stagedIsChronic = defaults.durationDays == null &&
+        (defaults.durationText == null ||
+            defaults.durationText!.toLowerCase().startsWith('cont') ||
+            defaults.durationText!.toLowerCase() == 'to continue');
+    stagedDurationController.text = defaults.durationText ??
+        (defaults.durationDays != null
+            ? '${defaults.durationDays} days'
+            : 'To continue');
     stagedInstructionsController.text = defaults.instructions ?? '';
     isSearchActive = false;
   }
@@ -169,10 +187,14 @@ class EncounterFormState {
     stagedDosageController.text = defaults.dosage;
     stagedFrequency = defaults.frequency;
     stagedTiming = defaults.timing;
-    stagedIsChronic = defaults.durationDays == null;
-    stagedDurationController.text = defaults.durationDays != null
-        ? '${defaults.durationDays}'
-        : '30';
+    stagedIsChronic = defaults.durationDays == null &&
+        (defaults.durationText == null ||
+            defaults.durationText!.toLowerCase().startsWith('cont') ||
+            defaults.durationText!.toLowerCase() == 'to continue');
+    stagedDurationController.text = defaults.durationText ??
+        (defaults.durationDays != null
+            ? '${defaults.durationDays} days'
+            : 'To continue');
     stagedInstructionsController.text = defaults.instructions ?? '';
     isSearchActive = false;
   }
@@ -188,7 +210,7 @@ class EncounterFormState {
     stagedFrequency = '1-0-1 (BD)';
     stagedTiming = 'After Food';
     stagedIsChronic = false;
-    stagedDurationController.text = '5';
+    stagedDurationController.text = '5 days';
     stagedInstructionsController.text = '';
     isSearchActive = false;
   }
@@ -200,7 +222,7 @@ class EncounterFormState {
     stagedComposition = null;
   }
 
-  void confirmAddStagedMedicine(String Function() uuidGenerator) {
+  bool confirmAddStagedMedicine(String Function() uuidGenerator) {
     String name;
     String comp = stagedComposition ?? '';
     String? medId;
@@ -218,12 +240,15 @@ class EncounterFormState {
       if (comp.isEmpty) comp = stagedUnlistedName!;
       unlisted = stagedUnlistedName!;
     } else {
-      return;
+      return false;
     }
 
-    final int? duration = stagedIsChronic
-        ? null
-        : int.tryParse(stagedDurationController.text.trim());
+    final parsed = MedicineEngine.parseDuration(
+      stagedIsChronic ? 'To continue' : stagedDurationController.text,
+    );
+    if (!parsed.isValid) {
+      return false;
+    }
 
     final item = PrescriptionItem(
       id: uuidGenerator(),
@@ -237,7 +262,8 @@ class EncounterFormState {
           : '1 Tablet',
       frequency: stagedFrequency,
       timing: stagedTiming,
-      durationDays: duration,
+      durationDays: parsed.durationDays,
+      durationText: parsed.durationText,
       unlistedName: unlisted,
       instructions: stagedInstructionsController.text.trim().isNotEmpty
           ? stagedInstructionsController.text.trim()
@@ -249,6 +275,7 @@ class EncounterFormState {
     medSearchController.clear();
     isSearchActive = false;
     medSearchFocusNode.requestFocus();
+    return true;
   }
 
   /// Evaluates and applies a clinical prescription template bundle.
@@ -363,17 +390,22 @@ class EncounterFormState {
         );
       }
 
+      final seenTestNames = <String>{};
       for (final past in pastConsultations) {
         for (final ordered in past.orderedTests) {
-          reviewedInvestigations.add(
-            DiagnosticInvestigationReview(
-              id: uuidGenerator(),
-              testName: ordered.testName,
-              resultValue: '',
-              performedDate: null,
-              notes: null,
-            ),
-          );
+          final clean = ordered.testName.trim().toLowerCase();
+          if (clean.isNotEmpty && !seenTestNames.contains(clean)) {
+            seenTestNames.add(clean);
+            reviewedInvestigations.add(
+              DiagnosticInvestigationReview(
+                id: uuidGenerator(),
+                testName: ordered.testName.trim(),
+                resultValue: '',
+                performedDate: null,
+                notes: null,
+              ),
+            );
+          }
         }
       }
       if (reviewedInvestigations.isNotEmpty) {

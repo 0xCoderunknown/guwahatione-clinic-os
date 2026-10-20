@@ -93,6 +93,71 @@ class _ConsultationEncounterScreenState
 
   Future<void> _completeAndSignConsultation() async {
     if (_isSaving) return;
+
+    if (form.hasStagedMedicine) {
+      final medicineName = form.stagedMedicineDisplayName;
+      final choice = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: Row(
+            children: const [
+              Icon(Icons.medication_outlined, color: Colors.teal),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Unadded Staged Medicine',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'You have staged "$medicineName" but have not added it to the prescription yet.\n\n'
+            'Would you like to include it before completing and signing?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'cancel'),
+              child: const Text('Review / Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'discard'),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Discard & Sign'),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(ctx, 'add'),
+              icon: const Icon(Icons.add, size: 16),
+              label: const Text('Add to Prescription & Sign'),
+              style: FilledButton.styleFrom(backgroundColor: Colors.teal.shade700),
+            ),
+          ],
+        ),
+      );
+
+      if (!mounted) return;
+      if (choice == 'cancel' || choice == null) {
+        return;
+      }
+      if (choice == 'add') {
+        final added = form.confirmAddStagedMedicine(() => _uuid.v4());
+        if (!added) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Please check medicine duration (e.g. 1-300 days, cont, or SOS) before signing.',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      } else if (choice == 'discard') {
+        form.cancelStaging();
+      }
+    }
+
     setState(() => _isSaving = true);
     try {
       final clinic = Provider.of<ClinicProvider>(context, listen: false);

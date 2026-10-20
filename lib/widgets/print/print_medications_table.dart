@@ -132,13 +132,16 @@ class PrintMedicationsTable extends StatelessWidget {
                 if (item.action == MedicationAction.stop) {
                   durationText = 'To STOP';
                   durationColor = Colors.red.shade800;
-                } else if (item.durationDays != null &&
-                    item.durationDays! > 0) {
-                  durationText = '${item.durationDays} Days';
-                  durationColor = Colors.black87;
                 } else {
-                  durationText = 'To Continue';
-                  durationColor = Colors.teal.shade900;
+                  durationText = item.effectiveDuration;
+                  if (durationText == 'SOS') {
+                    durationColor = Colors.orange.shade900;
+                  } else if (item.durationDays != null &&
+                      item.durationDays! > 0) {
+                    durationColor = Colors.black87;
+                  } else {
+                    durationColor = Colors.teal.shade900;
+                  }
                 }
 
                 return TableRow(

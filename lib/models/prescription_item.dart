@@ -43,6 +43,7 @@ class PrescriptionItem {
   final String timing; // e.g., 'After Food', 'Before Food'
   final int?
   durationDays; // Nullable: null for chronic drugs; integer for acute courses
+  final String? durationText; // e.g. 'To Continue', 'SOS', '5 Days'
   final String? stopReason; // Optional reason when action == STOP
   final String?
   unlistedName; // Fallback field for outside medications not in catalog
@@ -61,13 +62,37 @@ class PrescriptionItem {
     this.frequency = '1-0-1',
     this.timing = 'After Food',
     this.durationDays,
+    this.durationText,
     this.stopReason,
     this.unlistedName,
     this.instructions,
   });
 
   /// Returns true if this medication is an ongoing chronic therapy (indefinite duration)
-  bool get isChronic => durationDays == null;
+  bool get isChronic =>
+      (durationDays == null &&
+          (durationText == null ||
+              durationText!.toLowerCase().startsWith('cont') ||
+              durationText!.toLowerCase() == 'to continue'));
+
+  /// Formatted duration string adhering to Invariant #12 (Strict 3-Column Isolation).
+  /// Strictly outputs 'To STOP', 'SOS', 'X Days', or 'To Continue'.
+  String get effectiveDuration {
+    if (action == MedicationAction.stop) return 'To STOP';
+    if (durationText != null && durationText!.trim().isNotEmpty) {
+      final dt = durationText!.trim();
+      if (dt.toUpperCase() == 'SOS') return 'SOS';
+      if (dt.toLowerCase().startsWith('cont') ||
+          dt.toLowerCase() == 'to continue') {
+        return 'To Continue';
+      }
+      return dt;
+    }
+    if (durationDays != null && durationDays! > 0) {
+      return '$durationDays Days';
+    }
+    return 'To Continue';
+  }
 
   /// Returns true if this medication is currently active on today's prescription schedule
   bool get isActive => action != MedicationAction.stop;
@@ -94,6 +119,7 @@ class PrescriptionItem {
       'frequency': frequency,
       'timing': timing,
       'durationDays': durationDays,
+      'durationText': durationText,
       'stopReason': stopReason,
       'unlistedName': unlistedName,
       'instructions': instructions,
@@ -114,6 +140,7 @@ class PrescriptionItem {
       frequency: json['frequency'] as String? ?? '1-0-1',
       timing: json['timing'] as String? ?? 'After Food',
       durationDays: (json['durationDays'] as num?)?.toInt(),
+      durationText: json['durationText'] as String?,
       stopReason: json['stopReason'] as String?,
       unlistedName: json['unlistedName'] as String?,
       instructions: json['instructions'] as String?,
@@ -133,6 +160,7 @@ class PrescriptionItem {
     String? frequency,
     String? timing,
     int? durationDays,
+    String? durationText,
     bool clearDuration = false,
     String? stopReason,
     String? unlistedName,
@@ -151,6 +179,7 @@ class PrescriptionItem {
       frequency: frequency ?? this.frequency,
       timing: timing ?? this.timing,
       durationDays: clearDuration ? null : (durationDays ?? this.durationDays),
+      durationText: clearDuration ? null : (durationText ?? this.durationText),
       stopReason: stopReason ?? this.stopReason,
       unlistedName: unlistedName ?? this.unlistedName,
       instructions: instructions ?? this.instructions,

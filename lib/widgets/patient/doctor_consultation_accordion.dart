@@ -316,7 +316,7 @@ class DoctorConsultationAccordion extends StatelessWidget {
             ),
           ),
           Text(
-            item.durationDays != null ? '${item.durationDays}d' : 'Ongoing',
+            item.effectiveDuration,
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
