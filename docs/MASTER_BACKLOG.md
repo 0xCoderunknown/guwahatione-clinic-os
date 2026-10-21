@@ -542,6 +542,115 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
+### QOL-14 — Reconciled Regimen In-Place Duration Dropdown & Inline Dosage Editing
+
+**Domain:** Doctor Chamber / Encounter  
+**Affected Files:** `lib/widgets/encounter/rx/reconciliation_item_row.dart`, `lib/models/prescription_item.dart`  
+**Origin / Clinical Memory Dump:**  
+> *"Telma 40 tablet [TELMISARTAN 40mg] | 1 tablet daily morning before food | to continue. Each and every part is editable. He can click on continue which is a dropdown and change to STOP, 3 days, 5 days, [custom]."*  
+**Current Implementation Gap:** `ReconciliationItemRow` currently provides binary `ChoiceChip` toggles: `[CONTINUE]` and `[STOP]`. There is no inline dropdown on the card to switch duration to `3 days`, `5 days`, or `Custom`, nor an in-place editor for dosage/timing without discarding and re-searching the medication.  
+**Specification:**
+- Add an in-place duration preset dropdown on the reconciled card: `To continue`, `3 days`, `5 days`, `7 days`, `14 days`, `SOS`, `STOP`, and `Custom...`.
+- Tapping on the dosage/timing text (`Column 2`) allows inline editing if the doctor needs to tweak the strength or timing of an existing chronic therapy.
+
+---
+
+### QOL-15 — Primary "Print Preview" Action Button on Encounter Bottom Dock
+
+**Domain:** Doctor Chamber / Encounter  
+**Affected Files:** `lib/screens/consultation_encounter_screen.dart`, `lib/widgets/encounter/consultation_bottom_dock.dart`  
+**Origin / Clinical Memory Dump:**  
+> *"then hits a button to do a preview. Basically you can say this 'print preview' of MS Word. 1 last step before prescription is printed. And clicks 'Sign and Complete' to print the prescription."*  
+**Current Implementation Gap:** The prescription preview action currently exists only as a subtle icon button (`Icons.print_outlined`) in the top AppBar. The bottom dock only displays `[Pause / Step Out]` and `[Complete & Sign]`. Doctors naturally look at the bottom dock for their next clinical action.  
+**Specification:**
+- Elevate "Print Preview" to a primary action button in `ConsultationBottomDock` alongside `[Complete & Sign]`.
+- Clicking `[Print Preview]` opens the modal preview. From inside the preview, the doctor can review the 3-column table and click `[Sign & Print]` directly.
+
+---
+
+### QOL-16 — Reception Emergency Encounter Fallback (Doctor PC Outage Failover)
+
+**Domain:** Reception Desk / Clinical Continuity  
+**Affected Files:** `lib/screens/dashboard_screen.dart`, `lib/widgets/dashboard/dashboard_queue_item_row.dart`  
+**Origin / Clinical Memory Dump:**  
+> *"And if doctor PC goes down? then reception can take over and send in patient themselves but it's not readily accessible."*  
+**Current Implementation Gap:** The system currently has the reverse failover (if reception crashes, doctor uses `ChamberDoorOverrideBar` to self-call patients). However, if the doctor's terminal hardware dies completely or loses power, reception cannot open the consultation encounter to record clinical notes or print a prescription on the doctor's behalf.  
+**Specification:**
+- Add a protected fallback action on the reception queue card: `"Emergency Encounter Fallback (Doctor Terminal Down)"`.
+- Requires Doctor PIN authentication or Owner Override.
+- Opens `ConsultationEncounterScreen` directly on the reception PC, allowing the visiting doctor or counter staff to record vitals, medications, and generate a signed printout without halting OPD care.
+
+---
+
+### QOL-17 — Explicit "Patient Already Registered" Visual Banner on Phone Match
+
+**Domain:** Reception Desk / Registration  
+**Affected Files:** `lib/widgets/booking/booking_patient_fields.dart`, `lib/widgets/booking/add_appointment_dialog.dart`  
+**Origin / Clinical Memory Dump:**  
+> *"She enters Hira's phone number. It says 'patient already exist' and immediately pre-fills all details like name, age, etc."*  
+**Current Implementation Gap:** When a 10-digit phone number matches existing records, the form renders family member chips and populates the text fields, but lacks an explicit status alert or banner confirming that an existing patient record was found.  
+**Specification:**
+- Render an immediate green confirmation chip or banner above the name field: `✅ Registered Patient Found: [Name] (Age) • Details auto-filled`.
+- Informs counter staff that the patient is in the database and prevents accidental duplicate creation.
+
+---
+
+### QOL-18 — 1-Tap WhatsApp Clinical Summary from Patient Lookup History
+
+**Domain:** Patient Lookup / Communications  
+**Affected Files:** `lib/widgets/patient/doctor_consultation_accordion.dart`, `lib/screens/appointment_list_screen.dart`  
+**Origin / Clinical Memory Dump:**  
+> *"we also have a patient lookup (by both doc and reception) who can check past client reports. Say patient want a fresh copy or want a copy in their whatsapp, it is possible."*  
+**Current Implementation Gap:** In the Patient Lookup tab, each past consultation card (`DoctorConsultationAccordion`) provides a `[View Prescription]` button (which opens `PrescriptionPrintScreen` where WhatsApp is available), but does not have a direct 1-tap WhatsApp button on the history card itself.  
+**Specification:**
+- Add a direct `[WhatsApp Rx]` green icon button on each past consultation accordion row in Patient Lookup.
+- Tapping immediately opens the native WhatsApp deep-link (`WhatsAppEngine.buildDeepLink`) with the formatted clinical summary.
+
+---
+
+### QOL-19 — "Complete & Sign" Auto-Pushes to Print (Workflow Sequence Inversion)
+
+**Domain:** Doctor Chamber / Encounter  
+**Affected Files:** `lib/screens/consultation_encounter_screen.dart` (lines 179–199)  
+**Origin / Clinical Memory Dump:**  
+> *"then hits a button to do a preview. Basically you can say this 'print preview' of MS Word. 1 last step before prescription is printed. And clicks 'Sign and Complete' to print the prescription."*  
+**Current Implementation State:**  
+The implemented sequence is the **reverse** of the author's described flow:
+1. Doctor clicks **`Complete & Sign`** → consultation is **saved to Firestore first**, chamber signals `consultation_ended`, draft is cleared.
+2. *Then* the app auto-navigates to `PrescriptionPrintScreen` for the physical print.
+
+In the author's mental model, preview comes *before* sign-off. In the implementation, save/sign comes *before* preview. This is not a bug per se — the print screen opens immediately after save, so the practical result is similar — but it means a doctor **cannot abort a signed consultation** from the print preview screen even if they realize a medication error at that stage.
+
+**Specification:**
+- Evaluate whether a "pre-sign preview" gate should be added: show print preview *before* committing the `saveConsultation` call, with a `[Confirm & Sign]` button on the preview screen that triggers the actual Firestore write and chamber `consultation_ended` signal.
+- If the simpler approach is preferred: add a visible warning on the print screen — *"Consultation already signed and saved. To amend, contact the clinic administrator."* — so the doctor understands the record is finalized.
+- Whichever route is chosen, document the decision here and update QOL-15 accordingly.
+
+---
+
+### QOL-20 — Explicit "Skip Token" Action with Audit Trail on Reception Queue
+
+**Domain:** Reception Desk / Queue  
+**Affected Files:** `lib/widgets/queue/appointment_accordion.dart`, `lib/widgets/queue/accordion_status_actions.dart`  
+**Origin / Clinical Memory Dump:**  
+> *"Token #1 has stepped out to the medical shop across the street. Reception skips Token #1 without breaking the ledger, calls Token #2..."*  
+**Current Implementation Gap:**  
+The memory dump correctly describes the behaviour (skip without breaking the ledger), and the system does support dispatching Token #2 to the chamber without first dispatching Token #1. However, there is no explicit **"Skip / Stepped Out"** status or action on the token card for the skipped patient.
+
+Currently:
+- Receptionist can simply dispatch Token #2 from the accordion (Token #1 remains `waitingInLobby`).
+- Token #1 will accumulate at the top of the queue indefinitely until manually marked `absent` at shift close, or until the patient physically returns and is dispatched.
+- There is no intermediate status (`skipped` / `stepped_out`) that signals to everyone: *"This patient has temporarily stepped out but is expected to return."*
+
+**Specification:**
+- Add a `[Stepped Out]` action button (secondary, alongside `[Mark Absent]`) on the reception token accordion.
+- Marking a token `stepped_out` changes the queue card colour/indicator to a distinct amber badge: `⏭ Stepped Out`.
+- The patient can be returned to `waitingInLobby` status with a `[Patient Returned]` button when they re-enter the lobby.
+- **No new Firestore field is strictly required** — `AppointmentStatus` can add `steppedOut` or this can be modeled by a lightweight `visitStatusOverride` flag on the appointment document.
+- **AGENTS.md note:** Do NOT delete or permanently absent-mark a `steppedOut` token automatically. Only the receptionist can decide to absent them at shift close.
+
+---
+
 ## 💡 Section 3: Product Ideas Under Evaluation
 
 > Not approved for implementation. PM review required before entering the backlog.
@@ -769,3 +878,96 @@ flutter test      # All 306+ tests pass
 - Consolidate patch releases into minor series range entries: `## [1.36.0 – 1.36.5] — DD-MM-YYYY`
 - Never add Verification Gate sections or test pass counts to `CHANGELOG.md`
 - Always inform the PM explicitly if a breaking change is introduced
+
+---
+
+## 🔍 Section 8: Author Memory Dump — Mini-Review Verdict (21-10-2026)
+
+> This section records the outcome of a code-verified cross-check between the author's first-person narrative ("clinical memory dump") describing how ClinicOS is supposed to behave, and the actual codebase as it exists today. Items marked **✅ Verified** are correctly implemented. Items marked **⚠️ Gap Logged** are divergences that have been documented as QOL or AUDIT items above.
+
+---
+
+### 8.1 Registration & Phone Lookup
+
+| Author's Description | Implementation Reality | Status |
+|---|---|---|
+| Receptionist types phone number and system says *"Patient already exists"*, auto-fills all fields | Fields auto-fill and family chips appear — but no explicit green confirmation banner/chip is rendered | ⚠️ Gap → **QOL-17** |
+| New family member (`+ Add Member`) gets a new independent `patientId` linked to guardian's phone | Fully implemented via `BookingPatientFields` family picker + `PatientService.createPatient` with `guardianName`/`guardianRelation` | ✅ Verified |
+| Child patient identity zero cross-contamination with father's records | `patientId` is decoupled from phone. Phone is household contact index only. Confirmed via `SCHEMA_AND_MODELS.md`. | ✅ Verified |
+| Emergency / no-mobile patient registration | Not implemented — 1-tap dummy key feature pending | ⚠️ Gap → **QOL-01** |
+
+---
+
+### 8.2 Token & Queue Management
+
+| Author's Description | Implementation Reality | Status |
+|---|---|---|
+| Atomic consecutive queue numbering | `counters/queue_{doctorId}_{date}` Firestore transaction. Fully atomic. | ✅ Verified |
+| Provisional token + estimated wait time shown *before* booking is committed | `BookingPaymentSection` streams `AppointmentEngine.nextQueueNumber` + `calculateEstimatedTime`. Renders live badge on doctor selection. | ✅ Verified |
+| Reception skips Token #1 and dispatches Token #2 without freezing the queue | Accordion dispatch allows any token to be dispatched regardless of queue order. The skipped token stays `waitingInLobby`. | ✅ Verified (core mechanic) |
+| Skipped patient has a visible "stepped out" indicator distinct from absent | No `steppedOut` state exists. Patient just lingers as `waitingInLobby` with no visual cue. | ⚠️ Gap → **QOL-20** |
+| Absent marking preserves the token slot at ₹0 (no deletion) | `AccordionStatusActions` → `AppointmentStatus.absent` + confirmation dialog. Correct. | ✅ Verified |
+| Same-day duplicate guard with family exception | Composite `Date + DoctorId + Name + Phone` guard + family chip exception. Fully implemented. | ✅ Verified |
+
+---
+
+### 8.3 Doctor-Reception Chamber Handshake
+
+| Author's Description | Implementation Reality | Status |
+|---|---|---|
+| Doctor enters chamber, logs in with 4-digit PIN, clicks **"I AM READY"** | `DoctorChamberScreen` → `notifyReadyForNext()` → chamber transitions to `ready_for_next`. Reception dispatch lights up. | ✅ Verified |
+| Reception dispatch is **locked** during active consultation | `QueueChamberDispatchAction` checks `ChamberStatus.inConsultation` → `onDispatch = null`. | ✅ Verified |
+| After consultation ends, chamber auto-enters **Breather Mode** — reception cannot force next patient | `notifyConsultationEnded()` → `consultation_ended`. `ChamberControlBanner` shows breather card. Reception arrow disabled. | ✅ Verified |
+| Doctor's *"NEXT PATIENT"* unlocks reception dispatch | `onNextPatient` → `notifyReadyForNext()` → reception unlocks. | ✅ Verified |
+| Auto-load of encounter when reception dispatches | `DoctorChamberScreen` stream listener detects `calling` → `_isConsultationOpen` guard → opens `ConsultationEncounterScreen`. | ✅ Verified |
+| If reception PC goes down, doctor can directly call patients via door override | `ChamberDoorOverrideBar` shows top 1–2 lobby-checked-in paid patients. | ✅ Verified |
+
+---
+
+### 8.4 Consultation Encounter & Prescribing
+
+| Author's Description | Implementation Reality | Status |
+|---|---|---|
+| Full patient history across all previous visits visible on-screen | `_loadInitialData` → `EncounterFormState.loadInitialData` loads past consultations. Longitudinal history dialog via `EncounterDialogs.showLongitudinalHistory`. | ✅ Verified |
+| **1-Click Carry Forward** of prior chronic regimen as `CONTINUE` items | `form.carryForwardFromConsultation()` in `ConsultationEncounterScreen`. Carried items appear as `CONTINUE` in reconciliation list. | ✅ Verified |
+| Each prescription row is fully inline-editable (dosage, timing, duration dropdown from `CONTINUE` → `3 days`, `STOP`, etc.) | `ReconciliationItemRow` only has binary `CONTINUE`/`STOP` chips. No duration dropdown or inline dosage editor on the reconciled card. | ⚠️ Gap → **QOL-14** |
+| **`[STOP]`** medication — 1 tap, no popup interrogation | `reconciliation_item_row.dart` → `_promptStopReason` which opens a dialog for stop reason. This is a *light* popup (optional reason input), not a full interrogation. Acceptable. | ✅ Reasonable |
+| New medicine search by brand or salt | Unified `MedicineEngine` search. `RxSearchResultsView`. Inline staging form with presets. | ✅ Verified |
+| Rapid frequency chips (`1-0-1`, `1-0-0`, `0-0-1`, `1-1-1`, `SOS`) | `StagedMedicineForm` includes these chips. | ✅ Verified |
+| Timing chips (`After Food / PC`, `Before Food / AC`) | Implemented. | ✅ Verified |
+| Diagnostic orders & follow-up date chips | `AdviceAndOrdersSection` — lab orders + advice + `3 days / 7 days / 14 days / 1 month / 3 months / Not Needed` chips. | ✅ Verified |
+| **Print Preview** *before* clicking **Sign & Complete** | Preview button exists but is a subtle icon in the AppBar, not a primary bottom-dock action. Sign & Complete saves *first*, then auto-pushes to print — opposite of the described mental model. | ⚠️ Gap → **QOL-15** + **QOL-19** |
+| **Pause / Step Out** — saves draft, frees chamber, resumes when patient returns | `_pauseAndSaveConsultation()` + `EncounterFormState.saveDraft()` + `pauseConsultation()`. Fully implemented. Draft restored on re-open. | ✅ Verified |
+| **WhatsApp digital prescription** from reception after completion | `AccordionStatusActions` → WhatsApp button when `status == completed`. Correct. | ✅ Verified |
+| Patient lookup (by doctor and reception) with past consultation history + reprint | `PatientDirectoryScreen` → `PatientLookupCard` → `DoctorConsultationAccordion` → `[View Prescription]` → `PrescriptionPrintScreen`. WhatsApp available from print screen. | ✅ Verified (direct WhatsApp from history card pending QOL-18) |
+
+---
+
+### 8.5 Practicality & Real-World Edge Case Assessment
+
+| Scenario | Assessment |
+|---|---|
+| **Peak OPD hour — 3 doctors, 30+ tokens, multiple skips** | Core queue mechanics handle this. However, with no `steppedOut` status (QOL-20), the lobby list will have ambiguous `waitingInLobby` tokens that may or may not be physically present, causing receptionist confusion during handover. |
+| **Doctor types encounter, realizes medication error after clicking Complete & Sign** | Currently no amendment path. The consultation is committed to Firestore the moment Complete & Sign is pressed. The print screen opens for a signed, immutable record. QOL-19 documents a pre-sign preview gate as a potential safeguard. |
+| **Child patient with no phone — registered under father's number** | Fully handled by family chips. Works correctly. |
+| **Reception machine running 8+ hours — broadband dropout mid-shift** | Offline cache (`OfflineQueueCacheService`) provides resilience. High-visibility amber banner notifies staff. Emergency door override provides doctor-side fallback. Solid. |
+| **Second encounter for same patient same day (lab results return visit)** | Correctly handled: same-day return generates a new queue token via reception, unlocks free review waiver. Separate, fresh consultation encounter. Append-only. |
+| **Doctor forgets to click NEXT PATIENT after breather — reception stuck** | Reception is stuck indefinitely in `consultation_ended` holding mode. No auto-timeout. Manual coordination required. Low operational risk in small clinics, but should be noted for multi-doctor rollout. |
+| **Advance booking for a wrong day (doctor not sitting)** | `availableDays` check missing in advance booking (AUDIT-22). A patient could book for a day the doctor doesn't sit. |
+
+---
+
+### 8.6 Summary Verdict
+
+**Core flow is conceptually sound and mostly implemented correctly.** The author's mental model aligns well with the codebase for all critical paths: atomic tokens, doctor-paced handshake, 1-click carry forward, append-only clinical records, and offline resilience.
+
+**New gaps documented in this review:**
+
+| Item | Category | Description |
+|---|---|---|
+| **QOL-19** | Workflow | Sign-before-preview sequence inversion — pre-sign preview gate evaluation needed |
+| **QOL-20** | Queue UX | Missing `steppedOut` intermediate status for tokens that temporarily leave the lobby |
+
+**Pre-existing gaps confirmed by this review:** QOL-01 (no-mobile dummy), QOL-14 (inline duration dropdown), QOL-15 (preview as primary dock action), QOL-17 (existing patient banner), QOL-18 (WhatsApp from history card), AUDIT-22 (available days booking check).
+
+**No critical implementation divergences found** that would make the described clinic floor workflow impossible to execute. The product is operationally viable for initial deployment at a real clinic.
