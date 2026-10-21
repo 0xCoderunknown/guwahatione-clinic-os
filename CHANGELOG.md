@@ -147,7 +147,7 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
   - Replaced cluttered fee labels with clean payment presentation: `₹500 Paid`, `Free Review`, `Free Waiver`, `Post-Pay`, `Unpaid`.
   - Refined 5-state chamber status lifecycle: `[ABSENT]`, `[NO OPD TODAY]`, `[NOT ARRIVED]`, `[IN CHAMBER]`, `[CONSULTING]`.
 - **Single Source of Truth Documentation Consolidation (v1.36.3):**
-  - Purged legacy archives (`docs/archive/`) and historical decision logs (`docs/decisions/`) to establish a zero-hallucination, single source of truth (`AGENTS.md`, `docs/SCHEMA_AND_MODELS.md`, `docs/PRODUCT_ROADMAP.md`).
+  - Purged legacy archives (`docs/archive/`) and historical decision logs (`docs/decisions/`) to establish a zero-hallucination, single source of truth (`AGENTS.md`, `docs/SCHEMA_AND_MODELS.md`, `docs/MASTER_BACKLOG.md`).
 - **Enforce Doctor-Paced Handshake Integrity (v1.36.2):**
   - Purged `ChamberCallingAlertBar` and pre-emption routines from `ConsultationEncounterScreen` to strictly enforce Invariant #7 & #11.
   - Reception buttons are locked (`Chamber Occupied` or `Doctor on Break`) during active consultations and breathers. Doctor signals readiness via "Next Patient" (`ready_for_next`) before reception can dispatch.

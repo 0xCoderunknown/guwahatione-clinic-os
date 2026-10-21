@@ -13,7 +13,7 @@ Follow this checklist whenever modifying printable prescription documents, token
 
 ### Step 1: Identify Print Artifact Target
 - **Full Clinical Prescription:** `lib/widgets/print/print_header_and_demographics.dart` (Top header + demographics) and `lib/widgets/print/print_orders_and_footer.dart` (Footer, follow-ups, signature).
-- **Rx Medication Table:** `lib/widgets/print/print_rx_table.dart` (Active medications vs discontinued therapy).
+- **Rx Medication Table:** `lib/widgets/print/print_medications_table.dart` (Active medications vs discontinued therapy).
 - **Thermal Counter Token Slip:** `lib/widgets/print/token_receipt_dialog.dart` (A6 / POS slip).
 
 ---

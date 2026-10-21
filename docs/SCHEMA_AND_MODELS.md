@@ -12,7 +12,7 @@
 | `patients` | Unique patient ID (`pat_{timestamp}_{suffix}` or legacy `{phoneNumber}`) | Master patient directory keyed by unique `id`, with `phoneNumber` as household contact index. |
 | `doctors` | Auto-generated UID or slug | Consulting doctors, specialty, schedule, fees, and PINs. |
 | `appointments` | Auto-generated UID (UUID / Firestore ID) | Daily appointment & token ledger records. **Zero deletions.** |
-| `counters` | `queue_{doctorId}_{yyyy-MM-dd}` | Atomic sequence counter for daily queue token numbering. |
+| `counters` | `queue_{doctorId}_{yyyy-MM-dd}` (queue counter) · `chamber_{doctorId}_{yyyy-MM-dd}` (chamber sync) | Atomic sequence counters for daily queue token numbering and real-time doctor-reception chamber calling synchronization. |
 | `consultations` | Auto-generated UID | Append-only clinical encounter records. |
 | `medicines` | Deterministic `med_*` or auto UID | Master clinic medicine formulary catalogue. |
 
