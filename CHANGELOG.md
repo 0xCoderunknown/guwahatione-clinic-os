@@ -8,6 +8,17 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.1] — 21-10-2026
+
+### Universal 0000 Testing Mode & Single Client Configuration Architecture
+- **Universal Testing Mode Flag (`ClinicFeatureFlags.enableTestingMode`):**
+  - Added compile-time guarded `enableTestingMode` and `isTestingModeActive` to `ClinicFeatureFlags`.
+  - In testing mode, simplifies authentication across all roles by accepting PIN `0000` for Doctor, Receptionist, and Admin/Owner logins.
+  - Automatically suppresses and tree-shakes testing mode bypass logic in production release builds (`--release`), preventing auth bypass on Firebase Hosting.
+- **Login Screen Testing Role Selector:**
+  - Added sleek role switcher (`Admin Mode` / `Reception Desk`) in `ReceptionLoginForm` when testing mode is active.
+  - Cleaned all hardcoded default credentials and placeholders (`1234`, `849201`) across login, chamber release, and doctor list screens to prevent information disclosure.
+
 ## [1.40.0] — 20-10-2026
 
 ### Longitudinal 1-Click Carry Forward, Natural Dosage Synthesis, Doctor Revenue Split & Letterhead Margin Ergonomics

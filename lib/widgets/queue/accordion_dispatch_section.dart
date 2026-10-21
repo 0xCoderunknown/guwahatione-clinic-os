@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/clinic_config.dart';
 import '../../models/appointment.dart';
 import '../../models/chamber_session.dart';
 import '../../providers/auth_provider.dart';
@@ -389,7 +390,9 @@ class AccordionDispatchSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Clear active lock for ${AppFormatters.doctorTitle(appointment.doctorName)}\'s chamber? Use this if doctor left or chamber is stuck.\n\nEnter Reception PIN (0000) or Clinic Owner PIN to confirm.',
+                    ClinicConfig.current.features.isTestingModeActive
+                        ? 'Clear active lock for ${AppFormatters.doctorTitle(appointment.doctorName)}\'s chamber? Use this if doctor left or chamber is stuck.\n\nEnter PIN (0000) to confirm.'
+                        : 'Clear active lock for ${AppFormatters.doctorTitle(appointment.doctorName)}\'s chamber? Use this if doctor left or chamber is stuck.\n\nEnter Staff PIN to confirm.',
                     style: const TextStyle(fontSize: 13, height: 1.4),
                   ),
                   const SizedBox(height: 16),
@@ -400,7 +403,9 @@ class AccordionDispatchSection extends StatelessWidget {
                     autofocus: true,
                     decoration: InputDecoration(
                       labelText: 'Staff PIN',
-                      hintText: 'Enter 0000',
+                      hintText: ClinicConfig.current.features.isTestingModeActive
+                          ? 'Enter 0000'
+                          : '••••',
                       errorText: errorText,
                       border: const OutlineInputBorder(),
                     ),
@@ -427,7 +432,9 @@ class AccordionDispatchSection extends StatelessWidget {
                       Navigator.pop(dialogCtx, true);
                     } else {
                       setDialogState(() {
-                        errorText = 'Invalid PIN. Enter Reception PIN (0000)';
+                        errorText = ClinicConfig.current.features.isTestingModeActive
+                            ? 'Invalid PIN. Enter 0000'
+                            : 'Invalid Staff PIN. Please try again.';
                       });
                     }
                   },

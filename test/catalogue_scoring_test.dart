@@ -598,14 +598,14 @@ void main() {
     );
 
     testWidgets(
-      'ReceptionLoginForm renders testing credentials for Reception (0000) and Admin (849201)',
+      'ReceptionLoginForm renders 0000 credentials in testing mode without leaking 849201',
       (tester) async {
         final pinCtrl = TextEditingController();
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
               body: SizedBox(
-                height: 275,
+                height: 310,
                 child: ReceptionLoginForm(
                   pinController: pinCtrl,
                   isLoading: false,
@@ -616,8 +616,8 @@ void main() {
           ),
         );
 
-        expect(find.textContaining('849201'), findsWidgets);
         expect(find.textContaining('0000'), findsWidgets);
+        expect(find.textContaining('849201'), findsNothing);
         expect(tester.takeException(), isNull);
       },
     );

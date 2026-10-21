@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Per-client deployment configuration placeholder for GuwahatiOne Clinic OS.
 ///
 /// When deploying for a specific clinic / doctor chamber client, adjust these
@@ -47,8 +49,13 @@ class ClinicConfig {
   });
 
   /// Active configuration instance for this client deployment.
+  /// Active configuration instance for this client deployment.
   /// Replace or modify this instance for custom tenant deployments.
-  static ClinicConfig current = const ClinicConfig();
+  static ClinicConfig current = const ClinicConfig(
+    features: ClinicFeatureFlags(
+      enableTestingMode: true,
+    ),
+  );
 }
 
 /// Feature flags that can be toggled on or off per client installation.
@@ -101,6 +108,24 @@ class ClinicFeatureFlags {
   /// When true, a second doctor cannot signal ready or admit patients if another doctor is active.
   final bool enforceSingleActiveDoctor;
 
+  // ─── 🧪 Testing & Developer Feature Flags ──────────────────────────────────
+
+  /// 🧪 TESTING FLAG: When enabled, simplifies authentication across all roles
+  /// (Doctor, Reception, Admin/Owner) by accepting '0000' for all PIN challenges.
+  ///
+  /// For production safety and FOSS compliance on Firebase Hosting:
+  /// This bypass requires [isTestingModeActive], which is automatically suppressed
+  /// and dead-code eliminated in `--release` builds unless explicitly overridden
+  /// with `--dart-define=TEST_MODE=true`.
+  final bool enableTestingMode;
+
+  /// Compile-time guarded check for testing mode.
+  /// Returns `true` only if [enableTestingMode] is set AND the app is in debug/test
+  /// mode or explicitly built with `--dart-define=TEST_MODE=true`.
+  bool get isTestingModeActive =>
+      enableTestingMode &&
+      (kDebugMode || const bool.fromEnvironment('TEST_MODE', defaultValue: false));
+
   const ClinicFeatureFlags({
     this.enableLetterheadToggle = true,
     this.enableDoctorChamberOverride = true,
@@ -112,5 +137,6 @@ class ClinicFeatureFlags {
     this.enableGroupedCompositionCards = true,
     this.hidePrescriptionComposition = false,
     this.enforceSingleActiveDoctor = false,
+    this.enableTestingMode = true,
   });
 }

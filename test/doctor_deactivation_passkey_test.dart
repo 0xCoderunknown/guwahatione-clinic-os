@@ -1,3 +1,4 @@
+import 'package:appointment_app/config/clinic_config.dart';
 import 'package:appointment_app/models/models.dart';
 import 'package:appointment_app/providers/auth_provider.dart';
 import 'package:appointment_app/providers/clinic_provider.dart';
@@ -57,6 +58,15 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    ClinicConfig.current = const ClinicConfig(
+      features: ClinicFeatureFlags(enableTestingMode: false),
+    );
+  });
+
+  tearDown(() {
+    ClinicConfig.current = const ClinicConfig(
+      features: ClinicFeatureFlags(enableTestingMode: true),
+    );
   });
 
   group('Doctor Model & Deactivation Field Invariance', () {

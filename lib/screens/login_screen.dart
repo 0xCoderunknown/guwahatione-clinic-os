@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../config/clinic_config.dart';
 import '../models/doctor.dart';
+import '../models/user_role.dart';
 import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
 
@@ -18,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen>
   final TextEditingController _ownerPinController = TextEditingController();
   final TextEditingController _doctorPinController = TextEditingController();
   Doctor? _selectedDoctor;
+  UserRole _selectedReceptionRole = UserRole.owner;
   String? _errorMessage;
   bool _isLoading = false;
 
@@ -149,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen>
 
                     // Tab View Content
                     SizedBox(
-                      height: 275,
+                      height: 310,
                       child: TabBarView(
                         controller: _tabController,
                         children: [
@@ -172,6 +175,9 @@ class _LoginScreenState extends State<LoginScreen>
                             pinController: _ownerPinController,
                             isLoading: _isLoading,
                             onLogin: _handleOwnerLogin,
+                            onRoleChanged: (role) {
+                              _selectedReceptionRole = role;
+                            },
                           ),
                         ],
                       ),
@@ -248,7 +254,12 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _isLoading = false);
 
     if (!success) {
-      setState(() => _errorMessage = 'Incorrect PIN for ${doc.name}.');
+      final isTesting = ClinicConfig.current.features.isTestingModeActive;
+      setState(
+        () => _errorMessage = isTesting
+            ? 'Incorrect PIN (Testing Mode: Doctor PIN is 0000).'
+            : 'Incorrect PIN for ${doc.name}.',
+      );
     }
   }
 
@@ -266,15 +277,20 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.loginAsReceptionistOrOwner(pin);
+    final success = await authProvider.loginAsReceptionistOrOwner(
+      pin,
+      targetRole: _selectedReceptionRole,
+    );
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (!success) {
+      final isTesting = ClinicConfig.current.features.isTestingModeActive;
       setState(
-        () => _errorMessage =
-            'Incorrect PIN (Testing: Reception: 0000 | Admin: 849201).',
+        () => _errorMessage = isTesting
+            ? 'Incorrect PIN (Testing Mode: PIN is 0000).'
+            : 'Incorrect PIN. Please try again.',
       );
     }
   }
@@ -350,7 +366,17 @@ class DoctorLoginForm extends StatelessWidget {
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
             labelText: 'Chamber PIN',
-            hintText: 'Enter 4-digit PIN (default: 1234)',
+            hintText: ClinicConfig.current.features.isTestingModeActive
+                ? 'Enter PIN: 0000'
+                : 'Enter 4-digit Chamber PIN',
+            helperText: ClinicConfig.current.features.isTestingModeActive
+                ? '🧪 Testing Mode Active — Doctor PIN: 0000'
+                : null,
+            helperStyle: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.teal.shade700,
+            ),
             prefixIcon: const Icon(Icons.lock_outline_rounded),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             contentPadding: const EdgeInsets.symmetric(
@@ -390,45 +416,92 @@ class DoctorLoginForm extends StatelessWidget {
 }
 
 /// Presentation form for Reception Desk / Owner authentication.
-class ReceptionLoginForm extends StatelessWidget {
+class ReceptionLoginForm extends StatefulWidget {
   final TextEditingController pinController;
   final bool isLoading;
   final VoidCallback onLogin;
+  final ValueChanged<UserRole>? onRoleChanged;
 
   const ReceptionLoginForm({
     super.key,
     required this.pinController,
     required this.isLoading,
     required this.onLogin,
+    this.onRoleChanged,
   });
 
   @override
+  State<ReceptionLoginForm> createState() => _ReceptionLoginFormState();
+}
+
+class _ReceptionLoginFormState extends State<ReceptionLoginForm> {
+  UserRole _selectedRole = UserRole.owner;
+
+  @override
   Widget build(BuildContext context) {
+    final isTesting = ClinicConfig.current.features.isTestingModeActive;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'Reception Desk & Admin Mode',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF334155),
+        if (isTesting) ...[
+          SegmentedButton<UserRole>(
+            showSelectedIcon: false,
+            style: const ButtonStyle(
+              visualDensity: VisualDensity.compact,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            segments: const [
+              ButtonSegment(
+                value: UserRole.owner,
+                label: Text('Admin Mode', style: TextStyle(fontSize: 12)),
+                icon: Icon(Icons.admin_panel_settings_outlined, size: 16),
+              ),
+              ButtonSegment(
+                value: UserRole.receptionist,
+                label: Text('Reception Desk', style: TextStyle(fontSize: 12)),
+                icon: Icon(Icons.desk_outlined, size: 16),
+              ),
+            ],
+            selected: {_selectedRole},
+            onSelectionChanged: (set) {
+              setState(() => _selectedRole = set.first);
+              widget.onRoleChanged?.call(set.first);
+            },
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Full access to book appointments, manage doctors, and view financial reports.',
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 10),
+        ] else ...[
+          const Text(
+            'Reception Desk & Admin Mode',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF334155),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Full access to book appointments, manage doctors, and view financial reports.',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 16),
+        ],
         TextField(
-          controller: pinController,
+          controller: widget.pinController,
           obscureText: true,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
-            labelText: 'Reception / Owner PIN',
-            hintText: 'PIN (Reception: 0000 | Admin: 849201)',
-            helperText: 'Testing PINs — Reception: 0000 | Admin: 849201',
+            labelText: isTesting
+                ? (_selectedRole == UserRole.owner
+                    ? 'Admin PIN'
+                    : 'Reception PIN')
+                : 'Reception / Owner PIN',
+            hintText: isTesting
+                ? 'Enter PIN: 0000'
+                : 'Enter Staff PIN',
+            helperText: isTesting
+                ? '🧪 Testing Mode Active — Use PIN: 0000'
+                : null,
             helperStyle: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -441,7 +514,7 @@ class ReceptionLoginForm extends StatelessWidget {
               vertical: 12,
             ),
           ),
-          onSubmitted: (_) => onLogin(),
+          onSubmitted: (_) => widget.onLogin(),
         ),
         const Spacer(),
         FilledButton(
@@ -452,8 +525,8 @@ class ReceptionLoginForm extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          onPressed: isLoading ? null : onLogin,
-          child: isLoading
+          onPressed: widget.isLoading ? null : widget.onLogin,
+          child: widget.isLoading
               ? const SizedBox(
                   height: 18,
                   width: 18,
@@ -462,9 +535,16 @@ class ReceptionLoginForm extends StatelessWidget {
                     strokeWidth: 2,
                   ),
                 )
-              : const Text(
-                  'Access Reception Desk',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              : Text(
+                  isTesting
+                      ? (_selectedRole == UserRole.owner
+                          ? 'Enter as Admin (Owner)'
+                          : 'Enter as Receptionist')
+                      : 'Access Reception Desk',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
         ),
       ],

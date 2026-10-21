@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../config/clinic_config.dart';
 import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../providers/clinic_provider.dart';
@@ -92,7 +93,12 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                       maxLength: 6,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        hintText: '••••••',
+                        hintText: ClinicConfig.current.features.isTestingModeActive
+                            ? '0000'
+                            : '••••••',
+                        helperText: ClinicConfig.current.features.isTestingModeActive
+                            ? '🧪 Testing Mode: Enter 0000'
+                            : null,
                         counterText: '',
                         errorText: errorText,
                         prefixIcon: const Icon(Icons.lock_outline, size: 20),

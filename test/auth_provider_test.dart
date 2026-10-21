@@ -1,3 +1,4 @@
+import 'package:appointment_app/config/clinic_config.dart';
 import 'package:appointment_app/models/models.dart';
 import 'package:appointment_app/providers/auth_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,15 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    ClinicConfig.current = const ClinicConfig(
+      features: ClinicFeatureFlags(enableTestingMode: false),
+    );
+  });
+
+  tearDown(() {
+    ClinicConfig.current = const ClinicConfig(
+      features: ClinicFeatureFlags(enableTestingMode: true),
+    );
   });
 
   group('AuthProvider 3-Tier PIN Authentication & Role Guarding Tests', () {
@@ -369,5 +379,147 @@ void main() {
         expect(await auth.loginAsReceptionist('0000'), isTrue);
       },
     );
+  });
+
+  group('AuthProvider Universal Testing Mode (PIN 0000) Tests', () {
+    final sampleDoctors = [
+      Doctor(
+        id: 'doc-1',
+        name: 'Dr. Bhaskar Baruah',
+        specialty: 'Internal Medicine',
+        phone: '9864012345',
+        availableDays: ['Mon', 'Wed', 'Fri'],
+        blockedDates: [],
+        pin: '1111',
+      ),
+      Doctor(
+        id: 'doc-inactive',
+        name: 'Dr. Inactive',
+        specialty: 'Dermatology',
+        phone: '9864055555',
+        availableDays: ['Mon'],
+        blockedDates: [],
+        pin: '3333',
+        isActive: false,
+      ),
+    ];
+
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      ClinicConfig.current = const ClinicConfig(
+        features: ClinicFeatureFlags(enableTestingMode: true),
+      );
+    });
+
+    tearDown(() {
+      ClinicConfig.current = const ClinicConfig(
+        features: ClinicFeatureFlags(enableTestingMode: true),
+      );
+    });
+
+    test('Doctor logs in with 0000 regardless of configured chamber PIN', () async {
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      final doc = sampleDoctors.first; // PIN is 1111
+      final success = await auth.loginAsDoctor(doc, '0000');
+      expect(success, isTrue);
+      expect(auth.isDoctor, isTrue);
+      expect(auth.currentDoctor?.id, 'doc-1');
+    });
+
+    test('Inactive doctor cannot log in even with 0000 in testing mode', () async {
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      final inactiveDoc = sampleDoctors.last;
+      final success = await auth.loginAsDoctor(inactiveDoc, '0000');
+      expect(success, isFalse);
+      expect(auth.isAuthenticated, isFalse);
+    });
+
+    test('Receptionist logs in with 0000 in testing mode', () async {
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      final success = await auth.loginAsReceptionist('0000');
+      expect(success, isTrue);
+      expect(auth.isReceptionist, isTrue);
+      expect(auth.currentDoctor, isNull);
+    });
+
+    test('Admin/Owner logs in with 0000 in testing mode', () async {
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      final success = await auth.loginAsOwner('0000');
+      expect(success, isTrue);
+      expect(auth.isOwner, isTrue);
+      expect(auth.currentDoctor, isNull);
+    });
+
+    test('loginAsReceptionistOrOwner routes 0000 based on targetRole', () async {
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      // Explicit targetRole: owner
+      final ownerSuccess = await auth.loginAsReceptionistOrOwner(
+        '0000',
+        targetRole: UserRole.owner,
+      );
+      expect(ownerSuccess, isTrue);
+      expect(auth.isOwner, isTrue);
+
+      await auth.logout();
+
+      // Explicit targetRole: receptionist
+      final recepSuccess = await auth.loginAsReceptionistOrOwner(
+        '0000',
+        targetRole: UserRole.receptionist,
+      );
+      expect(recepSuccess, isTrue);
+      expect(auth.isReceptionist, isTrue);
+    });
+
+    test('verifyOwnerMasterPin accepts 0000 in testing mode', () async {
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      expect(auth.verifyOwnerMasterPin('0000'), isTrue);
+      expect(auth.verifyOwnerMasterPin(' 0000 '), isTrue);
+      expect(auth.verifyOwnerMasterPin('9999'), isFalse);
+    });
+
+    test('verifyReceptionOrOwnerPin accepts 0000 in testing mode', () async {
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      expect(auth.verifyReceptionOrOwnerPin('0000'), isTrue);
+      expect(auth.verifyReceptionOrOwnerPin(' 0000 '), isTrue);
+      expect(auth.verifyReceptionOrOwnerPin('9999'), isFalse);
+    });
+
+    test('authenticateWithPin with 0000 respects targetRole in testing mode', () async {
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      final ownerResult = await auth.authenticateWithPin(
+        pin: '0000',
+        doctors: sampleDoctors,
+        targetRole: UserRole.owner,
+      );
+      expect(ownerResult.isSuccess, isTrue);
+      expect(ownerResult.role, UserRole.owner);
+
+      await auth.logout();
+
+      final recepResult = await auth.authenticateWithPin(
+        pin: '0000',
+        doctors: sampleDoctors,
+        targetRole: UserRole.receptionist,
+      );
+      expect(recepResult.isSuccess, isTrue);
+      expect(recepResult.role, UserRole.receptionist);
+    });
   });
 }
