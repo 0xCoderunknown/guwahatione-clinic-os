@@ -232,9 +232,8 @@ class AppConstants {
 
 ```text
 docs/
-├── PRODUCT_ROADMAP.md                       # 4-state lifecycle roadmap, hardening runway & anti-goals
+├── MASTER_BACKLOG.md                       # Master backlog, roadmap & technical reference
 └── SCHEMA_AND_MODELS.md                     # Master data dictionary for Firestore collections & models
-QOL.MD                                       # Master single-source Quality of Life (QOL) & feature backlog
 lib/
 ├── main.dart                                # Entry point, AuthGate, theme & MultiProvider setup
 ├── firebase_options.dart                    # 🔒 Secret — not in git (see .gitignore)
@@ -403,10 +402,9 @@ flutter test
 ## 🛠️ Maintenance & Governance
 
 This project is **100% coded and maintained by AI**, directed by the human Product Manager & Tester.
-- For AI maintenance workflows, developer setup, and configuration rules, see [CONTRIBUTING.md](CONTRIBUTING.md).
-- For clinical invariants, patient privacy, and operational ethics, see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
-- For active sprint priorities, clinical encounter blueprint, and roadmap, see [docs/PRODUCT_ROADMAP.md](docs/PRODUCT_ROADMAP.md).
-- For Quality of Life (QOL) ideas, upcoming features, and backlog items, see [QOL.MD](QOL.MD).
+- For AI operating constitution, core clinical invariants, and engineering guardrails, see [AGENTS.md](AGENTS.md).
+- For product roadmap, architecture reference, and feature backlog, see [docs/MASTER_BACKLOG.md](docs/MASTER_BACKLOG.md).
+- For Firestore schemas and data contracts, see [docs/SCHEMA_AND_MODELS.md](docs/SCHEMA_AND_MODELS.md).
 
 ---
 

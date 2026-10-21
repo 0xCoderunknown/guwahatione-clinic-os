@@ -155,11 +155,9 @@ lib/
 ├── widgets/      -> Reusable UI sub-packages (booking, catalogue, chamber, common, dashboard, doctor, encounter, patient, print, queue)
 └── utils/        -> Helpers (Default medicines, app constants, platform print, platform sound, formatters)
 test/             -> Automated test suite (306 automated unit and widget tests covering engines, flows, models, and platform services)
-QOL.MD            -> Single source of truth for Quality of Life (QOL) ideas & feature backlog
 docs/
-├── SCHEMA_AND_MODELS.md  -> Single source of truth for Firestore collections & models
-├── PRODUCT_ROADMAP.md    -> Single source of truth for 2.0 hardening runway & architecture
-└── COMPLIANCE_AND_PRIVACY.md -> Clinical data handling & privacy standards
+├── MASTER_BACKLOG.md     -> Single source of truth for all issues, audit findings, QOL backlog, roadmap, compliance & AI guidelines
+└── SCHEMA_AND_MODELS.md  -> Single source of truth for Firestore collections & models
 ```
 
 ---

@@ -19,8 +19,8 @@ Follow this checklist whenever adding a new feature flag (🧪 experiment) or sy
 
 ---
 
-### Step 2: Document in Product Governance (`docs/PRODUCT_ROADMAP.md`)
-1. If experimental, register under **Section 8 (🧪 Experiment Flag Registry)**:
+### Step 2: Document in Product Governance (`docs/MASTER_BACKLOG.md`)
+1. If experimental, register under **Section 5 (🧪 Experiment Flag Registry)**:
    - Feature name
    - Status (e.g. `📋 TODO · 🧪 Experiment`)
    - Flag reason
