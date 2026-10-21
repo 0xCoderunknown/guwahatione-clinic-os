@@ -69,22 +69,7 @@ When implementing features, fixing bugs, or refactoring code:
 
 ---
 
-## 🎯 Priority Backlog & Delivery Status
+## 🎯 Priority Delivery History & Active Backlog
 
-Authoritative product tracking lives in [`docs/PRODUCT_ROADMAP.md`](docs/PRODUCT_ROADMAP.md):
-
-- [x] **P1:** Chamber Real-time Auto-Sync (`v1.5.0`)
-- [x] **P2:** Clinical Dosage & Duration OPD Defaults (`v1.5.0`)
-- [x] **P3:** Collapsible Encounter Sections (`v1.5.0`)
-- [x] **P4:** Doctor Brand vs. Composition Prescribing Preferences (`v1.5.0`)
-- [x] **P5:** Doctor Medical Registration & Official Printout Signature Block (`v1.14.0`)
-- [x] **P6:** Offline Queue Fallback Cache for Counter Broadband Dropouts (`v1.15.0`)
-- [x] **P7:** WhatsApp Digital Prescription Deep Link (`v1.15.0`)
-- [x] **P8:** Daily End-of-Day Financial Handover & Denomination Note Counter (`v1.15.0`)
-- [x] **P9:** Prescription Template Presets & OPD Regimen Bundles (`v1.28.0`)
-- [x] **P10:** Multi-Chamber Queue Sound Announcer & Vocal Token Calling (`v1.29.0`)
-- [ ] **P11:** Prepaid Carry-Over & Doctor No-Show Refund Protocol (RFC-2 in `docs/PRODUCT_ROADMAP.md`)
-- [x] **P12:** Patient Lookup / Explore Patients — Patients tab with zero-egress search, multi-doctor consultation accordions, and walk-in shortcut (`v1.33.0`)
-- [ ] **P13:** Emergency / Illiterate Walk-In Dummy Key (`9900000001`+)
-- [x] ~~**P14:** Doctor Discretionary Fee Waiver~~ — Scrapped (redundant with `PaymentType.freeFamily`)
-- [ ] **P15 · 🧪:** Fullscreen Waiting Hall Queue Display Board (`/display`)
+- **Core Capabilities Delivered (P1 – P10, P12):** Chamber real-time sync, dosage/duration OPD defaults, collapsible encounters, doctor prescribing preferences, print signature blocks, offline queue fallback, WhatsApp deep-link summaries, cash handover counter, prescription template presets, multi-chamber vocal announcer, and patient lookup.
+- **Active Backlog & Quality of Life (QOL):** All upcoming priorities (P11, P13, P15, P16, P17, P18) and clinical/reception QOL enhancements are maintained exclusively in [**`QOL.MD`**](QOL.MD). Refer directly to `QOL.MD` for active backlog items and acceptance criteria.

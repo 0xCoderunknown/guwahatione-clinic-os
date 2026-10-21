@@ -50,62 +50,48 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
-## [1.39.0] — 20-10-2026
+## [1.37.0 – 1.39.0] — 19-10-2026 to 20-10-2026
 
-### Pure Dart PatientSearchEngine, Same-Day Lab Reviews via Reception, Upfront Cash Drawer Accounting & Midnight Date Rollover
-- **Pure Dart `PatientSearchEngine` & Multi-Attribute Lookup (Finding #21):**
+### PatientSearchEngine, Same-Day Lab Reviews, Upfront Cash Drawer & Prescribing Guardrails
+- **Pure Dart `PatientSearchEngine` & Multi-Attribute Lookup (v1.39.0):**
   - Built pure Dart `PatientSearchEngine` with robust phone normalization (strips +91, 0, whitespace, formatting), multi-word name tokenization, and multi-tier relevance ranking (exact phone > exact name > surname prefix > partial matches).
   - Fixed `PatientService.searchPatients` to query the `phoneNumber` field instead of `FieldPath.documentId` (which failed on canonical `pat_*` IDs).
   - Added dedicated `pat_*` canonical ID lookup and integrated recent patient pool token matching so searching by surname (e.g. "Devi", "Baruah", "Sharma") or canonical ID immediately returns ranked matches.
-- **Same-Day Return Visits & Lab Review Tokens via Reception (Finding #11):**
+- **Same-Day Return Visits & Lab Review Tokens via Reception (v1.39.0):**
   - Updated `BookingService.hasAppointmentForDate` duplicate check to permit same-day re-booking when a prior appointment on the date has reached `AppointmentStatus.completed`. A patient consulted in the morning returning in the afternoon with lab results is routed via reception desk, receiving a valid queue token so doctors have complete operational clarity without unannounced chamber barging.
   - Enhanced `AppointmentEngine.evaluateReviewEligibility` to recognize same-day return visits (`daysSincePaid == 0`) with descriptive status `'Same-day return / lab review'`, correctly unlocking doctor-configured free review waivers (`PaymentType.freeReview`).
-- **Upfront Desk Cash Drawer Accounting & Session Close Preservation (Finding #19):**
+- **Upfront Desk Cash Drawer Accounting & Session Close Preservation (v1.39.0):**
   - Updated `CashHandoverEngine` to count physical cash collected upfront at the reception counter (`PaymentType.paidCash` with `amountCollected > 0`) regardless of whether the patient is in lobby, in consultation, or completed, perfectly mirroring real physical cash in drawer.
   - Fixed `BookingService.closeDoctorSessionForDate` to NEVER destructively zero out `amountCollected` on doctor absence. Retains collected cash amounts in the audit trail and tags `refundStatus: 'pending_refund'`.
   - Added `refundStatus` (`'none'`, `'pending_refund'`, `'refunded'`) on `Appointment` model and serialized to Firestore and offline cache.
   - `CashHandoverEngine` skips visits only when `refundStatus == 'refunded'`, eliminating ghost discrepancies between counted drawer cash and system expectations.
-- **Automatic Midnight Date Rollover Observer (Finding #10):**
+- **Automatic Midnight Date Rollover Observer (v1.39.0):**
   - Implemented periodic 30-second midnight rollover observer (`checkAndHandleMidnightRollover`) inside `ClinicProvider`. When counter PCs remain powered on overnight, the observer detects calendar day shift (`!DateUtils.isSameDay(_activeListeningDate, now)`), automatically cancels the previous day's stream, resets today's appointment list, and re-subscribes live queue streams to the new calendar day.
   - Operates automatically for live queue sessions while preserving intentional user archive browsing when historical dates are explicitly selected.
-- **Soft Daily Token Cap Retained per PM Directive (Finding #12):**
+- **Soft Daily Token Cap Retained (v1.39.0):**
   - Retained soft visual quota warning badge per Product Manager directive. In clinical practice, strict hard modal locks paralyze front-desk operations during walk-in emergencies. If limits are reached, soft warnings display prominently on desk badges while doctors retain discretion to verbally coordinate with reception.
-
----
-
-## [1.38.0] — 20-10-2026
-
-### Prescribing Safety Guardrails, Flexible Multi-Modal Duration System & Diagnostic Test Deduplication
-- **Flexible Multi-Modal Duration Engine & Pharmacological Validation (Finding #16):**
+- **Flexible Multi-Modal Duration Engine & Pharmacological Validation (v1.38.0):**
   - Implemented `MedicineEngine.parseDuration` accepting acute numeric days (`1 to 300` days, e.g. `5`, `14`, `21 days`), as-needed (`SOS`, `SoS`, `s.o.s`), and ongoing chronic therapy (`To continue`, `cont`, `chronic`).
   - Added inline pharmacological sanity checks strictly blocking negative (`<= 0`) or excessive (`> 300`) day values with clear feedback.
   - Enhanced `StagedMedicineForm` with 1-tap quick preset chips (`[Cont]`, `[SOS]`, `[3d]`, `[5d]`, `[7d]`, `[14d]`, `[30d]`) alongside direct keyboard input.
   - Integrated `effectiveDuration` getter in `PrescriptionItem` to guarantee strict 3-column isolation across print letterheads, preview tables, WhatsApp summaries, and consultation charts.
   - Ensured formulary catalogue bundled defaults (e.g. *Telma 40 tablet* with `{Telmisartan 40mg, 1-0-1, to continue}`) populate intact into staging without clinical friction.
-- **Staged Medicine Discard Guard (Finding #15):**
+- **Staged Medicine Discard Guard (v1.38.0):**
   - Added `hasStagedMedicine` and `stagedMedicineDisplayName` in `EncounterFormState`.
   - In `ConsultationEncounterScreen`, intercept "Complete & Sign" when a medicine is actively staged without being added, offering doctors an interactive dialog with `[Add to Prescription & Sign]`, `[Discard & Sign]`, and `[Review / Cancel]`, eliminating silent drops of configured medications.
-- **Longitudinal Diagnostic Test Deduplication (Finding #17):**
+- **Longitudinal Diagnostic Test Deduplication (v1.38.0):**
   - Updated `EncounterFormState.loadInitialData` to track `seenTestNames` across past consultations and deduplicate by normalized `testName.trim().toLowerCase()`.
   - Eliminates exponential ghost blank row accumulation in chronic follow-up charts while ensuring all unique past investigations remain accessible for review.
-- **Documented Allergy Presentation Retained (Finding #14):**
-  - Retained passive allergy header chips in `PatientHeaderSection` per PM directive, avoiding administrative popup roadblocks while preserving clear clinical visibility.
-
----
-
-## [1.37.0] — 19-10-2026
-
-### Multi-Chamber Live Queue Partitioning, Upcoming Advance Bookings & Bypassed Tag Retirement
-- **Retirement of Arbitrary `BYPASSED` Badge & Clean FIFO Lobby Queue:**
+- **Retirement of Arbitrary `BYPASSED` Badge & Clean FIFO Lobby Queue (v1.37.0):**
   - Completely eliminated the `bypassed` badge, calculation, and amber styling from `AppointmentEngine.partitionQueueForReception` and `AppointmentAccordion` per real-world OPD operational realities.
   - When doctors admit relatives, emergency walk-ins, or elderly patients out of strict sequential order, uncalled patients in the lobby remain in clean, unpenalized FIFO queue order without being arbitrarily labeled "Late" or "Bypassed".
-- **Multi-Chamber Queue Partitioning (`inChamberPatients`):**
+- **Multi-Chamber Queue Partitioning (`inChamberPatients`) (v1.37.0):**
   - Enhanced `ReceptionQueueView` to support `inChamberPatients` list (`List<Appointment> inChamberPatients` with `Appointment? get inChamber => inChamberPatients.firstOrNull`).
   - Supports concurrent multi-doctor clinics where multiple practitioners are in session simultaneously (e.g., Dr. A consulting Token #8 in Chamber 1, Dr. B consulting Token #3 in Chamber 2). Both patients render prominently in top active chamber cards, and neither leaks into the waiting list.
-- **Date-Specific Doctor Filter Chips on Live Ledger (`AppointmentListScreen`):**
+- **Date-Specific Doctor Filter Chips on Live Ledger (v1.37.0):**
   - Updated doctor filter chips to dynamically show strictly doctors who have an OPD schedule on the selected calendar date (and are not on planned leave) OR who have existing appointments booked for that date.
   - Clinics with 10 registered physicians displaying a 3-doctor OPD day will now only render chips for the 3 active doctors, eliminating visual clutter.
-- **Upcoming Advance Bookings on Reception Dashboard (`DashboardTodayQueueCard`):**
+- **Upcoming Advance Bookings on Reception Dashboard (v1.37.0):**
   - Added `BookingService.getUpcomingAppointments({int daysAhead = 7})` and exposed stream method in `ClinicProvider.streamUpcomingAppointments()`.
   - Added a responsive segmented toggle in `DashboardTodayQueueCard` allowing receptionists to seamlessly switch between `"Today's Queue (N)"` and `"Upcoming Bookings"`.
   - Upcoming bookings are grouped by calendar date adhering strictly to Indian formatting (`DD-MM-YYYY`) with booking count chips, displaying patient name, age, phone number, doctor name, and advance payment status (`Paid ₹X` vs `Pay at Desk`).
@@ -246,21 +232,17 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ---
 
-## [1.31.0] — 14-10-2026
+## [1.30.0 – 1.31.0] — 14-10-2026
 
-### Doctor Chamber Mobile & Historical Archive De-Duplication
-- Compact 1-line archive banner: `🔒 Viewing Past Records (Read-Only)`.
-- Consolidated historical status into a single muted `No-Show` pill; enabled direct card tapping for consultation summaries.
-- Tightened metric subtitles for mobile viewports (< 450px).
-
----
-
-## [1.30.0] — 14-10-2026
-
-### Dashboard Header Reorganization & Operational Lifecycle KPI Hierarchy
-- Bound global hotkey `F2` to trigger `[ Book Walk-In ]` instantly.
-- Restructured KPI cards to track real-world outpatient lifecycle: `Waiting in Lobby`, `Expected / Booked`, `Inside Chamber`, and `Completed`.
-- Embedded compact pace telemetry (`• Pace: ~8-10 min/pt`) directly into doctor cards.
+### Doctor Chamber Mobile, Historical Archive & Operational Lifecycle KPI Hierarchy
+- **Doctor Chamber Mobile & Historical Archive (v1.31.0):**
+  - Compact 1-line archive banner: `🔒 Viewing Past Records (Read-Only)`.
+  - Consolidated historical status into a single muted `No-Show` pill; enabled direct card tapping for consultation summaries.
+  - Tightened metric subtitles for mobile viewports (< 450px).
+- **Dashboard Header Reorganization & KPI Hierarchy (v1.30.0):**
+  - Bound global hotkey `F2` to trigger `[ Book Walk-In ]` instantly.
+  - Restructured KPI cards to track real-world outpatient lifecycle: `Waiting in Lobby`, `Expected / Booked`, `Inside Chamber`, and `Completed`.
+  - Embedded compact pace telemetry (`• Pace: ~8-10 min/pt`) directly into doctor cards.
 
 ---
 

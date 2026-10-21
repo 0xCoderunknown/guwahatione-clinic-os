@@ -147,17 +147,18 @@ When reviewing or authoring any code that touches queue, chamber, or encounters,
 └── recipes/      -> Change checklists (add_clinical_field.md, modify_booking_rule.md)
 lib/
 ├── config/       -> Tenant configuration, branding, and feature flags (clinic_config.dart)
-├── core/         -> Pure domain engines (appointment_engine, cash_handover_engine, medicine_engine, revenue_engine, whatsapp_engine)
+├── core/         -> Pure domain engines (appointment_engine, cash_handover_engine, medicine_engine, patient_search_engine, revenue_engine, whatsapp_engine)
 ├── models/       -> Pure data models (Appointment, Consultation, Patient, Doctor, Medicine, Vitals, ChamberSession, PrescriptionTemplate, UserRole)
-├── providers/    -> App state (AuthProvider for PIN sessions, ClinicProvider for live streams)
+├── providers/    -> App state (AuthProvider, ClinicProvider facade, and domain delegates: doctor_state, live_queue, catalogue)
 ├── services/     -> Modular Firestore service layer (FirestorePaths, booking, consultation, chamber, catalogue, doctor, patient, sound_service, offline_queue_cache)
 ├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
-├── widgets/      -> Reusable UI sub-packages (booking, catalogue, chamber, common, dashboard, encounter, patient, print, queue)
+├── widgets/      -> Reusable UI sub-packages (booking, catalogue, chamber, common, dashboard, doctor, encounter, patient, print, queue)
 └── utils/        -> Helpers (Default medicines, app constants, platform print, platform sound, formatters)
-test/             -> Automated test suite (258 automated unit and widget tests covering engines, flows, models, and platform services)
+test/             -> Automated test suite (306 automated unit and widget tests covering engines, flows, models, and platform services)
+QOL.MD            -> Single source of truth for Quality of Life (QOL) ideas & feature backlog
 docs/
 ├── SCHEMA_AND_MODELS.md  -> Single source of truth for Firestore collections & models
-├── PRODUCT_ROADMAP.md    -> Single source of truth for feature state, backlog, and architecture
+├── PRODUCT_ROADMAP.md    -> Single source of truth for 2.0 hardening runway & architecture
 └── COMPLIANCE_AND_PRIVACY.md -> Clinical data handling & privacy standards
 ```
 
