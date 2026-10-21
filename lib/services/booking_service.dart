@@ -325,8 +325,7 @@ class BookingService {
         .where('scheduledDate', isLessThan: Timestamp.fromDate(end))
         .get();
 
-    final batch = _firestore.batch();
-    int markedCount = 0;
+    final docsToUpdate = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
 
     for (final doc in snapshot.docs) {
       final data = doc.data();
@@ -340,6 +339,24 @@ class BookingService {
           status == AppointmentStatus.absent.name;
 
       if (!isCompleted && !isAlreadyAbsent) {
+        docsToUpdate.add(doc);
+      }
+    }
+
+    if (docsToUpdate.isEmpty) return 0;
+
+    // Firestore batch hard-limit is 500 operations. Chunk in batches of 450.
+    const chunkSize = 450;
+    for (int i = 0; i < docsToUpdate.length; i += chunkSize) {
+      final chunk = docsToUpdate.sublist(
+        i,
+        (i + chunkSize > docsToUpdate.length)
+            ? docsToUpdate.length
+            : i + chunkSize,
+      );
+      final batch = _firestore.batch();
+      for (final doc in chunk) {
+        final data = doc.data();
         final currentAmount = (data['amountCollected'] as num?)?.toInt() ?? 0;
         batch.update(doc.reference, {
           'visitStatus': VisitStatus.cancelled.name,
@@ -347,13 +364,10 @@ class BookingService {
           'refundStatus': currentAmount > 0 ? 'pending_refund' : 'none',
           'notes': reason,
         });
-        markedCount++;
       }
-    }
-
-    if (markedCount > 0) {
       await batch.commit();
     }
-    return markedCount;
+
+    return docsToUpdate.length;
   }
 }

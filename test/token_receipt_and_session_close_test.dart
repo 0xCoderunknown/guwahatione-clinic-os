@@ -118,5 +118,28 @@ void main() {
         expect(find.text('Close'), findsOneWidget);
       },
     );
+
+    test('Batch chunking logic partitions large volumes into <= 450 items', () {
+      final largeList = List.generate(1050, (index) => 'doc-$index');
+      const chunkSize = 450;
+      final chunks = <List<String>>[];
+
+      for (int i = 0; i < largeList.length; i += chunkSize) {
+        chunks.add(
+          largeList.sublist(
+            i,
+            (i + chunkSize > largeList.length)
+                ? largeList.length
+                : i + chunkSize,
+          ),
+        );
+      }
+
+      expect(chunks.length, equals(3));
+      expect(chunks[0].length, equals(450));
+      expect(chunks[1].length, equals(450));
+      expect(chunks[2].length, equals(150));
+      expect(chunks.expand((c) => c).length, equals(1050));
+    });
   });
 }

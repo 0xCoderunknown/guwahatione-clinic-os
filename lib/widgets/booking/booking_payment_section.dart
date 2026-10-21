@@ -164,12 +164,19 @@ class BookingPaymentSection extends StatelessWidget {
                     if (!reviewEligibility.hasVisitedDoctorEarlier) {
                       enabled = false;
                       label = 'FREE (Review) — Returning patients only';
+                    } else if (reviewEligibility.isReviewAlreadyConsumed) {
+                      enabled = false;
+                      label = 'FREE (Review) — Already used for last visit';
+                    } else if (reviewEligibility.allowedReviewDays == 0) {
+                      enabled = false;
+                      label = 'FREE (Review) — Doctor offers 0 review days';
                     } else if (reviewEligibility.isWithinReviewPeriod) {
                       label =
                           'FREE (Review) — Within ${reviewEligibility.allowedReviewDays} days';
                     } else {
+                      enabled = false;
                       label =
-                          'FREE (Review) — ⚠️ >${reviewEligibility.allowedReviewDays} days passed';
+                          'FREE (Review) — ⚠️ >${reviewEligibility.allowedReviewDays} days passed (Expired)';
                     }
                     break;
                   case PaymentType.freeFamily:
@@ -185,7 +192,7 @@ class BookingPaymentSection extends StatelessWidget {
 
                 return DropdownMenuItem<PaymentType>(
                   value: type,
-                  enabled: enabled,
+                  enabled: enabled || (type == selectedPayment),
                   child: Text(
                     label,
                     overflow: TextOverflow.ellipsis,

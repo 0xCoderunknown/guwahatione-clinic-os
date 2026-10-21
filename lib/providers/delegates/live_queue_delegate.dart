@@ -265,10 +265,21 @@ class LiveQueueDelegate {
         doctorId: selectedDoctor.id,
         targetDate: scheduledDate,
         doctorName: selectedDoctor.name,
+        freeReviewDays: selectedDoctor.freeReviewDays,
       );
       if (!eligibility.hasVisitedDoctorEarlier) {
         throw Exception(
           'Free Review is only allowed for patients who previously visited ${selectedDoctor.titleName}.',
+        );
+      }
+      if (eligibility.isReviewAlreadyConsumed) {
+        throw Exception(
+          'Free Review has already been consumed for the previous consultation with ${selectedDoctor.titleName}.',
+        );
+      }
+      if (!eligibility.isWithinReviewPeriod) {
+        throw Exception(
+          'Free review window has expired for ${selectedDoctor.titleName} (${eligibility.allowedReviewDays}-day policy).',
         );
       }
     }

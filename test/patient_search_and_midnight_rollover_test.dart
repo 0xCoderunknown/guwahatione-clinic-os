@@ -1,6 +1,7 @@
 import 'package:appointment_app/core/engines/engines.dart';
 import 'package:appointment_app/models/models.dart';
 import 'package:appointment_app/providers/clinic_provider.dart';
+import 'package:appointment_app/providers/delegates/live_queue_delegate.dart';
 import 'package:appointment_app/services/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -144,6 +145,188 @@ void main() {
       expect(eligibility.isWithinReviewPeriod, isFalse);
       expect(eligibility.message, contains('0-day policy'));
     });
+
+    test('evaluateReviewEligibility marks isReviewAlreadyConsumed when free review was already used', () {
+      final paidVisit = Appointment(
+        id: 'appt-paid',
+        patientId: 'pat-1',
+        patientPhone: '9864012345',
+        patientName: 'Test Patient',
+        status: AppointmentStatus.completed,
+        visitStatus: VisitStatus.completed,
+        paymentType: PaymentType.paidCash,
+        amountCollected: 500,
+        queueNumber: 1,
+        scheduledDate: today.subtract(const Duration(days: 3)),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. A. Sharma',
+      );
+      final consumedReview = Appointment(
+        id: 'appt-review',
+        patientId: 'pat-1',
+        patientPhone: '9864012345',
+        patientName: 'Test Patient',
+        status: AppointmentStatus.completed,
+        visitStatus: VisitStatus.completed,
+        paymentType: PaymentType.freeReview,
+        amountCollected: 0,
+        queueNumber: 2,
+        scheduledDate: today.subtract(const Duration(days: 1)),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. A. Sharma',
+      );
+
+      final eligibility = AppointmentEngine.evaluateReviewEligibility(
+        patientHistory: [paidVisit, consumedReview],
+        doctorId: 'doc-1',
+        doctorName: 'Dr. A. Sharma',
+        targetDate: today,
+        freeReviewDays: 7,
+      );
+
+      expect(eligibility.hasVisitedDoctorEarlier, isTrue);
+      expect(eligibility.isReviewAlreadyConsumed, isTrue);
+      expect(eligibility.isWithinReviewPeriod, isFalse);
+    });
+
+    test('evaluateReviewEligibility marks isWithinReviewPeriod false when review window expired', () {
+      final oldPaidVisit = Appointment(
+        id: 'appt-old-paid',
+        patientId: 'pat-1',
+        patientPhone: '9864012345',
+        patientName: 'Test Patient',
+        status: AppointmentStatus.completed,
+        visitStatus: VisitStatus.completed,
+        paymentType: PaymentType.paidCash,
+        amountCollected: 500,
+        queueNumber: 1,
+        scheduledDate: today.subtract(const Duration(days: 10)),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. A. Sharma',
+      );
+
+      final eligibility = AppointmentEngine.evaluateReviewEligibility(
+        patientHistory: [oldPaidVisit],
+        doctorId: 'doc-1',
+        doctorName: 'Dr. A. Sharma',
+        targetDate: today,
+        freeReviewDays: 7,
+      );
+
+      expect(eligibility.hasVisitedDoctorEarlier, isTrue);
+      expect(eligibility.isReviewAlreadyConsumed, isFalse);
+      expect(eligibility.isWithinReviewPeriod, isFalse);
+      expect(eligibility.daysSinceLastVisit, 10);
+    });
+
+    test('LiveQueueDelegate.bookAppointment rejects freeReview if review is already consumed or expired', () async {
+      final mockBooking = _MockBookingService();
+      final delegate = LiveQueueDelegate(
+        bookingService: mockBooking,
+        enableMidnightObserver: false,
+        notifyListeners: () {},
+      );
+
+      final doctor = Doctor(
+        id: 'doc-1',
+        name: 'Dr. A. Sharma',
+        specialty: 'General Medicine',
+        phone: '9864012345',
+        availableDays: const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        blockedDates: const [],
+        freeReviewDays: 7,
+        consultationFee: 500,
+      );
+
+      final paidVisit = Appointment(
+        id: 'appt-paid',
+        patientId: 'pat-1',
+        patientPhone: '9864012345',
+        patientName: 'Test Patient',
+        status: AppointmentStatus.completed,
+        visitStatus: VisitStatus.completed,
+        paymentType: PaymentType.paidCash,
+        amountCollected: 500,
+        queueNumber: 1,
+        scheduledDate: today.subtract(const Duration(days: 4)),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. A. Sharma',
+      );
+      final consumedReview = Appointment(
+        id: 'appt-review',
+        patientId: 'pat-1',
+        patientPhone: '9864012345',
+        patientName: 'Test Patient',
+        status: AppointmentStatus.completed,
+        visitStatus: VisitStatus.completed,
+        paymentType: PaymentType.freeReview,
+        amountCollected: 0,
+        queueNumber: 2,
+        scheduledDate: today.subtract(const Duration(days: 2)),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. A. Sharma',
+      );
+
+      mockBooking.mockPatientAppointments = [paidVisit, consumedReview];
+
+      // Expect throw because review already consumed
+      await expectLater(
+        () => delegate.bookAppointment(
+          phoneNumber: '9864012345',
+          name: 'Test Patient',
+          age: 30,
+          gender: 'Male',
+          selectedDoctor: doctor,
+          scheduledDate: today,
+          paymentType: PaymentType.freeReview,
+          amountCollected: 0,
+        ),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('already been consumed'),
+          ),
+        ),
+      );
+
+      // Now test expired window (15 days ago with 7-day policy)
+      final expiredVisit = Appointment(
+        id: 'appt-expired',
+        patientId: 'pat-1',
+        patientPhone: '9864012345',
+        patientName: 'Test Patient',
+        status: AppointmentStatus.completed,
+        visitStatus: VisitStatus.completed,
+        paymentType: PaymentType.paidCash,
+        amountCollected: 500,
+        queueNumber: 1,
+        scheduledDate: today.subtract(const Duration(days: 15)),
+        doctorId: 'doc-1',
+        doctorName: 'Dr. A. Sharma',
+      );
+      mockBooking.mockPatientAppointments = [expiredVisit];
+
+      await expectLater(
+        () => delegate.bookAppointment(
+          phoneNumber: '9864012345',
+          name: 'Test Patient',
+          age: 30,
+          gender: 'Male',
+          selectedDoctor: doctor,
+          scheduledDate: today,
+          paymentType: PaymentType.freeReview,
+          amountCollected: 0,
+        ),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'message',
+            contains('expired'),
+          ),
+        ),
+      );
+    });
   });
 
   group('Appointment Model & RefundStatus Tests', () {
@@ -214,6 +397,7 @@ void main() {
 
 class _MockBookingService extends BookingService {
   DateTime? lastQueriedDate;
+  List<Appointment> mockPatientAppointments = [];
 
   _MockBookingService();
 
@@ -221,6 +405,25 @@ class _MockBookingService extends BookingService {
   Stream<List<Appointment>> getAppointmentsForDate(DateTime date) {
     lastQueriedDate = date;
     return Stream.value([]);
+  }
+
+  @override
+  Future<bool> hasAppointmentForDate({
+    required String phone,
+    required DateTime date,
+    String? patientName,
+    String? doctorId,
+    String? patientId,
+  }) async {
+    return false;
+  }
+
+  @override
+  Future<List<Appointment>> getAppointmentsForPatient(
+    String patientIdOrPhone, {
+    String? phone,
+  }) async {
+    return mockPatientAppointments;
   }
 }
 

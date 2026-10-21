@@ -8,6 +8,21 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.2] — 22-10-2026
+
+### Family-Aware Auto-Trigger Free Review, Review Consumption Enforcement & Firestore Batch Chunking
+- **Auto-Trigger Free Review & Reception Discretion Preservation:**
+  - Automated follow-up review detection: when a patient is selected and doctor assigned, `AddAppointmentDialog` automatically evaluates review eligibility (`AppointmentEngine.evaluateReviewEligibility`) and selects `PaymentType.freeReview` with ₹0 fee if eligible.
+  - Implemented `_hasUserManuallyChangedPayment` tracking: if the receptionist manually chooses another payment option (e.g. charging full fee for a new clinical episode or selecting a complimentary waiver), the system respects the manual override without reverting.
+  - Reset manual payment overrides automatically upon phone number clearing, patient switching, or doctor reassignment.
+- **Strict Free Review Window & Consumption Guardrails (AUDIT-09):**
+  - Enforced full eligibility checks in `LiveQueueDelegate.bookAppointment`, `AddAppointmentDialog`, and `BookingPaymentSection`: patients who have already consumed their review or are outside the doctor's review window are prevented from booking under `freeReview`.
+  - Dropdown options clearly indicate when a review is already consumed or expired, disabling invalid selections while maintaining Flutter dropdown stability.
+- **Batch Chunking for Doctor Session Close (AUDIT-05):**
+  - Updated `BookingService.closeDoctorSessionForDate` to chunk uncompleted appointment document updates into batches of 450 items, eliminating Firestore 500-operation overflow crashes on high-volume clinic days.
+- **Patient Age Display Field Canonicalization (AUDIT-06):**
+  - Corrected `ConsultationService.saveConsultation` to persist `patientAgeDisplay` directly to the `patients` collection, eliminating the redundant `'formattedAge'` ghost key.
+
 ## [1.40.1] — 21-10-2026
 
 ### Universal 0000 Testing Mode & Single Client Configuration Architecture

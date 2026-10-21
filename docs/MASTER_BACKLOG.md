@@ -99,28 +99,23 @@ No rate limiting, lockout threshold, attempt counter, or delay between failed at
 
 ---
 
-### AUDIT-05 🟠 Batch Size Limit Not Enforced in `closeDoctorSessionForDate`
+### AUDIT-05 🟢 [RESOLVED] Batch Size Limit Not Enforced in `closeDoctorSessionForDate`
 
 **File:** `lib/services/booking_service.dart` lines 328–356
 
-Firestore batch writes have a hard 500-operation limit. `closeDoctorSessionForDate` adds all appointments for a doctor-date into a single batch without a size guard. In a polyclinic with accumulated advance bookings, this will throw a Firestore exception mid-operation, leaving the session partially-closed with inconsistent `absent`/`pending` records.
+Firestore batch writes have a hard 500-operation limit. `closeDoctorSessionForDate` previously added all appointments for a doctor-date into a single batch without a size guard. In a polyclinic with accumulated advance bookings, this would throw a Firestore exception mid-operation, leaving the session partially-closed.
 
-**Fix:** Chunk the batch into groups of 450 and commit sequentially.
+**Status:** Resolved in `lib/services/booking_service.dart`. Document updates are now chunked into safe batches of 450 items and committed sequentially.
 
 ---
 
-### AUDIT-06 🟠 `saveConsultation` Writes a Ghost Field `formattedAge` to Patient Documents
+### AUDIT-06 🟢 [RESOLVED] `saveConsultation` Writes a Ghost Field `formattedAge` to Patient Documents
 
 **File:** `lib/services/consultation_service.dart` line 55
 
-```dart
-if (consultation.patientAgeDisplay != null)
-  'formattedAge': consultation.patientAgeDisplay,   // ← wrong key
-```
+The canonical `patients` schema uses `patientAgeDisplay`, not `formattedAge`. Previously, `'formattedAge'` was written to patient documents on consultation completion.
 
-The canonical `patients` schema uses `patientAgeDisplay`, not `formattedAge`. This ghost field is written to every patient document on every consultation save, is never read back by any code, and silently violates the schema contract in `SCHEMA_AND_MODELS.md`.
-
-**Fix:** Change `'formattedAge'` to `'patientAgeDisplay'` in `consultation_service.dart`. Update `SCHEMA_AND_MODELS.md` if the field was previously undocumented.
+**Status:** Resolved in `lib/services/consultation_service.dart`. Key renamed to canonical `'patientAgeDisplay'`.
 
 ---
 
@@ -144,15 +139,13 @@ The name-search fallback in `searchPatients` fetches an arbitrary 50 documents f
 
 ---
 
-### AUDIT-09 🟠 Free Review Booking Skips Window and Consumption Checks
+### AUDIT-09 🟢 [RESOLVED] Free Review Booking Skips Window and Consumption Checks
 
-**File:** `lib/providers/delegates/live_queue_delegate.dart` lines 258–274
+**File:** `lib/providers/delegates/live_queue_delegate.dart` lines 258–285
 
-When booking `PaymentType.freeReview`, `bookAppointment` only validates `eligibility.hasVisitedDoctorEarlier` — it does **not** check `eligibility.isWithinReviewPeriod` or `eligibility.isReviewAlreadyConsumed`. A patient outside the configured `freeReviewDays` window, or one who already consumed their review this cycle, can still book for free.
+When booking `PaymentType.freeReview`, `bookAppointment` previously only validated `hasVisitedDoctorEarlier`. It now enforces that the review has not been already consumed (`!isReviewAlreadyConsumed`) and that the visit is within the doctor-configured review period (`isWithinReviewPeriod`) using `selectedDoctor.freeReviewDays`.
 
-`AppointmentEngine.evaluateReviewEligibility` already computes all conditions correctly. The booking path just needs to check all three.
-
-**Fix:** Add `eligibility.isWithinReviewPeriod` and `!eligibility.isReviewAlreadyConsumed` checks alongside the existing `hasVisitedDoctorEarlier` guard in `live_queue_delegate.dart`.
+**Status:** Resolved in `live_queue_delegate.dart`, `add_appointment_dialog.dart`, and `booking_payment_section.dart`. Added comprehensive unit and delegate test coverage.
 
 ---
 
@@ -375,11 +368,11 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 | AUDIT-02 | 🔴 | Security | Firestore open to public internet — all PHI exposed |
 | AUDIT-03 | 🔴 | Security | Doctor PINs plaintext in Firestore |
 | AUDIT-04 | 🟠 | Security | No brute-force protection on PIN login |
-| AUDIT-05 | 🟠 | Data Integrity | Firestore batch overflow in `closeDoctorSessionForDate` |
-| AUDIT-06 | 🟠 | Schema | Ghost field `formattedAge` instead of `patientAgeDisplay` |
+| AUDIT-05 | 🟢 (Resolved) | Data Integrity | Firestore batch overflow in `closeDoctorSessionForDate` |
+| AUDIT-06 | 🟢 (Resolved) | Schema | Ghost field `formattedAge` replaced with `patientAgeDisplay` |
 | AUDIT-07 | 🟠 | Clinical Integrity | TOCTOU race in single-doctor mode `notifyReadyForNext` |
 | AUDIT-08 | 🟠 | Search / UX | Patient name search silently misses >50 patients |
-| AUDIT-09 | 🟠 | Business Logic | Free review booking skips window & consumption checks |
+| AUDIT-09 | 🟢 (Resolved) | Business Logic | Free review enforces window, consumption, and doctor policy |
 | AUDIT-10 | 🟡 | Business Logic | Dual default fee constants can silently drift |
 | AUDIT-11 | 🟡 | Dev UX | `blockedDates` comment shows wrong format for humans |
 | AUDIT-12 | 🟡 | Security | Double-hashing will break on QOL-12 implementation |

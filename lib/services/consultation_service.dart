@@ -52,7 +52,7 @@ class ConsultationService {
       'name': consultation.patientName,
       'age': consultation.patientAge,
       if (consultation.patientAgeDisplay != null)
-        'formattedAge': consultation.patientAgeDisplay,
+        'patientAgeDisplay': consultation.patientAgeDisplay,
       if (consultation.guardianName != null)
         'guardianName': consultation.guardianName,
       if (consultation.guardianRelation != null)

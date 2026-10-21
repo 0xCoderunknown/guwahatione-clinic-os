@@ -62,6 +62,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   DateTime _selectedDate = DateTime.now();
   VisitStatus _selectedVisitStatus = VisitStatus.waitingInLobby;
   PaymentType _selectedPayment = PaymentType.paidCash;
+  bool _hasUserManuallyChangedPayment = false;
   String? _selectedGender;
   bool _genderHasError = false;
 
@@ -332,6 +333,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     onDoctorChanged: (val) {
                       setState(() {
                         _selectedDoctor = val;
+                        _hasUserManuallyChangedPayment = false;
                         if (_selectedPayment.isPaid && val != null) {
                           _amountController.text = "${val.consultationFee}";
                         }
@@ -426,6 +428,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   }
 
   void _onPhoneChanged(String val) {
+    _hasUserManuallyChangedPayment = false;
     _checkDuplicateBooking();
     if (val.length == 10) {
       _searchPatient(val);
@@ -453,6 +456,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       if (family.isNotEmpty) {
         setState(() {
           _familyMembers = family;
+          _hasUserManuallyChangedPayment = false;
         });
         await _onSelectFamilyMember(family.first);
       } else {
@@ -460,6 +464,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
           _familyMembers = [];
           _selectedPatientId = null;
           _isNewPatient = true;
+          _hasUserManuallyChangedPayment = false;
           _patientAppointments = [];
           _selectedGender = null;
           _genderHasError = false;
@@ -492,6 +497,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
   }
 
   Future<void> _onSelectFamilyMember(Patient? patient) async {
+    _hasUserManuallyChangedPayment = false;
     if (patient != null) {
       setState(() {
         _selectedPatientId = patient.id;
@@ -624,8 +630,10 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         _historyColor = Colors.teal.shade100;
         _historyInfo =
             "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n✅ Eligible for ${eligibility.allowedReviewDays}-day Free Review (${eligibility.daysSinceLastVisit} days ago)";
-        _selectedPayment = PaymentType.freeReview;
-        _amountController.text = "0";
+        if (!_hasUserManuallyChangedPayment) {
+          _selectedPayment = PaymentType.freeReview;
+          _amountController.text = "0";
+        }
       } else {
         final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
         _historyColor = Colors.amber.shade100;
@@ -646,11 +654,27 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     if (val == null) return;
 
     if (val == PaymentType.freeReview) {
+      final docTitle = _selectedDoctor != null
+          ? AppFormatters.doctorTitle(_selectedDoctor!.name)
+          : 'this doctor';
+
       if (!_reviewEligibility.hasVisitedDoctorEarlier) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Free Review is only available for returning patients of this doctor.',
+              'Free Review is only available for returning patients of $docTitle.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (_reviewEligibility.isReviewAlreadyConsumed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Free review has already been consumed for the previous visit with $docTitle.',
             ),
             backgroundColor: Colors.red,
           ),
@@ -659,32 +683,20 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       }
 
       if (!_reviewEligibility.isWithinReviewPeriod) {
-        final dateStr = _reviewEligibility.lastVisitDate != null
-            ? AppFormatters.date(_reviewEligibility.lastVisitDate!)
-            : 'N/A';
-        final days = _reviewEligibility.daysSinceLastVisit ?? 15;
-
-        final proceed = await BookingEligibilityBanner.showReviewWarningDialog(
-          context,
-          doctorName: _selectedDoctor?.name ?? 'the doctor',
-          dateStr: dateStr,
-          days: days,
-          policyDays: _selectedDoctor?.freeReviewDays ?? 14,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Free review window has expired for $docTitle (${_reviewEligibility.allowedReviewDays}-day policy).',
+            ),
+            backgroundColor: Colors.red,
+          ),
         );
-        if (!proceed) {
-          setState(() {
-            _selectedPayment = _selectedVisitStatus == VisitStatus.booked
-                ? PaymentType.unpaid
-                : PaymentType.paidCash;
-            _amountController.text =
-                "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
-          });
-          return;
-        }
+        return;
       }
     }
 
     setState(() {
+      _hasUserManuallyChangedPayment = true;
       _selectedPayment = val;
       _amountController.text =
           "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
@@ -746,17 +758,43 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       return;
     }
 
-    if (_selectedPayment == PaymentType.freeReview &&
-        !_reviewEligibility.hasVisitedDoctorEarlier) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Free review is only allowed for patients who previously visited ${AppFormatters.doctorTitle(_selectedDoctor!.name)}.",
+    if (_selectedPayment == PaymentType.freeReview) {
+      final docName = _selectedDoctor != null
+          ? AppFormatters.doctorTitle(_selectedDoctor!.name)
+          : 'the selected doctor';
+      if (!_reviewEligibility.hasVisitedDoctorEarlier) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Free review is only allowed for patients who previously visited $docName.",
+            ),
+            backgroundColor: Colors.red,
           ),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
+        );
+        return;
+      }
+      if (_reviewEligibility.isReviewAlreadyConsumed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Free review has already been consumed for the previous consultation with $docName.",
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      if (!_reviewEligibility.isWithinReviewPeriod) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Free review window has expired for $docName (${_reviewEligibility.allowedReviewDays}-day policy).",
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
     }
 
     int parsedAge = 0;
