@@ -9,6 +9,7 @@ import '../../models/patient.dart';
 import '../../models/patient_review_eligibility.dart';
 import '../../providers/clinic_provider.dart';
 import '../../utils/formatters.dart';
+import 'booking_carry_over_banner.dart';
 import 'booking_date_and_mode_section.dart';
 import 'booking_dialog_actions.dart';
 import 'booking_duplicate_warning_banner.dart';
@@ -73,6 +74,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
   List<Appointment> _patientAppointments = [];
   Appointment? _duplicateAppointment;
+  Appointment? _eligibleCarryOver;
+  bool _isCarryOverApplied = false;
 
   PatientReviewEligibility _reviewEligibility = const PatientReviewEligibility(
     hasVisitedDoctorEarlier: false,
@@ -318,6 +321,29 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                       historyInfo: _historyInfo,
                       historyColor: _historyColor,
                       isNewPatient: _isNewPatient,
+                    ),
+                  ],
+                  if (_eligibleCarryOver != null) ...[
+                    const SizedBox(height: 10),
+                    BookingCarryOverBanner(
+                      eligibleAppointment: _eligibleCarryOver!,
+                      isApplied: _isCarryOverApplied,
+                      onApply: () {
+                        setState(() {
+                          _isCarryOverApplied = true;
+                          _hasUserManuallyChangedPayment = true;
+                          _selectedPayment = PaymentType.paidCarryOver;
+                          _amountController.text = "0";
+                        });
+                      },
+                      onUndo: () {
+                        setState(() {
+                          _isCarryOverApplied = false;
+                          _selectedPayment = PaymentType.paidCash;
+                          _amountController.text =
+                              "${_selectedDoctor?.consultationFee ?? 500}";
+                        });
+                      },
                     ),
                   ],
                   const SizedBox(height: 16),
@@ -591,6 +617,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
     if (_isNewPatient || _phoneController.text.length < 10) {
       setState(() {
+        _eligibleCarryOver = null;
+        _isCarryOverApplied = false;
         _reviewEligibility = const PatientReviewEligibility(
           hasVisitedDoctorEarlier: false,
           isWithinReviewPeriod: false,
@@ -598,7 +626,8 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         );
         _historyInfo = "New Patient Record";
         _historyColor = Colors.green.shade100;
-        if (_selectedPayment == PaymentType.freeReview) {
+        if (_selectedPayment == PaymentType.freeReview ||
+            _selectedPayment == PaymentType.paidCarryOver) {
           _selectedPayment = _selectedVisitStatus == VisitStatus.booked
               ? PaymentType.unpaid
               : PaymentType.paidCash;
@@ -609,6 +638,14 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       return;
     }
 
+    final carryOver = AppointmentEngine.findEligibleCarryOverAppointment(
+      patientHistory: _patientAppointments,
+      doctorId: _selectedDoctor?.id,
+      targetDate: _selectedDate,
+      patientId: _selectedPatientId,
+      patientName: _nameController.text.trim(),
+    );
+
     final eligibility = AppointmentEngine.evaluateReviewEligibility(
       patientHistory: _patientAppointments,
       doctorId: _selectedDoctor?.id,
@@ -618,6 +655,16 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     );
 
     setState(() {
+      _eligibleCarryOver = carryOver;
+      if (carryOver == null && _isCarryOverApplied) {
+        _isCarryOverApplied = false;
+        if (_selectedPayment == PaymentType.paidCarryOver) {
+          _selectedPayment = PaymentType.paidCash;
+          _amountController.text =
+              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
+        }
+      }
+
       _reviewEligibility = eligibility;
 
       if (!eligibility.hasVisitedDoctorEarlier) {
@@ -660,7 +707,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         _historyColor = Colors.teal.shade100;
         _historyInfo =
             "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n✅ Eligible for ${eligibility.allowedReviewDays}-day Free Review (${eligibility.daysSinceLastVisit} days ago)";
-        if (!_hasUserManuallyChangedPayment) {
+        if (!_hasUserManuallyChangedPayment && !_isCarryOverApplied) {
           _selectedPayment = PaymentType.freeReview;
           _amountController.text = "0";
         }
@@ -682,6 +729,27 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
   Future<void> _onPaymentChanged(PaymentType? val) async {
     if (val == null) return;
+
+    if (val == PaymentType.paidCarryOver) {
+      if (_eligibleCarryOver == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No eligible un-consulted prepaid visit found for this patient and doctor.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      setState(() {
+        _hasUserManuallyChangedPayment = true;
+        _isCarryOverApplied = true;
+        _selectedPayment = PaymentType.paidCarryOver;
+        _amountController.text = "0";
+      });
+      return;
+    }
 
     if (val == PaymentType.freeReview) {
       final docTitle = _selectedDoctor != null
@@ -727,6 +795,9 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
 
     setState(() {
       _hasUserManuallyChangedPayment = true;
+      if (val != PaymentType.paidCarryOver) {
+        _isCarryOverApplied = false;
+      }
       _selectedPayment = val;
       _amountController.text =
           "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
@@ -892,6 +963,12 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
             scheduledDate: _selectedDate,
             selectedDoctor: _selectedDoctor!,
             isNewPatient: _isNewPatient,
+            carriedOverAppointmentId:
+                _isCarryOverApplied ? _eligibleCarryOver?.id : null,
+            carriedOverAmount:
+                _isCarryOverApplied ? _eligibleCarryOver?.amountCollected : null,
+            carriedOverDate:
+                _isCarryOverApplied ? _eligibleCarryOver?.scheduledDate : null,
           );
       if (mounted) {
         Navigator.pop(context, newAppt);

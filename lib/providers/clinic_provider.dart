@@ -225,6 +225,9 @@ class ClinicProvider with ChangeNotifier {
     required DateTime scheduledDate,
     required Doctor selectedDoctor,
     bool isNewPatient = false,
+    String? carriedOverAppointmentId,
+    int? carriedOverAmount,
+    DateTime? carriedOverDate,
   }) async {
     _setLoading(true);
     try {
@@ -244,6 +247,9 @@ class ClinicProvider with ChangeNotifier {
         scheduledDate: scheduledDate,
         selectedDoctor: selectedDoctor,
         isNewPatient: isNewPatient,
+        carriedOverAppointmentId: carriedOverAppointmentId,
+        carriedOverAmount: carriedOverAmount,
+        carriedOverDate: carriedOverDate,
       );
     } finally {
       _setLoading(false);
@@ -269,12 +275,14 @@ class ClinicProvider with ChangeNotifier {
     String paymentType,
     int amount, {
     VisitStatus? visitStatus,
+    String? refundStatus,
   }) => _queueDelegate.updateAppointmentStatus(
     id,
     status,
     paymentType,
     amount,
     visitStatus: visitStatus,
+    refundStatus: refundStatus,
   );
 
   Future<void> markAppointmentAbsent(Appointment appointment) =>

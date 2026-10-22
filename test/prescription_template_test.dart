@@ -9,33 +9,93 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  const testUriTemplate = PrescriptionTemplate(
+    id: 'tmpl_test_uri',
+    name: 'URI / Pharyngitis',
+    description: 'Dolo 650 + Azithral 500 + Levocet 5 + Pan 40',
+    emoji: '🤧',
+    items: [
+      PrescriptionTemplateItem(
+        medicineName: 'Dolo 650',
+        composition: 'Paracetamol 650mg',
+        dosage: '1 Tablet',
+        frequency: '1-0-1 (BD)',
+        timing: 'After Food',
+        durationDays: 5,
+        instructions: 'SOS for fever or throat pain',
+      ),
+      PrescriptionTemplateItem(
+        medicineName: 'Azithral 500',
+        composition: 'Azithromycin 500mg',
+        dosage: '1 Tablet',
+        frequency: '1-0-0 (OD)',
+        timing: 'After Food',
+        durationDays: 3,
+        instructions: 'Take at fixed time daily',
+      ),
+      PrescriptionTemplateItem(
+        medicineName: 'Levocet 5',
+        composition: 'Levocetirizine 5mg',
+        dosage: '1 Tablet',
+        frequency: '0-0-1 (HS)',
+        timing: 'After Food',
+        durationDays: 5,
+        instructions: 'Night at bedtime for runny nose / sneezing',
+      ),
+      PrescriptionTemplateItem(
+        medicineName: 'Pan 40',
+        composition: 'Pantoprazole 40mg',
+        dosage: '1 Tablet',
+        frequency: '1-0-0 (OD)',
+        timing: 'Before Food',
+        durationDays: 5,
+        instructions: 'Empty stomach in morning',
+      ),
+    ],
+  );
+
+  const testFeverTemplate = PrescriptionTemplate(
+    id: 'tmpl_test_fever',
+    name: 'Viral Fever / SOS',
+    description: 'Dolo 650 + Pan 40 + Limcee Chewable',
+    emoji: '🌡️',
+    items: [
+      PrescriptionTemplateItem(
+        medicineName: 'Dolo 650',
+        composition: 'Paracetamol 650mg',
+        dosage: '1 Tablet',
+        frequency: '1-1-1 (TDS)',
+        timing: 'After Food',
+        durationDays: 5,
+        instructions: 'SOS for fever > 100°F or body ache; min 6 hrs gap',
+      ),
+      PrescriptionTemplateItem(
+        medicineName: 'Pan 40',
+        composition: 'Pantoprazole 40mg',
+        dosage: '1 Tablet',
+        frequency: '1-0-0 (OD)',
+        timing: 'Before Food',
+        durationDays: 5,
+        instructions: 'Morning before food',
+      ),
+      PrescriptionTemplateItem(
+        medicineName: 'Limcee 500',
+        composition: 'Vitamin C 500mg',
+        dosage: '1 Tablet',
+        frequency: '1-0-0 (OD)',
+        timing: 'After Food',
+        durationDays: 10,
+        instructions: 'Chewable tablet after food',
+      ),
+    ],
+  );
+
   group('PrescriptionTemplate Domain & MedicineEngine Tests', () {
     test(
-      'Default templates list is populated with standard clinical presets',
+      'Default templates list is purged of hardcoded whole-course bundles per PM directive',
       () {
         final templates = MedicineEngine.getDefaultPrescriptionTemplates();
-        expect(templates.isNotEmpty, isTrue);
-        expect(templates.length, greaterThanOrEqualTo(5));
-
-        final uri = templates.firstWhere((t) => t.id == 'tmpl_uri_flu');
-        expect(uri.name, 'URI / Pharyngitis');
-        expect(uri.emoji, '🤧');
-        expect(uri.items.length, greaterThanOrEqualTo(3));
-        expect(uri.items.any((i) => i.medicineName.contains('Dolo')), isTrue);
-        expect(
-          uri.items.any((i) => i.medicineName.contains('Levocet')),
-          isTrue,
-        );
-
-        final gastritis = templates.firstWhere(
-          (t) => t.id == 'tmpl_acute_gastritis',
-        );
-        expect(gastritis.name, 'Acute Gastritis');
-        expect(gastritis.emoji, '🔥');
-        expect(
-          gastritis.items.any((i) => i.medicineName.contains('Pan 40')),
-          isTrue,
-        );
+        expect(templates.isEmpty, isTrue);
       },
     );
 
@@ -65,29 +125,26 @@ void main() {
       },
     );
 
-    test('evaluateTemplateApplication adds all items when encounter has no active meds', () {
-      final templates = MedicineEngine.getDefaultPrescriptionTemplates();
-      final uri = templates.firstWhere((t) => t.id == 'tmpl_uri_flu');
+    test(
+      'evaluateTemplateApplication adds all items when encounter has no active meds',
+      () {
+        var counter = 0;
+        final result = MedicineEngine.evaluateTemplateApplication(
+          template: testUriTemplate,
+          existingItems: const [],
+          uuidGenerator: () => 'uuid_${++counter}',
+        );
 
-      var counter = 0;
-      final result = MedicineEngine.evaluateTemplateApplication(
-        template: uri,
-        existingItems: const [],
-        uuidGenerator: () => 'uuid_${++counter}',
-      );
-
-      expect(result.templateName, uri.name);
-      expect(result.hasAdded, isTrue);
-      expect(result.hasSkipped, isFalse);
-      expect(result.addedItems.length, uri.items.length);
-      expect(result.skippedDuplicates.isEmpty, isTrue);
-      expect(result.addedItems.first.id, 'uuid_1');
-    });
+        expect(result.templateName, testUriTemplate.name);
+        expect(result.hasAdded, isTrue);
+        expect(result.hasSkipped, isFalse);
+        expect(result.addedItems.length, testUriTemplate.items.length);
+        expect(result.skippedDuplicates.isEmpty, isTrue);
+        expect(result.addedItems.first.id, 'uuid_1');
+      },
+    );
 
     test('evaluateTemplateApplication skips exact brand duplicate', () {
-      final templates = MedicineEngine.getDefaultPrescriptionTemplates();
-      final fever = templates.firstWhere((t) => t.id == 'tmpl_fever_viral');
-
       // Existing prescription already has Dolo 650
       final existing = [
         const PrescriptionItem(
@@ -103,7 +160,7 @@ void main() {
 
       var counter = 0;
       final result = MedicineEngine.evaluateTemplateApplication(
-        template: fever,
+        template: testFeverTemplate,
         existingItems: existing,
         uuidGenerator: () => 'uuid_${++counter}',
       );
@@ -112,7 +169,7 @@ void main() {
       expect(result.skippedDuplicates.length, 1);
       expect(result.skippedDuplicates.first.medicineName, 'Dolo 650');
       // Added other items from fever template (Pan 40, Limcee 500)
-      expect(result.addedItems.length, fever.items.length - 1);
+      expect(result.addedItems.length, testFeverTemplate.items.length - 1);
       expect(
         result.addedItems.any((i) => i.medicineName == 'Dolo 650'),
         isFalse,
@@ -123,9 +180,6 @@ void main() {
     test(
       'evaluateTemplateApplication skips duplicate by composition match',
       () {
-        final templates = MedicineEngine.getDefaultPrescriptionTemplates();
-        final uri = templates.firstWhere((t) => t.id == 'tmpl_uri_flu');
-
         // Patient is taking generic Paracetamol 650mg under a different brand name (Calpol 650)
         final existing = [
           const PrescriptionItem(
@@ -141,7 +195,7 @@ void main() {
 
         var counter = 0;
         final result = MedicineEngine.evaluateTemplateApplication(
-          template: uri,
+          template: testUriTemplate,
           existingItems: existing,
           uuidGenerator: () => 'uuid_${++counter}',
         );
@@ -161,70 +215,69 @@ void main() {
       },
     );
 
-    test('evaluateTemplateApplication does not treat STOPPED medication as duplicate', () {
-      final templates = MedicineEngine.getDefaultPrescriptionTemplates();
-      final uri = templates.firstWhere((t) => t.id == 'tmpl_uri_flu');
+    test(
+      'evaluateTemplateApplication does not treat STOPPED medication as duplicate',
+      () {
+        // Patient was previously on Dolo 650, but doctor explicitly STOPPED it
+        final existing = [
+          const PrescriptionItem(
+            id: 'stopped_dolo',
+            action: MedicationAction.stop,
+            medicineName: 'Dolo 650',
+            composition: 'Paracetamol 650mg',
+            dosage: '1 Tablet',
+            frequency: '1-0-1 (BD)',
+            timing: 'After Food',
+            stopReason: 'Finished course',
+          ),
+        ];
 
-      // Patient was previously on Dolo 650, but doctor explicitly STOPPED it
-      final existing = [
-        const PrescriptionItem(
-          id: 'stopped_dolo',
-          action: MedicationAction.stop,
-          medicineName: 'Dolo 650',
-          composition: 'Paracetamol 650mg',
-          dosage: '1 Tablet',
-          frequency: '1-0-1 (BD)',
-          timing: 'After Food',
-          stopReason: 'Finished course',
-        ),
-      ];
+        var counter = 0;
+        final result = MedicineEngine.evaluateTemplateApplication(
+          template: testUriTemplate,
+          existingItems: existing,
+          uuidGenerator: () => 'uuid_${++counter}',
+        );
 
-      var counter = 0;
-      final result = MedicineEngine.evaluateTemplateApplication(
-        template: uri,
-        existingItems: existing,
-        uuidGenerator: () => 'uuid_${++counter}',
-      );
-
-      // Stopped medication does not block template prescribing
-      expect(result.hasSkipped, isFalse);
-      expect(
-        result.addedItems.any((i) => i.medicineName == 'Dolo 650'),
-        isTrue,
-      );
-    });
+        // Stopped medication does not block template prescribing
+        expect(result.hasSkipped, isFalse);
+        expect(
+          result.addedItems.any((i) => i.medicineName == 'Dolo 650'),
+          isTrue,
+        );
+      },
+    );
   });
 
   group('EncounterFormState Template Integration', () {
     test('applyPrescriptionTemplate appends to newPrescriptions correctly', () {
       final form = EncounterFormState();
-      final templates = MedicineEngine.getDefaultPrescriptionTemplates();
-      final gastritis = templates.firstWhere(
-        (t) => t.id == 'tmpl_acute_gastritis',
-      );
 
       var counter = 0;
       final result = form.applyPrescriptionTemplate(
-        template: gastritis,
+        template: testUriTemplate,
         uuidGenerator: () => 'test_id_${++counter}',
       );
 
-      expect(result.addedItems.length, gastritis.items.length);
-      expect(form.newPrescriptions.length, gastritis.items.length);
-      expect(form.allPrescriptionItems.length, gastritis.items.length);
+      expect(result.addedItems.length, testUriTemplate.items.length);
+      expect(form.newPrescriptions.length, testUriTemplate.items.length);
+      expect(form.allPrescriptionItems.length, testUriTemplate.items.length);
 
       // Applying again should skip all as duplicates
       final secondResult = form.applyPrescriptionTemplate(
-        template: gastritis,
+        template: testUriTemplate,
         uuidGenerator: () => 'test_id_${++counter}',
       );
 
       expect(secondResult.hasAdded, isFalse);
       expect(secondResult.hasSkipped, isTrue);
-      expect(secondResult.skippedDuplicates.length, gastritis.items.length);
+      expect(
+        secondResult.skippedDuplicates.length,
+        testUriTemplate.items.length,
+      );
       expect(
         form.newPrescriptions.length,
-        gastritis.items.length,
+        testUriTemplate.items.length,
       ); // Unchanged count
 
       form.dispose();
@@ -243,6 +296,7 @@ void main() {
           MaterialApp(
             home: Scaffold(
               body: RxTemplatePresetsBar(
+                customTemplates: const [testUriTemplate, testFeverTemplate],
                 form: form,
                 uuidGenerator: () => 'chip_id_${++idCounter}',
                 onUpdate: () {

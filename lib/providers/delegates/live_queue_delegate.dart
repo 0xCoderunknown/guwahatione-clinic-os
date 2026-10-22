@@ -224,6 +224,9 @@ class LiveQueueDelegate {
     required DateTime scheduledDate,
     required Doctor selectedDoctor,
     bool isNewPatient = false,
+    String? carriedOverAppointmentId,
+    int? carriedOverAmount,
+    DateTime? carriedOverDate,
   }) async {
     if (AppointmentEngine.isDateBlocked(scheduledDate)) {
       throw Exception('Selected date is a clinic holiday.');
@@ -331,6 +334,9 @@ class LiveQueueDelegate {
       scheduledDate: scheduledDate,
       doctorId: selectedDoctor.id,
       doctorName: selectedDoctor.name,
+      carriedOverAppointmentId: carriedOverAppointmentId,
+      carriedOverAmount: carriedOverAmount,
+      carriedOverDate: carriedOverDate,
     );
 
     final appointment = Appointment(
@@ -349,6 +355,9 @@ class LiveQueueDelegate {
       doctorId: selectedDoctor.id,
       doctorName: selectedDoctor.name,
       checkedInAt: visitStatus == VisitStatus.waitingInLobby ? now : null,
+      carriedOverAppointmentId: carriedOverAppointmentId,
+      carriedOverAmount: carriedOverAmount,
+      carriedOverDate: carriedOverDate,
     );
     return appointment;
   }
@@ -385,6 +394,7 @@ class LiveQueueDelegate {
     String paymentType,
     int amount, {
     VisitStatus? visitStatus,
+    String? refundStatus,
   }) async {
     try {
       final pType = PaymentType.values.firstWhere(
@@ -403,6 +413,7 @@ class LiveQueueDelegate {
         visitStatus: visitStatus,
         collectedAmount: amount,
         paymentType: pType,
+        refundStatus: refundStatus,
       );
     } catch (e) {
       debugPrint('Error updating status: $e');
@@ -412,11 +423,13 @@ class LiveQueueDelegate {
 
   Future<void> markAppointmentAbsent(Appointment appointment) async {
     try {
+      final hasPaid = appointment.amountCollected > 0;
       await _bookingService.updateAppointmentStatus(
         appointment.id,
         AppointmentStatus.absent,
-        collectedAmount: 0,
+        collectedAmount: appointment.amountCollected,
         paymentType: appointment.paymentType,
+        refundStatus: hasPaid ? 'pending_refund' : 'none',
       );
     } catch (e) {
       debugPrint('Error marking appointment absent: $e');

@@ -18,7 +18,7 @@
    - Designed specifically for OPD polyclinics and consulting chambers in Tier 2 Indian cities with **1–3 consulting doctors** and an **attached pharmacy in front**.
    - Operating across **3 distinct physical hardware stations**:
      1. **Doctor Chamber Devices:** 1–3 consulting physicians running simultaneously on tablets, laptops, or desktops. Multiple doctors consult concurrently in their respective chambers.
-     2. **Reception Counter PC:** Typically a single dedicated PC handling walk-in booking, atomic token allocation, arrival verification, upfront fee reconciliation, and thermal receipt slip printing.
+     2. **Reception Counter PC:** Typically a single dedicated PC handling walk-in booking, atomic token allocation, arrival verification, and upfront fee reconciliation (tokens and waiting times tracked digitally on live screens and WhatsApp; physical thermal slips not needed per QOL-02).
      3. **Clinic Owner / Admin Device:** A single mobile or desktop session used occasionally for fee configuration, doctor roster management, security PIN rotation, and financial tax audits.
 
 2. **100% AI Developed & Maintained:**
@@ -415,12 +415,20 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-03 — Prepaid Carry-Over & Doctor No-Show / Refund Protocol (P11 / RFC-2)
+### QOL-03 🟢 [RESOLVED] — Prepaid Carry-Over & Patient No-Show Carry-Forward (Free Next-Day Revisit)
 
 **Domain:** Reception / Financial Ledger  
-**Status:** Doctor Absence / Session Cancellation ✅ implemented in v1.39.0. Patient No-Show Carry-Forward 📋 pending.  
-**Pending Specification:**
-- Reception option to "Revalidate Yesterday's Paid Token" — generates today's atomic token linked to yesterday's payment reference with ₹0 fresh collection.
+**Status:** Resolved in v1.40.13 (22-10-2026).  
+**Affected Files:** `lib/models/appointment.dart`, `lib/core/engines/appointment_engine.dart`, `lib/core/engines/cash_handover_engine.dart`, `lib/core/engines/revenue_engine.dart`, `lib/services/booking_service.dart`, `lib/widgets/booking/booking_carry_over_banner.dart`, `lib/widgets/booking/add_appointment_dialog.dart`, `lib/widgets/booking/booking_payment_section.dart`, `docs/SCHEMA_AND_MODELS.md`  
+**Problem:** In Indian Tier 2 OPD polyclinics, patients who paid their consultation fee upfront occasionally leave before being seen due to emergency delays, fatigue, or clinic closing. If they return next day (or within 30 days), reception must not charge them a second time, yet today's consecutive queue token must be issued, physical cash in drawer must balance to the rupee, and the doctor must receive their consultation payout upon completion.  
+**Resolution Details:**
+- **`PaymentType.paidCarryOver`:** Added payment type with ₹0 fresh cash collection for today's appointment document.
+- **Smart Revalidation Banner (`BookingCarryOverBanner`):** When registering or selecting an existing patient, `AppointmentEngine.findEligibleCarryOverAppointment()` automatically detects unredeemed paid visits within a 30-day window (`AppointmentStatus.absent` or `VisitStatus.waitingInLobby` with `amountCollected > 0` and un-refunded).
+- **1-Tap Revalidation:** Tapping "Revalidate Paid Visit" selects `PaymentType.paidCarryOver` and binds `carriedOverAppointmentId`, `carriedOverAmount`, and `carriedOverDate`.
+- **Atomic Double-Redemption Guard:** In `BookingService.bookAppointment()` Firestore transaction, the prior appointment document is atomically updated with `refundStatus: 'carried_forward'`, `carriedForwardToAppointmentId`, and `carriedForwardDate`.
+- **Zero Ghost Cash:** `CashHandoverEngine` treats carry-over patients as paid for patient volume while contributing ₹0 to `totalPhysicalCash`, ensuring reception cash drawers balance to the exact rupee at close of day.
+- **Doctor Payout Integrity:** `RevenueEngine` calculates physician fee splits based on `appointment.effectiveFee`, crediting the doctor their full fee slice upon completing the consultation.
+- **Queue & Chamber Visibility:** Amber `Carry-Over (₹X)` badges rendered on reception queue accordions and doctor chamber token cards.
 
 ---
 
@@ -436,14 +444,14 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-05 — Per-Doctor Saved Prescription Templates (Replaces Hardcoded P9 Presets)
+### QOL-05 🟡 [PRESETS PURGED & FLAG-GATED] — Prescription Templates & Hardcoded Presets Purge
 
 **Domain:** Doctor Chamber  
-**Affected Files:** `lib/models/prescription_template.dart`, `lib/screens/consultation_encounter_screen.dart`, `lib/config/clinic_config.dart`  
-**Problem:** Hardcoded GP condition presets (URI, Gastritis, Viral Fever) are generic and irrelevant to specialists.  
-**Specification:**
-- Doctors save their own regimens from active encounters to personal profiles (`doctor_templates` Firestore collection).
-- Replaces hardcoded presets without backward-compatibility debt.
+**Affected Files:** `lib/core/engines/medicine_engine.dart`, `lib/config/clinic_config.dart`, `lib/models/prescription_template.dart`  
+**PM Decision (22-10-2026):**
+- **Hardcoded Presets Purged:** Purged all hardcoded whole-course disease templates (`tmpl_uri_flu`, `tmpl_acute_gastritis`, etc.) from `MedicineEngine.getDefaultPrescriptionTemplates()`. While 1-tap medicine addition with default dosage is standard, 1-tap whole disease courses over-prescribe and are clinically inappropriate.
+- **Experimental Flag Gated:** Template selector UI remains completely hidden behind `enablePrescriptionTemplatePresets: false` in `ClinicConfig`. Doctors will not see templates until validated across multiple live clinics.
+- **Per-Doctor Custom Templates:** Deferred until multi-clinic pilot validation.
 
 ---
 

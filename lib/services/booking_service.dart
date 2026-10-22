@@ -24,7 +24,7 @@ class BookingService {
       _firestore.collection(FirestorePaths.patients);
 
   /// Atomically allocates the next daily queue number, creates the appointment,
-  /// and upserts the patient demographic profile in a single transaction.
+  /// upserts the patient demographic profile, and links carried-over prior appointments in a single transaction.
   Future<int> bookAppointment({
     required String appointmentId,
     required Patient patient,
@@ -35,12 +35,20 @@ class BookingService {
     required String doctorId,
     required String doctorName,
     DateTime? checkedInAt,
+    String? carriedOverAppointmentId,
+    int? carriedOverAmount,
+    DateTime? carriedOverDate,
   }) async {
     final counterRef = _countersRef.doc(
       FirestorePaths.doctorQueueCounter(doctorId, scheduledDate),
     );
     final appointmentRef = _appointmentsRef.doc(appointmentId);
     final patientRef = _patientsRef.doc(patient.id);
+    DocumentReference<Map<String, dynamic>>? priorApptRef;
+    if (carriedOverAppointmentId != null &&
+        carriedOverAppointmentId.trim().isNotEmpty) {
+      priorApptRef = _appointmentsRef.doc(carriedOverAppointmentId.trim());
+    }
     var queueNumber = 1;
 
     final effectiveCheckedInAt =
@@ -52,6 +60,19 @@ class BookingService {
       final snapshot = await transaction.get(counterRef);
       queueNumber =
           ((snapshot.data()?['currentNumber'] as num?)?.toInt() ?? 0) + 1;
+
+      // 2. Read prior appointment if linking carry-over
+      final targetPriorRef = priorApptRef;
+      if (targetPriorRef != null) {
+        final priorSnap = await transaction.get(targetPriorRef);
+        if (priorSnap.exists) {
+          transaction.update(targetPriorRef, {
+            'refundStatus': 'carried_forward',
+            'carriedForwardToAppointmentId': appointmentId,
+            'carriedForwardDate': Timestamp.fromDate(scheduledDate),
+          });
+        }
+      }
 
       final appointment = Appointment(
         id: appointmentId,
@@ -69,9 +90,12 @@ class BookingService {
         doctorId: doctorId,
         doctorName: doctorName,
         checkedInAt: effectiveCheckedInAt,
+        carriedOverAppointmentId: carriedOverAppointmentId,
+        carriedOverAmount: carriedOverAmount,
+        carriedOverDate: carriedOverDate,
       );
 
-      // 2. Commit atomic writes
+      // 3. Commit atomic writes
       transaction.set(counterRef, {'currentNumber': queueNumber});
       transaction.set(appointmentRef, appointment.toJson());
       transaction.set(patientRef, patient.toJson(), SetOptions(merge: true));
@@ -147,6 +171,7 @@ class BookingService {
     VisitStatus? visitStatus,
     int? collectedAmount,
     PaymentType? paymentType,
+    String? refundStatus,
   }) async {
     final effectiveVisitStatus =
         visitStatus ??
@@ -165,6 +190,9 @@ class BookingService {
     }
     if (paymentType != null) {
       data['paymentType'] = paymentType.name;
+    }
+    if (refundStatus != null) {
+      data['refundStatus'] = refundStatus;
     }
 
     final apptDoc = _appointmentsRef.doc(appointmentId);

@@ -47,7 +47,7 @@ class ChamberTokenCard extends StatelessWidget {
         badgeFg = const Color(0xFF15803D);
         statusTitle = "COMPLETED";
         paymentSubtitle =
-            "Paid: ${AppFormatters.currency(appointment.amountCollected)} (${appointment.paymentType.displayName})";
+            "Paid: ${AppFormatters.currency(appointment.effectiveFee)} (${appointment.paymentType.displayName})";
       } else if (appointment.paymentType == PaymentType.freeReview) {
         badgeBg = const Color(0xFFFEF3C7);
         badgeFg = const Color(0xFFB45309);

@@ -48,6 +48,7 @@ enum VisitStatus {
 enum PaymentType {
   paidCash,
   paidUpi,
+  paidCarryOver, // Prepaid prior-date visit carried forward (₹0 fresh collection)
   freeReview, // 14-day statutory return
   freeFamily, // Discretionary doctor/clinic waiver (MUST NOT be overridden)
   postPay, // Pay on exit / post-consultation
@@ -59,6 +60,8 @@ enum PaymentType {
         return 'Paid (Cash)';
       case PaymentType.paidUpi:
         return 'Paid (UPI)';
+      case PaymentType.paidCarryOver:
+        return 'Paid (Carry-Over)';
       case PaymentType.freeReview:
         return 'Free (Review)';
       case PaymentType.freeFamily:
@@ -71,7 +74,9 @@ enum PaymentType {
   }
 
   bool get isPaid =>
-      this == PaymentType.paidCash || this == PaymentType.paidUpi;
+      this == PaymentType.paidCash ||
+      this == PaymentType.paidUpi ||
+      this == PaymentType.paidCarryOver;
 
   bool get isFree =>
       this == PaymentType.freeReview || this == PaymentType.freeFamily;
@@ -95,7 +100,10 @@ class Appointment {
   final String doctorName;
   final DateTime? checkedInAt;
   final bool isPaused; // Indicates an in-progress consultation was paused/saved as draft
-  final String? refundStatus; // 'none', 'pending_refund', 'refunded'
+  final String? refundStatus; // 'none', 'pending_refund', 'refunded', 'carried_forward'
+  final String? carriedOverAppointmentId; // Reference to prior un-consulted paid appointment
+  final int? carriedOverAmount; // Amount originally paid on the prior appointment
+  final DateTime? carriedOverDate; // Calendar date of originating appointment
 
   AppointmentStatus get status {
     switch (visitStatus) {
@@ -110,13 +118,22 @@ class Appointment {
     }
   }
 
+  /// Effective consultation fee earned by doctor / clinic for this visit.
+  /// For carried-over visits where ₹0 was collected today, resolves to carriedOverAmount.
+  int get effectiveFee =>
+      paymentType == PaymentType.paidCarryOver
+          ? (carriedOverAmount ?? 0)
+          : amountCollected;
+
   /// Formats clean, human-friendly payment summary without bracket clutter.
-  /// Examples: "₹500 Paid", "Free Review", "Free Waiver", "Post-Pay", "Unpaid".
+  /// Examples: "₹500 Paid", "Free Review", "Free Waiver", "Post-Pay", "Unpaid", "₹500 Paid (Carry-Over)".
   String get paymentSummary {
     switch (paymentType) {
       case PaymentType.paidCash:
       case PaymentType.paidUpi:
         return '₹$amountCollected Paid';
+      case PaymentType.paidCarryOver:
+        return '₹${carriedOverAmount ?? 0} Paid (Carry-Over)';
       case PaymentType.freeReview:
         return 'Free Review';
       case PaymentType.freeFamily:
@@ -147,6 +164,9 @@ class Appointment {
     this.checkedInAt,
     this.isPaused = false,
     this.refundStatus = 'none',
+    this.carriedOverAppointmentId,
+    this.carriedOverAmount,
+    this.carriedOverDate,
   }) : patientId = patientId ?? patientPhone,
        visitStatus =
            visitStatus ??
@@ -184,6 +204,9 @@ class Appointment {
     DateTime? checkedInAt,
     bool? isPaused,
     String? refundStatus,
+    String? carriedOverAppointmentId,
+    int? carriedOverAmount,
+    DateTime? carriedOverDate,
   }) {
     return Appointment(
       id: id ?? this.id,
@@ -207,6 +230,10 @@ class Appointment {
       checkedInAt: checkedInAt ?? this.checkedInAt,
       isPaused: isPaused ?? this.isPaused,
       refundStatus: refundStatus ?? this.refundStatus,
+      carriedOverAppointmentId:
+          carriedOverAppointmentId ?? this.carriedOverAppointmentId,
+      carriedOverAmount: carriedOverAmount ?? this.carriedOverAmount,
+      carriedOverDate: carriedOverDate ?? this.carriedOverDate,
     );
   }
 
@@ -234,6 +261,13 @@ class Appointment {
       if (isPaused) 'isPaused': true,
       if (refundStatus != null && refundStatus != 'none')
         'refundStatus': refundStatus,
+      if (carriedOverAppointmentId != null &&
+          carriedOverAppointmentId!.trim().isNotEmpty)
+        'carriedOverAppointmentId': carriedOverAppointmentId!.trim(),
+      if (carriedOverAmount != null && carriedOverAmount! > 0)
+        'carriedOverAmount': carriedOverAmount,
+      if (carriedOverDate != null)
+        'carriedOverDate': Timestamp.fromDate(carriedOverDate!),
     };
   }
 
@@ -263,6 +297,13 @@ class Appointment {
       if (isPaused) 'isPaused': true,
       if (refundStatus != null && refundStatus != 'none')
         'refundStatus': refundStatus,
+      if (carriedOverAppointmentId != null &&
+          carriedOverAppointmentId!.trim().isNotEmpty)
+        'carriedOverAppointmentId': carriedOverAppointmentId!.trim(),
+      if (carriedOverAmount != null && carriedOverAmount! > 0)
+        'carriedOverAmount': carriedOverAmount,
+      if (carriedOverDate != null)
+        'carriedOverDate': carriedOverDate!.toIso8601String(),
     };
   }
 
@@ -287,6 +328,16 @@ class Appointment {
       parsedCheckedInAt = rawChecked;
     } else if (rawChecked is String) {
       parsedCheckedInAt = DateTime.tryParse(rawChecked);
+    }
+
+    DateTime? parsedCarriedOverDate;
+    final rawCarriedDate = json['carriedOverDate'];
+    if (rawCarriedDate is Timestamp) {
+      parsedCarriedOverDate = rawCarriedDate.toDate();
+    } else if (rawCarriedDate is DateTime) {
+      parsedCarriedOverDate = rawCarriedDate;
+    } else if (rawCarriedDate is String) {
+      parsedCarriedOverDate = DateTime.tryParse(rawCarriedDate);
     }
 
     VisitStatus visitStatus;
@@ -333,6 +384,10 @@ class Appointment {
     final patientId = json['patientId'] as String? ?? phone;
     final isPaused = json['isPaused'] as bool? ?? false;
     final refundStatus = json['refundStatus'] as String? ?? 'none';
+    final carriedOverAppointmentId =
+        json['carriedOverAppointmentId'] as String?;
+    final carriedOverAmount =
+        (json['carriedOverAmount'] as num?)?.toInt();
 
     return Appointment(
       id: json['id'] as String? ?? '',
@@ -352,6 +407,9 @@ class Appointment {
       checkedInAt: parsedCheckedInAt,
       isPaused: isPaused,
       refundStatus: refundStatus,
+      carriedOverAppointmentId: carriedOverAppointmentId,
+      carriedOverAmount: carriedOverAmount,
+      carriedOverDate: parsedCarriedOverDate,
     );
   }
 }

@@ -233,6 +233,12 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                   children: [
                     _buildChoiceChip(PaymentType.paidCash, 'Paid (Cash)'),
                     _buildChoiceChip(PaymentType.paidUpi, 'Paid (UPI)'),
+                    if (widget.appointment.paymentType ==
+                        PaymentType.paidCarryOver)
+                      _buildChoiceChip(
+                        PaymentType.paidCarryOver,
+                        'Paid (Carry-Over)',
+                      ),
                     _buildChoiceChip(PaymentType.freeReview, 'Free Review'),
                     _buildChoiceChip(
                       PaymentType.freeFamily,
@@ -453,8 +459,9 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
     final provider = Provider.of<ClinicProvider>(context, listen: false);
     final doctor = provider.getDoctorById(widget.appointment.doctorId);
 
-    int amount = 0;
+    int amount = widget.appointment.amountCollected;
     VisitStatus? vStatus;
+    String? refStatus = widget.appointment.refundStatus;
     if (status == AppointmentStatus.completed) {
       vStatus = VisitStatus.completed;
       amount = AppointmentEngine.resolveConsultationFee(
@@ -463,7 +470,10 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
       );
     } else if (status == AppointmentStatus.absent) {
       vStatus = VisitStatus.cancelled;
-      amount = 0;
+      amount = widget.appointment.amountCollected;
+      if (amount > 0 && (refStatus == 'none' || refStatus == null)) {
+        refStatus = 'pending_refund';
+      }
     }
 
     try {
@@ -473,6 +483,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
         _selectedPaymentType.name,
         amount,
         visitStatus: vStatus,
+        refundStatus: refStatus,
       );
     } catch (e) {
       if (context.mounted) {

@@ -132,6 +132,11 @@ abstract class CashHandoverEngine {
               totalUpiRevenue += a.amountCollected;
             }
             break;
+          case PaymentType.paidCarryOver:
+            // Prepaid on prior date (QOL-03): counts towards paid patient volume, but contributes ₹0 cash to today's drawer
+            docPaid++;
+            totalPaid++;
+            break;
           case PaymentType.freeReview:
             docFreeReview++;
             totalFreeReview++;

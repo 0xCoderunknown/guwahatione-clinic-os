@@ -246,6 +246,7 @@ abstract class AppointmentEngine {
     required PaymentType paymentType,
   }) {
     switch (paymentType) {
+      case PaymentType.paidCarryOver:
       case PaymentType.freeReview:
       case PaymentType.freeFamily:
       case PaymentType.unpaid:
@@ -256,6 +257,81 @@ abstract class AppointmentEngine {
         return doctor?.consultationFee ??
             ClinicConfig.current.defaultConsultationFee;
     }
+  }
+
+  /// Identifies if a patient has an eligible prepaid, un-consulted appointment from a prior date (QOL-03).
+  ///
+  /// Eligibility criteria:
+  /// 1. Belongs to the same doctor (doctorId matches).
+  /// 2. Scheduled on a prior date strictly before [targetDate].
+  /// 3. Was paid (paidCash, paidUpi, or amountCollected > 0).
+  /// 4. Patient was not consulted (status is absent, or cancelled/unattended).
+  /// 5. Has not been refunded and has not already been carried forward (refundStatus != 'refunded' && refundStatus != 'carried_forward').
+  /// 6. Within the validity window (default [validityDays] = 30 days).
+  static Appointment? findEligibleCarryOverAppointment({
+    required List<Appointment> patientHistory,
+    required String? doctorId,
+    required DateTime targetDate,
+    String? patientId,
+    String? patientName,
+    int validityDays = 30,
+  }) {
+    if (doctorId == null || doctorId.isEmpty) return null;
+
+    final targetDay = DateTime(
+      targetDate.year,
+      targetDate.month,
+      targetDate.day,
+    );
+    final earliestAllowed = targetDay.subtract(Duration(days: validityDays));
+
+    final cleanPatId = patientId?.trim();
+    final cleanName = patientName?.trim().toLowerCase();
+
+    // Sort descending to find the most recent eligible appointment first
+    final sorted = List<Appointment>.from(patientHistory)
+      ..sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
+
+    for (final a in sorted) {
+      if (a.doctorId != doctorId) continue;
+
+      final apptDay = DateTime(
+        a.scheduledDate.year,
+        a.scheduledDate.month,
+        a.scheduledDate.day,
+      );
+
+      // Must be strictly from a prior calendar date
+      if (!apptDay.isBefore(targetDay)) continue;
+
+      // Must be within validity window
+      if (apptDay.isBefore(earliestAllowed)) continue;
+
+      // Match patient identity if provided
+      if (cleanPatId != null && cleanPatId.isNotEmpty) {
+        if (a.patientId.isNotEmpty && a.patientId != cleanPatId) continue;
+      } else if (cleanName != null && cleanName.isNotEmpty) {
+        if (a.patientName.trim().toLowerCase() != cleanName) continue;
+      }
+
+      // Must have been a paid visit
+      final wasPaid = (a.paymentType == PaymentType.paidCash ||
+          a.paymentType == PaymentType.paidUpi ||
+          a.amountCollected > 0);
+      if (!wasPaid) continue;
+
+      // Must NOT have completed consultation
+      if (a.status == AppointmentStatus.completed) continue;
+
+      // Must NOT be already refunded or already carried forward
+      if (a.refundStatus == 'refunded' || a.refundStatus == 'carried_forward') {
+        continue;
+      }
+
+      return a;
+    }
+
+    return null;
   }
 
   /// Partitions an appointment list into Pending, Completed, and Absent segments.

@@ -143,6 +143,7 @@ class BookingPaymentSection extends StatelessWidget {
               const [
                 PaymentType.paidCash,
                 PaymentType.paidUpi,
+                PaymentType.paidCarryOver,
                 PaymentType.freeReview,
                 PaymentType.freeFamily,
                 PaymentType.unpaid,
@@ -159,6 +160,9 @@ class BookingPaymentSection extends StatelessWidget {
                     break;
                   case PaymentType.paidUpi:
                     label = 'Paid (UPI) — ₹$fee';
+                    break;
+                  case PaymentType.paidCarryOver:
+                    label = 'Paid (Carry-Over) — ₹0 (Paid on prior visit)';
                     break;
                   case PaymentType.freeReview:
                     if (!reviewEligibility.hasVisitedDoctorEarlier) {
@@ -211,6 +215,40 @@ class BookingPaymentSection extends StatelessWidget {
               }).toList(),
           onChanged: onPaymentChanged,
         ),
+
+        // Prepaid Carry-Over informational banner
+        if (selectedPayment == PaymentType.paidCarryOver) ...[
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFF86EFAC)),
+            ),
+            child: const Row(
+              children: [
+                Icon(
+                  Icons.replay_circle_filled_rounded,
+                  color: Color(0xFF16A34A),
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Prepaid Carry-Over: Patient previously paid for consultation but was unattended. ₹0 cash collected today; doctor fee share is credited upon consultation.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF166534),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
 
         // Cautionary banner when Post-Pay is chosen
         if (selectedPayment == PaymentType.postPay) ...[
@@ -283,26 +321,33 @@ class BookingPaymentSection extends StatelessWidget {
         ],
         const SizedBox(height: 14),
 
-        // 3. Amount Input Field (Locks to ₹0 on Free Review)
-        TextFormField(
-          controller: amountController,
-          focusNode: amountFocusNode,
-          readOnly: selectedPayment == PaymentType.freeReview,
-          decoration: InputDecoration(
-            labelText: 'Amount (₹)',
-            border: const OutlineInputBorder(),
-            prefixIcon: const Icon(Icons.currency_rupee),
-            filled: selectedPayment == PaymentType.freeReview,
-            fillColor: selectedPayment == PaymentType.freeReview
-                ? Colors.grey.shade100
-                : null,
-            helperText: selectedPayment == PaymentType.freeReview
-                ? 'No fee · Eligible free follow-up'
-                : null,
-          ),
-          keyboardType: TextInputType.number,
-          validator: (val) => (val == null || val.isEmpty) ? 'Required' : null,
-          onFieldSubmitted: (_) => onSubmitted?.call(),
+        // 3. Amount Input Field (Locks to ₹0 on Free Review / Paid Carry-Over)
+        Builder(
+          builder: (context) {
+            final isZeroFee = selectedPayment == PaymentType.freeReview ||
+                selectedPayment == PaymentType.paidCarryOver;
+            return TextFormField(
+              controller: amountController,
+              focusNode: amountFocusNode,
+              readOnly: isZeroFee,
+              decoration: InputDecoration(
+                labelText: 'Amount (₹)',
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.currency_rupee),
+                filled: isZeroFee,
+                fillColor: isZeroFee ? Colors.grey.shade100 : null,
+                helperText: selectedPayment == PaymentType.freeReview
+                    ? 'No fee · Eligible free follow-up'
+                    : selectedPayment == PaymentType.paidCarryOver
+                        ? '₹0 fresh collection · Fee paid on prior unattended visit'
+                        : null,
+              ),
+              keyboardType: TextInputType.number,
+              validator: (val) =>
+                  (val == null || val.isEmpty) ? 'Required' : null,
+              onFieldSubmitted: (_) => onSubmitted?.call(),
+            );
+          },
         ),
       ],
     );

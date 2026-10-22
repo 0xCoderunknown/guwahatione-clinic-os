@@ -220,9 +220,8 @@ class UpcomingBookingsSection extends StatelessWidget {
               border: Border.all(color: const Color(0xFFFCD34D)),
             ),
             child: Text(
-              appt.paymentType == PaymentType.paidCash ||
-                      appt.paymentType == PaymentType.paidUpi
-                  ? 'Paid ₹${appt.amountCollected}'
+              appt.paymentType.isPaid
+                  ? 'Paid ₹${appt.effectiveFee}'
                   : 'Pay at Desk',
               style: const TextStyle(
                 fontSize: 11,

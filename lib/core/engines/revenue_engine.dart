@@ -82,10 +82,11 @@ abstract class RevenueEngine {
   ///
   /// Revenue Rule: Only completed consultations generate realized revenue.
   /// Pending or absent appointments never contribute to realized revenue.
+  /// For carried-over prepaid visits, effectiveFee resolves to carriedOverAmount.
   static int calculateRealizedRevenue(List<Appointment> appointments) {
     return appointments
         .where((a) => a.status == AppointmentStatus.completed)
-        .fold(0, (sum, a) => sum + a.amountCollected);
+        .fold(0, (sum, a) => sum + a.effectiveFee);
   }
 
   /// Calculates total fees collected specifically for a doctor across their completed appointments.
@@ -98,7 +99,7 @@ abstract class RevenueEngine {
                   (a.paymentType == PaymentType.postPay &&
                       a.amountCollected > 0)),
         )
-        .fold(0, (sum, a) => sum + a.amountCollected);
+        .fold(0, (sum, a) => sum + a.effectiveFee);
   }
 
   /// Calculates doctor payout share based on agreed split percentage (0 to 100%).
@@ -124,7 +125,7 @@ abstract class RevenueEngine {
       switch (a.status) {
         case AppointmentStatus.completed:
           completed++;
-          realizedRevenue += a.amountCollected;
+          realizedRevenue += a.effectiveFee;
           break;
         case AppointmentStatus.pending:
           pending++;
@@ -162,7 +163,7 @@ abstract class RevenueEngine {
           if (a.paymentType.isPaid ||
               (a.paymentType == PaymentType.postPay && a.amountCollected > 0)) {
             paid++;
-            totalDoctorFees += a.amountCollected;
+            totalDoctorFees += a.effectiveFee;
           } else {
             free++;
           }
@@ -220,7 +221,7 @@ abstract class RevenueEngine {
         switch (a.status) {
           case AppointmentStatus.completed:
             completed++;
-            revenue += a.amountCollected;
+            revenue += a.effectiveFee;
             break;
           case AppointmentStatus.pending:
             pending++;

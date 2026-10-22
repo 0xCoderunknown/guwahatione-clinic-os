@@ -85,8 +85,8 @@
 | `guardianRelation` | `String?` | No | Relationship of guardian to patient. |
 | `status` | `String` (Enum) | Yes | `'pending'`, `'completed'`, or `'absent'` (retained for operational ledger). |
 | `visitStatus` | `String` (Enum) | Yes | `'booked'`, `'waitingInLobby'`, `'inConsultation'`, `'completed'`, or `'cancelled'`. |
-| `paymentType` | `String` (Enum) | Yes | `'paidCash'`, `'paidUpi'`, `'freeReview'`, `'freeFamily'`, `'postPay'`, or `'unpaid'`. |
-| `amountCollected`| `int` | Yes | Cash/UPI amount collected in INR. |
+| `paymentType` | `String` (Enum) | Yes | `'paidCash'`, `'paidUpi'`, `'paidCarryOver'`, `'freeReview'`, `'freeFamily'`, `'postPay'`, or `'unpaid'`. |
+| `amountCollected`| `int` | Yes | Cash/UPI amount collected in INR (0 for `'paidCarryOver'`). |
 | `queueNumber` | `int` | Yes | Strictly consecutive token number ($1, 2, 3 \dots N$). |
 | `scheduledDate` | `Timestamp` | Yes | Calendar date and time of appointment. |
 | `doctorId` | `String` | Yes | Assigned doctor ID. |
@@ -94,7 +94,12 @@
 | `checkedInAt` | `Timestamp?` | No | Timestamp recorded when patient arrives at desk and checks in to lobby. |
 | `isPaused` | `bool` | No | Whether an active consultation encounter was paused (draft saved) and returned to lobby queue. Default: `false`. |
 | `notes` | `String?` | No | Operational ledger audit note (e.g. cancellation or doctor absent session close reason). |
-| `refundStatus` | `String?` | No | Front desk cash drawer refund tracking: `'none'`, `'pending_refund'`, or `'refunded'`. Default: `'none'`. |
+| `refundStatus` | `String?` | No | Front desk cash drawer refund tracking: `'none'`, `'pending_refund'`, `'refunded'`, or `'carried_forward'`. Default: `'none'`. |
+| `carriedOverAppointmentId` | `String?` | No | ID of originating unattended paid appointment redeemed for this visit (QOL-03). |
+| `carriedOverAmount` | `int?` | No | Original consultation fee paid on prior visit, credited towards doctor fee payout. |
+| `carriedOverDate` | `Timestamp?` | No | Calendar date of originating prepaid appointment. |
+| `carriedForwardToAppointmentId` | `String?` | No | Cross-reference on prior appointment pointing to new appointment ID. |
+| `carriedForwardDate` | `Timestamp?` | No | Timestamp when prior appointment was carried forward. |
 
 ---
 

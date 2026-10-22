@@ -42,6 +42,15 @@ class PaymentBadge extends StatelessWidget {
         label = amtStr.startsWith('₹') ? '$amtStr (UPI)' : amtStr;
         icon = Icons.qr_code_2_rounded;
         break;
+      case PaymentType.paidCarryOver:
+        bg = const Color(0xFFF0FDF4);
+        textColor = const Color(0xFF15803D);
+        final amtStr = amount != null && amount! > 0
+            ? AppFormatters.currency(amount)
+            : 'Prepaid';
+        label = '$amtStr (Carry-Over)';
+        icon = Icons.replay_circle_filled_rounded;
+        break;
       case PaymentType.freeReview:
         bg = const Color(0xFFF0FDF4);
         textColor = const Color(0xFF15803D);

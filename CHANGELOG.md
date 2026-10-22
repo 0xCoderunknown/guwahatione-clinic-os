@@ -8,6 +8,22 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.13] — 22-10-2026
+
+### Prepaid Carry-Over & Patient No-Show Revisit (QOL-03) and Disease Presets Purge (QOL-05)
+- **Prepaid Carry-Over & Patient No-Show Carry-Forward (QOL-03):**
+  - Added `PaymentType.paidCarryOver` (`'Paid (Carry-Over)'`) enabling reception to issue fresh consecutive queue tokens for patients who paid their consultation fee on an earlier date but had to leave before being examined.
+  - Introduced `BookingCarryOverBanner` inside `AddAppointmentDialog`, automatically detecting unredeemed paid visits within a 30-day window (`AppointmentEngine.findEligibleCarryOverAppointment()`).
+  - 1-tap revalidation links `carriedOverAppointmentId`, `carriedOverAmount`, and `carriedOverDate` to today's appointment with ₹0 fresh cash collection.
+  - Atomically marks the prior appointment `refundStatus: 'carried_forward'`, `carriedForwardToAppointmentId`, and `carriedForwardDate` in the booking Firestore transaction, preventing double-redemption.
+  - Zero ghost cash: `CashHandoverEngine` balances physical cash in drawer to the exact rupee at the end of the day while tracking patient volume.
+  - Doctor payout integrity: `RevenueEngine` credits the consulting physician's fee split (`effectiveFee`) upon consultation completion.
+  - Rendered high-visibility amber `Carry-Over (₹X)` badges across reception queue accordions and doctor chamber token cards.
+- **Purge of Hardcoded Whole-Course Presets & Flag Gating (QOL-05):**
+  - Purged all hardcoded whole-course disease templates (`tmpl_uri_flu`, `tmpl_acute_gastritis`, etc.) from `MedicineEngine.getDefaultPrescriptionTemplates()`.
+  - While 1-tap medicine addition with default dosage and timing is supported, whole disease course presets have been eliminated.
+  - Prescription template selector UI remains flag-gated behind `enablePrescriptionTemplatePresets: false` in `ClinicConfig`.
+
 ## [1.40.12] — 22-10-2026
 
 ### Doctor Sitting Days (`availableDays`) Guard in Advance Booking (AUDIT-22)

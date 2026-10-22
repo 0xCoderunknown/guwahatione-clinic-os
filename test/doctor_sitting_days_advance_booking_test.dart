@@ -29,6 +29,9 @@ class _FakeBookingService extends BookingService {
     required String doctorId,
     required String doctorName,
     DateTime? checkedInAt,
+    String? carriedOverAppointmentId,
+    int? carriedOverAmount,
+    DateTime? carriedOverDate,
   }) async {
     return 1;
   }
