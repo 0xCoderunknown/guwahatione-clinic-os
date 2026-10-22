@@ -429,6 +429,7 @@ class _MockBookingService extends BookingService {
   @override
   Future<List<Appointment>> getAppointmentsForPatient(
     String patientIdOrPhone, {
+    int limit = 100,
     String? phone,
   }) async {
     return mockPatientAppointments;

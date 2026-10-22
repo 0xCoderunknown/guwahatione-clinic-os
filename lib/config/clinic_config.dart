@@ -126,6 +126,10 @@ class ClinicFeatureFlags {
       enableTestingMode &&
       (kDebugMode || const bool.fromEnvironment('TEST_MODE', defaultValue: false));
 
+  /// 🧪 EXPERIMENT FLAG: Whether the default demo OPD medicine list is seeded automatically (AUDIT-27).
+  /// When false, suppresses ensureDefaultMedicinesExist to prevent polluting live clinics that import custom CSV formularies.
+  final bool enableSeedDefaultMedicines;
+
   const ClinicFeatureFlags({
     this.enableLetterheadToggle = true,
     this.enableDoctorChamberOverride = true,
@@ -137,6 +141,7 @@ class ClinicFeatureFlags {
     this.enableGroupedCompositionCards = true,
     this.hidePrescriptionComposition = false,
     this.enforceSingleActiveDoctor = false,
+    this.enableSeedDefaultMedicines = true,
     this.enableTestingMode = true,
   });
 }

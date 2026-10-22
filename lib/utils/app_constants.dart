@@ -14,6 +14,9 @@ class AppConstants {
     return blockedDates.contains(dateString);
   }
 
+  /// System-wide clinic inception date for date pickers and historical navigation bounds (AUDIT-14).
+  static final DateTime clinicEpochDate = DateTime(2025, 1, 1);
+
   // ---------------------------------------------------------------------------
   // Clinical Input Length Limits (AUDIT-21)
   // Generous caps to prevent paste explosions and preserve letterhead layout.

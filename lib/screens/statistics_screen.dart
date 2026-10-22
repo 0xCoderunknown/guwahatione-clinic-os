@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/engines/engines.dart';
 import '../models/models.dart';
 import '../services/services.dart';
+import '../utils/app_constants.dart';
 import '../widgets/widgets.dart';
 import 'screens.dart';
 
@@ -52,6 +53,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 Expanded(
                   child: ClinicDateNavBar(
                     selectedDate: _selectedDate,
+                    firstDate: AppConstants.clinicEpochDate,
+                    lastDate: DateTime.now(),
                     onDateChanged: (picked) {
                       setState(() => _selectedDate = picked);
                     },
@@ -143,7 +146,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(2025),
+      firstDate: AppConstants.clinicEpochDate,
       lastDate: DateTime.now(), // Can't see future stats
     );
     if (picked != null) {

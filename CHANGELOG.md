@@ -8,6 +8,34 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.15] — 22-10-2026
+
+### Pre-Sign Rx Preview Gate (QOL-19) & Technical Audit Sweep (AUDIT-14, AUDIT-17, AUDIT-27, AUDIT-28)
+- **Pre-Sign Encounter Print Preview Gate (QOL-19):**
+  - Integrated pre-sign clinical preview gate into `ConsultationEncounterScreen` and `PrescriptionPrintScreen`.
+  - When the physician clicks `"Finish Consultation & Sign"` or `"Print Preview"`, the system routes to `PrescriptionPrintScreen` in `isPreSign: true` mode before committing any Firestore writes.
+  - Displays a high-contrast amber review banner (`"PRE-SIGN CLINICAL REVIEW • Verify 3-column prescription table, dosage, and allergy alerts before medical-legal sign-off."`) with an inline `"Edit Encounter"` button.
+  - Doctor can inspect the strict 3-column table, dosage instructions, and allergy notes. If an adjustment is needed, tapping `"Edit Encounter"` returns directly to the active draft with zero database mutations.
+  - Tapping `"Confirm & Sign Rx"` atomically saves the append-only consultation to Firestore, signals doctor chamber `consultation_ended`, clears local drafts, triggers physical prescription printing (`printDocument()`), and returns to the doctor chamber.
+- **Date Navigation & Statistics Epoch Lower Bounds (AUDIT-14):**
+  - Introduced `AppConstants.clinicEpochDate = DateTime(2025, 1, 1)` establishing a unified clinic launch lower bound for historical calendar navigation.
+  - Extended `ClinicDateNavBar` with `firstDate` and `lastDate` bounds, disabling the left chevron on or before the clinic epoch date and right chevron on future calendar limits.
+  - Unified `StatisticsScreen` desktop navigation bar and mobile AppBar date pickers to respect `AppConstants.clinicEpochDate` and today's date.
+- **Consultation `lastVisitDate` Timestamp Standardization (AUDIT-17):**
+  - Standardized `ConsultationService.saveConsultation` to write `patient.lastVisitDate` as a native Firestore `Timestamp` (`Timestamp.fromDate(consultation.createdAt)`).
+  - Eliminates client clock drift and ISO string formatting variations across heterogeneous clinic hardware, ensuring exact consistency with the schema definition in `docs/SCHEMA_AND_MODELS.md`.
+- **Default Medicine Seeding Production Flag (AUDIT-27):**
+  - Added `enableSeedDefaultMedicines` flag under `ClinicFeatureFlags` (defaulting to `true` for development and automated test suites).
+  - `CatalogueService.ensureDefaultMedicinesExist()` now checks this flag and skips execution when disabled, allowing production clinics to maintain clean master formularies populated via CSV import without test data pollution.
+- **Unbounded Patient History Query Protection (AUDIT-28):**
+  - Added bounded limit (`limit: 100`) to `BookingService.getAppointmentsForPatient`.
+  - Protects Firestore read budgets and client memory allocation for chronic patients with multi-year consultation records.
+- **Doctor PIN Verification & Single-Doctor Query Audits (AUDIT-12, AUDIT-20):**
+  - Formally closed AUDIT-12 as resolved by design in alignment with AUDIT-03 (doctor PINs are stored in plaintext for owner recovery; in-memory comparisons hash both sides consistently with domain salting).
+  - Verified AUDIT-20: single-field queries on `counters.date` are automatically indexed by Firestore.
+- **Roadmap Progression (IDEA-3):**
+  - Moved In-App Master Medicine Editor (GUI catalogue editing for Clinic Owners) from ideation to the approved Roadmap backlog (Milestone 1.41).
+
 ## [1.40.14] — 22-10-2026
 
 ### Operational Hardening: Cache Debounce, Print Guard & Clinical Input Limits (AUDIT-15, AUDIT-21, AUDIT-24)

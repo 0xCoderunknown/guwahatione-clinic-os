@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../config/clinic_config.dart';
 import '../models/medicine.dart';
 import '../utils/default_medicines.dart';
 import 'firestore_paths.dart';
@@ -39,9 +40,13 @@ class CatalogueService {
     return list;
   }
 
-  /// Ensures standard, essential OPD medicines exist in Firestore by default.
+  /// Ensures standard, essential OPD medicines exist in Firestore by default (AUDIT-27).
+  /// Respects enableSeedDefaultMedicines feature flag to avoid polluting custom clinic formularies.
   /// Uses deterministic document IDs so execution is strictly idempotent.
   Future<void> ensureDefaultMedicinesExist() async {
+    if (!ClinicConfig.current.features.enableSeedDefaultMedicines) {
+      return;
+    }
     final snapshot = await _medicinesRef.limit(1).get();
     if (snapshot.docs.isEmpty) {
       final batch = _firestore.batch();

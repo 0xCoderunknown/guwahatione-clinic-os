@@ -48,7 +48,7 @@ class ConsultationService {
     final patientDoc = _patientsRef.doc(consultation.patientId);
     batch.set(patientDoc, {
       'id': consultation.patientId,
-      'lastVisitDate': consultation.createdAt.toIso8601String(),
+      'lastVisitDate': Timestamp.fromDate(consultation.createdAt),
       'name': consultation.patientName,
       'age': consultation.patientAge,
       if (consultation.patientAgeDisplay != null)

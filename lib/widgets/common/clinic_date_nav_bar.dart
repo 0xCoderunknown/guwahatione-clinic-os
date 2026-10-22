@@ -7,12 +7,16 @@ class ClinicDateNavBar extends StatelessWidget {
   final DateTime selectedDate;
   final ValueChanged<DateTime> onDateChanged;
   final VoidCallback? onTodayPressed;
+  final DateTime? firstDate;
+  final DateTime? lastDate;
 
   const ClinicDateNavBar({
     super.key,
     required this.selectedDate,
     required this.onDateChanged,
     this.onTodayPressed,
+    this.firstDate,
+    this.lastDate,
   });
 
   bool get _isToday {
@@ -22,12 +26,34 @@ class ClinicDateNavBar extends StatelessWidget {
         selectedDate.day == now.day;
   }
 
+  bool get _canGoBack {
+    if (firstDate == null) return true;
+    final prevDay = selectedDate.subtract(const Duration(days: 1));
+    final prevStart = DateTime(prevDay.year, prevDay.month, prevDay.day);
+    final firstStart = DateTime(firstDate!.year, firstDate!.month, firstDate!.day);
+    return !prevStart.isBefore(firstStart);
+  }
+
+  bool get _canGoForward {
+    if (lastDate == null) return true;
+    final nextDay = selectedDate.add(const Duration(days: 1));
+    final nextStart = DateTime(nextDay.year, nextDay.month, nextDay.day);
+    final lastStart = DateTime(lastDate!.year, lastDate!.month, lastDate!.day);
+    return !nextStart.isAfter(lastStart);
+  }
+
   void _pickDate(BuildContext context) async {
+    final effectiveFirst = firstDate ?? DateTime(2020);
+    final effectiveLast = lastDate ?? DateTime(2030);
+    final clampedInitial = selectedDate.isBefore(effectiveFirst)
+        ? effectiveFirst
+        : (selectedDate.isAfter(effectiveLast) ? effectiveLast : selectedDate);
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      initialDate: clampedInitial,
+      firstDate: effectiveFirst,
+      lastDate: effectiveLast,
     );
     if (picked != null) {
       onDateChanged(picked);
@@ -54,7 +80,7 @@ class ClinicDateNavBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_left_rounded, size: 20),
             tooltip: 'Previous Day',
             visualDensity: VisualDensity.compact,
-            onPressed: () => _stepDays(-1),
+            onPressed: _canGoBack ? () => _stepDays(-1) : null,
           ),
           InkWell(
             onTap: () => _pickDate(context),
@@ -87,7 +113,7 @@ class ClinicDateNavBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_right_rounded, size: 20),
             tooltip: 'Next Day',
             visualDensity: VisualDensity.compact,
-            onPressed: () => _stepDays(1),
+            onPressed: _canGoForward ? () => _stepDays(1) : null,
           ),
           if (!_isToday) ...[
             const SizedBox(width: 6),

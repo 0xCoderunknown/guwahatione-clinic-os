@@ -295,17 +295,19 @@ class BookingService {
     return list;
   }
 
-  /// Retrieves historical appointments for a given patient identity or phone number.
+  /// Retrieves historical appointments for a given patient identity or phone number (AUDIT-28: capped at [limit]).
   Future<List<Appointment>> getAppointmentsForPatient(
     String patientId, {
     String? phone,
+    int limit = 100,
   }) async {
     final cleanId = patientId.trim();
     if (cleanId.isEmpty) return [];
 
-    // 1. Query by patientId
+    // 1. Query by patientId (bounded)
     final snapshot = await _appointmentsRef
         .where('patientId', isEqualTo: cleanId)
+        .limit(limit)
         .get();
 
     List<Appointment> list = snapshot.docs.map((doc) {
@@ -319,6 +321,7 @@ class BookingService {
       final fallbackPhone = phone?.trim() ?? cleanId;
       final phoneSnap = await _appointmentsRef
           .where('patientPhone', isEqualTo: fallbackPhone)
+          .limit(limit)
           .get();
       list = phoneSnap.docs.map((doc) {
         final data = Map<String, dynamic>.from(doc.data());

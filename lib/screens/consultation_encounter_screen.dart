@@ -9,6 +9,7 @@ import '../providers/clinic_provider.dart';
 import '../services/booking_service.dart';
 import '../services/patient_service.dart';
 import '../utils/formatters.dart';
+import '../utils/platform_print.dart';
 import '../widgets/widgets.dart';
 import 'screens.dart';
 
@@ -81,8 +82,11 @@ class _ConsultationEncounterScreenState
     }
   }
 
-  Future<void> _navigateToPrint(Consultation consultation) {
-    return Navigator.push(
+  Future<bool?> _navigateToPrint(
+    Consultation consultation, {
+    bool isPreSign = false,
+  }) {
+    return Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (ctx) => PrescriptionPrintScreen(
@@ -91,6 +95,7 @@ class _ConsultationEncounterScreenState
           patientAllergies: form.allergies,
           doctorSpecialty: widget.doctor.specialty,
           doctorRegNumber: widget.doctor.medicalRegNumber,
+          isPreSign: isPreSign,
         ),
       ),
     );
@@ -232,23 +237,30 @@ class _ConsultationEncounterScreenState
       }
     }
 
+    final candidate = form.buildConsultation(
+      id: _uuid.v4(),
+      appointmentId: widget.appointment.id,
+      patientId: widget.appointment.patientId,
+      patientPhone: widget.appointment.patientPhone,
+      patientName: widget.appointment.patientName,
+      patientAgeDisplay: widget.appointment.patientAgeDisplay,
+      guardianName: widget.appointment.guardianName,
+      guardianRelation: widget.appointment.guardianRelation,
+      doctorId: widget.doctor.id,
+      doctorName: widget.doctor.name,
+      doctorRegNumber: widget.doctor.medicalRegNumber,
+    );
+
+    final confirmed = await _navigateToPrint(candidate, isPreSign: true);
+    if (confirmed == true && mounted) {
+      await _commitConsultationAndSign(candidate);
+    }
+  }
+
+  Future<void> _commitConsultationAndSign(Consultation consultation) async {
     setState(() => _isSaving = true);
     try {
       final clinic = Provider.of<ClinicProvider>(context, listen: false);
-      final consultation = form.buildConsultation(
-        id: _uuid.v4(),
-        appointmentId: widget.appointment.id,
-        patientId: widget.appointment.patientId,
-        patientPhone: widget.appointment.patientPhone,
-        patientName: widget.appointment.patientName,
-        patientAgeDisplay: widget.appointment.patientAgeDisplay,
-        guardianName: widget.appointment.guardianName,
-        guardianRelation: widget.appointment.guardianRelation,
-        doctorId: widget.doctor.id,
-        doctorName: widget.doctor.name,
-        doctorRegNumber: widget.doctor.medicalRegNumber,
-      );
-
       await clinic.saveConsultation(consultation);
       await clinic.notifyConsultationEnded(
         doctorId: widget.doctor.id,
@@ -257,6 +269,8 @@ class _ConsultationEncounterScreenState
         patientName: widget.appointment.patientName,
       );
       await EncounterFormState.clearDraft(widget.appointment.id);
+
+      printDocument();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -268,8 +282,7 @@ class _ConsultationEncounterScreenState
         ),
       );
 
-      await _navigateToPrint(consultation);
-      if (mounted) Navigator.pop(context, true);
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -406,9 +419,9 @@ class _ConsultationEncounterScreenState
     }
   }
 
-  void _previewCurrentPrescription() {
-    final draft = form.buildConsultation(
-      id: 'draft-${_uuid.v4()}',
+  Future<void> _previewCurrentPrescription() async {
+    final candidate = form.buildConsultation(
+      id: _uuid.v4(),
       appointmentId: widget.appointment.id,
       patientId: widget.appointment.patientId,
       patientPhone: widget.appointment.patientPhone,
@@ -418,8 +431,12 @@ class _ConsultationEncounterScreenState
       guardianRelation: widget.appointment.guardianRelation,
       doctorId: widget.doctor.id,
       doctorName: widget.doctor.name,
+      doctorRegNumber: widget.doctor.medicalRegNumber,
     );
-    _navigateToPrint(draft);
+    final confirmed = await _navigateToPrint(candidate, isPreSign: true);
+    if (confirmed == true && mounted) {
+      await _commitConsultationAndSign(candidate);
+    }
   }
 
   @override

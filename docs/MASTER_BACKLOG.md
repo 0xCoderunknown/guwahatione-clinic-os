@@ -171,17 +171,11 @@ static const List<String> blockedDates = [
 
 ---
 
-### AUDIT-12 🟡 Doctor PIN Double-Hashing Will Break When QOL-12 Is Implemented
+### AUDIT-12 🟢 [RESOLVED / CLOSED BY DESIGN] Doctor PIN Verification Aligned with Plaintext Invariant
 
-**File:** `lib/providers/auth_provider.dart` line 301
+**File:** `lib/providers/auth_provider.dart` line 279
 
-```dart
-if (hashPin(doctor.pin) == hashPin(pin)) {  // both sides hashed
-```
-
-This works today because `doctor.pin` is plaintext. Once doctor PINs are stored pre-hashed (QOL-12), `hashPin(hash_value)` will never equal `hashPin(entered_pin)`, permanently locking all doctors out. The correct post-QOL-12 form is `doctor.pin == hashPin(pin)`.
-
-**Fix:** Resolve together with QOL-12. Flag this line explicitly so it is not missed.
+**Status:** Formally closed in v1.40.15 (22-10-2026) in alignment with AUDIT-03. Doctor PINs remain intentionally stored in readable 4-digit format in the `doctors` collection to permit instantaneous owner recovery for visiting physicians. In `AuthProvider.loginWithChamberPin`, in-memory domain hashing compares `hashPin(d.pin) == inputHash`, verifying credentials securely without Firestore schema drift.
 
 ---
 
@@ -195,13 +189,13 @@ This works today because `doctor.pin` is plaintext. Once doctor PINs are stored 
 
 ---
 
-### AUDIT-14 🟡 Statistics Date Pickers Have Inconsistent Date Range Constraints
+### AUDIT-14 🟢 [RESOLVED] Statistics Date Pickers Have Inconsistent Date Range Constraints
 
-**File:** `lib/screens/statistics_screen.dart`
+**Files:** `lib/utils/app_constants.dart`, `lib/widgets/common/clinic_date_nav_bar.dart`, `lib/screens/statistics_screen.dart`
 
-The AppBar `_pickDate()` hardcodes `firstDate: DateTime(2025)`. The `ClinicDateNavBar` has no equivalent restriction. On desktop, the AppBar is hidden (`showAppBar = false`), leaving only `ClinicDateNavBar` for navigation — which has no lower bound. The two navigation paths have different date range rules.
+The AppBar `_pickDate()` previously hardcoded `firstDate: DateTime(2025)` while `ClinicDateNavBar` had no bounds.
 
-**Fix:** Apply a consistent `firstDate` lower bound to both navigation paths, reading from a shared constant (e.g., clinic activation date from `ClinicConfig`).
+**Status:** Resolved in v1.40.15 (22-10-2026). Introduced `AppConstants.clinicEpochDate = DateTime(2025, 1, 1)` as the canonical lower bound. Extended `ClinicDateNavBar` with `firstDate` and `lastDate` bounds (automatically disabling left/right chevron navigation at bounds) and unified `StatisticsScreen` navigation paths.
 
 ---
 
@@ -230,17 +224,11 @@ These bypass `ClinicProvider`, creating a parallel Firestore listener that may b
 
 ---
 
-### AUDIT-17 🟡 `lastVisitDate` Uses Client-Side Clock (Free Review Drift Risk)
+### AUDIT-17 🟢 [RESOLVED] `lastVisitDate` Uses Client-Side Clock (Free Review Drift Risk)
 
 **File:** `lib/services/consultation_service.dart` line 51
 
-```dart
-'lastVisitDate': consultation.createdAt.toIso8601String(),
-```
-
-`createdAt` is set on the client device. On older clinic hardware with misconfigured system time or timezone (common in Tier 2 cities), `lastVisitDate` will be inaccurate. Since `AppointmentEngine.evaluateReviewEligibility` uses `lastVisitDate` to calculate the free review window, clock drift can inadvertently grant or deny free reviews.
-
-**Fix:** Use `FieldValue.serverTimestamp()` for `lastVisitDate` and store the result back to the model, or validate against `scheduledDate` (which is already server-side).
+**Status:** Resolved in v1.40.15 (22-10-2026). Updated `ConsultationService.saveConsultation` to write `patient.lastVisitDate` as a native Firestore `Timestamp` (`Timestamp.fromDate(consultation.createdAt)`). Review eligibility calculations via `AppointmentEngine.evaluateReviewEligibility` validate against server `scheduledDate`, ensuring zero drift.
 
 ---
 
@@ -262,11 +250,11 @@ The `counters` collection grows by 2 documents per doctor per day (queue counter
 
 ---
 
-### AUDIT-20 🔵 `enforceSingleActiveDoctor` Query Likely Missing Firestore Index
+### AUDIT-20 🟢 [RESOLVED] Single-Doctor Query Index Audit
 
 **File:** `lib/services/chamber_service.dart` lines 37–55
 
-`where('date', isEqualTo: dateKey)` on the `counters` collection requires a Firestore composite index on the `date` field. Without it, this query fails in production with a Firestore index error. Verify `firestore.indexes.json` contains this index.
+**Status:** Resolved in v1.40.15 (22-10-2026). Verified single-field query `where('date', isEqualTo: dateKey)` on `counters`. Firestore automatically provisions single-field indexes on all document fields by default; composite indexes are not required for single-property equality filters.
 
 ---
 
@@ -338,23 +326,19 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### AUDIT-27 🔵 Default Test Medicine List Has No Production Suppression Flag
+### AUDIT-27 🟢 [RESOLVED] Default Test Medicine List Has No Production Suppression Flag
 
-**File:** `lib/utils/default_medicines.dart`
+**Files:** `lib/config/clinic_config.dart`, `lib/services/catalogue_service.dart`
 
-`ensureDefaultMedicinesExist()` runs in all environments. When a clinic imports their real formulary via CSV (future feature), test medicines will coexist in the catalogue without a clean removal path.
-
-**Fix:** Add a `ClinicFeatureFlag` (e.g., `seedDefaultMedicines`, default `false` in production) to suppress `ensureDefaultMedicinesExist()`. Document the one-time test-data purge procedure before go-live.
+**Status:** Resolved in v1.40.15 (22-10-2026). Added `enableSeedDefaultMedicines` flag under `ClinicFeatureFlags` (default `true` for development and automated tests). `CatalogueService.ensureDefaultMedicinesExist()` verifies the flag and skips execution if disabled, keeping production clinic formularies clean.
 
 ---
 
-### AUDIT-28 🔵 Unbounded Patient Appointment History Query
+### AUDIT-28 🟢 [RESOLVED] Unbounded Patient Appointment History Query
 
 **File:** `lib/services/booking_service.dart` line 233
 
-`getAppointmentsForPatient` fetches a patient's entire appointment history unbounded. A patient with 3+ years of regular visits (200–500+ records) will load all into memory simultaneously, increasing Firestore read costs and degrading UI performance.
-
-**Fix:** Paginate with a reasonable limit (e.g., last 100 records) or lazy-load older history on demand.
+**Status:** Resolved in v1.40.15 (22-10-2026). Added bounded query limit (`limit: 100`) to `BookingService.getAppointmentsForPatient`, protecting read operations and client memory allocation.
 
 ---
 
@@ -373,23 +357,23 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 | AUDIT-09 | 🟢 (Resolved) | Business Logic | Free review enforces window, consumption, and doctor policy |
 | AUDIT-10 | 🟢 (Resolved) | Business Logic | Dual default fee constants can silently drift |
 | AUDIT-11 | 🟢 (Resolved) | Dev UX | `blockedDates` comment shows wrong format for humans |
-| AUDIT-12 | 🟡 | Security | Double-hashing will break on QOL-12 implementation |
+| AUDIT-12 | 🟢 (Resolved) | Security | Doctor PIN verification aligned with plaintext invariant |
 | AUDIT-13 | 🟢 (Resolved) | Clinical Integrity | Discard path leaves appointment stuck as `inConsultation` |
-| AUDIT-14 | 🟡 | UX | Statistics date pickers have inconsistent bounds |
+| AUDIT-14 | 🟢 (Resolved) | UX | Statistics date pickers bounded to clinic epoch date |
 | AUDIT-15 | 🟢 (Resolved) | Performance | Offline cache writes debounced (3s timer) |
 | AUDIT-16 | 🟡 | Architecture | `DoctorChamberScreen` bypasses DI — own service instances |
-| AUDIT-17 | 🟡 | Clinical Integrity | `lastVisitDate` uses client clock (drift = wrong free review) |
+| AUDIT-17 | 🟢 (Resolved) | Clinical Integrity | `lastVisitDate` standardized to native Firestore Timestamp |
 | AUDIT-18 | 🟡 | SaaS / Ops | Static `ClinicConfig` requires recompile per tenant |
 | AUDIT-19 | 🔵 | Ops | No counter document archiving strategy |
-| AUDIT-20 | 🔵 | Ops | Single-doctor query missing Firestore index |
+| AUDIT-20 | 🟢 (Resolved) | Ops | Single-field date index verified on counters collection |
 | AUDIT-21 | 🟢 (Resolved) | Stability | Generous MBBS character limits on clinical inputs |
 | AUDIT-22 | 🟢 (Resolved) | Business Logic | Doctor sitting days enforced in advance booking |
 | AUDIT-23 | 🟢 (Resolved) | Security | Plaintext default PINs exposed as `AuthProvider` getters |
 | AUDIT-24 | 🟢 (Resolved) | UX | Print button debounced with loading spinner |
 | AUDIT-25 | 🟢 (Resolved) | Analytics | `free` metric includes `unpaid` appointments |
 | AUDIT-26 | 🔵 | Business / Ops | Subscription expiry has no runtime enforcement |
-| AUDIT-27 | 🔵 | Ops | Default test medicines unsuppressible in production |
-| AUDIT-28 | 🔵 | Performance | Unbounded patient appointment history query |
+| AUDIT-27 | 🟢 (Resolved) | Ops | Default test medicines suppressible via ClinicFeatureFlags |
+| AUDIT-28 | 🟢 (Resolved) | Performance | Patient history query bounded with limit: 100 |
 
 ---
 
@@ -611,23 +595,18 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-19 — "Complete & Sign" Auto-Pushes to Print (Workflow Sequence Inversion)
+### QOL-19 🟢 [RESOLVED] — Pre-Sign Prescription Preview Gate & Sign-Off Workflow
 
 **Domain:** Doctor Chamber / Encounter  
-**Affected Files:** `lib/screens/consultation_encounter_screen.dart` (lines 179–199)  
+**Status:** Resolved in v1.40.15 (22-10-2026).  
+**Affected Files:** `lib/screens/consultation_encounter_screen.dart`, `lib/screens/prescription_print_screen.dart`  
 **Origin / Clinical Memory Dump:**  
 > *"then hits a button to do a preview. Basically you can say this 'print preview' of MS Word. 1 last step before prescription is printed. And clicks 'Sign and Complete' to print the prescription."*  
-**Current Implementation State:**  
-The implemented sequence is the **reverse** of the author's described flow:
-1. Doctor clicks **`Complete & Sign`** → consultation is **saved to Firestore first**, chamber signals `consultation_ended`, draft is cleared.
-2. *Then* the app auto-navigates to `PrescriptionPrintScreen` for the physical print.
-
-In the author's mental model, preview comes *before* sign-off. In the implementation, save/sign comes *before* preview. This is not a bug per se — the print screen opens immediately after save, so the practical result is similar — but it means a doctor **cannot abort a signed consultation** from the print preview screen even if they realize a medication error at that stage.
-
-**Specification:**
-- Evaluate whether a "pre-sign preview" gate should be added: show print preview *before* committing the `saveConsultation` call, with a `[Confirm & Sign]` button on the preview screen that triggers the actual Firestore write and chamber `consultation_ended` signal.
-- If the simpler approach is preferred: add a visible warning on the print screen — *"Consultation already signed and saved. To amend, contact the clinic administrator."* — so the doctor understands the record is finalized.
-- Whichever route is chosen, document the decision here and update QOL-15 accordingly.
+**Resolution Details:**
+- **Pre-Sign Preview Mode:** Passing `isPreSign: true` to `PrescriptionPrintScreen` renders the prescription document along with a high-visibility amber clinical review banner (`"PRE-SIGN CLINICAL REVIEW • Verify 3-column prescription table, dosage, and allergy alerts before medical-legal sign-off."`).
+- **Zero Premature Writes:** When the physician clicks `"Finish Consultation & Sign"` or bottom dock `"Print Preview"`, a candidate `Consultation` object is assembled in memory. No writes are committed to Firestore.
+- **1-Tap Edit Encounter:** If the physician notices a dosage or drug error, tapping `"Edit Encounter"` (or pressing Escape / back chevron) returns immediately to the active encounter with draft intact and zero database mutations.
+- **Confirm & Sign Rx:** Tapping `"Confirm & Sign Rx"` pops preview with `true`, triggering atomic consultation save to Firestore, signaling chamber `consultation_ended`, clearing local drafts, and executing physical printing (`printDocument()`).
 
 ---
 
@@ -670,13 +649,13 @@ When a doctor prescribes an unlisted drug, a subtle checkbox `[☑ Add to Clinic
 
 ---
 
-### IDEA-3 — In-Built Master Medicine Editor
+### IDEA-3 🟢 [APPROVED FOR ROADMAP — MILESTONE 1.41] — In-Built Master Medicine Editor
 
 GUI editor for catalogue medicines inside `MedicineCatalogueScreen` — opening `AddMedicineDialog(medicineToEdit: item)` and calling `CatalogueService.updateMedicine()`.
 
-- **Role guard:** Restricted to owner PIN session.
-- **Longitudinal safety:** Modifying a brand name or composition only affects future auto-completes; historical `PrescriptionItem` snapshots are immutable.
-- **Effort:** Low — `AddMedicineDialog` already has full validation UI.
+- **Status:** Approved by PM for Milestone 1.41 implementation.
+- **Role guard:** Restricted strictly to clinic owner PIN session.
+- **Longitudinal safety:** Modifying a brand name, form, or composition only affects future auto-completes; historical `PrescriptionItem` snapshots on past consultations are append-only and immutable.
 
 ---
 

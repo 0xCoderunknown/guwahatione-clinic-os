@@ -27,6 +27,7 @@ class PrescriptionPrintScreen extends StatefulWidget {
   final List<String> patientAllergies;
   final String? doctorSpecialty;
   final String? doctorRegNumber;
+  final bool isPreSign;
 
   const PrescriptionPrintScreen({
     super.key,
@@ -35,6 +36,7 @@ class PrescriptionPrintScreen extends StatefulWidget {
     this.patientAllergies = const [],
     this.doctorSpecialty,
     this.doctorRegNumber,
+    this.isPreSign = false,
   });
 
   @override
@@ -62,85 +64,175 @@ class _PrescriptionPrintScreenState extends State<PrescriptionPrintScreen> {
   Widget build(BuildContext context) {
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
-        const SingleActivator(LogicalKeyboardKey.enter): _handlePrint,
+        const SingleActivator(LogicalKeyboardKey.enter): () {
+          if (widget.isPreSign) {
+            Navigator.pop(context, true);
+          } else {
+            _handlePrint();
+          }
+        },
         const SingleActivator(LogicalKeyboardKey.escape): () =>
-            Navigator.pop(context),
+            Navigator.pop(context, false),
       },
       child: Focus(
         autofocus: true,
         child: Scaffold(
           backgroundColor: const Color(0xFFE2E8F0),
           appBar: AppBar(
-            title: const Text('Prescription Print Preview'),
+            title: Text(
+              widget.isPreSign
+                  ? 'Prescription Preview & Sign-Off'
+                  : 'Prescription Print Preview',
+            ),
             elevation: 0.5,
             backgroundColor: Colors.white,
-        actions: [
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF16A34A),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            ),
-            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-            label: const Text(
-              'Send on WhatsApp',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            onPressed: () {
-              final clinic = context.read<ClinicProvider>();
-              final doc = clinic.doctors
-                  .where((d) => d.id == widget.consultation.doctorId)
-                  .firstOrNull;
-              final msg = WhatsAppEngine.formatPrescriptionMessage(
-                consultation: widget.consultation,
-                queueNumber: widget.appointment?.queueNumber,
-                freeReviewDays: doc?.freeReviewDays,
-              );
-              final link = WhatsAppEngine.buildDeepLink(
-                phone: widget.consultation.patientPhone,
-                message: msg,
-              );
-              openUrl(link);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Opening WhatsApp for ${widget.consultation.patientName}...',
-                  ),
-                  backgroundColor: const Color(0xFF16A34A),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: _isPrinting
-                  ? Colors.teal.shade400
-                  : Colors.teal.shade700,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            icon: _isPrinting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
+            actions: [
+              if (widget.isPreSign) ...[
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF0F766E),
+                    side: const BorderSide(color: Color(0xFF5EEAD4)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
                     ),
-                  )
-                : const Icon(Icons.print_rounded, size: 18),
-            label: Text(
-              _isPrinting ? 'Printing...' : 'Print Prescription',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            onPressed: _isPrinting ? null : _handlePrint,
+                  ),
+                  icon: const Icon(Icons.print_outlined, size: 18),
+                  label: const Text('Print Draft'),
+                  onPressed: _isPrinting ? null : _handlePrint,
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F766E),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                  ),
+                  icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                  label: const Text(
+                    'Confirm & Sign Rx',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () => Navigator.pop(context, true),
+                ),
+                const SizedBox(width: 12),
+              ] else ...[
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF16A34A),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                  ),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                  label: const Text(
+                    'Send on WhatsApp',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () {
+                    final clinic = context.read<ClinicProvider>();
+                    final doc = clinic.doctors
+                        .where((d) => d.id == widget.consultation.doctorId)
+                        .firstOrNull;
+                    final msg = WhatsAppEngine.formatPrescriptionMessage(
+                      consultation: widget.consultation,
+                      queueNumber: widget.appointment?.queueNumber,
+                      freeReviewDays: doc?.freeReviewDays,
+                    );
+                    final link = WhatsAppEngine.buildDeepLink(
+                      phone: widget.consultation.patientPhone,
+                      message: msg,
+                    );
+                    openUrl(link);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Opening WhatsApp for ${widget.consultation.patientName}...',
+                        ),
+                        backgroundColor: const Color(0xFF16A34A),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _isPrinting
+                        ? Colors.teal.shade400
+                        : Colors.teal.shade700,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                  ),
+                  icon: _isPrinting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.print_rounded, size: 18),
+                  label: Text(
+                    _isPrinting ? 'Printing...' : 'Print Prescription',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: _isPrinting ? null : _handlePrint,
+                ),
+                const SizedBox(width: 12),
+              ],
+            ],
           ),
-          const SizedBox(width: 12),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Toolbar: Letterhead toggle & Paper size selector
+          body: Column(
+            children: [
+              if (widget.isPreSign)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  color: const Color(0xFFFEF3C7),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.verified_user_outlined,
+                        size: 20,
+                        color: Color(0xFFB45309),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'PRE-SIGN CLINICAL REVIEW • Verify 3-column prescription table, dosage, and allergy alerts before medical-legal sign-off.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF92400E),
+                          ),
+                        ),
+                      ),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF92400E),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: () => Navigator.pop(context, false),
+                        icon: const Icon(Icons.edit_note_rounded, size: 16),
+                        label: const Text(
+                          'Edit Encounter',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              // Toolbar: Letterhead toggle & Paper size selector
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: Colors.white,
