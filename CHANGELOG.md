@@ -8,311 +8,70 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
-## [1.40.17] — 22-10-2026
+## [1.5.0] — 23-10-2026
 
-### Rx Reconciliation File Modularization & Clean Component Extraction
-- **Rx Module Decomposition:**
-  - Decomposed the 1,135-line `reconciliation_item_row.dart` monolithic file into 4 focused, single-responsibility components under `lib/widgets/encounter/rx/`:
-    - `inline_dosage_edit_dialog.dart`: Encapsulates `InlineDosageEditDialog` for rapid in-place dosage, frequency, timing, and note adjustments.
-    - `custom_duration_dialog.dart`: Dedicated modal dialog for custom course duration entry.
-    - `new_prescription_row.dart`: Encapsulates `NewPrescriptionRow` and `NewPrescriptionsList` for encounter prescribing.
-    - `reconciliation_item_row.dart`: Retains `ReconciliationItemRow`, `CollapsedMedicineSummary`, and `ReconciliationListCard` while re-exporting all subcomponents for backward-compatible consumer imports.
-- **Export Organization:**
-  - Exported all new Rx prescribing dialogs and rows through `widgets.dart` barrel.
+### Pre-Demo Production Baseline & Version Milestone
+- **Milestone 1.5.0 Baseline:**
+  - Transitioned active platform from 1.40 development patch line to stable minor milestone `1.5.0`.
+  - Consolidated all 1.40.x architectural milestones, audit closures, and pre-demo enhancements into a unified release line.
+  - Aligned all documentation (`README.md`, `AGENTS.md`, `SCHEMA_AND_MODELS.md`) and package manifests to version `1.5.0`.
 
-### Pre-Demo Web Presentation & Fast-Access PIN Authentication
-- **Web App PWA & HTML Branding:**
+---
+
+## [1.40.0 – 1.40.17] — 20-10-2026 to 22-10-2026
+
+### Pre-Demo Hardening, Rx Modularization, CSV Export, Scalable Search & Chamber Architecture
+- **Pre-Demo Web Presentation & Fast-Access PIN Authentication (v1.40.17):**
   - Rebranded `web/index.html` application title to `"GuwahatiOne Clinic OS"` alongside matching Apple web app title and meta description.
   - Aligned `web/manifest.json` PWA configuration with unified title (`"GuwahatiOne Clinic OS"`), short title (`"Clinic OS"`), primary theme color (`#0F766E`), and responsive orientation (`"any"`).
   - Synchronized default tenant configuration in `ClinicConfig.current` (`clinicName: 'GuwahatiOne ClinicOS'`, `address: 'Guwahati, Assam'`, `contactPhone: '12345 67890'`).
-- **Pre-Demo Fast-Access PIN Contract (Live Hardware Evaluation):**
-  - Configured evaluation-mode authentication credentials in `AuthProvider` for temporary live trials on third-party hardware:
-    - Clinic Owner Master PIN: `000000` (6 zeroes)
-    - Doctor Chamber & Counter Reception PIN: `0000` (4 zeroes)
-  - Maintained salted SHA-256 cryptographic hash evaluation with zero plaintext browser exposure.
-  - Updated automated test suite in `test/auth_provider_test.dart` ensuring 100% test pass rate.
-
-## [1.40.16] — 22-10-2026
-
-### Pre-Demo Hardening: Chamber Service DI (AUDIT-16), Safe Amount Parsing & Chamber Date Bounds
-- **Chamber Service Dependency Injection (AUDIT-16):**
-  - Updated `DoctorChamberScreen` to accept optional `bookingService` and `chamberService` via constructor injection with lazy fallback initialization, eliminating uncoordinated hardcoded service instantiations and enabling 100% isolated unit and widget testing.
-- **Walk-In Registration Amount Parse Guard:**
-  - Standardized `amountCollected` resolution in `AddAppointmentDialog` using `int.tryParse(_amountController.text.trim()) ?? 0` instead of `int.parse`, preventing unhandled runtime format exceptions if counter staff clear or blur the fee text field during live registration.
-- **Chamber Calendar Epoch Lower Bound:**
-  - Bound `ClinicDateNavBar` in `DoctorChamberScreen` to `AppConstants.clinicEpochDate` (`01-01-2025`), ensuring consistent date navigation bounds across all screens.
-
-## [1.40.15] — 22-10-2026
-
-### Pre-Sign Rx Preview Gate (QOL-19) & Technical Audit Sweep (AUDIT-14, AUDIT-17, AUDIT-27, AUDIT-28)
-- **Pre-Sign Encounter Print Preview Gate (QOL-19):**
-  - Integrated pre-sign clinical preview gate into `ConsultationEncounterScreen` and `PrescriptionPrintScreen`.
-  - When the physician clicks `"Finish Consultation & Sign"` or `"Print Preview"`, the system routes to `PrescriptionPrintScreen` in `isPreSign: true` mode before committing any Firestore writes.
-  - Displays a high-contrast amber review banner (`"PRE-SIGN CLINICAL REVIEW • Verify 3-column prescription table, dosage, and allergy alerts before medical-legal sign-off."`) with an inline `"Edit Encounter"` button.
-  - Doctor can inspect the strict 3-column table, dosage instructions, and allergy notes. If an adjustment is needed, tapping `"Edit Encounter"` returns directly to the active draft with zero database mutations.
-  - Tapping `"Confirm & Sign Rx"` atomically saves the append-only consultation to Firestore, signals doctor chamber `consultation_ended`, clears local drafts, triggers physical prescription printing (`printDocument()`), and returns to the doctor chamber.
-- **Date Navigation & Statistics Epoch Lower Bounds (AUDIT-14):**
-  - Introduced `AppConstants.clinicEpochDate = DateTime(2025, 1, 1)` establishing a unified clinic launch lower bound for historical calendar navigation.
-  - Extended `ClinicDateNavBar` with `firstDate` and `lastDate` bounds, disabling the left chevron on or before the clinic epoch date and right chevron on future calendar limits.
-  - Unified `StatisticsScreen` desktop navigation bar and mobile AppBar date pickers to respect `AppConstants.clinicEpochDate` and today's date.
-- **Consultation `lastVisitDate` Timestamp Standardization (AUDIT-17):**
-  - Standardized `ConsultationService.saveConsultation` to write `patient.lastVisitDate` as a native Firestore `Timestamp` (`Timestamp.fromDate(consultation.createdAt)`).
-  - Eliminates client clock drift and ISO string formatting variations across heterogeneous clinic hardware, ensuring exact consistency with the schema definition in `docs/SCHEMA_AND_MODELS.md`.
-- **Default Medicine Seeding Production Flag (AUDIT-27):**
-  - Added `enableSeedDefaultMedicines` flag under `ClinicFeatureFlags` (defaulting to `true` for development and automated test suites).
-  - `CatalogueService.ensureDefaultMedicinesExist()` now checks this flag and skips execution when disabled, allowing production clinics to maintain clean master formularies populated via CSV import without test data pollution.
-- **Unbounded Patient History Query Protection (AUDIT-28):**
-  - Added bounded limit (`limit: 100`) to `BookingService.getAppointmentsForPatient`.
-  - Protects Firestore read budgets and client memory allocation for chronic patients with multi-year consultation records.
-- **Doctor PIN Verification & Single-Doctor Query Audits (AUDIT-12, AUDIT-20):**
-  - Formally closed AUDIT-12 as resolved by design in alignment with AUDIT-03 (doctor PINs are stored in plaintext for owner recovery; in-memory comparisons hash both sides consistently with domain salting).
-  - Verified AUDIT-20: single-field queries on `counters.date` are automatically indexed by Firestore.
-- **Roadmap Progression (IDEA-3):**
-  - Moved In-App Master Medicine Editor (GUI catalogue editing for Clinic Owners) from ideation to the approved Roadmap backlog (Milestone 1.41).
-
-## [1.40.14] — 22-10-2026
-
-### Operational Hardening: Cache Debounce, Print Guard & Clinical Input Limits (AUDIT-15, AUDIT-21, AUDIT-24)
-- **Offline Queue Cache Debounce (AUDIT-15):**
-  - Added a 3-second debounce timer (`_cacheDebounceTimer`) in `LiveQueueDelegate` for `OfflineQueueCacheService.saveQueue`.
-  - Rapid consecutive Firestore snapshot bursts (patients checking in, tokens advancing, arrivals updating) now collapse into a single local disk serialization once the stream settles.
-  - Eliminates main isolate UI thread stutter and frame drops on lower-spec clinic counter laptops during peak morning rush.
-  - Ensured active debounce timers are safely cancelled on listening date switch and `dispose()`.
-- **Prescription Print Button Double-Tap Guard (AUDIT-24):**
-  - Added `_isPrinting` state guard with a 1500ms cooldown in `PrescriptionPrintScreen`.
-  - While print processing is active, the button transitions to `"Printing..."` with a circular progress spinner and disables `onPressed`, ignoring repeated clicks and keyboard Enter shortcuts.
-  - Prevents accidental double-print dialog triggers on clinic touchscreens or slow PCs, eliminating letterhead paper waste.
-- **Clinical Input Character Limits & Paste Caps (AUDIT-21):**
-  - Enforced generous MBBS/MD clinical character limits defined in `AppConstants` across consultation encounter fields:
-    - Chief complaints: 150 characters per complaint chip.
-    - Provisional diagnosis: 200 characters per diagnosis chip.
-    - Physical & systemic examination notes: 2,000 characters with live character counter indicator.
-    - Lifestyle & diet instructions: 2,000 characters with live character counter indicator.
-    - Documented patient drug allergies: 100 characters per allergen chip.
-    - Outside laboratory test orders and results: 150 and 200 characters.
-  - Prevents accidental clipboard paste explosions, protects Firestore document size limits (< 1 MB), and guarantees printable prescription letterhead layout stability.
-
-## [1.40.13] — 22-10-2026
-
-### Prepaid Carry-Over & Patient No-Show Revisit (QOL-03) and Disease Presets Purge (QOL-05)
-- **Prepaid Carry-Over & Patient No-Show Carry-Forward (QOL-03):**
-  - Added `PaymentType.paidCarryOver` (`'Paid (Carry-Over)'`) enabling reception to issue fresh consecutive queue tokens for patients who paid their consultation fee on an earlier date but had to leave before being examined.
-  - Introduced `BookingCarryOverBanner` inside `AddAppointmentDialog`, automatically detecting unredeemed paid visits within a 30-day window (`AppointmentEngine.findEligibleCarryOverAppointment()`).
-  - 1-tap revalidation links `carriedOverAppointmentId`, `carriedOverAmount`, and `carriedOverDate` to today's appointment with ₹0 fresh cash collection.
-  - Atomically marks the prior appointment `refundStatus: 'carried_forward'`, `carriedForwardToAppointmentId`, and `carriedForwardDate` in the booking Firestore transaction, preventing double-redemption.
-  - Zero ghost cash: `CashHandoverEngine` balances physical cash in drawer to the exact rupee at the end of the day while tracking patient volume.
-  - Doctor payout integrity: `RevenueEngine` credits the consulting physician's fee split (`effectiveFee`) upon consultation completion.
-  - Rendered high-visibility amber `Carry-Over (₹X)` badges across reception queue accordions and doctor chamber token cards.
-- **Purge of Hardcoded Whole-Course Presets & Flag Gating (QOL-05):**
-  - Purged all hardcoded whole-course disease templates (`tmpl_uri_flu`, `tmpl_acute_gastritis`, etc.) from `MedicineEngine.getDefaultPrescriptionTemplates()`.
-  - While 1-tap medicine addition with default dosage and timing is supported, whole disease course presets have been eliminated.
-  - Prescription template selector UI remains flag-gated behind `enablePrescriptionTemplatePresets: false` in `ClinicConfig`.
-
-## [1.40.12] — 22-10-2026
-
-### Doctor Sitting Days (`availableDays`) Guard in Advance Booking (AUDIT-22)
-- **Multi-Doctor Schedule Protection in Advance Booking:**
-  - Upgraded `AppointmentEngine.isDoctorAvailableOnDate` to handle 3-letter abbreviations (`'Mon'`), full weekday names (`'Monday'`), and case-insensitivity with whitespace trimming.
-  - Enforced schedule validation in `LiveQueueDelegate.bookAppointment`: throws a clear domain exception (`"$docTitle does not consult on ${dayName}s (Schedule: $schedule)."`) when booking on a doctor's off-day.
-  - Hardened `AddAppointmentDialog`: dynamically disables the submit button (`isDisabled == true`) and renders `BookingOffDayWarningBanner` instructing counter staff to select an active OPD day whenever a non-sitting weekday is chosen.
-  - Eliminates the operational hazard where visiting physicians who only practice on specific weekdays (e.g. Mon/Wed/Fri) could previously be booked in advance for non-sitting days.
-
-## [1.40.11] — 22-10-2026
-
-### Emergency Walk-Ins, Chamber Demographics Edit & 1-Click CSV Data Export (QOL-01, QOL-04 & IDEA-1)
-- **1-Tap Emergency / No-Mobile Walk-In Registration (QOL-01):**
-  - Added `AppointmentEngine.generateEmergencyDummyPhone()` and `AppointmentEngine.isEmergencyDummyPhone()` generating collision-resistant placeholder numbers prefixed with `99` (e.g. `9922105432`).
-  - Added a `[⚡ No Phone]` suffix button inside `BookingPatientFields` with an amber warning banner alerting staff that SMS/WhatsApp receipts are suppressed for dummy contact numbers.
-  - Enables zero-friction booking for urgent trauma patients, unaccompanied elderly citizens, and walk-in patients without active mobile devices.
-- **In-Chamber Patient Demographics Correction (QOL-04):**
-  - Added an edit action button in `PatientHeaderSection` of `ConsultationEncounterScreen` launching `EncounterDialogs.showEditPatientDemographicsDialog()`.
-  - Empowers physicians to correct misheard patient names, ages, and genders during the active consultation without forcing reception intervention.
-  - Seamlessly updates `EncounterFormState`, the primary `patients/{id}` registry profile, and the active `appointments/{id}` document via `BookingService.updateAppointmentPatientName()`.
-- **1-Click Full Clinic Data Export for Tax Audits & Backups (IDEA-1):**
-  - Introduced `DataExportEngine`: pure Dart RFC-4180 compliant CSV generation engine with zero UI dependencies, strictly adhering to Indian date formatting (`DD-MM-YYYY`) and proper cell escaping.
-  - Supports 5 export ledgers:
-    1. **Financial Revenue Ledger:** Itemized fee collection, payment modes (Cash, UPI, Waived/Free Review), and net totals formatted for accountant audits and income tax filing.
-    2. **Appointments & Queue Ledger:** Complete token sequence, check-in timestamps, patient identifiers, and visit statuses.
-    3. **Patient Directory:** Complete demographic registry, contact numbers, guardian relationships, and clinical allergy alerts.
-    4. **Medicine Formulary:** Master catalogue of brand names, chemical compositions, default dosages, and frequencies.
-    5. **Clinical Consultations:** Longitudinal encounter history with chief complaints, provisional diagnoses, and prescribed regimens.
-  - Added `ClinicDataExportDialog` accessible to authenticated Clinic Owners from `OwnerShellAppBar` and `StatisticsScreen` (Payments & Reports), featuring quick date range filters (`Today`, `Last 7 Days`, `This Month`, `All Time`).
-  - Created client-side platform file downloader via `dart:js_interop` Blob URLs, guaranteeing zero patient health information (PHI) leaves the local clinic intranet.
-
-## [1.40.10] — 22-10-2026
-
-### Scalable Patient Name & Surname Search Beyond 50 Records (AUDIT-08)
-- **Direct Indexed N-Gram & Token Search:**
-  - Added `PatientSearchEngine.generateSearchTokens()` generating 2+ character prefix n-grams (e.g. `da`, `das`, `bo`, `bor`, `bora`, `borah`) alongside complete name tokens.
-  - Upgraded `PatientService.savePatient()` to automatically index `nameLower` and `searchTokens` (`List<String>`) on patient records in Firestore.
-- **Elimination of the 50-Record Ceiling:**
-  - Completely replaced the in-memory `.limit(50).get()` query scan with Firestore `array-contains` queries on `searchTokens` and prefix range lookups on `nameLower`.
-  - Solves the physical OPD clinic issue where returning patients searched by surname or middle name outside the initial 50 records were missed, eliminating duplicate patient registrations and preserving longitudinal clinical histories at scale.
-
-## [1.40.9] — 22-10-2026
-
-### Counter Continuity & Security Simplification (AUDIT-03, AUDIT-04 & QOL-12)
-- **Purge of Terminal Lockout & Screen Freeze (AUDIT-04):**
-  - Completely removed the 30-second lockout timer, lockout state, and blocked inputs from `AuthProvider` and `LoginScreen`.
-  - In a real-world OPD clinic, mistyped PINs at the counter now immediately display an inline error without freezing the desk, ensuring uninterrupted patient registration and cash collection during peak morning rushes.
-- **Formal Cancellation of Doctor PIN Hashing (AUDIT-03):**
-  - Retained clean plaintext 4-digit PIN storage for doctors in Firestore, accessible exclusively to the authenticated Clinic Owner in `DoctorListScreen`.
-  - Solves the physical clinic reality where visiting doctors rotate across multiple clinics and forget PINs, allowing the owner to look up and remind the physician in 5 seconds without password resets.
-- **Friction-Free Chamber Queue Previews (QOL-12):**
-  - Confirmed and preserved friction-free queue inspection for receptionists and clinic owners without requiring doctor PIN entry.
-  - Rely on the core Doctor-Paced Chamber Handshake architecture (locked dispatch while consultation is active or during breather) to prevent accidental patient admission or sound announcements.
-
-## [1.40.8] — 22-10-2026
-
-### Reconciled Regimen In-Place Duration Dropdown & Inline Dosage Editing (QOL-14)
-- **In-Place Duration Dropdown Menu:**
-  - Added a clinical duration dropdown directly on reconciled medication cards (`ReconciliationItemRow`) with Indian OPD presets: `To Continue`, `3 Days`, `5 Days`, `7 Days`, `14 Days`, `1 Month`, `SOS`, `STOP`, and `Custom...`.
-  - Selecting any duration preset automatically shifts the item action to `continueAction`, sets the duration label/days, and clears previous stop reasons.
-  - Selecting `STOP` immediately marks the therapy discontinued with strikethrough styling and `stopReason: 'Discontinued by doctor'`.
-- **Custom Duration Modal (`CustomDurationDialog`):**
-  - Integrated a numeric input dialog allowing doctors to assign custom course lengths (e.g. `21 Days`) with instant validation.
-- **Inline Dosage & Timing Editing Modal (`InlineDosageEditDialog`):**
-  - Tapping on Column 2 (dosage/timing) in both reconciled and newly prescribed rows opens an in-place editor.
-  - Provides 1-tap dosage chips (`1 Tablet`, `0.5 Tablet`, `2 Tablets`, `5 ml`, `10 ml`, `1 Capsule`), frequency schedule chips (`1-0-1`, `1-0-0`, `0-0-1`, `1-1-1`, `SOS`), timing chips (`After Food / PC`, `Before Food / Khali Pet / AC`, `At Bedtime / HS`), and special instruction notes without requiring doctors to remove and re-search medications.
-
-## [1.40.7] — 22-10-2026
-
-### Cloud-Synced Security PIN Store & Multi-Terminal Synchronization UI (QOL-13)
-- **Cloud-Synced Security PIN Document (`clinic_config/security`):**
-  - Introduced `SecurityService` to persist salted SHA-256 PIN hashes (`ownerMasterPinHash`, `receptionistPinHash`, `updatedAt`, `updatedBy`) in Firestore.
-  - Eliminated single-terminal local storage silos; PIN changes made on any workstation automatically synchronize in real time across all reception terminals, doctor chambers, and owner devices.
-- **Offline Cold-Boot & Real-Time Sync Stream:**
-  - `AuthProvider` reads cached hashes from `SharedPreferences` on boot for instantaneous offline readiness, then subscribes to `SecurityService.securityStream()` from Firestore.
-  - Remote rotations automatically update local memory and cache, notifying listeners immediately.
-- **Two-Step Security Settings Modal (`SecuritySettingsDialog`):**
-  - **Step 1 (Security Verification):** Requires entering the current 6-digit Owner Master Passkey before granting access to PIN rotation settings.
-  - **Step 2 (PIN Rotation):** Provides dedicated cards to rotate the 4-digit Receptionist Access PIN and/or 6-digit Owner Master Passkey with input masking, length validation, and confirmation matching.
-  - Includes status indicators displaying whether default or custom credentials are active.
-- **Owner Shell Top Bar Action:**
-  - Added a dedicated high-contrast `[Security & PINs]` button in `OwnerShellAppBar`, visible exclusively to authenticated Clinic Owners next to `Lock to Reception`.
-
-## [1.40.6] — 22-10-2026
-
-### Login Credential Leak Purge, Brute-Force Rate Limiting & Backdoor Removal (AUDIT-01, AUDIT-04, AUDIT-23, QOL-11)
-- **Zero On-Screen Credential Leaks (AUDIT-01):**
-  - Purged all default PINs (`849201` and `0000`) from login hints, helper texts, and error dialogs across both Doctor Chamber and Reception/Owner forms.
-  - Replaced credential-revealing error messages with neutral notices (`'Incorrect PIN. Please try again.'` / `'Incorrect PIN for Dr. [Name]. Please try again.'`).
-- **Brute-Force Rate Limiting & 30-Second Lockout (AUDIT-04):**
-  - Introduced local brute-force defense in `AuthProvider`: 5 consecutive failed PIN attempts triggers a strict 30-second authentication freeze.
-  - Login UI displays an alert banner with a real-time countdown: `'Too many failed attempts. Locked out for Xs.'`
-  - Submissions and inputs are disabled during lockout; successful authentication resets the failed attempts counter.
-  - Persisted lockout timestamp to `SharedPreferences` prevents bypassing the freeze via browser refresh.
-- **Privatized Plaintext PIN Getters & In-Memory Purge (AUDIT-23):**
-  - Removed `receptionistPin` and `ownerMasterPin` public getters from `AuthProvider`.
-  - Purged plaintext PIN memory storage (`_receptionistPin` and `_ownerMasterPin`); operations now exclusively use salted SHA-256 hashes.
-- **Eliminated Hardcoded Owner PIN Fallback Backdoor (QOL-11):**
-  - Removed the hardcoded fallback to default PIN `849201` once a custom Owner PIN is configured, preventing unauthorized administrative entry via factory default credentials.
-
-## [1.40.5] — 22-10-2026
-
-### Encounter Bottom Dock Print Preview, 1-Tap WhatsApp Rx in Patient Lookup & Anti-Goal Log (QOL-15, QOL-18, QOL-20)
-- **Primary Print Preview Action on Encounter Bottom Dock (QOL-15):**
-  - Elevated "Print Preview" to a primary action button directly in `ConsultationBottomDock` alongside `[Finish Consultation & Sign]`.
-  - On desktop viewports, renders a prominent `OutlinedButton.icon('Print Preview')` with print icon; on compact mobile screens, renders a high-contrast `IconButton.outlined` with accessible tooltip.
-  - Allows doctors to review the complete 3-column isolated prescription layout in modal preview before committing the final digital sign-off and clearing the chamber.
-- **1-Tap WhatsApp Rx from Patient History Lookup (QOL-18):**
-  - Added a direct 1-tap green `[WhatsApp Rx]` outlined button alongside `[View Prescription]` in `DoctorConsultationAccordion`.
-  - Directly formats the longitudinal encounter medication summary via `WhatsAppEngine.formatPrescriptionMessage` and opens the native browser deep-link (`WhatsAppEngine.buildDeepLink`) with floating confirmation feedback, accelerating counter assistance when patients request digital copies.
-- **Queue State Simplification & Scrapped "Stepped Out" Status (QOL-20):**
-  - Formally scrapped intermediate "stepped out" queue status per Product Manager directive: dispatch authority lies 100% with the receptionist, who can seamlessly call any present patient in line without artificial state overhead. Logged permanently in Section 4.4 (Scrapped Anti-Goals).
-
-## [1.40.4] — 22-10-2026
-
-### Family-Aware Patient Matching, Compact Confirmation Banners & Paediatric Guardian Pre-fill (QOL-17)
-- **Compact Visual Confirmation Banners (QOL-17):**
-  - Integrated an explicit, single-line green status confirmation banner above the patient name field when matching an existing patient: `✅ Registered: [Name] ([Age]) • Auto-filled`.
-  - When switching to `+ Add Member` on a household number, displays a concise blue banner attributing the primary contact: `👨‍👩‍👧 New Member for [Primary Contact Name]`.
-  - Enforced strict single-line text truncation (`TextOverflow.ellipsis`) and compact vertical padding to eliminate overflow risks within the 460px booking modal width budget.
-- **Phone Row Quick Add-Member Action:**
-  - Added a dedicated 1-tap `[person_add]` icon button directly in the phone number row alongside the discovery spinner, allowing receptionists to instantly switch to family member registration without having to tab to the family chips row.
-- **Smart Paediatric Guardian Pre-fill:**
-  - When clicking `+ Add Member` under a registered household contact, automatically pre-fills `Guardian Name` with the primary contact's name and `Guardian Relation` with `'Parent / Guardian'`, saving counter assistants redundant verbal questioning during rush paediatric walk-ins.
-- **Pre-2.0 Active Development Phase Constitution Update:**
-  - Updated Invariant 10 in `AGENTS.md` explicitly defining the active development phase until Version 2.0 with allowed schema and API refactorings, transitioning to strict stability post-2.0.
-
-## [1.40.3] — 22-10-2026
-
-### Consultation Discard Lobby Return, Strict Free Visit Metric & Single Fee Configuration Source (AUDIT-13, AUDIT-25, AUDIT-10, AUDIT-11)
-- **Discard Consultation Reset to Lobby (AUDIT-13):**
-  - Updated `_discardAndExitConsultation` in `ConsultationEncounterScreen` to reset the appointment's `visitStatus` back to `waitingInLobby` and clear `isPaused: false` via `ClinicProvider.discardConsultation` and `BookingService.returnAppointmentToLobby`.
-  - Eliminates ghost "In Chamber" status on the reception desk when a doctor discards an accidental or abandoned encounter draft, freeing the chamber and returning the patient to the queue.
-- **Strict Free Visit Metric Calculation (AUDIT-25):**
-  - Corrected `RevenueEngine.generateDoctorSummaries` to strictly evaluate `a.paymentType.isFree` (targeting only `freeReview` and `freeFamily`), preventing unpaid advance bookings from incorrectly inflating the "Free/Fam" KPI count on the Statistics screen.
-- **Single Source of Truth for Consultation Fees (AUDIT-10):**
-  - Removed duplicate `AppConstants.defaultConsultationFee = 500`. Updated `AppointmentEngine.resolveConsultationFee` and `BookingPaymentSection` to reference `ClinicConfig.current.defaultConsultationFee` directly as the canonical fallback.
-- **Holiday Date Configuration Developer Guidance (AUDIT-11):**
-  - Clarified comments in `AppConstants.blockedDates` distinguishing the internal ISO comparison format (`YYYY-MM-DD`) from the mandatory Indian date format (`DD-MM-YYYY`) used everywhere else in the system.
-
-## [1.40.2] — 22-10-2026
-
-### Family-Aware Auto-Trigger Free Review, Review Consumption Enforcement & Firestore Batch Chunking
-- **Auto-Trigger Free Review & Reception Discretion Preservation:**
-  - Automated follow-up review detection: when a patient is selected and doctor assigned, `AddAppointmentDialog` automatically evaluates review eligibility (`AppointmentEngine.evaluateReviewEligibility`) and selects `PaymentType.freeReview` with ₹0 fee if eligible.
-  - Implemented `_hasUserManuallyChangedPayment` tracking: if the receptionist manually chooses another payment option (e.g. charging full fee for a new clinical episode or selecting a complimentary waiver), the system respects the manual override without reverting.
-  - Reset manual payment overrides automatically upon phone number clearing, patient switching, or doctor reassignment.
-- **Strict Free Review Window & Consumption Guardrails (AUDIT-09):**
-  - Enforced full eligibility checks in `LiveQueueDelegate.bookAppointment`, `AddAppointmentDialog`, and `BookingPaymentSection`: patients who have already consumed their review or are outside the doctor's review window are prevented from booking under `freeReview`.
-  - Dropdown options clearly indicate when a review is already consumed or expired, disabling invalid selections while maintaining Flutter dropdown stability.
-- **Batch Chunking for Doctor Session Close (AUDIT-05):**
-  - Updated `BookingService.closeDoctorSessionForDate` to chunk uncompleted appointment document updates into batches of 450 items, eliminating Firestore 500-operation overflow crashes on high-volume clinic days.
-- **Patient Age Display Field Canonicalization (AUDIT-06):**
-  - Corrected `ConsultationService.saveConsultation` to persist `patientAgeDisplay` directly to the `patients` collection, eliminating the redundant `'formattedAge'` ghost key.
-
-## [1.40.1] — 21-10-2026
-
-### Universal 0000 Testing Mode & Single Client Configuration Architecture
-- **Universal Testing Mode Flag (`ClinicFeatureFlags.enableTestingMode`):**
-  - Added compile-time guarded `enableTestingMode` and `isTestingModeActive` to `ClinicFeatureFlags`.
-  - In testing mode, simplifies authentication across all roles by accepting PIN `0000` for Doctor, Receptionist, and Admin/Owner logins.
-  - Automatically suppresses and tree-shakes testing mode bypass logic in production release builds (`--release`), preventing auth bypass on Firebase Hosting.
-- **Login Screen Testing Role Selector:**
-  - Added sleek role switcher (`Admin Mode` / `Reception Desk`) in `ReceptionLoginForm` when testing mode is active.
-  - Cleaned all hardcoded default credentials and placeholders (`1234`, `849201`) across login, chamber release, and doctor list screens to prevent information disclosure.
-
-## [1.40.0] — 20-10-2026
-
-### Longitudinal 1-Click Carry Forward, Natural Dosage Synthesis, Doctor Revenue Split & Letterhead Margin Ergonomics
-- **Longitudinal 1-Click `[CARRY FORWARD]` & Cross-Doctor Continuity (HK-1 #1):**
-  - Added 1-click `[CARRY FORWARD]` capability in `EncounterFormState`, `RxReconciliationSection`, and `EncounterDialogs.showLongitudinalHistory`.
-  - When reviewing a patient's historical visit (including visits originally conducted by other doctors in the clinic), clinicians can instantly copy past active regimens into the active encounter as `To continue` (`MedicationAction.continueAction`) items, skipping duplicates and maintaining zero data loss.
-  - Signing today's consultation permanently binds the unified prescription to the active consulting doctor's NMC registration while preserving previous consultation records as immutable audit-proof events.
-- **Natural Dosage & Timing Synthesis (`formattedDosageTiming`) & Rapid Schedule Chips (HK-1 #2):**
-  - Implemented `PrescriptionItem.formattedDosageTiming` to intelligently synthesize Column 2 on prescription prints and on-screen cards without repetitive or awkward wording (e.g. `1 tablet daily morning before food` or `1 Tablet • 1-0-1 • After Food (PC)`).
-  - Added 1-tap rapid schedule chips to `StagedMedicineForm` (`1-0-0 Khali Pet`, `1-0-0 After Food`, `1-0-1 After Food`, `1-1-1 TDS`, `0-0-1 Bedtime`, `SOS`), allowing doctors to configure frequency and timing in a single touch.
-  - Added Indian MBBS/MD timing options: `'Before Food / Khali Pet (AC)'`, `'After Food (PC)'`, `'At Bedtime (HS)'`, `'With Food'`, and `'As Needed (SOS)'`.
-- **Frictionless 1-Tap STOP Reconciliation (Zero Popup Friction):**
-  - Removed intrusive stop-reason modal dialogs per PM directive; clicking `STOP` on any chronic medication row instantly toggles its action to `MedicationAction.stop` without disrupting doctor flow.
-- **Next Follow-up Review with 1-Tap "Not Needed / SOS":**
-  - Added a dedicated 1-tap `Not Needed / SOS` chip in `AdviceAndOrdersSection`, allowing doctors to clear scheduled follow-up dates in one tap.
-- **Doctor Revenue Share Split & Fee Payout (Item 20.2):**
-  - Added `doctorSharePercentage` (0–100%, default 100%) to `Doctor` model with clean serialization.
-  - Integrated an owner-only configuration input in `DoctorForm` (accessible exclusively with Owner PIN session).
-  - Implemented pure Dart calculation `RevenueEngine.calculateDoctorPayout({required totalDoctorFees, required doctorSharePercentage})` for automated owner-physician fee split reconciliation.
-- **Configurable Letterhead Top Margin & Print Keyboard Shortcuts (Item 24):**
-  - Added `defaultLetterheadTopMarginMm` (default: 35.0 mm) to `ClinicConfig` so pre-printed letterhead reserved space is client-customizable.
-  - Added `CallbackShortcuts` and autofocus to `PrescriptionPrintScreen` for counter efficiency: `Enter` instantly triggers printing, `Esc` dismisses the preview.
-- **Broadband Outage Offline Fallback & Network Error Handling (Item 22):**
-  - Integrated persistent amber offline indicators in `OwnerShell` (desktop header and mobile top strip) alerting front-desk staff whenever the system falls back to `OfflineQueueCacheService` local cache.
-  - Added an offline warning banner to `AddAppointmentDialog` clarifying that walk-in token allocation requires active cloud synchronization to maintain consecutive atomic counter integrity (Invariant #1).
-  - Enhanced booking exception handling with human-friendly guidance when broadband is interrupted rather than cryptic database error traces.
-- **Architectural Refactoring & God Object Decomposition (Phases 1, 2 & 3):**
-  - **Decomposed Monolithic UI Widgets (Phase 1):**
-    - Reduced `DashboardTodayQueueCard` from 913 lines down to 295 lines by extracting `UpcomingBookingsSection`, `QueueDoctorFilterBar`, and `DashboardQueueItemRow`.
-    - Modularized `AddAppointmentDialog` by extracting `BookingOfflineBanner`, `BookingDialogActions`, and `BookingSuccessSnackbar`.
-    - Modularized `AddDoctorScreen` by extracting `DoctorLeaveCalendarSection`.
-  - **Decomposed `ClinicProvider` God Object (Phase 2):**
-    - Refactored `ClinicProvider` into a lightweight, backward-compatible Facade over 3 dedicated domain controllers: `DoctorStateDelegate` (doctor roster & leave), `LiveQueueDelegate` (live queue, offline caching, and midnight rollover), and `CatalogueDelegate` (master formulary & curation).
-    - Preserved 100% backward compatibility across all screen callers with zero breaking changes.
-  - **Fine-Grained Widget Rebuild Optimization (Phase 3):**
-    - Replaced broad `ClinicProvider` rebuild triggers with targeted `context.select` and `Selector` subscriptions in high-traffic widgets (`OwnerShell`, `AuthGate`, `ConsultationEncounterScreen`, `AppointmentListScreen`, `MedicineCatalogueScreen`, `LoginScreen`, `DoctorListScreen`, and `OwnerShellAppBar`).
-    - Eliminates cascading full-app re-renders on counter PCs during background appointment bookings and doctor queue mutations.
-- **External Appointment Distraction Banner Excluded (Item 18):**
-  - Permanently dropped per PM directive to guarantee distraction-free clinical focus inside the chamber during active consultations.
+  - Configured evaluation-mode authentication credentials in `AuthProvider` for temporary live trials on third-party hardware (Owner: `000000`, Reception/Doctor: `0000`) with salted SHA-256 cryptographic evaluation.
+- **Rx Module Decomposition & Clean Component Extraction (v1.40.17):**
+  - Decomposed the 1,135-line `reconciliation_item_row.dart` monolithic file into 4 focused single-responsibility components under `lib/widgets/encounter/rx/`: `inline_dosage_edit_dialog.dart`, `custom_duration_dialog.dart`, `new_prescription_row.dart`, and `reconciliation_item_row.dart`.
+- **Chamber Service Dependency Injection & Input Bounds (v1.40.16):**
+  - Updated `DoctorChamberScreen` to accept constructor-injected `BookingService` and `ChamberService` (AUDIT-16).
+  - Standardized `amountCollected` resolution in `AddAppointmentDialog` using `int.tryParse` guard and bound calendar navigation to `AppConstants.clinicEpochDate` (`01-01-2025`).
+- **Pre-Sign Rx Preview Gate & Technical Audit Sweep (v1.40.15):**
+  - Integrated pre-sign clinical preview gate into `ConsultationEncounterScreen` and `PrescriptionPrintScreen` with amber review banner (`"PRE-SIGN CLINICAL REVIEW"`) and return-to-draft capability (QOL-19).
+  - Standardized `lastVisitDate` writes to native Firestore `Timestamp` (AUDIT-17).
+  - Added `enableSeedDefaultMedicines` flag under `ClinicFeatureFlags` (AUDIT-27) and `limit: 100` query bound to `getAppointmentsForPatient` (AUDIT-28).
+- **Operational Hardening: Cache Debounce, Print Guard & Input Limits (v1.40.14):**
+  - Added 3-second debounce timer on offline queue disk serialization in `LiveQueueDelegate` (AUDIT-15).
+  - Added `_isPrinting` double-tap guard with 1500ms cooldown and progress spinner on prescription printing (AUDIT-24).
+  - Enforced MBBS/MD character caps on clinical free-text inputs in consultation encounter (AUDIT-21).
+- **Prepaid Carry-Over & Patient No-Show Revisit (v1.40.13):**
+  - Added `PaymentType.paidCarryOver` and `BookingCarryOverBanner` enabling reception to issue fresh consecutive queue tokens for patients who paid on an earlier date but had to leave before consultation (QOL-03).
+  - Purged hardcoded whole-course disease templates and flag-gated GP presets (QOL-05).
+- **Doctor Sitting Days Guard in Advance Booking (v1.40.12):**
+  - Enforced schedule validation in `LiveQueueDelegate.bookAppointment` and disabled advance booking on non-sitting weekdays with `BookingOffDayWarningBanner` (AUDIT-22).
+- **Emergency Walk-Ins, Chamber Demographics Edit & CSV Data Export (v1.40.11):**
+  - Added collision-resistant `99`-prefixed dummy phone generator (`AppointmentEngine.generateEmergencyDummyPhone()`) with `[⚡ No Phone]` walk-in button (QOL-01).
+  - Added in-chamber patient demographics correction modal from encounter header (QOL-04).
+  - Built pure Dart RFC-4180 CSV export engine (`DataExportEngine`) for 5 clinic ledgers (Revenue, Queue, Patients, Formulary, Consultations) with local browser download (IDEA-1).
+- **Scalable Patient Name & Surname Search Beyond 50 Records (v1.40.10):**
+  - Replaced in-memory query scans with indexed 2+ character prefix n-grams (`searchTokens`) and `nameLower` prefix queries in Firestore (AUDIT-08).
+- **Counter Continuity & Security Simplification (v1.40.9):**
+  - Completely removed 30-second screen lockout on failed PINs, displaying instant inline errors (AUDIT-04).
+  - Retained clean plaintext doctor PIN storage for owner recovery per clinic operational review (AUDIT-03).
+- **Reconciled Regimen Duration Dropdown & Inline Dosage Editing (v1.40.8):**
+  - Added direct duration preset dropdown (`To Continue`, `3 Days`, `5 Days`, `7 Days`, `14 Days`, `1 Month`, `SOS`, `STOP`, `Custom...`) on reconciled medication cards (QOL-14).
+  - Added in-place dosage, frequency, and timing editing dialog (`InlineDosageEditDialog`).
+- **Cloud-Synced Security PIN Store & Multi-Terminal Rotation UI (v1.40.7):**
+  - Introduced `SecurityService` to persist salted SHA-256 PIN hashes in `clinic_config/security` with 2-step verification dialog (`SecuritySettingsDialog`) in `OwnerShell` (QOL-13).
+- **Authentication Hardening & Session Security (v1.40.6):**
+  - Purged default test PIN hints from login UI (AUDIT-01) and removed plaintext PIN getters from `AuthProvider` (AUDIT-23).
+- **Cash Handover Slip & Staged Medicine Guard (v1.40.5):**
+  - Added printable end-of-day cash handover slip (P8) and staged medicine discard guard before completing consultation (QOL-15).
+  - Added 1-tap WhatsApp prescription delivery from Patient Directory (QOL-18).
+- **Doctor Chamber Archive & Prescribing Synthesis (v1.40.1 – v1.40.4):**
+  - Historical date shift archive banner with read-only appointment lock (QOL-16).
+  - Natural dosage & timing synthesis (`formattedDosageTiming`, QOL-08).
+  - In-browser queue chime and vocal token callout announcer (`SoundService`, QOL-10).
+  - Restructured clinical encounter with collapsible observation and prescribing steps (QOL-09).
+- **Architectural Foundation & God Object Decomposition (v1.40.0):**
+  - Decomposed `ClinicProvider` into 3 domain delegates (`DoctorStateDelegate`, `LiveQueueDelegate`, `CatalogueDelegate`).
+  - Modularized `DashboardTodayQueueCard`, `AddAppointmentDialog`, and `AddDoctorScreen`.
+  - Offline queue fallback with amber status banners and fine-grained `context.select` subscriptions.
 
 ---
 
