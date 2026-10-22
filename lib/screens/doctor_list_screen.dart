@@ -23,138 +23,16 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
     Doctor doctor,
   ) async {
     final isDeactivating = doctor.isActive;
-    final pinController = TextEditingController();
-    String? errorText;
-
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final clinicProvider = Provider.of<ClinicProvider>(context, listen: false);
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              title: Row(
-                children: [
-                  Icon(
-                    isDeactivating
-                        ? Icons.pause_circle_outline
-                        : Icons.play_circle_outline,
-                    color: isDeactivating ? Colors.red.shade700 : Colors.teal,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      isDeactivating ? 'Deactivate Doctor' : 'Reactivate Doctor',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              content: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isDeactivating
-                          ? 'Deactivating ${doctor.titleName} will remove them from the walk-in booking desk, live queue rosters, and chamber login.\n\nAll past consultations, prescriptions, and financial audit records will remain permanently intact.'
-                          : 'Reactivating ${doctor.titleName} will restore them to active OPD booking, queue rosters, and chamber login.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade800,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      'Enter 6-digit Owner Master Passkey to authorize:',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      key: const Key('admin_passkey_input'),
-                      controller: pinController,
-                      obscureText: true,
-                      autofocus: true,
-                      maxLength: 6,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: ClinicConfig.current.features.isTestingModeActive
-                            ? '0000'
-                            : '••••••',
-                        helperText: ClinicConfig.current.features.isTestingModeActive
-                            ? '🧪 Testing Mode: Enter 0000'
-                            : null,
-                        counterText: '',
-                        errorText: errorText,
-                        prefixIcon: const Icon(Icons.lock_outline, size: 20),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                      ),
-                      onSubmitted: (val) {
-                        final isValid = authProvider.verifyOwnerMasterPin(val);
-                        if (isValid) {
-                          Navigator.pop(dialogCtx, true);
-                        } else {
-                          setDialogState(() {
-                            errorText = 'Incorrect Owner Master Passkey';
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogCtx, false),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  key: const Key('confirm_passkey_action_btn'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDeactivating
-                        ? Colors.red.shade700
-                        : Colors.teal,
-                    foregroundColor: Colors.white,
-                  ),
-                  onPressed: () {
-                    final enteredPin = pinController.text.trim();
-                    final isValid = authProvider.verifyOwnerMasterPin(enteredPin);
-                    if (isValid) {
-                      Navigator.pop(dialogCtx, true);
-                    } else {
-                      setDialogState(() {
-                        errorText = 'Incorrect Owner Master Passkey';
-                      });
-                    }
-                  },
-                  child: Text(isDeactivating ? 'Deactivate' : 'Reactivate'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (dialogCtx) => _DoctorPasskeyDialog(
+        doctor: doctor,
+        isDeactivating: isDeactivating,
+        authProvider: authProvider,
+      ),
     );
 
     if (confirmed == true && context.mounted) {
@@ -617,6 +495,156 @@ class DoctorRosterCard extends StatelessWidget {
                 ],
               ),
       ),
+    );
+  }
+}
+
+class _DoctorPasskeyDialog extends StatefulWidget {
+  final Doctor doctor;
+  final bool isDeactivating;
+  final AuthProvider authProvider;
+
+  const _DoctorPasskeyDialog({
+    required this.doctor,
+    required this.isDeactivating,
+    required this.authProvider,
+  });
+
+  @override
+  State<_DoctorPasskeyDialog> createState() => _DoctorPasskeyDialogState();
+}
+
+class _DoctorPasskeyDialogState extends State<_DoctorPasskeyDialog> {
+  late final TextEditingController _pinController;
+  String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    _pinController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _pinController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final enteredPin = _pinController.text.trim();
+    final isValid = widget.authProvider.verifyOwnerMasterPin(enteredPin);
+    if (isValid) {
+      Navigator.pop(context, true);
+    } else {
+      setState(() {
+        _errorText = 'Incorrect Owner Master Passkey';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDeactivating = widget.isDeactivating;
+    final doctor = widget.doctor;
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Row(
+        children: [
+          Icon(
+            isDeactivating
+                ? Icons.pause_circle_outline
+                : Icons.play_circle_outline,
+            color: isDeactivating ? Colors.red.shade700 : Colors.teal,
+            size: 24,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isDeactivating ? 'Deactivate Doctor' : 'Reactivate Doctor',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isDeactivating
+                  ? 'Deactivating ${doctor.titleName} will remove them from the walk-in booking desk, live queue rosters, and chamber login.\n\nAll past consultations, prescriptions, and financial audit records will remain permanently intact.'
+                  : 'Reactivating ${doctor.titleName} will restore them to active OPD booking, queue rosters, and chamber login.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade800,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Enter 6-digit Owner Master Passkey to authorize:',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              key: const Key('admin_passkey_input'),
+              controller: _pinController,
+              obscureText: true,
+              autofocus: true,
+              maxLength: 6,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                hintText: ClinicConfig.current.features.isTestingModeActive
+                    ? '0000'
+                    : '••••••',
+                helperText: ClinicConfig.current.features.isTestingModeActive
+                    ? '🧪 Testing Mode: Enter 0000'
+                    : null,
+                counterText: '',
+                errorText: _errorText,
+                prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+              ),
+              onSubmitted: (_) => _submit(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          key: const Key('confirm_passkey_action_btn'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isDeactivating
+                ? Colors.red.shade700
+                : Colors.teal,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: _submit,
+          child: Text(isDeactivating ? 'Deactivate' : 'Reactivate'),
+        ),
+      ],
     );
   }
 }

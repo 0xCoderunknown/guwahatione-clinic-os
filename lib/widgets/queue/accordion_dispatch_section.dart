@@ -372,80 +372,85 @@ class AccordionDispatchSection extends StatelessWidget {
     final pinController = TextEditingController();
     String? errorText;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626)),
-                  SizedBox(width: 8),
-                  Text('Emergency Release Chamber'),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ClinicConfig.current.features.isTestingModeActive
-                        ? 'Clear active lock for ${AppFormatters.doctorTitle(appointment.doctorName)}\'s chamber? Use this if doctor left or chamber is stuck.\n\nEnter PIN (0000) to confirm.'
-                        : 'Clear active lock for ${AppFormatters.doctorTitle(appointment.doctorName)}\'s chamber? Use this if doctor left or chamber is stuck.\n\nEnter Staff PIN to confirm.',
-                    style: const TextStyle(fontSize: 13, height: 1.4),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: pinController,
-                    keyboardType: TextInputType.number,
-                    obscureText: true,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: 'Staff PIN',
-                      hintText: ClinicConfig.current.features.isTestingModeActive
-                          ? 'Enter 0000'
-                          : '••••',
-                      errorText: errorText,
-                      border: const OutlineInputBorder(),
+    bool? confirmed;
+    try {
+      confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogCtx) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                title: const Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626)),
+                    SizedBox(width: 8),
+                    Text('Emergency Release Chamber'),
+                  ],
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      ClinicConfig.current.features.isTestingModeActive
+                          ? 'Clear active lock for ${AppFormatters.doctorTitle(appointment.doctorName)}\'s chamber? Use this if doctor left or chamber is stuck.\n\nEnter PIN (0000) to confirm.'
+                          : 'Clear active lock for ${AppFormatters.doctorTitle(appointment.doctorName)}\'s chamber? Use this if doctor left or chamber is stuck.\n\nEnter Staff PIN to confirm.',
+                      style: const TextStyle(fontSize: 13, height: 1.4),
                     ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: pinController,
+                      keyboardType: TextInputType.number,
+                      obscureText: true,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: 'Staff PIN',
+                        hintText: ClinicConfig.current.features.isTestingModeActive
+                            ? 'Enter 0000'
+                            : '••••',
+                        errorText: errorText,
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogCtx, false),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFDC2626),
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () {
+                      final enteredPin = pinController.text.trim();
+                      final auth = Provider.of<AuthProvider>(
+                        context,
+                        listen: false,
+                      );
+                      if (auth.verifyReceptionOrOwnerPin(enteredPin)) {
+                        Navigator.pop(dialogCtx, true);
+                      } else {
+                        setDialogState(() {
+                          errorText = ClinicConfig.current.features.isTestingModeActive
+                              ? 'Invalid PIN. Enter 0000'
+                              : 'Invalid Staff PIN. Please try again.';
+                        });
+                      }
+                    },
+                    child: const Text('Release Lock'),
                   ),
                 ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogCtx, false),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFDC2626),
-                    foregroundColor: Colors.white,
-                  ),
-                  onPressed: () {
-                    final enteredPin = pinController.text.trim();
-                    final auth = Provider.of<AuthProvider>(
-                      context,
-                      listen: false,
-                    );
-                    if (auth.verifyReceptionOrOwnerPin(enteredPin)) {
-                      Navigator.pop(dialogCtx, true);
-                    } else {
-                      setDialogState(() {
-                        errorText = ClinicConfig.current.features.isTestingModeActive
-                            ? 'Invalid PIN. Enter 0000'
-                            : 'Invalid Staff PIN. Please try again.';
-                      });
-                    }
-                  },
-                  child: const Text('Release Lock'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      pinController.dispose();
+    }
 
     if (confirmed == true && context.mounted) {
       final clinic = Provider.of<ClinicProvider>(context, listen: false);

@@ -19,39 +19,43 @@ class EncounterDialogs {
     ValueChanged<String> onAdd,
   ) async {
     final controller = TextEditingController();
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add Allergy'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          inputFormatters: [
-            LengthLimitingTextInputFormatter(AppConstants.maxAllergyLength),
+    try {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Add Allergy'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(AppConstants.maxAllergyLength),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Allergen / Drug Name',
+              hintText: 'e.g., Penicillin, Sulfa, NSAIDs, Peanuts...',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final val = controller.text.trim();
+                if (val.isNotEmpty) {
+                  onAdd(val);
+                }
+                Navigator.pop(ctx);
+              },
+              child: const Text('Add'),
+            ),
           ],
-          decoration: const InputDecoration(
-            labelText: 'Allergen / Drug Name',
-            hintText: 'e.g., Penicillin, Sulfa, NSAIDs, Peanuts...',
-          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final val = controller.text.trim();
-              if (val.isNotEmpty) {
-                onAdd(val);
-              }
-              Navigator.pop(ctx);
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
+      );
+    } finally {
+      controller.dispose();
+    }
   }
 
   /// Dialog to document an outside lab test/investigation.
@@ -64,62 +68,67 @@ class EncounterDialogs {
     final resultCtrl = TextEditingController();
     DateTime pickedDate = DateTime.now();
 
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add Outside Lab Report'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              autofocus: true,
-              inputFormatters: [
-                LengthLimitingTextInputFormatter(AppConstants.maxLabOrderLength),
-              ],
-              decoration: const InputDecoration(
-                labelText: 'Test Name',
-                hintText: 'e.g., HbA1c, Lipid Profile, Ultrasound...',
+    try {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Add Outside Lab Report'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                autofocus: true,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(AppConstants.maxLabOrderLength),
+                ],
+                decoration: const InputDecoration(
+                  labelText: 'Test Name',
+                  hintText: 'e.g., HbA1c, Lipid Profile, Ultrasound...',
+                ),
               ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: resultCtrl,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(AppConstants.maxLabResultLength),
+                ],
+                decoration: const InputDecoration(
+                  labelText: 'Findings / Result Value',
+                  hintText: 'e.g., 6.8%, Normal sinus rhythm...',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: resultCtrl,
-              inputFormatters: [
-                LengthLimitingTextInputFormatter(AppConstants.maxLabResultLength),
-              ],
-              decoration: const InputDecoration(
-                labelText: 'Findings / Result Value',
-                hintText: 'e.g., 6.8%, Normal sinus rhythm...',
-              ),
+            FilledButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                if (name.isNotEmpty) {
+                  onAdd(
+                    DiagnosticInvestigationReview(
+                      id: uuidGenerator(),
+                      testName: name,
+                      resultValue: resultCtrl.text.trim(),
+                      performedDate: pickedDate,
+                    ),
+                  );
+                }
+                Navigator.pop(ctx);
+              },
+              child: const Text('Add'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              if (name.isNotEmpty) {
-                onAdd(
-                  DiagnosticInvestigationReview(
-                    id: uuidGenerator(),
-                    testName: name,
-                    resultValue: resultCtrl.text.trim(),
-                    performedDate: pickedDate,
-                  ),
-                );
-              }
-              Navigator.pop(ctx);
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
+      );
+    } finally {
+      nameCtrl.dispose();
+      resultCtrl.dispose();
+    }
   }
 
   /// Dialog to capture explicit clinical reason for discontinuing a drug.
@@ -129,68 +138,72 @@ class EncounterDialogs {
     ValueChanged<String> onConfirmStop,
   ) async {
     final reasonCtrl = TextEditingController();
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Stop ${item.effectiveName}?'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Select or type the clinical reason for discontinuing this drug:',
-              style: TextStyle(fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 6,
-              children:
-                  [
-                        'Condition Resolved',
-                        'Adverse Effect / Intolerance',
-                        'Ineffective',
-                        'Switched',
-                      ]
-                      .map(
-                        (chip) => ActionChip(
-                          label: Text(
-                            chip,
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                          onPressed: () => reasonCtrl.text = chip,
-                        ),
-                      )
-                      .toList(),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: reasonCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Stop Reason (Optional)',
-                border: OutlineInputBorder(),
+    try {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Stop ${item.effectiveName}?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Select or type the clinical reason for discontinuing this drug:',
+                style: TextStyle(fontSize: 13),
               ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 6,
+                children:
+                    [
+                          'Condition Resolved',
+                          'Adverse Effect / Intolerance',
+                          'Ineffective',
+                          'Switched',
+                        ]
+                        .map(
+                          (chip) => ActionChip(
+                            label: Text(
+                              chip,
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                            onPressed: () => reasonCtrl.text = chip,
+                          ),
+                        )
+                        .toList(),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Stop Reason (Optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+              onPressed: () {
+                final reason = reasonCtrl.text.trim().isEmpty
+                    ? 'Discontinued by Doctor'
+                    : reasonCtrl.text.trim();
+                onConfirmStop(reason);
+                Navigator.pop(ctx);
+              },
+              child: const Text('Confirm Stop'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
-            onPressed: () {
-              final reason = reasonCtrl.text.trim().isEmpty
-                  ? 'Discontinued by Doctor'
-                  : reasonCtrl.text.trim();
-              onConfirmStop(reason);
-              Navigator.pop(ctx);
-            },
-            child: const Text('Confirm Stop'),
-          ),
-        ],
-      ),
-    );
+      );
+    } finally {
+      reasonCtrl.dispose();
+    }
   }
 
   /// Dialog to enter prior chronic medications from outside records.
@@ -202,71 +215,76 @@ class EncounterDialogs {
     final medCtrl = TextEditingController();
     final doseCtrl = TextEditingController();
 
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add Existing Medicines'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Add outside medications that a new patient was already taking prior to this encounter. These will be added as ongoing baseline medications.',
-              style: TextStyle(fontSize: 12),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: medCtrl,
-              autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Medication Name & Strength',
-                hintText: 'e.g., Metformin 500mg, Telmisartan 40mg...',
-                border: OutlineInputBorder(),
+    try {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Add Existing Medicines'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Add outside medications that a new patient was already taking prior to this encounter. These will be added as ongoing baseline medications.',
+                style: TextStyle(fontSize: 12),
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: doseCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Schedule / Frequency',
-                hintText: 'e.g., Once daily morning after food',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 12),
+              TextField(
+                controller: medCtrl,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Medication Name & Strength',
+                  hintText: 'e.g., Metformin 500mg, Telmisartan 40mg...',
+                  border: OutlineInputBorder(),
+                ),
               ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: doseCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Schedule / Frequency',
+                  hintText: 'e.g., Once daily morning after food',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final val = medCtrl.text.trim();
+                if (val.isNotEmpty) {
+                  onAdd(
+                    PrescriptionItem(
+                      id: uuidGenerator(),
+                      action: MedicationAction.continueAction,
+                      medicineName: val,
+                      composition: val,
+                      dosage: '1 Dose',
+                      frequency: doseCtrl.text.trim().isNotEmpty
+                          ? doseCtrl.text.trim()
+                          : 'Once daily',
+                      timing: 'After Food',
+                      durationDays: null,
+                      // baseline chronic
+                      unlistedName: val,
+                    ),
+                  );
+                }
+                Navigator.pop(ctx);
+              },
+              child: const Text('Save as Existing Medicine'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final val = medCtrl.text.trim();
-              if (val.isNotEmpty) {
-                onAdd(
-                  PrescriptionItem(
-                    id: uuidGenerator(),
-                    action: MedicationAction.continueAction,
-                    medicineName: val,
-                    composition: val,
-                    dosage: '1 Dose',
-                    frequency: doseCtrl.text.trim().isNotEmpty
-                        ? doseCtrl.text.trim()
-                        : 'Once daily',
-                    timing: 'After Food',
-                    durationDays: null,
-                    // baseline chronic
-                    unlistedName: val,
-                  ),
-                );
-              }
-              Navigator.pop(ctx);
-            },
-            child: const Text('Save as Existing Medicine'),
-          ),
-        ],
-      ),
-    );
+      );
+    } finally {
+      medCtrl.dispose();
+      doseCtrl.dispose();
+    }
   }
 
   /// Date picker for next follow up visit.
@@ -449,6 +467,7 @@ class EncounterDialogs {
   }
 
   /// Dialog for consulting doctor to correct demographic typos (name, age, gender)
+  /// Dialog for consulting doctor to correct demographic typos (name, age, gender)
   /// directly during consultation without leaving the encounter.
   static Future<void> showEditPatientDemographicsDialog({
     required BuildContext context,
@@ -460,111 +479,159 @@ class EncounterDialogs {
       required int age,
       required String gender,
     }) onSave,
-  }) async {
-    final nameCtrl = TextEditingController(text: initialName);
-    final ageCtrl = TextEditingController(
-      text: initialAge > 0 ? initialAge.toString() : '',
-    );
-    String selectedGender =
-        ['Male', 'Female', 'Other'].contains(initialGender)
-            ? initialGender
-            : 'Male';
-
-    await showDialog(
+  }) {
+    return showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(
-            children: [
-              Icon(Icons.edit_note_rounded, color: Color(0xFF0F766E)),
-              SizedBox(width: 8),
-              Text(
-                'Edit Patient Details',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ],
+      builder: (ctx) => _EditPatientDemographicsDialog(
+        initialName: initialName,
+        initialAge: initialAge,
+        initialGender: initialGender,
+        onSave: onSave,
+      ),
+    );
+  }
+}
+
+class _EditPatientDemographicsDialog extends StatefulWidget {
+  final String initialName;
+  final int initialAge;
+  final String initialGender;
+  final Future<void> Function({
+    required String name,
+    required int age,
+    required String gender,
+  }) onSave;
+
+  const _EditPatientDemographicsDialog({
+    required this.initialName,
+    required this.initialAge,
+    required this.initialGender,
+    required this.onSave,
+  });
+
+  @override
+  State<_EditPatientDemographicsDialog> createState() =>
+      _EditPatientDemographicsDialogState();
+}
+
+class _EditPatientDemographicsDialogState
+    extends State<_EditPatientDemographicsDialog> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _ageCtrl;
+  late String _selectedGender;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: widget.initialName);
+    _ageCtrl = TextEditingController(
+      text: widget.initialAge > 0 ? widget.initialAge.toString() : '',
+    );
+    _selectedGender =
+        ['Male', 'Female', 'Other'].contains(widget.initialGender)
+            ? widget.initialGender
+            : 'Male';
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _ageCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Row(
+        children: [
+          Icon(Icons.edit_note_rounded, color: Color(0xFF0F766E)),
+          SizedBox(width: 8),
+          Text(
+            'Edit Patient Details',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        ],
+      ),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _nameCtrl,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Patient Full Name',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
                 children: [
-                  TextField(
-                    controller: nameCtrl,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(
-                      labelText: 'Patient Full Name',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person_outline),
+                  Expanded(
+                    child: TextField(
+                      controller: _ageCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Age (Years)',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.cake_outlined),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: ageCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Age (Years)',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.cake_outlined),
-                          ),
-                        ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _selectedGender,
+                      decoration: const InputDecoration(
+                        labelText: 'Gender',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.wc_outlined),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          initialValue: selectedGender,
-                          decoration: const InputDecoration(
-                            labelText: 'Gender',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.wc_outlined),
-                          ),
-                          items: const [
-                            DropdownMenuItem(value: 'Male', child: Text('Male')),
-                            DropdownMenuItem(value: 'Female', child: Text('Female')),
-                            DropdownMenuItem(value: 'Other', child: Text('Other')),
-                          ],
-                          onChanged: (val) {
-                            if (val != null) {
-                              setDialogState(() => selectedGender = val);
-                            }
-                          },
-                        ),
-                      ),
-                    ],
+                      items: const [
+                        DropdownMenuItem(value: 'Male', child: Text('Male')),
+                        DropdownMenuItem(value: 'Female', child: Text('Female')),
+                        DropdownMenuItem(value: 'Other', child: Text('Other')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() => _selectedGender = val);
+                        }
+                      },
+                    ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
-            ),
-            FilledButton.icon(
-              icon: const Icon(Icons.save_outlined, size: 18),
-              label: const Text('Save Changes'),
-              onPressed: () async {
-                final newName = nameCtrl.text.trim();
-                if (newName.isEmpty) return;
-                final newAge = int.tryParse(ageCtrl.text.trim()) ?? initialAge;
-                await onSave(
-                  name: newName,
-                  age: newAge,
-                  gender: selectedGender,
-                );
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-            ),
-          ],
         ),
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton.icon(
+          icon: const Icon(Icons.save_outlined, size: 18),
+          label: const Text('Save Changes'),
+          onPressed: () async {
+            final newName = _nameCtrl.text.trim();
+            if (newName.isEmpty) return;
+            final newAge = int.tryParse(_ageCtrl.text.trim()) ?? widget.initialAge;
+            await widget.onSave(
+              name: newName,
+              age: newAge,
+              gender: _selectedGender,
+            );
+            if (context.mounted) Navigator.pop(context);
+          },
+        ),
+      ],
     );
   }
 }
