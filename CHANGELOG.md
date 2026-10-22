@@ -10,7 +10,19 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 
 ## [1.5.0] — 23-10-2026
 
-### Pre-Demo Production Baseline & Version Milestone
+### Pre-Demo Production Baseline, Codebase Polish & Architecture Hardening
+- **Memory Leak Elimination & Controller Lifecycle Management (P1):**
+  - Converted helper-rendered modal dialogs in `DoctorListScreen` (`_showAddDoctorDialog`), `AccordionDispatchSection` (`_showEditAmountDialog`), and `EncounterDialogs` (`_showNewMedDialog`, `_showEditMedDialog`, `_showNewLabDialog`, `_showNewAdviceDialog`) into dedicated private `StatefulWidget` classes (`_AddDoctorDialog`, `_EditAmountDialog`, `_NewMedDialog`, `_EditMedDialog`, `_NewLabDialog`, `_NewAdviceDialog`).
+  - Implemented explicit `dispose()` callbacks for all `TextEditingController` instances, eliminating memory leak risks across always-on counter PC displays.
+- **Fast-Access Demo Credentials Alignment (P2):**
+  - Synchronized owner passkey dialog hint text (`"Owner PIN (6-digit default: 000000)"`) with the active demo credential configuration in `AuthProvider` for smooth hardware-independent evaluation.
+- **Booking Payment Fallback Consolidation (P3):**
+  - Consolidated 5x duplicate fee fallback calculations into a single reusable helper `_fallbackToStandardPayment()` in `AddAppointmentDialog`, eliminating logic drift between doctor selection, date switching, and review resets.
+- **Chamber Control Banner Decomposition (P4):**
+  - Decomposed monolithic `ChamberControlBanner` into discrete, maintainable card widgets (`_ConsultationEndedCard`, `_ReadyForNextCard`, `_CallingCard`, `_InConsultationCard`) adhering to single-responsibility rendering across all 5 chamber handshake lifecycle states.
+- **Error Observability & Documentation Hygiene (P5):**
+  - Enriched silent catch blocks in `LiveQueueDelegate`, `DoctorStateDelegate`, `PatientService`, `SecurityService`, and `ChamberService` with structured `debugPrint` observability.
+  - Cleaned duplicated documentation comments in `ClinicConfig`.
 - **Milestone 1.5.0 Baseline:**
   - Transitioned active platform from 1.40 development patch line to stable minor milestone `1.5.0`.
   - Consolidated all 1.40.x architectural milestones, audit closures, and pre-demo enhancements into a unified release line.
