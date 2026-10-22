@@ -214,7 +214,7 @@ abstract class RevenueEngine {
       int revenue = 0;
 
       for (final a in docAppts) {
-        if (!a.paymentType.isPaid && a.paymentType != PaymentType.postPay) {
+        if (a.paymentType.isFree) {
           free++;
         }
         switch (a.status) {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../config/clinic_config.dart';
 import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
 import '../../models/doctor.dart';
 import '../../models/patient_review_eligibility.dart';
-import '../../utils/app_constants.dart';
 
 /// Form section managing doctor selection, provisional token preview, payment policy, and consultation fees.
 /// Supports 100% keyboard navigation and live queue arrival estimation.
@@ -152,7 +152,7 @@ class BookingPaymentSection extends StatelessWidget {
                 bool enabled = true;
                 final fee =
                     selectedDoctor?.consultationFee ??
-                    AppConstants.defaultConsultationFee;
+                    ClinicConfig.current.defaultConsultationFee;
                 switch (type) {
                   case PaymentType.paidCash:
                     label = 'Paid (Cash) — ₹$fee';

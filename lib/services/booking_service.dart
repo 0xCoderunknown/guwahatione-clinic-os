@@ -131,6 +131,15 @@ class BookingService {
     });
   }
 
+  /// Returns an appointment back to waitingInLobby and clears isPaused (e.g. when an encounter is discarded).
+  Future<void> returnAppointmentToLobby(String appointmentId) async {
+    final apptDoc = _appointmentsRef.doc(appointmentId);
+    await apptDoc.update({
+      'visitStatus': VisitStatus.waitingInLobby.name,
+      'isPaused': false,
+    });
+  }
+
   /// Updates status and optionally collected amount, payment type, or visitStatus.
   Future<void> updateAppointmentStatus(
     String appointmentId,

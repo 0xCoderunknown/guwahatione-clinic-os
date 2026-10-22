@@ -415,6 +415,23 @@ class ClinicProvider with ChangeNotifier {
     }
   }
 
+  Future<void> discardConsultation({
+    required String appointmentId,
+    required String doctorId,
+    required DateTime date,
+  }) async {
+    try {
+      await _queueDelegate.returnAppointmentToLobby(appointmentId);
+      await notifyReadyForNext(
+        doctorId: doctorId,
+        date: date,
+      );
+    } catch (e) {
+      debugPrint('Error discarding consultation: $e');
+      rethrow;
+    }
+  }
+
   Future<void> clearChamberSession(String doctorId, DateTime date) async {
     try {
       await _chamberService.clearChamberSession(doctorId, date);

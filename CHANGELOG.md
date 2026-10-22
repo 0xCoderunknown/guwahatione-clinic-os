@@ -8,6 +8,19 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.3] — 22-10-2026
+
+### Consultation Discard Lobby Return, Strict Free Visit Metric & Single Fee Configuration Source (AUDIT-13, AUDIT-25, AUDIT-10, AUDIT-11)
+- **Discard Consultation Reset to Lobby (AUDIT-13):**
+  - Updated `_discardAndExitConsultation` in `ConsultationEncounterScreen` to reset the appointment's `visitStatus` back to `waitingInLobby` and clear `isPaused: false` via `ClinicProvider.discardConsultation` and `BookingService.returnAppointmentToLobby`.
+  - Eliminates ghost "In Chamber" status on the reception desk when a doctor discards an accidental or abandoned encounter draft, freeing the chamber and returning the patient to the queue.
+- **Strict Free Visit Metric Calculation (AUDIT-25):**
+  - Corrected `RevenueEngine.generateDoctorSummaries` to strictly evaluate `a.paymentType.isFree` (targeting only `freeReview` and `freeFamily`), preventing unpaid advance bookings from incorrectly inflating the "Free/Fam" KPI count on the Statistics screen.
+- **Single Source of Truth for Consultation Fees (AUDIT-10):**
+  - Removed duplicate `AppConstants.defaultConsultationFee = 500`. Updated `AppointmentEngine.resolveConsultationFee` and `BookingPaymentSection` to reference `ClinicConfig.current.defaultConsultationFee` directly as the canonical fallback.
+- **Holiday Date Configuration Developer Guidance (AUDIT-11):**
+  - Clarified comments in `AppConstants.blockedDates` distinguishing the internal ISO comparison format (`YYYY-MM-DD`) from the mandatory Indian date format (`DD-MM-YYYY`) used everywhere else in the system.
+
 ## [1.40.2] — 22-10-2026
 
 ### Family-Aware Auto-Trigger Free Review, Review Consumption Enforcement & Firestore Batch Chunking

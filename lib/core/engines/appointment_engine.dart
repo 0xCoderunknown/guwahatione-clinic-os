@@ -1,3 +1,4 @@
+import '../../config/clinic_config.dart';
 import '../../models/models.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/formatters.dart';
@@ -252,7 +253,8 @@ abstract class AppointmentEngine {
       case PaymentType.postPay:
       case PaymentType.paidCash:
       case PaymentType.paidUpi:
-        return doctor?.consultationFee ?? AppConstants.defaultConsultationFee;
+        return doctor?.consultationFee ??
+            ClinicConfig.current.defaultConsultationFee;
     }
   }
 

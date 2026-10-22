@@ -407,6 +407,10 @@ class LiveQueueDelegate {
     await _bookingService.pauseAppointment(appointmentId);
   }
 
+  Future<void> returnAppointmentToLobby(String appointmentId) async {
+    await _bookingService.returnAppointmentToLobby(appointmentId);
+  }
+
   Stream<List<Appointment>> streamUpcomingAppointments({int daysAhead = 7}) {
     return _bookingService.getUpcomingAppointments(daysAhead: daysAhead);
   }

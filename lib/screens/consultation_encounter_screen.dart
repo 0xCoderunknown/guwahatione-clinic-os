@@ -253,13 +253,36 @@ class _ConsultationEncounterScreenState
   }
 
   Future<void> _discardAndExitConsultation() async {
-    final clinic = Provider.of<ClinicProvider>(context, listen: false);
-    await EncounterFormState.clearDraft(widget.appointment.id);
-    await clinic.notifyReadyForNext(
-      doctorId: widget.doctor.id,
-      date: widget.appointment.scheduledDate,
-    );
-    if (mounted) Navigator.pop(context, false);
+    setState(() => _isSaving = true);
+    try {
+      final clinic = Provider.of<ClinicProvider>(context, listen: false);
+      await EncounterFormState.clearDraft(widget.appointment.id);
+      await clinic.discardConsultation(
+        appointmentId: widget.appointment.id,
+        doctorId: widget.doctor.id,
+        date: widget.appointment.scheduledDate,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Draft discarded. Token #${widget.appointment.queueNumber} (${widget.appointment.patientName}) returned to lobby.",
+          ),
+          backgroundColor: Colors.blueGrey.shade800,
+        ),
+      );
+      Navigator.pop(context, false);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error discarding consultation: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   Future<void> _showExitOrPauseDialog() async {

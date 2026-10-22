@@ -1,14 +1,11 @@
 class AppConstants {
-  /// Default consultation fee (₹). Used for PaymentType.paid.
-  /// Update this constant when the fee changes — it is referenced
-  /// in all booking and status-update logic.
-  static const int defaultConsultationFee = 500;
-
   /// Globally blocked dates (clinic holidays).
-  /// Format: 'YYYY-MM-DD'. Add dates here to prevent bookings on those days.
+  ///
+  /// NOTE: Internal comparison format is ISO 'YYYY-MM-DD' for programmatic checks only.
+  /// This is distinct from the mandatory 'DD-MM-YYYY' display format used everywhere else in the product.
   static const List<String> blockedDates = [
-    // Add clinic holiday dates here, e.g.:
-    // '2026-10-02',  // Gandhi Jayanti
+    // Add clinic holiday dates in ISO format here, e.g.:
+    // '2026-10-02',  // Gandhi Jayanti (02-10-2026)
   ];
 
   static bool isDateBlocked(DateTime date) {

@@ -347,5 +347,71 @@ void main() {
         expect(doc2.realizedRevenue, 700);
       },
     );
+
+    test(
+      'AUDIT-25: DoctorAnalyticsSummary strictly counts freeReview and freeFamily, excluding unpaid advance bookings',
+      () {
+        final appts = [
+          Appointment(
+            id: '1',
+            patientPhone: '9876543210',
+            patientName: 'Paid Patient',
+            status: AppointmentStatus.completed,
+            paymentType: PaymentType.paidCash,
+            amountCollected: 500,
+            queueNumber: 1,
+            scheduledDate: DateTime(2026, 10, 11),
+            doctorId: 'doc-1',
+            doctorName: 'Dr. Baruah',
+          ),
+          Appointment(
+            id: '2',
+            patientPhone: '9876543211',
+            patientName: 'Unpaid Advance Booking',
+            status: AppointmentStatus.pending,
+            paymentType: PaymentType.unpaid,
+            amountCollected: 0,
+            queueNumber: 2,
+            scheduledDate: DateTime(2026, 10, 11),
+            doctorId: 'doc-1',
+            doctorName: 'Dr. Baruah',
+          ),
+          Appointment(
+            id: '3',
+            patientPhone: '9876543212',
+            patientName: 'Free Review Patient',
+            status: AppointmentStatus.completed,
+            paymentType: PaymentType.freeReview,
+            amountCollected: 0,
+            queueNumber: 3,
+            scheduledDate: DateTime(2026, 10, 11),
+            doctorId: 'doc-1',
+            doctorName: 'Dr. Baruah',
+          ),
+          Appointment(
+            id: '4',
+            patientPhone: '9876543213',
+            patientName: 'Free Family Waiver',
+            status: AppointmentStatus.completed,
+            paymentType: PaymentType.freeFamily,
+            amountCollected: 0,
+            queueNumber: 4,
+            scheduledDate: DateTime(2026, 10, 11),
+            doctorId: 'doc-1',
+            doctorName: 'Dr. Baruah',
+          ),
+        ];
+
+        final analytics = RevenueEngine.calculateDoctorAnalytics(appts);
+        expect(analytics.length, 1);
+        final doc = analytics.first;
+        expect(doc.totalPatients, 4);
+        expect(doc.completed, 3);
+        expect(doc.pending, 1);
+        // Strictly 2 free visits (freeReview + freeFamily); unpaid is NOT counted as free
+        expect(doc.free, 2);
+        expect(doc.realizedRevenue, 500);
+      },
+    );
   });
 }

@@ -149,28 +149,32 @@ When booking `PaymentType.freeReview`, `bookAppointment` previously only validat
 
 ---
 
-### AUDIT-10 🟡 Dual Default Fee Constants Can Silently Drift
+### AUDIT-10 🟢 [RESOLVED] Dual Default Fee Constants Can Silently Drift
 
 **Files:** `lib/utils/app_constants.dart`, `lib/core/engines/appointment_engine.dart` line 255, `lib/config/clinic_config.dart` line 43
 
-`AppConstants.defaultConsultationFee = 500` is used as the engine fallback when `doctor` is null, completely bypassing `ClinicConfig.current.defaultConsultationFee`. If a clinic operator changes the `ClinicConfig` value, the engine fallback silently ignores it.
+`AppConstants.defaultConsultationFee = 500` previously acted as a separate engine fallback when `doctor` was null, bypassing `ClinicConfig.current.defaultConsultationFee`.
 
-**Fix:** Remove `AppConstants.defaultConsultationFee`. Have `AppointmentEngine.resolveConsultationFee` read `ClinicConfig.current.defaultConsultationFee` as its fallback.
+**Status:** Resolved. Removed `AppConstants.defaultConsultationFee` and updated `AppointmentEngine.resolveConsultationFee` and `BookingPaymentSection` to reference `ClinicConfig.current.defaultConsultationFee` directly.
 
 ---
 
-### AUDIT-11 🟡 `blockedDates` Comment Shows YYYY-MM-DD but Humans Write DD-MM-YYYY
+### AUDIT-11 🟢 [RESOLVED] `blockedDates` Comment Shows YYYY-MM-DD but Humans Write DD-MM-YYYY
 
 **File:** `lib/utils/app_constants.dart` lines 8–12
 
 ```dart
-/// Format: 'YYYY-MM-DD'. Add dates here to prevent bookings on those days.
-// '2026-10-02',  // Gandhi Jayanti
+/// Globally blocked dates (clinic holidays).
+///
+/// NOTE: Internal comparison format is ISO 'YYYY-MM-DD' for programmatic checks only.
+/// This is distinct from the mandatory 'DD-MM-YYYY' display format used everywhere else in the product.
+static const List<String> blockedDates = [
+  // Add clinic holiday dates in ISO format here, e.g.:
+  // '2026-10-02',  // Gandhi Jayanti (02-10-2026)
+];
 ```
 
-Any human configuring clinic holidays following the product-wide `DD-MM-YYYY` convention will enter `'02-10-2026'` instead of `'2026-10-02'`, causing the blocking to silently fail.
-
-**Fix:** Add a clear note: *"Internal format is ISO `YYYY-MM-DD` for programmatic comparison only. This is distinct from the `DD-MM-YYYY` display format used everywhere else in the product."*
+**Status:** Resolved in `lib/utils/app_constants.dart` with explicit developer guidance distinguishing internal ISO format from the mandatory product-wide `DD-MM-YYYY` standard.
 
 ---
 
@@ -188,13 +192,13 @@ This works today because `doctor.pin` is plaintext. Once doctor PINs are stored 
 
 ---
 
-### AUDIT-13 🟡 Discard Consultation Leaves Appointment Stuck as `inConsultation`
+### AUDIT-13 🟢 [RESOLVED] Discard Consultation Leaves Appointment Stuck as `inConsultation`
 
 **File:** `lib/screens/consultation_encounter_screen.dart` lines 255–263
 
-`_discardAndExitConsultation` clears the local draft and signals `ready_for_next` but does **not** reset the appointment's `visitStatus` back to `waitingInLobby`. The appointment remains `inConsultation` in Firestore, making the patient appear "In Chamber" on the reception dashboard indefinitely. The `pauseConsultation` path correctly calls `pauseAppointment()`; the discard path needs the same.
+`_discardAndExitConsultation` previously cleared the local draft and signaled `ready_for_next` but failed to reset the appointment's `visitStatus` back to `waitingInLobby`. The appointment remained `inConsultation` in Firestore, making the patient appear "In Chamber" on the reception dashboard indefinitely.
 
-**Fix:** Call `_bookingService.pauseAppointment(widget.appointment.id)` (or an equivalent `resumeToLobby` method) before popping navigation in `_discardAndExitConsultation`.
+**Status:** Resolved in `lib/screens/consultation_encounter_screen.dart`, `ClinicProvider`, `LiveQueueDelegate`, and `BookingService`. Added `returnAppointmentToLobby` and `discardConsultation`, properly resetting `visitStatus: waitingInLobby` and `isPaused: false`.
 
 ---
 
@@ -316,19 +320,19 @@ The print button has no loading lock. A double-tap on a slow clinic PC triggers 
 
 ---
 
-### AUDIT-25 🔵 `DoctorAnalyticsSummary.free` Count Includes `unpaid` Appointments
+### AUDIT-25 🟢 [RESOLVED] `DoctorAnalyticsSummary.free` Count Includes `unpaid` Appointments
 
 **File:** `lib/core/engines/revenue_engine.dart` lines 217–219
 
 ```dart
-if (!a.paymentType.isPaid && a.paymentType != PaymentType.postPay) {
+if (a.paymentType.isFree) {
   free++;
 }
 ```
 
-This incorrectly counts `unpaid` advance bookings (not yet paid) as free consultations, inflating the "Free/Fam" metric on the Statistics screen.
+This previously counted `unpaid` advance bookings (not yet paid) as free consultations, inflating the "Free/Fam" metric on the Statistics screen.
 
-**Fix:** Change to `if (a.paymentType.isFree)` which correctly covers only `freeReview` and `freeFamily`.
+**Status:** Resolved in `lib/core/engines/revenue_engine.dart`. Changed condition to `if (a.paymentType.isFree)` which strictly targets `freeReview` and `freeFamily`.
 
 ---
 
@@ -373,10 +377,10 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 | AUDIT-07 | 🟠 | Clinical Integrity | TOCTOU race in single-doctor mode `notifyReadyForNext` |
 | AUDIT-08 | 🟠 | Search / UX | Patient name search silently misses >50 patients |
 | AUDIT-09 | 🟢 (Resolved) | Business Logic | Free review enforces window, consumption, and doctor policy |
-| AUDIT-10 | 🟡 | Business Logic | Dual default fee constants can silently drift |
-| AUDIT-11 | 🟡 | Dev UX | `blockedDates` comment shows wrong format for humans |
+| AUDIT-10 | 🟢 (Resolved) | Business Logic | Dual default fee constants can silently drift |
+| AUDIT-11 | 🟢 (Resolved) | Dev UX | `blockedDates` comment shows wrong format for humans |
 | AUDIT-12 | 🟡 | Security | Double-hashing will break on QOL-12 implementation |
-| AUDIT-13 | 🟡 | Clinical Integrity | Discard path leaves appointment stuck as `inConsultation` |
+| AUDIT-13 | 🟢 (Resolved) | Clinical Integrity | Discard path leaves appointment stuck as `inConsultation` |
 | AUDIT-14 | 🟡 | UX | Statistics date pickers have inconsistent bounds |
 | AUDIT-15 | 🟡 | Performance | Offline cache writes on every Firestore event |
 | AUDIT-16 | 🟡 | Architecture | `DoctorChamberScreen` bypasses DI — own service instances |
@@ -388,7 +392,7 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 | AUDIT-22 | 🔵 | Business Logic | No `availableDays` check in advance booking |
 | AUDIT-23 | 🔵 | Security | Plaintext default PINs exposed as `AuthProvider` getters |
 | AUDIT-24 | 🔵 | UX | No debounce on print button (double-print risk) |
-| AUDIT-25 | 🔵 | Analytics | `free` metric includes `unpaid` appointments |
+| AUDIT-25 | 🟢 (Resolved) | Analytics | `free` metric includes `unpaid` appointments |
 | AUDIT-26 | 🔵 | Business / Ops | Subscription expiry has no runtime enforcement |
 | AUDIT-27 | 🔵 | Ops | Default test medicines unsuppressible in production |
 | AUDIT-28 | 🔵 | Performance | Unbounded patient appointment history query |
