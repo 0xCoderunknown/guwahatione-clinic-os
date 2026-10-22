@@ -607,6 +607,14 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
     _updateEligibilityAndPayment();
   }
 
+  void _fallbackToStandardPayment() {
+    _selectedPayment = _selectedVisitStatus == VisitStatus.booked
+        ? PaymentType.unpaid
+        : PaymentType.paidCash;
+    _amountController.text =
+        "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
+  }
+
   void _updateEligibilityAndPayment() {
     // INVIOLABLE CLINIC INVARIANT: Discretionary FREE (Family / VVIP) waivers
     // must NEVER be overwritten or coerced by patient history or review window calculations!
@@ -628,11 +636,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         _historyColor = Colors.green.shade100;
         if (_selectedPayment == PaymentType.freeReview ||
             _selectedPayment == PaymentType.paidCarryOver) {
-          _selectedPayment = _selectedVisitStatus == VisitStatus.booked
-              ? PaymentType.unpaid
-              : PaymentType.paidCash;
-          _amountController.text =
-              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
+          _fallbackToStandardPayment();
         }
       });
       return;
@@ -659,9 +663,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       if (carryOver == null && _isCarryOverApplied) {
         _isCarryOverApplied = false;
         if (_selectedPayment == PaymentType.paidCarryOver) {
-          _selectedPayment = PaymentType.paidCash;
-          _amountController.text =
-              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
+          _fallbackToStandardPayment();
         }
       }
 
@@ -672,11 +674,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         _historyInfo =
             "Existing Patient • No earlier visit with ${_selectedDoctor?.name ?? 'selected doctor'}\n(Free Review requires prior visit with same doctor)";
         if (_selectedPayment == PaymentType.freeReview) {
-          _selectedPayment = _selectedVisitStatus == VisitStatus.booked
-              ? PaymentType.unpaid
-              : PaymentType.paidCash;
-          _amountController.text =
-              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
+          _fallbackToStandardPayment();
         }
       } else if (eligibility.isReviewAlreadyConsumed) {
         final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
@@ -684,11 +682,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         _historyInfo =
             "Existing Patient • Paid visit on $dateStr\n⚠️ Free review already used for this consultation (1 review allowed per paid visit)";
         if (_selectedPayment == PaymentType.freeReview) {
-          _selectedPayment = _selectedVisitStatus == VisitStatus.booked
-              ? PaymentType.unpaid
-              : PaymentType.paidCash;
-          _amountController.text =
-              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
+          _fallbackToStandardPayment();
         }
       } else if (eligibility.allowedReviewDays == 0) {
         final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
@@ -696,11 +690,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         _historyInfo =
             "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n⚠️ ${_selectedDoctor?.name} does not offer free reviews (0-day free-follow-up policy)";
         if (_selectedPayment == PaymentType.freeReview) {
-          _selectedPayment = _selectedVisitStatus == VisitStatus.booked
-              ? PaymentType.unpaid
-              : PaymentType.paidCash;
-          _amountController.text =
-              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
+          _fallbackToStandardPayment();
         }
       } else if (eligibility.isWithinReviewPeriod) {
         final dateStr = AppFormatters.date(eligibility.lastVisitDate!);
@@ -717,11 +707,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
         _historyInfo =
             "Existing Patient • Last visit with ${_selectedDoctor?.name}: $dateStr\n⚠️ ${eligibility.allowedReviewDays} days have passed (${eligibility.daysSinceLastVisit} days ago)";
         if (_selectedPayment == PaymentType.freeReview) {
-          _selectedPayment = _selectedVisitStatus == VisitStatus.booked
-              ? PaymentType.unpaid
-              : PaymentType.paidCash;
-          _amountController.text =
-              "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment)}";
+          _fallbackToStandardPayment();
         }
       }
     });
