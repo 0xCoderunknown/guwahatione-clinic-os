@@ -959,7 +959,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
             gender: _selectedGender!,
             visitStatus: _selectedVisitStatus,
             paymentType: _selectedPayment,
-            amountCollected: int.parse(_amountController.text.trim()),
+            amountCollected: int.tryParse(_amountController.text.trim()) ?? 0,
             scheduledDate: _selectedDate,
             selectedDoctor: _selectedDoctor!,
             isNewPatient: _isNewPatient,

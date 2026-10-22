@@ -8,6 +8,16 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.16] — 22-10-2026
+
+### Pre-Demo Hardening: Chamber Service DI (AUDIT-16), Safe Amount Parsing & Chamber Date Bounds
+- **Chamber Service Dependency Injection (AUDIT-16):**
+  - Updated `DoctorChamberScreen` to accept optional `bookingService` and `chamberService` via constructor injection with lazy fallback initialization, eliminating uncoordinated hardcoded service instantiations and enabling 100% isolated unit and widget testing.
+- **Walk-In Registration Amount Parse Guard:**
+  - Standardized `amountCollected` resolution in `AddAppointmentDialog` using `int.tryParse(_amountController.text.trim()) ?? 0` instead of `int.parse`, preventing unhandled runtime format exceptions if counter staff clear or blur the fee text field during live registration.
+- **Chamber Calendar Epoch Lower Bound:**
+  - Bound `ClinicDateNavBar` in `DoctorChamberScreen` to `AppConstants.clinicEpochDate` (`01-01-2025`), ensuring consistent date navigation bounds across all screens.
+
 ## [1.40.15] — 22-10-2026
 
 ### Pre-Sign Rx Preview Gate (QOL-19) & Technical Audit Sweep (AUDIT-14, AUDIT-17, AUDIT-27, AUDIT-28)

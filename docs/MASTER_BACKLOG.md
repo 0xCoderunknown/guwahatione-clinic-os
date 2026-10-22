@@ -22,15 +22,6 @@
   - **Role Guard:** Strictly locked to Clinic Owner PIN session (Receptionist & Doctor chamber cannot modify catalogue).
   - **Longitudinal Safety Invariant:** Editing a catalogue drug modifies future auto-complete queries only; historical `PrescriptionItem` snapshots on past consultation encounters are append-only and strictly immutable.
 
-#### 2. AUDIT-16 — `DoctorChamberScreen` Service Dependency Injection
-- **Domain:** Architecture / State Management
-- **Status:** Approved for Implementation (TODO)
-- **Target Files:** `lib/screens/doctor_chamber_screen.dart` lines 27–28
-- **Specification:**
-  - Remove direct instantiations: `final BookingService _bookingService = BookingService();` and `final ChamberService _chamberService = ChamberService();`.
-  - Inject services via constructor arguments or consume them through `ClinicProvider` delegates (`LiveQueueDelegate` and `ChamberService`).
-  - Eliminates parallel uncoordinated Firestore streams and ensures 100% testability with mock service injection.
-
 ---
 
 ### ⏳ Milestone 1.42+ — Operational & Commercial Enhancements (Backlog)
@@ -95,7 +86,7 @@
 | **AUDIT-13** | 🟢 Resolved | Clinical Flow | Discard consultation properly resets appointment status to `waitingInLobby` | v1.40.10 |
 | **AUDIT-14** | 🟢 Resolved | UX / Navigation | Bounded calendar navigation to `AppConstants.clinicEpochDate` (01-01-2025) | v1.40.15 |
 | **AUDIT-15** | 🟢 Resolved | Performance | Debounced offline queue cache writes with 3s cooldown timer | v1.40.14 |
-| **AUDIT-16** | 🟡 Open | Architecture | `DoctorChamberScreen` service DI cleanup (tracked above in Milestone 1.41) | Milestone 1.41 |
+| **AUDIT-16** | 🟢 Resolved | Architecture | Constructor DI for `BookingService` and `ChamberService` in chamber screen | v1.40.16 |
 | **AUDIT-17** | 🟢 Resolved | Schema | Standardized `lastVisitDate` write to native Firestore `Timestamp` | v1.40.15 |
 | **AUDIT-18** | 🟡 Deferred | Architecture | Dynamic runtime tenant config migration deferred to SaaS phase | SaaS Phase |
 | **AUDIT-19** | 🔵 Open | Maintenance | Chamber counter document retention strategy (tracked above in Milestone 1.42) | Milestone 1.42 |

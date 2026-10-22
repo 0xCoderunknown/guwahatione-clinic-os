@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/models.dart';
 import '../services/services.dart';
+import '../utils/app_constants.dart';
 import '../widgets/widgets.dart';
 import 'screens.dart';
 
@@ -11,11 +12,15 @@ import 'screens.dart';
 class DoctorChamberScreen extends StatefulWidget {
   final Doctor doctor;
   final bool isPreviewMode;
+  final BookingService? bookingService;
+  final ChamberService? chamberService;
 
   const DoctorChamberScreen({
     super.key,
     required this.doctor,
     this.isPreviewMode = false,
+    this.bookingService,
+    this.chamberService,
   });
 
   @override
@@ -24,8 +29,10 @@ class DoctorChamberScreen extends StatefulWidget {
 
 class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   DateTime _selectedDate = DateTime.now();
-  final BookingService _bookingService = BookingService();
-  final ChamberService _chamberService = ChamberService();
+  late final BookingService _bookingService =
+      widget.bookingService ?? BookingService();
+  late final ChamberService _chamberService =
+      widget.chamberService ?? ChamberService();
   StreamSubscription? _chamberSessionSub;
   String? _activeCallingApptId;
   String? _lastHandledCallingAppointmentId;
@@ -471,6 +478,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
                     children: [
                       ClinicDateNavBar(
                         selectedDate: _selectedDate,
+                        firstDate: AppConstants.clinicEpochDate,
                         onDateChanged: (newDate) {
                           setState(() => _selectedDate = newDate);
                           _listenToChamberSession();
