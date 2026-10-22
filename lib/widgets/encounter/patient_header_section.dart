@@ -13,6 +13,7 @@ class PatientHeaderSection extends StatelessWidget {
   final VoidCallback onAddAllergy;
   final ValueChanged<String> onRemoveAllergy;
   final VoidCallback onPriorMedsPressed;
+  final VoidCallback? onEditDemographics;
 
   const PatientHeaderSection({
     super.key,
@@ -24,6 +25,7 @@ class PatientHeaderSection extends StatelessWidget {
     required this.onAddAllergy,
     required this.onRemoveAllergy,
     required this.onPriorMedsPressed,
+    this.onEditDemographics,
   });
 
   /// Factory binding directly to Appointment and EncounterFormState.
@@ -33,8 +35,11 @@ class PatientHeaderSection extends StatelessWidget {
     required EncounterFormState form,
     required this.onAddAllergy,
     required this.onPriorMedsPressed,
+    this.onEditDemographics,
     required VoidCallback onUpdate,
-  }) : patientName = appointment.patientName,
+  }) : patientName = form.patientName.isNotEmpty
+           ? form.patientName
+           : appointment.patientName,
        patientAge = form.patientAge,
        patientGender = form.patientGender,
        patientPhone = appointment.patientPhone,
@@ -86,13 +91,29 @@ class PatientHeaderSection extends StatelessWidget {
                     runSpacing: 4,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Text(
-                        patientName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            patientName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          if (onEditDemographics != null) ...[
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, size: 16),
+                              tooltip: 'Edit Patient Details',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              color: const Color(0xFF0F766E),
+                              onPressed: onEditDemographics,
+                            ),
+                          ],
+                        ],
                       ),
                       Text(
                         "Age: ${patientAge > 0 ? patientAge : '—'} yrs • Sex: $patientGender",

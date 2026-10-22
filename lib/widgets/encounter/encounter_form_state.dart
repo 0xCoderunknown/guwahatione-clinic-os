@@ -82,9 +82,21 @@ class EncounterFormState {
   DateTime? nextFollowUpDate;
 
   // Patient Demographic & Allergy State
+  String patientName = '';
   List<String> allergies = [];
   String patientGender = 'Unspecified';
   int patientAge = 0;
+
+  /// Updates patient demographics directly from the active encounter.
+  void updatePatientDemographics({
+    required String name,
+    required int age,
+    required String gender,
+  }) {
+    patientName = name.trim();
+    patientAge = age;
+    patientGender = gender;
+  }
 
   // Longitudinal History & Carried-Forward Regimens
   List<Consultation> pastConsultations = [];
@@ -401,6 +413,7 @@ class EncounterFormState {
         : patientPhone;
     final patient = await clinic.searchPatient(effectiveId);
     if (patient != null) {
+      patientName = patient.name;
       allergies = List.from(patient.allergies);
       patientGender = patient.gender;
       patientAge = patient.age;

@@ -692,6 +692,27 @@ abstract class AppointmentEngine {
     }
     return 'Doctor is on leave from ${AppFormatters.date(block.first)} to ${AppFormatters.date(block.last)}';
   }
+
+  /// Generates a valid 10-digit dummy contact phone number for illiterate, elderly,
+  /// or emergency trauma walk-ins who arrive without a mobile phone.
+  ///
+  /// Conforms to the 10-digit national schema using the reserved internal prefix '99'
+  /// plus the last 8 digits of the current millisecond timestamp for guaranteed uniqueness.
+  /// Example: '99' + '12345678' -> '9912345678'.
+  static String generateEmergencyDummyPhone({DateTime? timestamp}) {
+    final now = timestamp ?? DateTime.now();
+    final msStr = now.millisecondsSinceEpoch.toString();
+    final suffix = msStr.length >= 8
+        ? msStr.substring(msStr.length - 8)
+        : msStr.padLeft(8, '0');
+    return '99$suffix';
+  }
+
+  /// Whether a phone number is an internal dummy phone generated for emergency/no-phone walk-ins.
+  static bool isEmergencyDummyPhone(String phone) {
+    final clean = phone.trim();
+    return clean.length == 10 && clean.startsWith('99');
+  }
 }
 
 /// Operational token allocation alert statuses for doctor OPD capacity.

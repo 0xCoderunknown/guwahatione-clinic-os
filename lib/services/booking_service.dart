@@ -171,6 +171,16 @@ class BookingService {
     await apptDoc.update(data);
   }
 
+  /// Updates patient name on an existing appointment (e.g. demographic corrections during consultation).
+  Future<void> updateAppointmentPatientName({
+    required String appointmentId,
+    required String patientName,
+  }) async {
+    await _appointmentsRef.doc(appointmentId).update({
+      'patientName': patientName.trim(),
+    });
+  }
+
   /// Streams appointments for a given calendar date.
   Stream<List<Appointment>> getAppointmentsForDate(DateTime date) {
     final start = DateTime(date.year, date.month, date.day);
@@ -228,6 +238,33 @@ class BookingService {
               .where((a) => a.status != AppointmentStatus.absent)
               .toList();
         });
+  }
+
+  /// Retrieves appointments within an optional date range for export/auditing.
+  Future<List<Appointment>> fetchAppointmentsForExport({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    Query<Map<String, dynamic>> query = _appointmentsRef;
+    if (startDate != null) {
+      final start = DateTime(startDate.year, startDate.month, startDate.day);
+      query = query.where(
+        'scheduledDate',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(start),
+      );
+    }
+    if (endDate != null) {
+      final end = DateTime(endDate.year, endDate.month, endDate.day).add(const Duration(days: 1));
+      query = query.where('scheduledDate', isLessThan: Timestamp.fromDate(end));
+    }
+    final snapshot = await query.get();
+    final list = snapshot.docs.map((doc) {
+      final data = Map<String, dynamic>.from(doc.data());
+      data['id'] ??= doc.id;
+      return Appointment.fromJson(data);
+    }).toList();
+    list.sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
+    return list;
   }
 
   /// Retrieves historical appointments for a given patient identity or phone number.

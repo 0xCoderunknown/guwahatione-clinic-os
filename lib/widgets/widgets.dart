@@ -33,6 +33,7 @@ export 'common/section_card.dart';
 export 'common/token_badge.dart';
 // Dashboard Widgets
 export 'dashboard/cash_denomination_counter_section.dart';
+export 'dashboard/clinic_data_export_dialog.dart';
 export 'dashboard/daily_cash_handover_dialog.dart';
 export 'dashboard/dashboard_doctor_roster_card.dart';
 export 'dashboard/dashboard_header_bar.dart';

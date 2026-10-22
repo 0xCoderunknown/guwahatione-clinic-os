@@ -121,4 +121,29 @@ class ConsultationService {
     if (latest == null) return [];
     return latest.activePrescriptions;
   }
+
+  /// Fetches clinical consultations for export/auditing with optional date range filter.
+  Future<List<Consultation>> getAllConsultationsForExport({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    Query<Map<String, dynamic>> query = _consultationsRef;
+    if (startDate != null) {
+      final start = DateTime(startDate.year, startDate.month, startDate.day);
+      query = query.where(
+        'createdAt',
+        isGreaterThanOrEqualTo: Timestamp.fromDate(start),
+      );
+    }
+    if (endDate != null) {
+      final end = DateTime(endDate.year, endDate.month, endDate.day).add(const Duration(days: 1));
+      query = query.where('createdAt', isLessThan: Timestamp.fromDate(end));
+    }
+    final snapshot = await query.get();
+    final list = snapshot.docs
+        .map((doc) => Consultation.fromJson(doc.data()))
+        .toList();
+    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return list;
+  }
 }

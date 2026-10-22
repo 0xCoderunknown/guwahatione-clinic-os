@@ -8,6 +8,28 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.11] — 22-10-2026
+
+### Emergency Walk-Ins, Chamber Demographics Edit & 1-Click CSV Data Export (QOL-01, QOL-04 & IDEA-1)
+- **1-Tap Emergency / No-Mobile Walk-In Registration (QOL-01):**
+  - Added `AppointmentEngine.generateEmergencyDummyPhone()` and `AppointmentEngine.isEmergencyDummyPhone()` generating collision-resistant placeholder numbers prefixed with `99` (e.g. `9922105432`).
+  - Added a `[⚡ No Phone]` suffix button inside `BookingPatientFields` with an amber warning banner alerting staff that SMS/WhatsApp receipts are suppressed for dummy contact numbers.
+  - Enables zero-friction booking for urgent trauma patients, unaccompanied elderly citizens, and walk-in patients without active mobile devices.
+- **In-Chamber Patient Demographics Correction (QOL-04):**
+  - Added an edit action button in `PatientHeaderSection` of `ConsultationEncounterScreen` launching `EncounterDialogs.showEditPatientDemographicsDialog()`.
+  - Empowers physicians to correct misheard patient names, ages, and genders during the active consultation without forcing reception intervention.
+  - Seamlessly updates `EncounterFormState`, the primary `patients/{id}` registry profile, and the active `appointments/{id}` document via `BookingService.updateAppointmentPatientName()`.
+- **1-Click Full Clinic Data Export for Tax Audits & Backups (IDEA-1):**
+  - Introduced `DataExportEngine`: pure Dart RFC-4180 compliant CSV generation engine with zero UI dependencies, strictly adhering to Indian date formatting (`DD-MM-YYYY`) and proper cell escaping.
+  - Supports 5 export ledgers:
+    1. **Financial Revenue Ledger:** Itemized fee collection, payment modes (Cash, UPI, Waived/Free Review), and net totals formatted for accountant audits and income tax filing.
+    2. **Appointments & Queue Ledger:** Complete token sequence, check-in timestamps, patient identifiers, and visit statuses.
+    3. **Patient Directory:** Complete demographic registry, contact numbers, guardian relationships, and clinical allergy alerts.
+    4. **Medicine Formulary:** Master catalogue of brand names, chemical compositions, default dosages, and frequencies.
+    5. **Clinical Consultations:** Longitudinal encounter history with chief complaints, provisional diagnoses, and prescribed regimens.
+  - Added `ClinicDataExportDialog` accessible to authenticated Clinic Owners from `OwnerShellAppBar` and `StatisticsScreen` (Payments & Reports), featuring quick date range filters (`Today`, `Last 7 Days`, `This Month`, `All Time`).
+  - Created client-side platform file downloader via `dart:js_interop` Blob URLs, guaranteeing zero patient health information (PHI) leaves the local clinic intranet.
+
 ## [1.40.10] — 22-10-2026
 
 ### Scalable Patient Name & Surname Search Beyond 50 Records (AUDIT-08)

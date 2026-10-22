@@ -305,6 +305,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                       });
                     },
                     onPhoneChanged: _onPhoneChanged,
+                    onGenerateEmergencyPhone: _generateEmergencyPhone,
                     onSubmitted: () {
                       if (!_isBooking && _duplicateAppointment == null) {
                         _saveAppointment();
@@ -494,6 +495,28 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _generateEmergencyPhone() {
+    final dummy = AppointmentEngine.generateEmergencyDummyPhone();
+    setState(() {
+      _phoneController.text = dummy;
+      _selectedPatientId = null;
+      _familyMembers = [];
+      _isNewPatient = true;
+      _historyInfo = null;
+      _nameController.clear();
+      _ageController.clear();
+      _selectedGender = null;
+      _guardianNameController.clear();
+      _guardianRelationController.clear();
+      _amountController.text =
+          "${AppointmentEngine.resolveConsultationFee(doctor: _selectedDoctor, paymentType: _selectedPayment.isPaid ? _selectedPayment : PaymentType.paidCash)}";
+    });
+    _onPhoneChanged(dummy);
+    if (mounted) {
+      _nameFocusNode.requestFocus();
     }
   }
 

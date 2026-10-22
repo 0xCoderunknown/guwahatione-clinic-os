@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/clinic_provider.dart';
 import '../../services/services.dart';
 import '../../utils/formatters.dart';
+import '../dashboard/clinic_data_export_dialog.dart';
 import '../dashboard/daily_cash_handover_dialog.dart';
 import '../dashboard/security_settings_dialog.dart';
 
@@ -135,6 +136,27 @@ class OwnerShellAppBar extends StatelessWidget implements PreferredSizeWidget {
                 icon: const Icon(Icons.shield_outlined, size: 16),
                 label: const Text(
                   'Security & PINs',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Tooltip(
+              message: 'Export Clinic Data & Revenue Ledger to CSV (Tax Audits / Backups)',
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF0F766E),
+                  backgroundColor: const Color(0xFFF0FDFA),
+                  side: const BorderSide(color: Color(0xFF99F6E4)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                ),
+                onPressed: () => ClinicDataExportDialog.show(context),
+                icon: const Icon(Icons.file_download_outlined, size: 16),
+                label: const Text(
+                  'Export Data',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                 ),
               ),

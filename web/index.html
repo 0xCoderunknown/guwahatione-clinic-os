@@ -96,6 +96,22 @@
         console.warn("Audio chime error:", err);
       }
     };
+
+    window.downloadTextFile = function(filename, content, mimeType) {
+      try {
+        const blob = new Blob([content], { type: mimeType || 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      } catch (e) {
+        console.error('File download failed:', e);
+      }
+    };
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

@@ -31,6 +31,14 @@ class CatalogueService {
     });
   }
 
+  /// Fetches all medicines for export/formulary backup.
+  Future<List<Medicine>> getAllMedicinesForExport() async {
+    final snapshot = await _medicinesRef.get();
+    final list = snapshot.docs.map((doc) => Medicine.fromJson(doc.data())).toList();
+    list.sort((a, b) => a.productName.toLowerCase().compareTo(b.productName.toLowerCase()));
+    return list;
+  }
+
   /// Ensures standard, essential OPD medicines exist in Firestore by default.
   /// Uses deterministic document IDs so execution is strictly idempotent.
   Future<void> ensureDefaultMedicinesExist() async {

@@ -29,6 +29,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               title: const Text("Daily Statistics"),
               actions: [
                 IconButton(
+                  icon: const Icon(Icons.file_download_outlined),
+                  tooltip: 'Export CSV',
+                  onPressed: () => ClinicDataExportDialog.show(context),
+                ),
+                IconButton(
                   icon: const Icon(Icons.calendar_today),
                   onPressed: _pickDate,
                 ),
@@ -42,11 +47,44 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               horizontal: 16.0,
               vertical: 10.0,
             ),
-            child: ClinicDateNavBar(
-              selectedDate: _selectedDate,
-              onDateChanged: (picked) {
-                setState(() => _selectedDate = picked);
-              },
+            child: Row(
+              children: [
+                Expanded(
+                  child: ClinicDateNavBar(
+                    selectedDate: _selectedDate,
+                    onDateChanged: (picked) {
+                      setState(() => _selectedDate = picked);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Tooltip(
+                  message: 'Export Clinic Data & Financial Ledger to CSV',
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF0F766E),
+                      backgroundColor: const Color(0xFFF0FDFA),
+                      side: const BorderSide(color: Color(0xFF99F6E4)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () => ClinicDataExportDialog.show(context),
+                    icon: const Icon(Icons.file_download_outlined, size: 16),
+                    label: const Text(
+                      'Export CSV',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 

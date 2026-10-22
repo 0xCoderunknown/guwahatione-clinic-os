@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/engines/appointment_engine.dart';
 import '../../models/patient.dart';
 
 /// Form fields for patient demographic data (Phone with search trigger, Family picker, Name, Age/Unit, Sex, Guardian).
@@ -19,6 +20,7 @@ class BookingPatientFields extends StatelessWidget {
   final FocusNode genderFocusNode;
   final bool genderHasError;
   final VoidCallback? onSubmitted;
+  final VoidCallback? onGenerateEmergencyPhone;
 
   // Family Picker
   final List<Patient> familyMembers;
@@ -53,6 +55,7 @@ class BookingPatientFields extends StatelessWidget {
     required this.genderFocusNode,
     this.genderHasError = false,
     this.onSubmitted,
+    this.onGenerateEmergencyPhone,
     this.familyMembers = const [],
     this.selectedPatientId,
     required this.onSelectPatient,
@@ -74,11 +77,13 @@ class BookingPatientFields extends StatelessWidget {
         familyMembers.isNotEmpty && selectedPatientId == null;
     final resolvedPrimaryContact = primaryContactName ??
         (familyMembers.isNotEmpty ? familyMembers.first.name : null);
+    final isEmergencyPhone =
+        AppointmentEngine.isEmergencyDummyPhone(phoneController.text);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 1. Phone Input with Discovery Spinner & Quick Add Member Action
+        // 1. Phone Input with Discovery Spinner, Quick Add Member Action & Emergency Key
         Row(
           children: [
             Expanded(
@@ -87,11 +92,38 @@ class BookingPatientFields extends StatelessWidget {
                 focusNode: phoneFocusNode,
                 autofocus: true,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Phone Number',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.phone),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.phone),
                   hintText: '10-digit mobile number',
+                  suffixIcon: onGenerateEmergencyPhone != null
+                      ? Tooltip(
+                          message: 'No Mobile / Emergency Walk-In (Generate Dummy Key)',
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: onGenerateEmergencyPhone,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.bolt, size: 16, color: Colors.amber.shade800),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    'No Phone',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.amber.shade900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
                 keyboardType: TextInputType.phone,
                 inputFormatters: [
@@ -134,6 +166,34 @@ class BookingPatientFields extends StatelessWidget {
               ),
           ],
         ),
+
+        if (isEmergencyPhone) ...[
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFFFCD34D)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.bolt, size: 14, color: Colors.amber.shade900),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'No-Mobile / Emergency Walk-In Key: ${phoneController.text}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF78350F),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
 
         // Family Member Picker Chips
         if (familyMembers.isNotEmpty) ...[

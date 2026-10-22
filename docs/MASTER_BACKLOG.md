@@ -365,7 +365,7 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 | AUDIT-05 | 🟢 (Resolved) | Data Integrity | Firestore batch overflow in `closeDoctorSessionForDate` |
 | AUDIT-06 | 🟢 (Resolved) | Schema | Ghost field `formattedAge` replaced with `patientAgeDisplay` |
 | AUDIT-07 | 🟠 | Clinical Integrity | TOCTOU race in single-doctor mode `notifyReadyForNext` |
-| AUDIT-08 | 🟠 | Search / UX | Patient name search silently misses >50 patients |
+| AUDIT-08 | 🟢 (Resolved) | Search / UX | Patient name search silently misses >50 patients |
 | AUDIT-09 | 🟢 (Resolved) | Business Logic | Free review enforces window, consumption, and doctor policy |
 | AUDIT-10 | 🟢 (Resolved) | Business Logic | Dual default fee constants can silently drift |
 | AUDIT-11 | 🟢 (Resolved) | Dev UX | `blockedDates` comment shows wrong format for humans |
@@ -393,9 +393,10 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 > All pending Quality-of-Life enhancements and feature requests. PM must explicitly approve items before implementation begins.
 
-### QOL-01 — Emergency / Illiterate Walk-In Dummy Key (P13)
+### QOL-01 🟢 [RESOLVED] — Emergency / Illiterate Walk-In Dummy Key (P13)
 
 **Domain:** Reception Desk  
+**Status:** Resolved in v1.40.11. Added `AppointmentEngine.generateEmergencyDummyPhone()` generating `99`-prefixed collision-resistant phone keys (`9922105432`), 1-tap `[⚡ No Phone]` walk-in button, and amber notification suppression alert in `BookingPatientFields`.
 **Problem:** Emergency or elderly village patient arrives without a mobile number. Registration mandates a 10-digit phone key, blocking immediate token issuance.  
 **Specification:**
 - 1-tap `[No Mobile / Emergency Dummy]` toggle at walk-in registration.
@@ -424,9 +425,10 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-04 — Patient Demographics Edit from Encounter Header
+### QOL-04 🟢 [RESOLVED] — Patient Demographics Edit from Encounter Header
 
 **Domain:** Doctor Chamber  
+**Status:** Resolved in v1.40.11. Added an edit action button in `PatientHeaderSection`, `EncounterDialogs.showEditPatientDemographicsDialog()`, and synchronized live state across `EncounterFormState`, `patients/{id}`, and `appointments/{id}` via `BookingService.updateAppointmentPatientName()`.
 **Affected Files:** `lib/widgets/encounter/patient_header_section.dart`, `lib/screens/consultation_encounter_screen.dart`, `lib/services/patient_service.dart`  
 **Problem:** Reception frequently makes minor spelling or age errors during rush registration. Doctor cannot fix them from inside the encounter.  
 **Specification:**
@@ -638,7 +640,9 @@ In the author's mental model, preview comes *before* sign-off. In the implementa
 
 > Not approved for implementation. PM review required before entering the backlog.
 
-### IDEA-1 — Full Clinic Data Export (CSV / Excel)
+### IDEA-1 🟢 [RESOLVED] — Full Clinic Data Export (CSV / Excel)
+
+**Status:** Resolved in v1.40.11. Implemented `DataExportEngine` (pure Dart RFC-4180 CSV serializer) exporting 5 complete datasets (Revenue & Tax Ledger, Appointments, Patient Directory, Medicines Formulary, Clinical Encounters) formatted with Indian dates (`DD-MM-YYYY`). Added `ClinicDataExportDialog` in `OwnerShellAppBar` and `StatisticsScreen` with client-side blob download via `dart:js_interop`.
 
 Provide a 1-click mechanism for clinic owners to export all operational data (appointments, patient registry, financial ledger, consultations, master medicine list) as `.csv` or `.xlsx`.
 

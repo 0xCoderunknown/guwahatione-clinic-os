@@ -6,6 +6,8 @@ import 'package:uuid/uuid.dart';
 
 import '../models/models.dart';
 import '../providers/clinic_provider.dart';
+import '../services/booking_service.dart';
+import '../services/patient_service.dart';
 import '../utils/formatters.dart';
 import '../widgets/widgets.dart';
 import 'screens.dart';
@@ -30,6 +32,7 @@ class _ConsultationEncounterScreenState
     extends State<ConsultationEncounterScreen> {
   final Uuid _uuid = const Uuid();
   final EncounterFormState form = EncounterFormState();
+  late Appointment _activeAppointment;
 
   bool _isLoading = true;
   bool _isSaving = false;
@@ -37,6 +40,7 @@ class _ConsultationEncounterScreenState
   @override
   void initState() {
     super.initState();
+    _activeAppointment = widget.appointment;
     form.searchMode = widget.doctor.searchPreference;
     _loadInitialData();
   }
@@ -89,6 +93,75 @@ class _ConsultationEncounterScreenState
           doctorRegNumber: widget.doctor.medicalRegNumber,
         ),
       ),
+    );
+  }
+
+  Future<void> _handleEditDemographics() async {
+    final currentName = form.patientName.isNotEmpty
+        ? form.patientName
+        : _activeAppointment.patientName;
+    final currentAge = form.patientAge;
+    final currentGender = form.patientGender;
+
+    await EncounterDialogs.showEditPatientDemographicsDialog(
+      context: context,
+      initialName: currentName,
+      initialAge: currentAge,
+      initialGender: currentGender,
+      onSave: ({required name, required age, required gender}) async {
+        setState(() {
+          form.updatePatientDemographics(
+            name: name,
+            age: age,
+            gender: gender,
+          );
+          _activeAppointment = _activeAppointment.copyWith(patientName: name);
+        });
+
+        try {
+          final patientService = PatientService();
+          final existing = await patientService.getPatient(_activeAppointment.patientId);
+          if (existing != null) {
+            final updated = Patient(
+              id: existing.id,
+              name: name,
+              age: age,
+              gender: gender,
+              phoneNumber: existing.phoneNumber,
+              allergies: existing.allergies,
+              lastVisitDate: existing.lastVisitDate,
+              guardianName: existing.guardianName,
+              guardianRelation: existing.guardianRelation,
+              isLegacy: existing.isLegacy,
+            );
+            await patientService.savePatient(updated);
+          }
+
+          final bookingService = BookingService();
+          await bookingService.updateAppointmentPatientName(
+            appointmentId: _activeAppointment.id,
+            patientName: name,
+          );
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Patient details updated successfully'),
+                backgroundColor: Color(0xFF0F766E),
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error updating patient: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      },
     );
   }
 
@@ -451,8 +524,9 @@ class _ConsultationEncounterScreenState
                 padding: const EdgeInsets.all(16.0),
                 children: [
                   PatientHeaderSection.fromForm(
-                    appointment: widget.appointment,
+                    appointment: _activeAppointment,
                     form: form,
+                    onEditDemographics: _handleEditDemographics,
                     onAddAllergy: () => EncounterDialogs.promptAddAllergy(
                       context,
                       (a) => setState(() => form.addAllergy(a)),

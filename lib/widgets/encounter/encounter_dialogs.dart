@@ -436,4 +436,124 @@ class EncounterDialogs {
       ),
     );
   }
+
+  /// Dialog for consulting doctor to correct demographic typos (name, age, gender)
+  /// directly during consultation without leaving the encounter.
+  static Future<void> showEditPatientDemographicsDialog({
+    required BuildContext context,
+    required String initialName,
+    required int initialAge,
+    required String initialGender,
+    required Future<void> Function({
+      required String name,
+      required int age,
+      required String gender,
+    }) onSave,
+  }) async {
+    final nameCtrl = TextEditingController(text: initialName);
+    final ageCtrl = TextEditingController(
+      text: initialAge > 0 ? initialAge.toString() : '',
+    );
+    String selectedGender =
+        ['Male', 'Female', 'Other'].contains(initialGender)
+            ? initialGender
+            : 'Male';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.edit_note_rounded, color: Color(0xFF0F766E)),
+              SizedBox(width: 8),
+              Text(
+                'Edit Patient Details',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: nameCtrl,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      labelText: 'Patient Full Name',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.person_outline),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: ageCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Age (Years)',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.cake_outlined),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: selectedGender,
+                          decoration: const InputDecoration(
+                            labelText: 'Gender',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.wc_outlined),
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'Male', child: Text('Male')),
+                            DropdownMenuItem(value: 'Female', child: Text('Female')),
+                            DropdownMenuItem(value: 'Other', child: Text('Other')),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              setDialogState(() => selectedGender = val);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton.icon(
+              icon: const Icon(Icons.save_outlined, size: 18),
+              label: const Text('Save Changes'),
+              onPressed: () async {
+                final newName = nameCtrl.text.trim();
+                if (newName.isEmpty) return;
+                final newAge = int.tryParse(ageCtrl.text.trim()) ?? initialAge;
+                await onSave(
+                  name: newName,
+                  age: newAge,
+                  gender: selectedGender,
+                );
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

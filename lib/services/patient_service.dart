@@ -223,4 +223,17 @@ class PatientService {
 
     return PatientSearchEngine.filterAndRank(results.values.toList(), clean);
   }
+
+  /// Fetches all registered patients for data export and audit.
+  Future<List<Patient>> getAllPatientsForExport() async {
+    final snapshot = await _patientsRef.get();
+    final list = snapshot.docs.map((doc) {
+      final data = Map<String, dynamic>.from(doc.data());
+      data['id'] ??= doc.id;
+      data['phoneNumber'] ??= doc.id;
+      return Patient.fromJson(data);
+    }).toList();
+    list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return list;
+  }
 }
