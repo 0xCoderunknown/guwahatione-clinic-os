@@ -607,10 +607,10 @@ class _DoctorPasskeyDialogState extends State<_DoctorPasskeyDialog> {
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 hintText: ClinicConfig.current.features.isTestingModeActive
-                    ? '0000'
+                    ? '000000'
                     : '••••••',
                 helperText: ClinicConfig.current.features.isTestingModeActive
-                    ? '🧪 Testing Mode: Enter 0000'
+                    ? '🧪 Testing Mode: Enter 000000'
                     : null,
                 counterText: '',
                 errorText: _errorText,
