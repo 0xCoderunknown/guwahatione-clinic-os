@@ -20,6 +20,18 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 - **Export Organization:**
   - Exported all new Rx prescribing dialogs and rows through `widgets.dart` barrel.
 
+### Pre-Demo Web Presentation & Fast-Access PIN Authentication
+- **Web App PWA & HTML Branding:**
+  - Rebranded `web/index.html` application title to `"GuwahatiOne Clinic OS"` alongside matching Apple web app title and meta description.
+  - Aligned `web/manifest.json` PWA configuration with unified title (`"GuwahatiOne Clinic OS"`), short title (`"Clinic OS"`), primary theme color (`#0F766E`), and responsive orientation (`"any"`).
+  - Synchronized default tenant configuration in `ClinicConfig.current` (`clinicName: 'GuwahatiOne ClinicOS'`, `address: 'Guwahati, Assam'`, `contactPhone: '12345 67890'`).
+- **Pre-Demo Fast-Access PIN Contract (Live Hardware Evaluation):**
+  - Configured evaluation-mode authentication credentials in `AuthProvider` for temporary live trials on third-party hardware:
+    - Clinic Owner Master PIN: `000000` (6 zeroes)
+    - Doctor Chamber & Counter Reception PIN: `0000` (4 zeroes)
+  - Maintained salted SHA-256 cryptographic hash evaluation with zero plaintext browser exposure.
+  - Updated automated test suite in `test/auth_provider_test.dart` ensuring 100% test pass rate.
+
 ## [1.40.16] — 22-10-2026
 
 ### Pre-Demo Hardening: Chamber Service DI (AUDIT-16), Safe Amount Parsing & Chamber Date Bounds

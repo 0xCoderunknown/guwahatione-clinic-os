@@ -1,12 +1,12 @@
 {
-    "name": "appointment_app",
-    "short_name": "appointment_app",
+    "name": "GuwahatiOne Clinic OS",
+    "short_name": "Clinic OS",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#F1F5F9",
+    "theme_color": "#0F766E",
+    "description": "GuwahatiOne Clinic OS — OPD Queue & Consultation Management",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

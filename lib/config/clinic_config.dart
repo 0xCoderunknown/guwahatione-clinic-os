@@ -52,6 +52,9 @@ class ClinicConfig {
   /// Active configuration instance for this client deployment.
   /// Replace or modify this instance for custom tenant deployments.
   static ClinicConfig current = const ClinicConfig(
+    clinicName: 'GuwahatiOne ClinicOS',
+    address: 'Guwahati, Assam',
+    contactPhone: '12345 67890',
     features: ClinicFeatureFlags(
       enableTestingMode: true,
     ),

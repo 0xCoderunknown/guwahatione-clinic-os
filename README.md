@@ -401,10 +401,13 @@ lib/
 │   │   ├── rx_reconciliation_section.dart   # Step 4: Coordinator for Rx reconciliation, search, and staging
 │   │   ├── vitals_and_exam_section.dart     # Step 2: Vitals entry grid, collapsible findings pills & exam notes
 │   │   └── rx/                              # Specialized prescribing sub-components
-│   │       ├── rx_template_presets_bar.dart # 1-tap OPD clinical bundle presets chip bar (P9)
-│   │       ├── staged_medicine_form.dart    # Prefilled OPD defaults, dosage chips & chronic toggle
+│   │       ├── custom_duration_dialog.dart  # Modal dialog for custom course duration entry
+│   │       ├── inline_dosage_edit_dialog.dart # In-place dosage, frequency & timing editing modal
+│   │       ├── new_prescription_row.dart    # New prescription item row and lists
+│   │       ├── reconciliation_item_row.dart # Reconciled regimen row with 1-tap CONTINUE/STOP actions
 │   │       ├── rx_search_results_view.dart  # Chemical salt + trade brand search pills & pickers
-│   │       └── reconciliation_item_row.dart # Active regimen row with 1-tap CONTINUE/STOP actions
+│   │       ├── rx_template_presets_bar.dart # 1-tap OPD clinical bundle presets chip bar (P9)
+│   │       └── staged_medicine_form.dart    # Prefilled OPD defaults, dosage chips & chronic toggle
 │   ├── print/                               # High-contrast monochrome A4/A5 prescription print components
 │   │   ├── print_header_and_demographics.dart # Header with clinic details, patient demographics & clinical vitals snapshot
 │   │   ├── print_medications_table.dart     # Active Rx table and discontinued medications audit box

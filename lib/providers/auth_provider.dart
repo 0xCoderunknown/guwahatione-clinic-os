@@ -56,6 +56,11 @@ class AuthProvider with ChangeNotifier {
   static const String defaultReceptionistPin = '0000';
   static const String defaultOwnerMasterPin = '849201';
 
+  // ─── 🧪 DEMO-ONLY bypass PINs (active only when TEST_MODE=true build flag is set) ───
+  // TO REMOVE POST-DEMO: delete these two consts and every reference to them below.
+  static const String _demoDoctorPin = '0000';
+  static const String _demoOwnerPin = '000000';
+
   /// Cryptographic SHA-256 hash with domain salt to prevent plaintext exposure in storage.
   static String hashPin(String pin) {
     final bytes = utf8.encode('guwahatione_clinic_salt_v1:${pin.trim()}');
@@ -105,11 +110,12 @@ class AuthProvider with ChangeNotifier {
   bool get isTestingMode => ClinicConfig.current.features.isTestingModeActive;
 
   /// Verifies if a given PIN matches the clinic Reception PIN or Owner Master PIN.
-  /// When [isTestingMode] is active, '0000' is unconditionally accepted.
+  /// When [isTestingMode] is active, '0000' unlocks reception and '000000' unlocks owner.
   bool verifyReceptionOrOwnerPin(String pin) {
     final cleanPin = pin.trim();
     if (cleanPin.isEmpty) return false;
-    if (isTestingMode && cleanPin == '0000') return true;
+    if (isTestingMode && cleanPin == _demoDoctorPin) return true;
+    if (isTestingMode && cleanPin == _demoOwnerPin) return true;
     final inputHash = hashPin(cleanPin);
     return inputHash == _receptionistPinHash ||
         inputHash == _ownerMasterPinHash;
@@ -233,16 +239,17 @@ class AuthProvider with ChangeNotifier {
     final inputHash = hashPin(cleanPin);
     final prefs = await SharedPreferences.getInstance();
 
-    // Universal testing mode bypass: 0000 unlocks any role
-    if (isTestingMode && cleanPin == '0000') {
-      if (targetRole == UserRole.owner) {
-        _currentRole = UserRole.owner;
-        _currentDoctor = null;
-        await prefs.setString(_prefKeyRole, UserRole.owner.name);
-        await prefs.remove(_prefKeyDoctorId);
-        notifyListeners();
-        return AuthResult.success(UserRole.owner);
-      }
+    // Universal testing mode bypass:
+    // Reception/Doctor → '0000', Owner → '000000'
+    if (isTestingMode && cleanPin == _demoOwnerPin && targetRole == UserRole.owner) {
+      _currentRole = UserRole.owner;
+      _currentDoctor = null;
+      await prefs.setString(_prefKeyRole, UserRole.owner.name);
+      await prefs.remove(_prefKeyDoctorId);
+      notifyListeners();
+      return AuthResult.success(UserRole.owner);
+    }
+    if (isTestingMode && cleanPin == _demoDoctorPin) {
       if (targetRole == UserRole.receptionist) {
         _currentRole = UserRole.receptionist;
         _currentDoctor = null;
@@ -263,9 +270,9 @@ class AuthProvider with ChangeNotifier {
       return AuthResult.success(UserRole.owner);
     }
 
-    // 2. Check 4-digit Receptionist PIN via cryptographic hash (or testing mode 0000)
+    // 2. Check 4-digit Receptionist PIN via cryptographic hash (or demo '0000')
     if (inputHash == _receptionistPinHash ||
-        (isTestingMode && cleanPin == '0000')) {
+        (isTestingMode && cleanPin == _demoDoctorPin)) {
       _currentRole = UserRole.receptionist;
       _currentDoctor = null;
       await prefs.setString(_prefKeyRole, UserRole.receptionist.name);
@@ -276,7 +283,7 @@ class AuthProvider with ChangeNotifier {
 
     // 3. Check Doctor Chamber PINs via cryptographic hash (only active doctors)
     final matchedDoctors = doctors
-        .where((d) => d.isActive && (hashPin(d.pin) == inputHash || (isTestingMode && cleanPin == '0000')))
+        .where((d) => d.isActive && (hashPin(d.pin) == inputHash || (isTestingMode && cleanPin == _demoDoctorPin)))
         .toList();
     if (matchedDoctors.length == 1) {
       final doc = matchedDoctors.first;
@@ -308,7 +315,7 @@ class AuthProvider with ChangeNotifier {
   Future<bool> loginAsOwner(String pin) async {
     final cleanPin = pin.trim();
     final inputHash = hashPin(cleanPin);
-    if ((isTestingMode && cleanPin == '0000') ||
+    if ((isTestingMode && cleanPin == _demoOwnerPin) ||
         inputHash == _ownerMasterPinHash) {
       _currentRole = UserRole.owner;
       _currentDoctor = null;
@@ -326,7 +333,7 @@ class AuthProvider with ChangeNotifier {
   Future<bool> loginAsReceptionist(String pin) async {
     final cleanPin = pin.trim();
     final inputHash = hashPin(cleanPin);
-    if ((isTestingMode && cleanPin == '0000') ||
+    if ((isTestingMode && cleanPin == _demoDoctorPin) ||
         inputHash == _receptionistPinHash) {
       _currentRole = UserRole.receptionist;
       _currentDoctor = null;
@@ -352,8 +359,11 @@ class AuthProvider with ChangeNotifier {
     final cleanPin = pin.trim();
     final inputHash = hashPin(cleanPin);
 
-    // Testing Mode: PIN '0000' authenticates target role or receptionist by default
-    if (isTestingMode && cleanPin == '0000') {
+    // Demo Mode: '000000' unlocks Owner, '0000' unlocks Reception
+    if (isTestingMode && cleanPin == _demoOwnerPin) {
+      return loginAsOwner(cleanPin);
+    }
+    if (isTestingMode && cleanPin == _demoDoctorPin) {
       if (targetRole == UserRole.owner) {
         return loginAsOwner(cleanPin);
       }
@@ -381,7 +391,7 @@ class AuthProvider with ChangeNotifier {
   Future<bool> loginAsDoctor(Doctor doctor, String pin) async {
     if (!doctor.isActive) return false;
     final cleanPin = pin.trim();
-    if ((isTestingMode && cleanPin == '0000') ||
+    if ((isTestingMode && cleanPin == _demoDoctorPin) ||
         hashPin(doctor.pin) == hashPin(cleanPin)) {
       _currentRole = UserRole.doctor;
       _currentDoctor = doctor;
@@ -398,11 +408,11 @@ class AuthProvider with ChangeNotifier {
 
   /// Verifies an entered PIN against the Owner Master Passkey hash.
   /// Used for authorizing sensitive administrative actions like doctor deactivation/reactivation.
-  /// When [isTestingMode] is active, '0000' is unconditionally accepted.
+  /// In demo testing mode, '000000' is unconditionally accepted for owner actions.
   bool verifyOwnerMasterPin(String pin) {
     final cleanPin = pin.trim();
     if (cleanPin.isEmpty) return false;
-    if (isTestingMode && cleanPin == '0000') return true;
+    if (isTestingMode && (cleanPin == _demoOwnerPin || cleanPin == _demoDoctorPin)) return true;
     final inputHash = hashPin(cleanPin);
     return inputHash == _ownerMasterPinHash;
   }

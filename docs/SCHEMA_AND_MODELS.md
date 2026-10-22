@@ -37,7 +37,7 @@
 | `guardianRelation` | `String?` | No | Relationship of guardian to patient (e.g. `"Mother"`, `"Father"`). |
 | `gender` | `String` | Yes | `'Male'`, `'Female'`, or `'Other'`. |
 | `allergies` | `List<String>` | No | Critical clinical allergy alerts (e.g. `["Penicillin", "Sulfa"]`). Default: `[]`. |
-| `lastVisitDate` | `String` (ISO 8601) | No | Most recent completed consultation time; absent until the patient has a consultation. |
+| `lastVisitDate` | `Timestamp` \| `String` (ISO 8601) | No | Most recent completed consultation time; stamped as native `Timestamp` on encounter completion, with fallback parsing for ISO 8601 strings. Absent until first consultation. |
 | `nameLower` | `String` | No | Lowercase normalized full name for scalable prefix queries (e.g. `"rahul borah"`). |
 | `searchTokens` | `List<String>` | No | Lowercase 3+ char prefix n-grams and word tokens for direct `array-contains` surname search at scale. |
 
@@ -324,6 +324,7 @@
   - `enableGroupedCompositionCards` (`bool`, default: `true`): Renders grouped composition cards [COMPOSITION] with associated trade brand pills in medicine search.
   - `hidePrescriptionComposition` (`bool`, default: `false`): When enabled, suppresses generic chemical composition and renders trade brand names exclusively on prescriptions.
   - `enforceSingleActiveDoctor` (`bool`, default: `false`): When false (default), multi-chamber polyclinic consulting is allowed. When true, restricts the clinic to a single active consulting doctor at a time.
+  - `enableSeedDefaultMedicines` (`bool`, default: `true` in dev/test): Controls whether essential OPD medicines are seeded on cold start. Can be disabled in production when loading master catalogues via CSV.
 
 ### F. Reception Queue Partitioning Contract (`ReceptionQueueView`)
 - **Source:** `lib/core/engines/appointment_engine.dart`.

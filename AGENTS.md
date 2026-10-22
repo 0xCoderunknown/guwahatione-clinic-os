@@ -120,7 +120,7 @@ You are being managed by a strict Product Manager. Follow this exact workflow:
 
 ### Step 2: Respect Existing Conventions
 - **Naming Casing:** Firestore field names use `camelCase` (e.g., `patientPhone`, `scheduledDate`, `amountCollected`).
-- **Date Storage:** Follow the storage type documented for each field in `docs/SCHEMA_AND_MODELS.md`; for example, `lastVisitDate` is an optional ISO-8601 string while appointment and consultation event dates are `Timestamp` values.
+- **Date Storage:** Follow the storage type documented for each field in `docs/SCHEMA_AND_MODELS.md`; for example, appointment, consultation events, and `lastVisitDate` are `Timestamp` values (with defensive fallback parsing for legacy ISO-8601 strings).
 - **Enums:** Store enum values using `enum.name` strings (e.g., `'pending'`, `'completed'`, `'absent'`), never integer indices.
 
 ### Step 3: Verification Gate
@@ -154,7 +154,7 @@ lib/
 ├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
 ├── widgets/      -> Reusable UI sub-packages (booking, catalogue, chamber, common, dashboard, doctor, encounter, patient, print, queue)
 └── utils/        -> Helpers (Default medicines, app constants, platform print, platform sound, formatters)
-test/             -> Automated test suite (306 automated unit and widget tests covering engines, flows, models, and platform services)
+test/             -> Automated test suite (375 automated unit and widget tests covering engines, flows, models, and platform services)
 docs/
 ├── MASTER_BACKLOG.md     -> Single source of truth for all issues, audit findings, QOL backlog, roadmap, compliance & AI guidelines
 └── SCHEMA_AND_MODELS.md  -> Single source of truth for Firestore collections & models

@@ -21,7 +21,7 @@ Follow this checklist whenever modifying printable prescription documents, token
 ### Step 2: Letterhead Margin & Spacing Toggle
 1. Support both pre-printed clinic letterhead pads and digital white-paper letterheads:
    - Check `usePrePrintedLetterhead` flag.
-   - When enabled, render empty top spacer (`SizedBox(height: letterheadMargin)`) so pre-printed clinic clinic logos align perfectly.
+   - When enabled, render empty top spacer (`SizedBox(height: letterheadMargin)`) so pre-printed clinic logos align perfectly.
 
 ---
 

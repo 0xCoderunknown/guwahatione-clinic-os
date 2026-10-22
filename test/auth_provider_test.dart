@@ -469,23 +469,23 @@ void main() {
       expect(auth.currentDoctor, isNull);
     });
 
-    test('Admin/Owner logs in with 0000 in testing mode', () async {
+    test('Admin/Owner logs in with 000000 in testing mode', () async {
       final auth = AuthProvider();
       await auth.initSession(sampleDoctors);
 
-      final success = await auth.loginAsOwner('0000');
+      final success = await auth.loginAsOwner('000000');
       expect(success, isTrue);
       expect(auth.isOwner, isTrue);
       expect(auth.currentDoctor, isNull);
     });
 
-    test('loginAsReceptionistOrOwner routes 0000 based on targetRole', () async {
+    test('loginAsReceptionistOrOwner routes demo PINs (000000 → owner, 0000 → reception)', () async {
       final auth = AuthProvider();
       await auth.initSession(sampleDoctors);
 
-      // Explicit targetRole: owner
+      // Owner demo PIN: 000000
       final ownerSuccess = await auth.loginAsReceptionistOrOwner(
-        '0000',
+        '000000',
         targetRole: UserRole.owner,
       );
       expect(ownerSuccess, isTrue);
@@ -493,7 +493,7 @@ void main() {
 
       await auth.logout();
 
-      // Explicit targetRole: receptionist
+      // Reception demo PIN: 0000
       final recepSuccess = await auth.loginAsReceptionistOrOwner(
         '0000',
         targetRole: UserRole.receptionist,
@@ -502,12 +502,12 @@ void main() {
       expect(auth.isReceptionist, isTrue);
     });
 
-    test('verifyOwnerMasterPin accepts 0000 in testing mode', () async {
+    test('verifyOwnerMasterPin accepts 000000 in demo testing mode', () async {
       final auth = AuthProvider();
       await auth.initSession(sampleDoctors);
 
-      expect(auth.verifyOwnerMasterPin('0000'), isTrue);
-      expect(auth.verifyOwnerMasterPin(' 0000 '), isTrue);
+      expect(auth.verifyOwnerMasterPin('000000'), isTrue);
+      expect(auth.verifyOwnerMasterPin(' 000000 '), isTrue);
       expect(auth.verifyOwnerMasterPin('9999'), isFalse);
     });
 
@@ -520,12 +520,13 @@ void main() {
       expect(auth.verifyReceptionOrOwnerPin('9999'), isFalse);
     });
 
-    test('authenticateWithPin with 0000 respects targetRole in testing mode', () async {
+    test('authenticateWithPin with demo PINs respects targetRole in testing mode', () async {
       final auth = AuthProvider();
       await auth.initSession(sampleDoctors);
 
+      // Owner demo PIN: 000000
       final ownerResult = await auth.authenticateWithPin(
-        pin: '0000',
+        pin: '000000',
         doctors: sampleDoctors,
         targetRole: UserRole.owner,
       );
@@ -534,6 +535,7 @@ void main() {
 
       await auth.logout();
 
+      // Reception demo PIN: 0000
       final recepResult = await auth.authenticateWithPin(
         pin: '0000',
         doctors: sampleDoctors,
