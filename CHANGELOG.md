@@ -8,6 +8,16 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.10] — 22-10-2026
+
+### Scalable Patient Name & Surname Search Beyond 50 Records (AUDIT-08)
+- **Direct Indexed N-Gram & Token Search:**
+  - Added `PatientSearchEngine.generateSearchTokens()` generating 2+ character prefix n-grams (e.g. `da`, `das`, `bo`, `bor`, `bora`, `borah`) alongside complete name tokens.
+  - Upgraded `PatientService.savePatient()` to automatically index `nameLower` and `searchTokens` (`List<String>`) on patient records in Firestore.
+- **Elimination of the 50-Record Ceiling:**
+  - Completely replaced the in-memory `.limit(50).get()` query scan with Firestore `array-contains` queries on `searchTokens` and prefix range lookups on `nameLower`.
+  - Solves the physical OPD clinic issue where returning patients searched by surname or middle name outside the initial 50 records were missed, eliminating duplicate patient registrations and preserving longitudinal clinical histories at scale.
+
 ## [1.40.9] — 22-10-2026
 
 ### Counter Continuity & Security Simplification (AUDIT-03, AUDIT-04 & QOL-12)

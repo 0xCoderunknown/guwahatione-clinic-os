@@ -120,13 +120,17 @@ The `enforceSingleActiveDoctor` check in `notifyReadyForNext` performs a `get()`
 
 ---
 
-### AUDIT-08 🟠 Patient Name Search Only Covers Last 50 Records
+### AUDIT-08 🟢 [RESOLVED] Patient Name & Surname Search Scalability Beyond 50 Records
 
-**File:** `lib/services/patient_service.dart` lines 188–196
+**Files:** `lib/services/patient_service.dart`, `lib/core/engines/patient_search_engine.dart`, `docs/SCHEMA_AND_MODELS.md`
 
-The name-search fallback in `searchPatients` fetches an arbitrary 50 documents from the `patients` collection without `orderBy`, then filters in memory. In a clinic with 200+ patients, searching for a common surname ("Das", "Borah") will silently miss registered patients outside the 50-document window, causing duplicate patient registrations.
+Previously, the name search fallback in `searchPatients` loaded an arbitrary 50 documents from the `patients` collection into memory. When clinics exceeded 50 registered patients, searching by surname (*"Borah"*, *"Das"*) or middle name silently missed records, causing duplicate patient registrations and fractured clinical histories.
 
-**Fix:** Replace the in-memory filter over 50 docs with a Firestore composite index on `name` to support proper prefix range queries at scale.
+**Status:** Resolved in v1.40.10 (22-10-2026).
+- Added `PatientSearchEngine.generateSearchTokens()` generating 2+ char n-grams and whole words for each term in the patient's name.
+- Upgraded `PatientService.savePatient()` to automatically index `nameLower` (full lowercase string) and `searchTokens` (`List<String>`) on patient records in Firestore.
+- Replaced the in-memory 50-limit scan with direct `array-contains` lookup on `searchTokens` and prefix range queries on `nameLower`.
+- Eliminated all arbitrary document query ceilings while retaining legacy prefix query fallbacks.
 
 ---
 

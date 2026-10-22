@@ -27,6 +27,24 @@ abstract class PatientSearchEngine {
         .toList();
   }
 
+  /// Generates a deduplicated list of lowercase tokens and prefix n-grams (2+ chars)
+  /// for indexing and scalable `array-contains` queries in Firestore.
+  ///
+  /// Example: "Rahul Borah" -> ["ra", "rah", "rahu", "rahul", "bo", "bor", "bora", "borah"]
+  static List<String> generateSearchTokens(String name) {
+    final words = tokenizeName(name);
+    final tokens = <String>{};
+
+    for (final word in words) {
+      tokens.add(word);
+      for (int i = 2; i <= word.length; i++) {
+        tokens.add(word.substring(0, i));
+      }
+    }
+
+    return tokens.toList();
+  }
+
   /// Returns true if [query] matches the patient by phone, canonical ID, full name, or surname.
   static bool matches(Patient patient, String query) {
     final clean = query.trim().toLowerCase();

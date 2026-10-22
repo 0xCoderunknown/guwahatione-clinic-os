@@ -80,10 +80,15 @@ class PatientService {
   }
 
   /// Persists or updates a patient record keyed by unique patient.id.
+  /// Automatically indexes lowercase name and search tokens for scalable name and surname queries.
   Future<void> savePatient(Patient patient) async {
+    final data = patient.toJson();
+    data['nameLower'] = patient.name.trim().toLowerCase();
+    data['searchTokens'] = PatientSearchEngine.generateSearchTokens(patient.name);
+
     await _patientsRef
         .doc(patient.id)
-        .set(patient.toJson(), SetOptions(merge: true));
+        .set(data, SetOptions(merge: true));
   }
 
   /// Searches patients by phone number (exact or prefix), canonical ID (pat_*), or name/surname.
@@ -151,7 +156,38 @@ class PatientService {
         results[doc.id] = Patient.fromJson(data);
       }
     } else {
-      // Name prefix search (case-normalized)
+      final cleanLower = clean.toLowerCase();
+
+      // 1. Lowercase full name prefix query (scales across entire collection)
+      final nameLowerSnap = await _patientsRef
+          .where('nameLower', isGreaterThanOrEqualTo: cleanLower)
+          .where('nameLower', isLessThanOrEqualTo: '$cleanLower\uf8ff')
+          .limit(25)
+          .get();
+
+      for (final doc in nameLowerSnap.docs) {
+        final data = Map<String, dynamic>.from(doc.data());
+        data['id'] ??= doc.id;
+        data['phoneNumber'] ??= doc.id;
+        results[doc.id] = Patient.fromJson(data);
+      }
+
+      // 2. Token & surname query via indexed searchTokens array (e.g. "borah", "das")
+      if (cleanLower.length >= 2) {
+        final tokenSnap = await _patientsRef
+            .where('searchTokens', arrayContains: cleanLower)
+            .limit(25)
+            .get();
+
+        for (final doc in tokenSnap.docs) {
+          final data = Map<String, dynamic>.from(doc.data());
+          data['id'] ??= doc.id;
+          data['phoneNumber'] ??= doc.id;
+          results[doc.id] = Patient.fromJson(data);
+        }
+      }
+
+      // 3. Fallback for un-migrated legacy records without nameLower / searchTokens
       final capitalized = clean.isNotEmpty
           ? '${clean[0].toUpperCase()}${clean.substring(1)}'
           : clean;
@@ -181,17 +217,6 @@ class PatientService {
           data['id'] ??= doc.id;
           data['phoneNumber'] ??= doc.id;
           results[doc.id] = Patient.fromJson(data);
-        }
-      }
-
-      // 4. Token & surname fallback: query recent patient pool to match tokens/surnames in-memory
-      final recentSnap = await _patientsRef.limit(50).get();
-      for (final doc in recentSnap.docs) {
-        final data = Map<String, dynamic>.from(doc.data());
-        data['id'] ??= doc.id;
-        final patient = Patient.fromJson(data);
-        if (PatientSearchEngine.matches(patient, clean)) {
-          results[doc.id] = patient;
         }
       }
     }

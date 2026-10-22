@@ -22,6 +22,14 @@ void main() {
       expect(tokens, ['dr.', 'ratul', 'sharma', 'baruah']);
     });
 
+    test('generateSearchTokens produces lowercase 2+ char n-grams and full words for indexing', () {
+      final tokens = PatientSearchEngine.generateSearchTokens('Rahul Das');
+      expect(tokens, containsAll(['ra', 'rah', 'rahu', 'rahul', 'da', 'das']));
+
+      final borahTokens = PatientSearchEngine.generateSearchTokens('Sunita Borah');
+      expect(borahTokens, containsAll(['su', 'sun', 'suni', 'sunit', 'sunita', 'bo', 'bor', 'bora', 'borah']));
+    });
+
     test('matches finds patient by canonical pat_* ID, phone, name, or surname', () {
       final p = Patient(
         id: 'pat_1710920000000_1234',

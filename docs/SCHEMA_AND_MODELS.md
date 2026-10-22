@@ -38,6 +38,8 @@
 | `gender` | `String` | Yes | `'Male'`, `'Female'`, or `'Other'`. |
 | `allergies` | `List<String>` | No | Critical clinical allergy alerts (e.g. `["Penicillin", "Sulfa"]`). Default: `[]`. |
 | `lastVisitDate` | `String` (ISO 8601) | No | Most recent completed consultation time; absent until the patient has a consultation. |
+| `nameLower` | `String` | No | Lowercase normalized full name for scalable prefix queries (e.g. `"rahul borah"`). |
+| `searchTokens` | `List<String>` | No | Lowercase 3+ char prefix n-grams and word tokens for direct `array-contains` surname search at scale. |
 
 ---
 
