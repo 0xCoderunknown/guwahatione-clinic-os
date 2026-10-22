@@ -559,17 +559,16 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-16 — Reception Emergency Encounter Fallback (Doctor PC Outage Failover)
+### QOL-16 🟢 [RESOLVED VIA ARCHITECTURE / SCRAPPED AS REDUNDANT] — Reception Emergency Encounter Fallback (Doctor PC Outage Failover)
 
 **Domain:** Reception Desk / Clinical Continuity  
-**Affected Files:** `lib/screens/dashboard_screen.dart`, `lib/widgets/dashboard/dashboard_queue_item_row.dart`  
+**Affected Files:** `docs/MASTER_BACKLOG.md`  
 **Origin / Clinical Memory Dump:**  
 > *"And if doctor PC goes down? then reception can take over and send in patient themselves but it's not readily accessible."*  
-**Current Implementation Gap:** The system currently has the reverse failover (if reception crashes, doctor uses `ChamberDoorOverrideBar` to self-call patients). However, if the doctor's terminal hardware dies completely or loses power, reception cannot open the consultation encounter to record clinical notes or print a prescription on the doctor's behalf.  
-**Specification:**
-- Add a protected fallback action on the reception queue card: `"Emergency Encounter Fallback (Doctor Terminal Down)"`.
-- Requires Doctor PIN authentication or Owner Override.
-- Opens `ConsultationEncounterScreen` directly on the reception PC, allowing the visiting doctor or counter staff to record vitals, medications, and generate a signed printout without halting OPD care.
+**Resolution & Scrapped Rationale (PM Directive 22-10-2026):**
+- **Existing Native Mobile Chamber:** In the rare event of doctor PC terminal hardware failure, the doctor seamlessly logs into GuwahatiOne Clinic OS from their smartphone browser or mobile app. The mobile layout is already 100% responsive, allows signaling `Next Patient`, advancing the queue, and reviewing clinical history with zero desktop dependency.
+- **Reception Paper Fallback:** If the doctor prefers to temporarily switch to physical pen-and-paper prescription pads during an outage, Reception already possesses the `[Mark Complete]` action in `AccordionStatusActions` to advance the queue and record the encounter as completed without typing clinical notes.
+- **Zero Code Overhead:** Adding a heavy emergency encounter takeover UI on the reception desk was rejected as unnecessary complexity and a violation of clean role boundaries. Logged permanently in Section 4.4.
 
 ---
 
@@ -735,6 +734,7 @@ A decoupled external analytics sink collecting pure aggregate counts of prescrib
 | **Forensic Audit Events Collection (`appointment_events`)** | Write-only sink, zero UI consumers, doubles Firestore writes. | Store lifecycle timestamps directly on `Appointment`. Never re-add `appointment_events`. |
 | **`PaymentType.freeConcession`** | Fully redundant with `PaymentType.freeFamily`. | Use `freeFamily` for all authorized discretionary waivers. Never add redundant payment type variants. |
 | **"Stepped Out" / "Skipped" Token Intermediate Queue Status (QOL-20)** | Dispatch authority lies 100% with receptionist who can call any lobby patient in any order; intermediate status adds state complexity with zero clinical benefit. | Never add stepped-out, skipped, or paused intermediate token statuses to the patient queue. |
+| **Reception Emergency Encounter Takeover (QOL-16)** | Doctor smartphone already provides 100% responsive mobile chamber; for physical paper prescriptions, reception already has `Mark Complete`. Avoids UI bloat and role confusion. | Keep clinical encounter entry restricted to doctor chamber sessions; never add reception desk clinical takeover dialogs. |
 
 ---
 
