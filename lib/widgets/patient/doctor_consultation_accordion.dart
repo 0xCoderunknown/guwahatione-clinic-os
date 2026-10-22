@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../core/engines/whatsapp_engine.dart';
 import '../../models/consultation.dart';
 import '../../models/prescription_item.dart';
 import '../../screens/prescription_print_screen.dart';
 import '../../utils/formatters.dart';
+import '../../utils/platform_url.dart';
 
 /// Collapsible accordion panel presenting clinical prescriptions and encounter summary for a specific doctor.
 class DoctorConsultationAccordion extends StatelessWidget {
@@ -227,37 +229,75 @@ class DoctorConsultationAccordion extends StatelessWidget {
                   ],
 
                   const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF0F766E),
-                        side: const BorderSide(color: Color(0xFF99F6E4)),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PrescriptionPrintScreen(
-                              consultation: latestConsultation,
-                              patientAllergies: patientAllergies,
-                              doctorRegNumber:
-                                  latestConsultation.doctorRegNumber,
-                            ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF16A34A),
+                          side: const BorderSide(color: Color(0xFFBBF7D0)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
                           ),
-                        );
-                      },
-                      icon: const Icon(Icons.print_outlined, size: 14),
-                      label: const Text(
-                        'View Prescription',
-                        style: TextStyle(fontSize: 12),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: () {
+                          final msg = WhatsAppEngine.formatPrescriptionMessage(
+                            consultation: latestConsultation,
+                          );
+                          final link = WhatsAppEngine.buildDeepLink(
+                            phone: latestConsultation.patientPhone,
+                            message: msg,
+                          );
+                          openUrl(link);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Opening WhatsApp for ${latestConsultation.patientName}...',
+                              ),
+                              backgroundColor: const Color(0xFF16A34A),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.send_rounded, size: 14),
+                        label: const Text(
+                          'WhatsApp Rx',
+                          style: TextStyle(fontSize: 12),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF0F766E),
+                          side: const BorderSide(color: Color(0xFF99F6E4)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PrescriptionPrintScreen(
+                                consultation: latestConsultation,
+                                patientAllergies: patientAllergies,
+                                doctorRegNumber:
+                                    latestConsultation.doctorRegNumber,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.print_outlined, size: 14),
+                        label: const Text(
+                          'View Prescription',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

@@ -552,16 +552,16 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-15 — Primary "Print Preview" Action Button on Encounter Bottom Dock
+### QOL-15 🟢 [RESOLVED] — Primary "Print Preview" Action Button on Encounter Bottom Dock
 
 **Domain:** Doctor Chamber / Encounter  
 **Affected Files:** `lib/screens/consultation_encounter_screen.dart`, `lib/widgets/encounter/consultation_bottom_dock.dart`  
 **Origin / Clinical Memory Dump:**  
 > *"then hits a button to do a preview. Basically you can say this 'print preview' of MS Word. 1 last step before prescription is printed. And clicks 'Sign and Complete' to print the prescription."*  
-**Current Implementation Gap:** The prescription preview action currently exists only as a subtle icon button (`Icons.print_outlined`) in the top AppBar. The bottom dock only displays `[Pause / Step Out]` and `[Complete & Sign]`. Doctors naturally look at the bottom dock for their next clinical action.  
-**Specification:**
-- Elevate "Print Preview" to a primary action button in `ConsultationBottomDock` alongside `[Complete & Sign]`.
-- Clicking `[Print Preview]` opens the modal preview. From inside the preview, the doctor can review the 3-column table and click `[Sign & Print]` directly.
+**Status:** Resolved in v1.40.5.
+- Elevated "Print Preview" to a primary action button directly on `ConsultationBottomDock` alongside `[Finish Consultation & Sign]`.
+- Desktop view renders a high-visibility outlined button (`OutlinedButton.icon`) with print icon; mobile view renders a dedicated `IconButton.outlined` with tooltip.
+- Clicking triggers full modal preview of the strict 3-column prescription without premature encounter completion.
 
 ---
 
@@ -594,16 +594,15 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-18 — 1-Tap WhatsApp Clinical Summary from Patient Lookup History
+### QOL-18 🟢 [RESOLVED] — 1-Tap WhatsApp Clinical Summary from Patient Lookup History
 
 **Domain:** Patient Lookup / Communications  
 **Affected Files:** `lib/widgets/patient/doctor_consultation_accordion.dart`, `lib/screens/appointment_list_screen.dart`  
 **Origin / Clinical Memory Dump:**  
 > *"we also have a patient lookup (by both doc and reception) who can check past client reports. Say patient want a fresh copy or want a copy in their whatsapp, it is possible."*  
-**Current Implementation Gap:** In the Patient Lookup tab, each past consultation card (`DoctorConsultationAccordion`) provides a `[View Prescription]` button (which opens `PrescriptionPrintScreen` where WhatsApp is available), but does not have a direct 1-tap WhatsApp button on the history card itself.  
-**Specification:**
-- Add a direct `[WhatsApp Rx]` green icon button on each past consultation accordion row in Patient Lookup.
-- Tapping immediately opens the native WhatsApp deep-link (`WhatsAppEngine.buildDeepLink`) with the formatted clinical summary.
+**Status:** Resolved in v1.40.5.
+- Added direct 1-tap green `[WhatsApp Rx]` outlined button alongside `[View Prescription]` on each past consultation accordion card in Patient Lookup.
+- Formats standard longitudinal prescription summary via `WhatsAppEngine.formatPrescriptionMessage` and launches browser deep-link (`WhatsAppEngine.buildDeepLink`) with floating confirmation feedback.
 
 ---
 
@@ -627,26 +626,17 @@ In the author's mental model, preview comes *before* sign-off. In the implementa
 
 ---
 
-### QOL-20 — Explicit "Skip Token" Action with Audit Trail on Reception Queue
+### QOL-20 ❌ [SCRAPPED] — Explicit "Skip Token / Stepped Out" Status Action on Reception Queue
 
 **Domain:** Reception Desk / Queue  
 **Affected Files:** `lib/widgets/queue/appointment_accordion.dart`, `lib/widgets/queue/accordion_status_actions.dart`  
 **Origin / Clinical Memory Dump:**  
 > *"Token #1 has stepped out to the medical shop across the street. Reception skips Token #1 without breaking the ledger, calls Token #2..."*  
-**Current Implementation Gap:**  
-The memory dump correctly describes the behaviour (skip without breaking the ledger), and the system does support dispatching Token #2 to the chamber without first dispatching Token #1. However, there is no explicit **"Skip / Stepped Out"** status or action on the token card for the skipped patient.
-
-Currently:
-- Receptionist can simply dispatch Token #2 from the accordion (Token #1 remains `waitingInLobby`).
-- Token #1 will accumulate at the top of the queue indefinitely until manually marked `absent` at shift close, or until the patient physically returns and is dispatched.
-- There is no intermediate status (`skipped` / `stepped_out`) that signals to everyone: *"This patient has temporarily stepped out but is expected to return."*
-
-**Specification:**
-- Add a `[Stepped Out]` action button (secondary, alongside `[Mark Absent]`) on the reception token accordion.
-- Marking a token `stepped_out` changes the queue card colour/indicator to a distinct amber badge: `⏭ Stepped Out`.
-- The patient can be returned to `waitingInLobby` status with a `[Patient Returned]` button when they re-enter the lobby.
-- **No new Firestore field is strictly required** — `AppointmentStatus` can add `steppedOut` or this can be modeled by a lightweight `visitStatusOverride` flag on the appointment document.
-- **AGENTS.md note:** Do NOT delete or permanently absent-mark a `steppedOut` token automatically. Only the receptionist can decide to absent them at shift close.
+**Scrapped Rationale (PM Directive):**
+- Control to send in whom next lies 100% in receptionist hands.
+- Reception can dispatch any present waiting patient (e.g. Token #11 or #12) without needing an artificial intermediate status for Token #10.
+- If a patient steps out and returns, reception directly dispatches them when ready; adding a "stepped out" status introduces unnecessary operational and database state complexity with zero clinical benefit.
+- Logged permanently in Section 4.4 (Scrapped Log).
 
 ---
 
@@ -716,7 +706,7 @@ A decoupled external analytics sink collecting pure aggregate counts of prescrib
 | **Clinical Encounter** | Append-only consultations. Free-form modular encounter (HK-1). Local draft persistence. PopScope exit guard. 3-state medication reconciliation. Prescription snapshot immunity. Unified 2-column drug search. | Longitudinal integrity. Past visits never mutated. |
 | **3-Tier Security & Ledger** | Owner (6-digit), Doctor (4-digit), Reception (`0000`). Owner-exclusive doctor CRUD & fee config. Free review 0–30 day window. Daily cash handover modal. | Role isolation. Zero unearned review chaining. |
 | **Print & Communication** | Monochrome A4/A5 prescription printing. WhatsApp deep-link summaries. Web Audio API dual-tone chime. SpeechSynthesis multi-chamber announcer. | High-contrast monochrome. Zero PHI to third-party endpoints. |
-| **Pure Domain Engines** | `RevenueEngine`, `AppointmentEngine`, `MedicineEngine`, `WhatsAppEngine`, `CashHandoverEngine`, `PatientSearchEngine`. 306 passing automated tests. | Zero business logic in UI widget `build()` methods. |
+| **Pure Domain Engines** | `RevenueEngine`, `AppointmentEngine`, `MedicineEngine`, `WhatsAppEngine`, `CashHandoverEngine`, `PatientSearchEngine`. 328 passing automated tests. | Zero business logic in UI widget `build()` methods. |
 
 ---
 
@@ -750,6 +740,7 @@ A decoupled external analytics sink collecting pure aggregate counts of prescrib
 | **Atomic Multi-Desk Booking Locks (`counters/lock_*`)** | 95%+ of clinics have 1 counter. Queue counter transaction already serializes tokens. | Do not re-add distributed lock collections. |
 | **Forensic Audit Events Collection (`appointment_events`)** | Write-only sink, zero UI consumers, doubles Firestore writes. | Store lifecycle timestamps directly on `Appointment`. Never re-add `appointment_events`. |
 | **`PaymentType.freeConcession`** | Fully redundant with `PaymentType.freeFamily`. | Use `freeFamily` for all authorized discretionary waivers. Never add redundant payment type variants. |
+| **"Stepped Out" / "Skipped" Token Intermediate Queue Status (QOL-20)** | Dispatch authority lies 100% with receptionist who can call any lobby patient in any order; intermediate status adds state complexity with zero clinical benefit. | Never add stepped-out, skipped, or paused intermediate token statuses to the patient queue. |
 
 ---
 

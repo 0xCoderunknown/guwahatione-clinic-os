@@ -8,6 +8,19 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.5] — 22-10-2026
+
+### Encounter Bottom Dock Print Preview, 1-Tap WhatsApp Rx in Patient Lookup & Anti-Goal Log (QOL-15, QOL-18, QOL-20)
+- **Primary Print Preview Action on Encounter Bottom Dock (QOL-15):**
+  - Elevated "Print Preview" to a primary action button directly in `ConsultationBottomDock` alongside `[Finish Consultation & Sign]`.
+  - On desktop viewports, renders a prominent `OutlinedButton.icon('Print Preview')` with print icon; on compact mobile screens, renders a high-contrast `IconButton.outlined` with accessible tooltip.
+  - Allows doctors to review the complete 3-column isolated prescription layout in modal preview before committing the final digital sign-off and clearing the chamber.
+- **1-Tap WhatsApp Rx from Patient History Lookup (QOL-18):**
+  - Added a direct 1-tap green `[WhatsApp Rx]` outlined button alongside `[View Prescription]` in `DoctorConsultationAccordion`.
+  - Directly formats the longitudinal encounter medication summary via `WhatsAppEngine.formatPrescriptionMessage` and opens the native browser deep-link (`WhatsAppEngine.buildDeepLink`) with floating confirmation feedback, accelerating counter assistance when patients request digital copies.
+- **Queue State Simplification & Scrapped "Stepped Out" Status (QOL-20):**
+  - Formally scrapped intermediate "stepped out" queue status per Product Manager directive: dispatch authority lies 100% with the receptionist, who can seamlessly call any present patient in line without artificial state overhead. Logged permanently in Section 4.4 (Scrapped Anti-Goals).
+
 ## [1.40.4] — 22-10-2026
 
 ### Family-Aware Patient Matching, Compact Confirmation Banners & Paediatric Guardian Pre-fill (QOL-17)

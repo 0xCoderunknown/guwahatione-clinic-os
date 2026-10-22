@@ -527,6 +527,7 @@ class _ConsultationEncounterScreenState
             ConsultationBottomDock(
               isSaving: _isSaving,
               onPause: _showExitOrPauseDialog,
+              onPreview: _previewCurrentPrescription,
               onCompleteAndSign: _completeAndSignConsultation,
             ),
           ],
@@ -542,12 +543,14 @@ class ConsultationBottomDock extends StatelessWidget {
   final bool isSaving;
   final VoidCallback onPause;
   final VoidCallback onCompleteAndSign;
+  final VoidCallback? onPreview;
 
   const ConsultationBottomDock({
     super.key,
     required this.isSaving,
     required this.onPause,
     required this.onCompleteAndSign,
+    this.onPreview,
   });
 
   @override
@@ -586,6 +589,19 @@ class ConsultationBottomDock extends StatelessWidget {
                   onPressed: isSaving ? null : onPause,
                   label: const Text('Pause'),
                 ),
+                if (onPreview != null) ...[
+                  const SizedBox(width: 8),
+                  IconButton.outlined(
+                    tooltip: 'Print Preview',
+                    style: IconButton.styleFrom(
+                      foregroundColor: const Color(0xFF0F766E),
+                      side: const BorderSide(color: Color(0xFF5EEAD4)),
+                      padding: const EdgeInsets.all(12),
+                    ),
+                    icon: const Icon(Icons.print_outlined, size: 18),
+                    onPressed: isSaving ? null : onPreview,
+                  ),
+                ],
                 const SizedBox(width: 8),
                 Expanded(
                   child: FilledButton.icon(
@@ -639,37 +655,64 @@ class ConsultationBottomDock extends StatelessWidget {
                   onPressed: isSaving ? null : onPause,
                   label: const Text('Pause / Step Out'),
                 ),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.teal.shade700,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
-                  icon: isSaving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (onPreview != null) ...[
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF0F766E),
+                          side: const BorderSide(color: Color(0xFF5EEAD4)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
                           ),
-                        )
-                      : const Icon(
-                          Icons.check_circle_outline_rounded,
-                          size: 18,
                         ),
-                  label: Text(
-                    isSaving
-                        ? 'Saving & Ending...'
-                        : 'Finish Consultation & Sign',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                        icon: const Icon(Icons.print_outlined, size: 18),
+                        label: const Text(
+                          'Print Preview',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        onPressed: isSaving ? null : onPreview,
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.teal.shade700,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
+                      icon: isSaving
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.check_circle_outline_rounded,
+                              size: 18,
+                            ),
+                      label: Text(
+                        isSaving
+                            ? 'Saving & Ending...'
+                            : 'Finish Consultation & Sign',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      onPressed: isSaving ? null : onCompleteAndSign,
                     ),
-                  ),
-                  onPressed: isSaving ? null : onCompleteAndSign,
+                  ],
                 ),
               ],
             ),
