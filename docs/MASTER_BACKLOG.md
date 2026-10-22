@@ -52,18 +52,13 @@
 
 ---
 
-### AUDIT-01 🔴 Hardcoded Test Credentials Displayed in Login UI
+### AUDIT-01 🟢 [RESOLVED] Hardcoded Test Credentials Displayed in Login UI
 
-**File:** `lib/screens/login_screen.dart` lines 277, 430–432
+**Files:** `lib/screens/login_screen.dart`, `lib/providers/auth_provider.dart`
 
-Default admin and reception PINs are **visibly on-screen** in three places:
-1. Error message (line 277): `'Incorrect PIN (Testing: Reception: 0000 | Admin: 849201).'`
-2. Helper text (line 431): `'Testing PINs — Reception: 0000 | Admin: 849201'`
-3. Hint text (line 430): `'PIN (Reception: 0000 | Admin: 849201)'`
+Default admin and reception PINs (`849201` and `0000`) were previously visibly on-screen in hints, helper texts, and error messages.
 
-Any patient or visitor at the reception desk can read the owner master PIN (`849201`) off the screen and gain full administrative access. The UI-visible leak is not documented in QOL-11 which only covers the code fallback logic.
-
-**Fix:** Remove all three helper/hint/error credential strings. The login form must never display default PINs. Also remove the hardcoded fallback in `auth_provider.dart` that compares against the literal default strings.
+**Status:** Resolved in v1.40.6. Removed all default PIN helper/hint/error strings from `LoginScreen`. Replaced with neutral failure messages (`'Incorrect PIN. Please try again.'` and `'Incorrect PIN for Dr. [Name]. Please try again.'`). Zero credentials are leaked in the UI.
 
 ---
 
@@ -89,13 +84,13 @@ Application-layer PIN checks do **not** protect Firestore. Rules are the only se
 
 ---
 
-### AUDIT-04 🟠 No Brute-Force Protection on PIN Authentication
+### AUDIT-04 🟢 [RESOLVED] No Brute-Force Protection on PIN Authentication
 
 **Files:** `lib/screens/login_screen.dart`, `lib/providers/auth_provider.dart`
 
-No rate limiting, lockout threshold, attempt counter, or delay between failed attempts. A 4-digit PIN has 10,000 combinations; a 6-digit PIN has 1,000,000. Both can be exhausted in seconds with automated tooling through the web UI since `loginAsReceptionistOrOwner` accepts unlimited sequential calls.
+Previously, there was no rate limiting or lockout threshold on PIN attempts.
 
-**Fix:** Add a failed-attempt counter with a lockout (e.g., 5 attempts → 30-second freeze) tracked in local state or `SharedPreferences`.
+**Status:** Resolved in v1.40.6. Introduced client-side and persistent lockout defense in `AuthProvider`: 5 consecutive failed attempts triggers an automated 30-second lockout. During lockout, inputs are disabled and a real-time countdown alert banner is displayed in `LoginScreen`. Persistent lockout timestamp in `SharedPreferences` prevents bypassing via browser reload. Successful login resets failed attempts.
 
 ---
 
@@ -295,18 +290,13 @@ Advance booking validates `isDateBlocked` (holidays) and `isDoctorOnLeave` (pers
 
 ---
 
-### AUDIT-23 🔵 `AuthProvider` Exposes Plaintext Default PINs as Public Getters
+### AUDIT-23 🟢 [RESOLVED] `AuthProvider` Exposes Plaintext Default PINs as Public Getters
 
-**File:** `lib/providers/auth_provider.dart` lines 88–90
+**File:** `lib/providers/auth_provider.dart`
 
-```dart
-String get receptionistPin => _receptionistPin;   // '0000'
-String get ownerMasterPin => _ownerMasterPin;      // '849201'
-```
+Previously exposed unhashed default PIN strings as public getters (`receptionistPin` and `ownerMasterPin`).
 
-Exposes unhashed default PIN strings as public getters. Only hashed equivalents (`ownerMasterPinHash`, `receptionistPinHash`) are needed for any legitimate use case.
-
-**Fix:** Remove or privatize `receptionistPin` and `ownerMasterPin` getters.
+**Status:** Resolved in v1.40.6. Removed public getters and purged in-memory plaintext PIN fields (`_receptionistPin` and `_ownerMasterPin`). All authentication routines and assertions strictly use domain-salted SHA-256 hashes (`receptionistPinHash`, `ownerMasterPinHash`).
 
 ---
 
@@ -368,10 +358,10 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 | ID | 🔴🟠🟡🔵 | Domain | Issue |
 |---|---|---|---|
-| AUDIT-01 | 🔴 | Security / UX | Test credentials visible in login UI |
+| AUDIT-01 | 🟢 (Resolved) | Security / UX | Test credentials visible in login UI |
 | AUDIT-02 | 🔴 | Security | Firestore open to public internet — all PHI exposed |
 | AUDIT-03 | 🔴 | Security | Doctor PINs plaintext in Firestore |
-| AUDIT-04 | 🟠 | Security | No brute-force protection on PIN login |
+| AUDIT-04 | 🟢 (Resolved) | Security | No brute-force protection on PIN login |
 | AUDIT-05 | 🟢 (Resolved) | Data Integrity | Firestore batch overflow in `closeDoctorSessionForDate` |
 | AUDIT-06 | 🟢 (Resolved) | Schema | Ghost field `formattedAge` replaced with `patientAgeDisplay` |
 | AUDIT-07 | 🟠 | Clinical Integrity | TOCTOU race in single-doctor mode `notifyReadyForNext` |
@@ -390,7 +380,7 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 | AUDIT-20 | 🔵 | Ops | Single-doctor query missing Firestore index |
 | AUDIT-21 | 🔵 | Stability | No input length limits on clinical free-text fields |
 | AUDIT-22 | 🔵 | Business Logic | No `availableDays` check in advance booking |
-| AUDIT-23 | 🔵 | Security | Plaintext default PINs exposed as `AuthProvider` getters |
+| AUDIT-23 | 🟢 (Resolved) | Security | Plaintext default PINs exposed as `AuthProvider` getters |
 | AUDIT-24 | 🔵 | UX | No debounce on print button (double-print risk) |
 | AUDIT-25 | 🟢 (Resolved) | Analytics | `free` metric includes `unpaid` appointments |
 | AUDIT-26 | 🔵 | Business / Ops | Subscription expiry has no runtime enforcement |
@@ -509,13 +499,13 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-11 — Remove Hardcoded Admin PIN Fallback & Credential Leak
+### QOL-11 🟢 [RESOLVED] — Remove Hardcoded Admin PIN Fallback & Credential Leak
 
 **Domain:** Security / Auth  
-**Affected Files:** `lib/providers/auth_provider.dart` lines 173–176, 228–230, 269–270; `lib/screens/login_screen.dart`  
-**Specification:**
-- Remove hardcoded default admin PIN `849201` fallback once the owner PIN is initialized.
-- Purge credential leak helper strings from error UI. (See also: AUDIT-01 which covers the UI-visible leak specifically.)
+**Affected Files:** `lib/providers/auth_provider.dart`, `lib/screens/login_screen.dart`  
+**Status:** Resolved in v1.40.6.
+- Removed hardcoded default admin PIN `849201` fallback in `AuthProvider.loginAsOwner`, `loginAsReceptionistOrOwner`, and `authenticateWithPin` once a custom Owner PIN is set.
+- Purged all default PIN leak helper/hint strings from `LoginScreen` error and testing UI. Zero credentials are leaked on-screen. (See also: AUDIT-01).
 
 ---
 
@@ -529,13 +519,16 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-13 — Cloud-Synced PIN Store & Security Settings UI
+### QOL-13 🟢 [RESOLVED] — Cloud-Synced PIN Store & Security Settings UI
 
 **Domain:** Security / Auth  
-**Affected Files:** `lib/providers/auth_provider.dart` lines 304–320  
-**Specification:**
-- Store hashed Owner and Reception PINs in Firestore (`clinic_config/security`) rather than local browser storage only, enabling synchronized PIN changes across all clinic terminals.
-- Administrative Security Settings dialog for PIN rotation with recovery passkey.
+**Affected Files:** [auth_provider.dart](file:///k:/Android/guwahatione-clinic-os/lib/providers/auth_provider.dart), [security_service.dart](file:///k:/Android/guwahatione-clinic-os/lib/services/security_service.dart), [security_settings_dialog.dart](file:///k:/Android/guwahatione-clinic-os/lib/widgets/dashboard/security_settings_dialog.dart), [owner_shell_app_bar.dart](file:///k:/Android/guwahatione-clinic-os/lib/widgets/common/owner_shell_app_bar.dart), [firestore_paths.dart](file:///k:/Android/guwahatione-clinic-os/lib/services/firestore_paths.dart)  
+**Resolution Details:**
+- **Cloud-Synchronized PIN Store (`clinic_config/security`):** Persists salted SHA-256 hashes (`ownerMasterPinHash`, `receptionistPinHash`, `updatedAt`, `updatedBy`) in Firestore.
+- **Multi-Terminal Real-Time Sync:** `AuthProvider` initializes session from local `SharedPreferences` for sub-second offline boot and automatically streams updates from `SecurityService.securityStream()`, notifying listeners and updating local storage immediately upon remote PIN rotation.
+- **Two-Step Security Settings Dialog:** Step 1 requires entering current 6-digit Owner Master Passkey. Step 2 allows changing 4-digit Receptionist Access PIN and/or 6-digit Owner Master Passkey with input length enforcement, confirmation matching, and 1-tap cloud synchronization.
+- **Top Bar Integration:** Added high-contrast `[Security & PINs]` button in `OwnerShellAppBar` visible exclusively when logged in as Clinic Owner.
+- **Comprehensive Test Suite:** Covered by 4 dedicated automated unit and widget tests in `test/security_settings_and_pin_sync_test.dart`.
 
 ---
 

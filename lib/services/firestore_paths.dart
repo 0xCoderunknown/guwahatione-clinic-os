@@ -10,8 +10,10 @@ abstract class FirestorePaths {
   static const String consultations = 'consultations';
   static const String medicines = 'medicines';
   static const String doctors = 'doctors';
+  static const String clinicConfig = 'clinic_config';
 
   // Document Path Builders
+  static const String securityDoc = 'security';
   static String patientDoc(String phone) => phone;
 
   static String appointmentDoc(String id) => id;

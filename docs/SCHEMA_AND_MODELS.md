@@ -239,13 +239,20 @@
 
 ## ⚙️ 7. `clinic_config` Collection (Authentication & System Settings)
 
-- **Document ID:** `settings` (or `auth`).
-- **Purpose:** Clinic-wide operational configuration and master PIN hashes.
+- **Document IDs:** `security` (for role authentication hashes) and `settings` (for clinic metadata).
+- **Purpose:** Clinic-wide operational configuration, multi-terminal synchronized PIN stores, and clinic branding.
 
-### Fields
+### Fields (Document: `security`)
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `ownerPinHash` | `String` | No | SHA-256 hashed 6-digit PIN for Clinic Owner role (`owner`). Default hash resolves to master PIN `849201`. |
+| `ownerMasterPinHash` | `String` | Yes | Salted SHA-256 hashed 6-digit PIN for Clinic Owner role (`owner`). Default resolves to master PIN `849201`. |
+| `receptionistPinHash` | `String` | Yes | Salted SHA-256 hashed 4-digit PIN for Reception Desk role (`receptionist`). Default resolves to `0000`. |
+| `updatedAt` | `Timestamp` | Yes | Server timestamp of last PIN rotation. |
+| `updatedBy` | `String` | Yes | Administrative identity or role performing rotation (`'owner'`). |
+
+### Fields (Document: `settings`)
+| Field | Type | Required | Description |
+|---|---|---|---|
 | `clinicName` | `String` | No | Official clinic display title. |
 | `address` | `String` | No | Clinic postal address for prescription headers. |
 

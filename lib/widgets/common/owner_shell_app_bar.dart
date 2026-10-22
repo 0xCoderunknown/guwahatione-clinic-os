@@ -5,6 +5,7 @@ import '../../providers/clinic_provider.dart';
 import '../../services/services.dart';
 import '../../utils/formatters.dart';
 import '../dashboard/daily_cash_handover_dialog.dart';
+import '../dashboard/security_settings_dialog.dart';
 
 /// Top desktop AppBar rendered inside OwnerShell.
 /// Contains view title, Indian date, owner step-down button, cash handover,
@@ -116,8 +117,29 @@ class OwnerShellAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           const SizedBox(width: 12),
 
-          // Step-Down Security Button for Owner
+          // Security & PIN Settings Button for Owner
           if (isOwner) ...[
+            Tooltip(
+              message: 'Configure Receptionist PIN & Owner Master Passkey',
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF0F766E),
+                  backgroundColor: const Color(0xFFF0FDFA),
+                  side: const BorderSide(color: Color(0xFF99F6E4)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
+                onPressed: () => SecuritySettingsDialog.show(context),
+                icon: const Icon(Icons.shield_outlined, size: 16),
+                label: const Text(
+                  'Security & PINs',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.amber.shade900,

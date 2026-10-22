@@ -8,6 +8,39 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.7] — 22-10-2026
+
+### Cloud-Synced Security PIN Store & Multi-Terminal Synchronization UI (QOL-13)
+- **Cloud-Synced Security PIN Document (`clinic_config/security`):**
+  - Introduced `SecurityService` to persist salted SHA-256 PIN hashes (`ownerMasterPinHash`, `receptionistPinHash`, `updatedAt`, `updatedBy`) in Firestore.
+  - Eliminated single-terminal local storage silos; PIN changes made on any workstation automatically synchronize in real time across all reception terminals, doctor chambers, and owner devices.
+- **Offline Cold-Boot & Real-Time Sync Stream:**
+  - `AuthProvider` reads cached hashes from `SharedPreferences` on boot for instantaneous offline readiness, then subscribes to `SecurityService.securityStream()` from Firestore.
+  - Remote rotations automatically update local memory and cache, notifying listeners immediately.
+- **Two-Step Security Settings Modal (`SecuritySettingsDialog`):**
+  - **Step 1 (Security Verification):** Requires entering the current 6-digit Owner Master Passkey before granting access to PIN rotation settings.
+  - **Step 2 (PIN Rotation):** Provides dedicated cards to rotate the 4-digit Receptionist Access PIN and/or 6-digit Owner Master Passkey with input masking, length validation, and confirmation matching.
+  - Includes status indicators displaying whether default or custom credentials are active.
+- **Owner Shell Top Bar Action:**
+  - Added a dedicated high-contrast `[Security & PINs]` button in `OwnerShellAppBar`, visible exclusively to authenticated Clinic Owners next to `Lock to Reception`.
+
+## [1.40.6] — 22-10-2026
+
+### Login Credential Leak Purge, Brute-Force Rate Limiting & Backdoor Removal (AUDIT-01, AUDIT-04, AUDIT-23, QOL-11)
+- **Zero On-Screen Credential Leaks (AUDIT-01):**
+  - Purged all default PINs (`849201` and `0000`) from login hints, helper texts, and error dialogs across both Doctor Chamber and Reception/Owner forms.
+  - Replaced credential-revealing error messages with neutral notices (`'Incorrect PIN. Please try again.'` / `'Incorrect PIN for Dr. [Name]. Please try again.'`).
+- **Brute-Force Rate Limiting & 30-Second Lockout (AUDIT-04):**
+  - Introduced local brute-force defense in `AuthProvider`: 5 consecutive failed PIN attempts triggers a strict 30-second authentication freeze.
+  - Login UI displays an alert banner with a real-time countdown: `'Too many failed attempts. Locked out for Xs.'`
+  - Submissions and inputs are disabled during lockout; successful authentication resets the failed attempts counter.
+  - Persisted lockout timestamp to `SharedPreferences` prevents bypassing the freeze via browser refresh.
+- **Privatized Plaintext PIN Getters & In-Memory Purge (AUDIT-23):**
+  - Removed `receptionistPin` and `ownerMasterPin` public getters from `AuthProvider`.
+  - Purged plaintext PIN memory storage (`_receptionistPin` and `_ownerMasterPin`); operations now exclusively use salted SHA-256 hashes.
+- **Eliminated Hardcoded Owner PIN Fallback Backdoor (QOL-11):**
+  - Removed the hardcoded fallback to default PIN `849201` once a custom Owner PIN is configured, preventing unauthorized administrative entry via factory default credentials.
+
 ## [1.40.5] — 22-10-2026
 
 ### Encounter Bottom Dock Print Preview, 1-Tap WhatsApp Rx in Patient Lookup & Anti-Goal Log (QOL-15, QOL-18, QOL-20)

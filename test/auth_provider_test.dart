@@ -61,8 +61,10 @@ void main() {
         expect(auth.isAuthenticated, isFalse);
         expect(auth.currentRole, isNull);
         expect(auth.currentDoctor, isNull);
-        expect(auth.receptionistPin, '0000');
-        expect(auth.ownerMasterPin, '849201');
+        expect(auth.receptionistPinHash, AuthProvider.hashPin('0000'));
+        expect(auth.ownerMasterPinHash, AuthProvider.hashPin('849201'));
+        expect(auth.verifyReceptionOrOwnerPin('0000'), isTrue);
+        expect(auth.verifyReceptionOrOwnerPin('849201'), isTrue);
       },
     );
 
@@ -202,8 +204,8 @@ void main() {
       await auth.setReceptionistPin('1234');
       await auth.setOwnerMasterPin('987654');
 
-      expect(auth.receptionistPin, '1234');
-      expect(auth.ownerMasterPin, '987654');
+      expect(auth.receptionistPinHash, AuthProvider.hashPin('1234'));
+      expect(auth.ownerMasterPinHash, AuthProvider.hashPin('987654'));
 
       // Authenticate with new PINs
       final recepResult = await auth.authenticateWithPin(
@@ -341,7 +343,7 @@ void main() {
       expect(auth.isAuthenticated, isFalse);
     });
 
-    test('Owner authentication falls back to default 849201 even if custom hash was desynced', () async {
+    test('Custom Owner PIN strictly replaces default 849201 (no backdoor fallback)', () async {
       SharedPreferences.setMockInitialValues({
         'auth_owner_master_pin_hash': AuthProvider.hashPin('999999'),
       });
@@ -349,11 +351,11 @@ void main() {
       final auth = AuthProvider();
       await auth.initSession(sampleDoctors);
 
-      // Default master PIN always works via fallback
-      expect(await auth.loginAsOwner('849201'), isTrue);
-      expect(auth.isOwner, isTrue);
+      // Default master PIN 849201 is rejected once custom PIN is set
+      expect(await auth.loginAsOwner('849201'), isFalse);
+      expect(auth.isAuthenticated, isFalse);
 
-      // Stored custom PIN also works
+      // Stored custom PIN authenticates successfully
       expect(await auth.loginAsOwner('999999'), isTrue);
       expect(auth.isOwner, isTrue);
     });
@@ -379,6 +381,63 @@ void main() {
         expect(await auth.loginAsReceptionist('0000'), isTrue);
       },
     );
+
+    test('Brute force protection: 5 failed attempts triggers 30-second lockout', () async {
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      expect(auth.isLockedOut, isFalse);
+      expect(auth.failedAttempts, 0);
+
+      // 4 failed attempts do not trigger lockout
+      for (int i = 0; i < 4; i++) {
+        final result = await auth.loginAsReceptionistOrOwner('999$i');
+        expect(result, isFalse);
+        expect(auth.isLockedOut, isFalse);
+        expect(auth.failedAttempts, i + 1);
+      }
+
+      // 5th failed attempt triggers lockout
+      final fifthFail = await auth.loginAsReceptionistOrOwner('9999');
+      expect(fifthFail, isFalse);
+      expect(auth.isLockedOut, isTrue);
+      expect(auth.failedAttempts, 5);
+      expect(auth.lockoutSecondsRemaining, inInclusiveRange(1, 30));
+
+      // Attempting login with correct credentials during lockout is rejected
+      expect(await auth.loginAsOwner('849201'), isFalse);
+      expect(await auth.loginAsReceptionist('0000'), isFalse);
+      final authResult = await auth.authenticateWithPin(
+        pin: '849201',
+        doctors: sampleDoctors,
+      );
+      expect(authResult.isSuccess, isFalse);
+      expect(authResult.errorMessage, contains('Too many failed attempts'));
+
+      // Resetting lockout restores normal login capability
+      await auth.resetLockout();
+      expect(auth.isLockedOut, isFalse);
+      expect(auth.failedAttempts, 0);
+      expect(await auth.loginAsOwner('849201'), isTrue);
+      expect(auth.isOwner, isTrue);
+    });
+
+    test('Successful authentication resets failed attempts counter', () async {
+      final auth = AuthProvider();
+      await auth.initSession(sampleDoctors);
+
+      // 3 failed attempts
+      await auth.loginAsReceptionistOrOwner('9991');
+      await auth.loginAsReceptionistOrOwner('9992');
+      await auth.loginAsReceptionistOrOwner('9993');
+      expect(auth.failedAttempts, 3);
+
+      // Successful login resets counter to 0
+      final success = await auth.loginAsOwner('849201');
+      expect(success, isTrue);
+      expect(auth.failedAttempts, 0);
+      expect(auth.isLockedOut, isFalse);
+    });
   });
 
   group('AuthProvider Universal Testing Mode (PIN 0000) Tests', () {

@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/clinic_config.dart';
 import '../models/doctor.dart';
 import '../models/user_role.dart';
+import '../services/services.dart';
 
 class AuthResult {
   final bool isSuccess;
@@ -34,6 +37,12 @@ class AuthResult {
 }
 
 class AuthProvider with ChangeNotifier {
+  final SecurityService _securityService;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>?
+      _securitySubscription;
+
+  AuthProvider({SecurityService? securityService})
+      : _securityService = securityService ?? SecurityService();
   static const String _prefKeyRole = 'auth_role';
   static const String _prefKeyDoctorId = 'auth_doctor_id';
   static const String _prefKeyOwnerMasterPinHash = 'auth_owner_master_pin_hash';
@@ -60,11 +69,61 @@ class AuthProvider with ChangeNotifier {
     defaultOwnerMasterPin,
   );
 
+  static const int maxFailedAttempts = 5;
+  static const Duration lockoutDuration = Duration(seconds: 30);
+  static const String _prefKeyLockoutUntil = 'auth_lockout_until_ms';
+
+  int _failedAttempts = 0;
+  DateTime? _lockoutUntil;
+
+  int get failedAttempts => _failedAttempts;
+
+  /// Whether authentication is temporarily locked out due to excessive failed attempts.
+  bool get isLockedOut {
+    if (_lockoutUntil == null) return false;
+    if (DateTime.now().isAfter(_lockoutUntil!)) {
+      _lockoutUntil = null;
+      _failedAttempts = 0;
+      return false;
+    }
+    return true;
+  }
+
+  /// Remaining seconds before lockout expires, or 0 if not locked out.
+  int get lockoutSecondsRemaining {
+    if (!isLockedOut || _lockoutUntil == null) return 0;
+    final diff = _lockoutUntil!.difference(DateTime.now()).inSeconds;
+    return diff > 0 ? diff : 0;
+  }
+
+  Future<void> _recordFailedAttempt() async {
+    _failedAttempts++;
+    if (_failedAttempts >= maxFailedAttempts) {
+      _lockoutUntil = DateTime.now().add(lockoutDuration);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_prefKeyLockoutUntil, _lockoutUntil!.millisecondsSinceEpoch);
+    }
+    notifyListeners();
+  }
+
+  Future<void> _resetLockout() async {
+    if (_failedAttempts > 0 || _lockoutUntil != null) {
+      _failedAttempts = 0;
+      _lockoutUntil = null;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_prefKeyLockoutUntil);
+      notifyListeners();
+    }
+  }
+
+  /// Explicitly reset lockout (for testing or administrative overrides).
+  Future<void> resetLockout() async {
+    await _resetLockout();
+  }
+
   UserRole? _currentRole;
   Doctor? _currentDoctor;
   bool _isInitialized = false;
-  String _receptionistPin = defaultReceptionistPin;
-  String _ownerMasterPin = defaultOwnerMasterPin;
   String _receptionistPinHash = _defaultReceptionistPinHash;
   String _ownerMasterPinHash = _defaultOwnerMasterPinHash;
 
@@ -86,10 +145,6 @@ class AuthProvider with ChangeNotifier {
 
   String get ownerMasterPinHash => _ownerMasterPinHash;
 
-  String get receptionistPin => _receptionistPin;
-
-  String get ownerMasterPin => _ownerMasterPin;
-
   bool get isCustomOwnerPinSet =>
       _ownerMasterPinHash != _defaultOwnerMasterPinHash;
 
@@ -99,7 +154,7 @@ class AuthProvider with ChangeNotifier {
   /// Whether universal 0000 testing authentication mode is active.
   bool get isTestingMode => ClinicConfig.current.features.isTestingModeActive;
 
-  /// Verifies if a given PIN matches the clinic Reception PIN (0000) or Owner Master PIN.
+  /// Verifies if a given PIN matches the clinic Reception PIN or Owner Master PIN.
   /// When [isTestingMode] is active, '0000' is unconditionally accepted.
   bool verifyReceptionOrOwnerPin(String pin) {
     final cleanPin = pin.trim();
@@ -107,9 +162,7 @@ class AuthProvider with ChangeNotifier {
     if (isTestingMode && cleanPin == '0000') return true;
     final inputHash = hashPin(cleanPin);
     return inputHash == _receptionistPinHash ||
-        inputHash == _defaultReceptionistPinHash ||
-        inputHash == _ownerMasterPinHash ||
-        inputHash == _defaultOwnerMasterPinHash;
+        inputHash == _ownerMasterPinHash;
   }
 
   Future<void> initSession(List<Doctor> availableDoctors) async {
@@ -147,6 +200,18 @@ class AuthProvider with ChangeNotifier {
       );
     }
 
+    // Restore persisted lockout if still active
+    final lockoutMs = prefs.getInt(_prefKeyLockoutUntil);
+    if (lockoutMs != null) {
+      final storedLockout = DateTime.fromMillisecondsSinceEpoch(lockoutMs);
+      if (storedLockout.isAfter(DateTime.now())) {
+        _lockoutUntil = storedLockout;
+        _failedAttempts = maxFailedAttempts;
+      } else {
+        await prefs.remove(_prefKeyLockoutUntil);
+      }
+    }
+
     final savedRole = prefs.getString(_prefKeyRole);
     final savedDoctorId = prefs.getString(_prefKeyDoctorId);
 
@@ -172,6 +237,47 @@ class AuthProvider with ChangeNotifier {
     }
     _isInitialized = true;
     notifyListeners();
+
+    // 2. Subscribe to remote security pin synchronization
+    await _securitySubscription?.cancel();
+    try {
+      _securitySubscription = _securityService.securityStream().listen(
+        (snapshot) async {
+          if (!snapshot.exists || snapshot.data() == null) return;
+          final data = snapshot.data()!;
+          bool changed = false;
+
+          final remoteOwnerHash = data['ownerMasterPinHash'] as String?;
+          if (remoteOwnerHash != null &&
+              remoteOwnerHash.isNotEmpty &&
+              remoteOwnerHash != _ownerMasterPinHash) {
+            _ownerMasterPinHash = remoteOwnerHash;
+            final p = await SharedPreferences.getInstance();
+            await p.setString(_prefKeyOwnerMasterPinHash, remoteOwnerHash);
+            changed = true;
+          }
+
+          final remoteRecHash = data['receptionistPinHash'] as String?;
+          if (remoteRecHash != null &&
+              remoteRecHash.isNotEmpty &&
+              remoteRecHash != _receptionistPinHash) {
+            _receptionistPinHash = remoteRecHash;
+            final p = await SharedPreferences.getInstance();
+            await p.setString(_prefKeyReceptionistPinHash, remoteRecHash);
+            changed = true;
+          }
+
+          if (changed) {
+            notifyListeners();
+          }
+        },
+        onError: (_) {
+          // Gracefully handle network drops
+        },
+      );
+    } catch (_) {
+      // Offline or unit testing without Firebase
+    }
   }
 
   /// Unified PIN evaluation using SHA-256 hash comparisons:
@@ -183,6 +289,12 @@ class AuthProvider with ChangeNotifier {
     required List<Doctor> doctors,
     UserRole? targetRole,
   }) async {
+    if (isLockedOut) {
+      return AuthResult.failed(
+        'Too many failed attempts. Locked for $lockoutSecondsRemaining seconds.',
+      );
+    }
+
     final cleanPin = pin.trim();
     final inputHash = hashPin(cleanPin);
     final prefs = await SharedPreferences.getInstance();
@@ -194,6 +306,7 @@ class AuthProvider with ChangeNotifier {
         _currentDoctor = null;
         await prefs.setString(_prefKeyRole, UserRole.owner.name);
         await prefs.remove(_prefKeyDoctorId);
+        await _resetLockout();
         notifyListeners();
         return AuthResult.success(UserRole.owner);
       }
@@ -202,31 +315,31 @@ class AuthProvider with ChangeNotifier {
         _currentDoctor = null;
         await prefs.setString(_prefKeyRole, UserRole.receptionist.name);
         await prefs.remove(_prefKeyDoctorId);
+        await _resetLockout();
         notifyListeners();
         return AuthResult.success(UserRole.receptionist);
       }
     }
 
     // 1. Check 6-digit Owner Master PIN via cryptographic hash
-    if (cleanPin.length == 6 &&
-        (inputHash == _ownerMasterPinHash ||
-            inputHash == _defaultOwnerMasterPinHash)) {
+    if (cleanPin.length == 6 && inputHash == _ownerMasterPinHash) {
       _currentRole = UserRole.owner;
       _currentDoctor = null;
       await prefs.setString(_prefKeyRole, UserRole.owner.name);
       await prefs.remove(_prefKeyDoctorId);
+      await _resetLockout();
       notifyListeners();
       return AuthResult.success(UserRole.owner);
     }
 
     // 2. Check 4-digit Receptionist PIN via cryptographic hash (or testing mode 0000)
     if (inputHash == _receptionistPinHash ||
-        inputHash == _defaultReceptionistPinHash ||
         (isTestingMode && cleanPin == '0000')) {
       _currentRole = UserRole.receptionist;
       _currentDoctor = null;
       await prefs.setString(_prefKeyRole, UserRole.receptionist.name);
       await prefs.remove(_prefKeyDoctorId);
+      await _resetLockout();
       notifyListeners();
       return AuthResult.success(UserRole.receptionist);
     }
@@ -241,12 +354,14 @@ class AuthProvider with ChangeNotifier {
       _currentDoctor = doc;
       await prefs.setString(_prefKeyRole, UserRole.doctor.name);
       await prefs.setString(_prefKeyDoctorId, doc.id);
+      await _resetLockout();
       notifyListeners();
       return AuthResult.success(UserRole.doctor, doctor: doc);
     } else if (matchedDoctors.length > 1) {
       return AuthResult.multipleDoctors(matchedDoctors);
     }
 
+    await _recordFailedAttempt();
     return AuthResult.failed('Invalid Access PIN. Please try again.');
   }
 
@@ -263,40 +378,44 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> loginAsOwner(String pin) async {
+    if (isLockedOut) return false;
     final cleanPin = pin.trim();
     final inputHash = hashPin(cleanPin);
     if ((isTestingMode && cleanPin == '0000') ||
-        inputHash == _ownerMasterPinHash ||
-        inputHash == _defaultOwnerMasterPinHash) {
+        inputHash == _ownerMasterPinHash) {
       _currentRole = UserRole.owner;
       _currentDoctor = null;
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefKeyRole, _currentRole!.name);
       await prefs.remove(_prefKeyDoctorId);
+      await _resetLockout();
 
       notifyListeners();
       return true;
     }
+    await _recordFailedAttempt();
     return false;
   }
 
   Future<bool> loginAsReceptionist(String pin) async {
+    if (isLockedOut) return false;
     final cleanPin = pin.trim();
     final inputHash = hashPin(cleanPin);
     if ((isTestingMode && cleanPin == '0000') ||
-        inputHash == _receptionistPinHash ||
-        inputHash == _defaultReceptionistPinHash) {
+        inputHash == _receptionistPinHash) {
       _currentRole = UserRole.receptionist;
       _currentDoctor = null;
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefKeyRole, UserRole.receptionist.name);
       await prefs.remove(_prefKeyDoctorId);
+      await _resetLockout();
 
       notifyListeners();
       return true;
     }
+    await _recordFailedAttempt();
     return false;
   }
 
@@ -308,6 +427,7 @@ class AuthProvider with ChangeNotifier {
     String pin, {
     UserRole? targetRole,
   }) async {
+    if (isLockedOut) return false;
     final cleanPin = pin.trim();
     final inputHash = hashPin(cleanPin);
 
@@ -320,28 +440,26 @@ class AuthProvider with ChangeNotifier {
     }
 
     // 1. Check Owner PIN (6-digit admin)
-    if (cleanPin.length == 6 &&
-        (inputHash == _ownerMasterPinHash ||
-            inputHash == _defaultOwnerMasterPinHash)) {
+    if (cleanPin.length == 6 && inputHash == _ownerMasterPinHash) {
       return loginAsOwner(cleanPin);
     }
 
     // 2. Check Receptionist PIN (4-digit reception)
-    if (inputHash == _receptionistPinHash ||
-        inputHash == _defaultReceptionistPinHash) {
+    if (inputHash == _receptionistPinHash) {
       return loginAsReceptionist(cleanPin);
     }
 
     // Fallback: If 6-digit owner pin didn't match length rule but matches owner hash
-    if (inputHash == _ownerMasterPinHash ||
-        inputHash == _defaultOwnerMasterPinHash) {
+    if (inputHash == _ownerMasterPinHash) {
       return loginAsOwner(cleanPin);
     }
 
+    await _recordFailedAttempt();
     return false;
   }
 
   Future<bool> loginAsDoctor(Doctor doctor, String pin) async {
+    if (isLockedOut) return false;
     if (!doctor.isActive) return false;
     final cleanPin = pin.trim();
     if ((isTestingMode && cleanPin == '0000') ||
@@ -352,10 +470,12 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefKeyRole, UserRole.doctor.name);
       await prefs.setString(_prefKeyDoctorId, doctor.id);
+      await _resetLockout();
 
       notifyListeners();
       return true;
     }
+    await _recordFailedAttempt();
     return false;
   }
 
@@ -367,26 +487,50 @@ class AuthProvider with ChangeNotifier {
     if (cleanPin.isEmpty) return false;
     if (isTestingMode && cleanPin == '0000') return true;
     final inputHash = hashPin(cleanPin);
-    return inputHash == _ownerMasterPinHash ||
-        inputHash == _defaultOwnerMasterPinHash;
+    return inputHash == _ownerMasterPinHash;
+  }
+
+  /// Updates Owner Master PIN and/or Receptionist PIN locally and synchronizes to Firestore.
+  Future<void> updateSecurityPins({
+    String? newOwnerPin,
+    String? newReceptionistPin,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    String? newOwnerHash;
+    String? newRecHash;
+
+    if (newOwnerPin != null && newOwnerPin.trim().isNotEmpty) {
+      newOwnerHash = hashPin(newOwnerPin.trim());
+      _ownerMasterPinHash = newOwnerHash;
+      await prefs.setString(_prefKeyOwnerMasterPinHash, newOwnerHash);
+      await prefs.remove(_legacyPrefKeyOwnerMasterPin);
+    }
+
+    if (newReceptionistPin != null && newReceptionistPin.trim().isNotEmpty) {
+      newRecHash = hashPin(newReceptionistPin.trim());
+      _receptionistPinHash = newRecHash;
+      await prefs.setString(_prefKeyReceptionistPinHash, newRecHash);
+      await prefs.remove(_legacyPrefKeyReceptionistPin);
+    }
+
+    notifyListeners();
+
+    try {
+      await _securityService.updateSecurityPins(
+        ownerMasterPinHash: newOwnerHash,
+        receptionistPinHash: newRecHash,
+      );
+    } catch (_) {
+      // Local changes persist via SharedPreferences even when offline
+    }
   }
 
   Future<void> setOwnerMasterPin(String newPin) async {
-    _ownerMasterPin = newPin.trim();
-    _ownerMasterPinHash = hashPin(newPin);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefKeyOwnerMasterPinHash, _ownerMasterPinHash);
-    await prefs.remove(_legacyPrefKeyOwnerMasterPin);
-    notifyListeners();
+    await updateSecurityPins(newOwnerPin: newPin);
   }
 
   Future<void> setReceptionistPin(String newPin) async {
-    _receptionistPin = newPin.trim();
-    _receptionistPinHash = hashPin(newPin);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefKeyReceptionistPinHash, _receptionistPinHash);
-    await prefs.remove(_legacyPrefKeyReceptionistPin);
-    notifyListeners();
+    await updateSecurityPins(newReceptionistPin: newPin);
   }
 
   Future<void> logout() async {
@@ -398,5 +542,11 @@ class AuthProvider with ChangeNotifier {
     await prefs.remove(_prefKeyDoctorId);
 
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _securitySubscription?.cancel();
+    super.dispose();
   }
 }

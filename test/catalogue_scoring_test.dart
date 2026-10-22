@@ -598,7 +598,7 @@ void main() {
     );
 
     testWidgets(
-      'ReceptionLoginForm renders 0000 credentials in testing mode without leaking 849201',
+      'ReceptionLoginForm renders cleanly in testing mode without leaking 0000 or 849201 credentials',
       (tester) async {
         final pinCtrl = TextEditingController();
         await tester.pumpWidget(
@@ -616,8 +616,9 @@ void main() {
           ),
         );
 
-        expect(find.textContaining('0000'), findsWidgets);
+        expect(find.textContaining('0000'), findsNothing);
         expect(find.textContaining('849201'), findsNothing);
+        expect(find.textContaining('🧪 Testing Mode Active'), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );
