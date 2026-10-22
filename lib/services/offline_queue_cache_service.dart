@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/appointment.dart';
@@ -48,7 +49,8 @@ class OfflineQueueCacheService {
       return decoded
           .map((item) => Appointment.fromJson(item as Map<String, dynamic>))
           .toList();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('OfflineQueueCacheService: failed to decode cached queue: $e');
       return null;
     }
   }
@@ -64,7 +66,8 @@ class OfflineQueueCacheService {
 
     try {
       return DateTime.parse(rawTime);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('OfflineQueueCacheService: failed to parse cache timestamp: $e');
       return null;
     }
   }

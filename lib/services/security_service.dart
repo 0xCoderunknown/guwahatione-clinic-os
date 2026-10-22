@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'firestore_paths.dart';
 
 /// Service managing remote synchronization of clinic access PIN hashes.
@@ -21,7 +22,8 @@ class SecurityService {
           .collection(FirestorePaths.clinicConfig)
           .doc(FirestorePaths.securityDoc)
           .snapshots();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('SecurityService: error subscribing to security settings stream: $e');
       return const Stream.empty();
     }
   }

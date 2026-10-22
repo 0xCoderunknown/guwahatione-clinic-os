@@ -210,7 +210,9 @@ class LiveQueueDelegate {
                 _offlineCacheTimestamp = ts;
                 _notifyListeners();
               }
-            } catch (_) {}
+            } catch (e) {
+              debugPrint('Offline queue cache fallback error: $e');
+            }
           },
         );
   }
