@@ -288,6 +288,7 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                     genderHasError: _genderHasError,
                     familyMembers: _familyMembers,
                     selectedPatientId: _selectedPatientId,
+                    primaryContactName: _familyMembers.firstOrNull?.name,
                     onSelectPatient: _onSelectFamilyMember,
                     ageUnit: _ageUnit,
                     onAgeUnitChanged: (unit) {
@@ -532,13 +533,15 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       }
     } else {
       // "+ Add Member" on same household phone
+      final primaryContact = _familyMembers.firstOrNull;
       setState(() {
         _selectedPatientId = null;
         _isNewPatient = true;
         _nameController.clear();
         _ageController.clear();
-        _guardianNameController.clear();
-        _guardianRelationController.clear();
+        _guardianNameController.text = primaryContact?.name ?? '';
+        _guardianRelationController.text =
+            primaryContact != null ? 'Parent / Guardian' : '';
         _selectedGender = null;
         _genderHasError = false;
         _patientAppointments = [];

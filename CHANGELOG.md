@@ -8,6 +8,20 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.4] — 22-10-2026
+
+### Family-Aware Patient Matching, Compact Confirmation Banners & Paediatric Guardian Pre-fill (QOL-17)
+- **Compact Visual Confirmation Banners (QOL-17):**
+  - Integrated an explicit, single-line green status confirmation banner above the patient name field when matching an existing patient: `✅ Registered: [Name] ([Age]) • Auto-filled`.
+  - When switching to `+ Add Member` on a household number, displays a concise blue banner attributing the primary contact: `👨‍👩‍👧 New Member for [Primary Contact Name]`.
+  - Enforced strict single-line text truncation (`TextOverflow.ellipsis`) and compact vertical padding to eliminate overflow risks within the 460px booking modal width budget.
+- **Phone Row Quick Add-Member Action:**
+  - Added a dedicated 1-tap `[person_add]` icon button directly in the phone number row alongside the discovery spinner, allowing receptionists to instantly switch to family member registration without having to tab to the family chips row.
+- **Smart Paediatric Guardian Pre-fill:**
+  - When clicking `+ Add Member` under a registered household contact, automatically pre-fills `Guardian Name` with the primary contact's name and `Guardian Relation` with `'Parent / Guardian'`, saving counter assistants redundant verbal questioning during rush paediatric walk-ins.
+- **Pre-2.0 Active Development Phase Constitution Update:**
+  - Updated Invariant 10 in `AGENTS.md` explicitly defining the active development phase until Version 2.0 with allowed schema and API refactorings, transitioning to strict stability post-2.0.
+
 ## [1.40.3] — 22-10-2026
 
 ### Consultation Discard Lobby Return, Strict Free Visit Metric & Single Fee Configuration Source (AUDIT-13, AUDIT-25, AUDIT-10, AUDIT-11)

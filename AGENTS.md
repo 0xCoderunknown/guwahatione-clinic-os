@@ -67,9 +67,9 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
    - Any direct doctor door admission fallback (`ChamberDoorOverrideBar`) must strictly show ONLY the next 1–2 patients who are physically present in clinic (`waitingInLobby`) with confirmed payment/waiver (`PaymentType != unpaid`).
    - Remote reservations (`VisitStatus.booked`) and unpaid tokens (`PaymentType.unpaid`) must NEVER appear in emergency self-call lists.
 
-10. **Zero Backward-Compatibility Debt (No Compatibility Shims):**
-    - **Backward compatibility is NOT required in this codebase.**
-    - Never write fallback bridges, legacy adapters, deprecated aliases, migration shims, or polyfill glue solely to maintain backward compatibility with obsolete schemas or retired APIs.
+10. **Pre-2.0 Active Development Phase & Zero Backward-Compatibility Debt:**
+    - **Active Development Phase Until Version 2.0:** You are explicitly allowed to break schemas, data models, internal APIs, and component structures until version 2.0 is reached. Post-2.0, strict schema immutability, data migrations, and stability rules will apply.
+    - **Backward compatibility is NOT required in this codebase.** Never write fallback bridges, legacy adapters, deprecated aliases, migration shims, or polyfill glue solely to maintain backward compatibility with obsolete schemas or retired APIs.
     - Clean, modern, unified domain code is always prioritized over legacy preservation.
     - If backward compatibility happens naturally without extra code or compromises, that is fine; if not, breaking clean is explicitly encouraged.
     - **MANDATORY:** Whenever a breaking change is introduced (schema mutation, model property shift, API signature rewrite), you MUST explicitly inform the Product Manager.

@@ -35,6 +35,9 @@ class BookingPatientFields extends StatelessWidget {
   final FocusNode? guardianFocusNode;
   final FocusNode? guardianRelationFocusNode;
 
+  // Primary Contact Name (for + Add Member banner)
+  final String? primaryContactName;
+
   const BookingPatientFields({
     super.key,
     required this.phoneController,
@@ -59,14 +62,23 @@ class BookingPatientFields extends StatelessWidget {
     required this.guardianRelationController,
     this.guardianFocusNode,
     this.guardianRelationFocusNode,
+    this.primaryContactName,
   });
 
   @override
   Widget build(BuildContext context) {
+    final selectedPatient = selectedPatientId != null
+        ? familyMembers.where((m) => m.id == selectedPatientId).firstOrNull
+        : null;
+    final isAddingFamilyMember =
+        familyMembers.isNotEmpty && selectedPatientId == null;
+    final resolvedPrimaryContact = primaryContactName ??
+        (familyMembers.isNotEmpty ? familyMembers.first.name : null);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 1. Phone Input with Discovery Spinner
+        // 1. Phone Input with Discovery Spinner & Quick Add Member Action
         Row(
           children: [
             Expanded(
@@ -93,6 +105,24 @@ class BookingPatientFields extends StatelessWidget {
                 onFieldSubmitted: (_) => nameFocusNode.requestFocus(),
               ),
             ),
+            if (familyMembers.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Tooltip(
+                message: 'Add family member under this phone',
+                child: IconButton.filledTonal(
+                  onPressed: () => onSelectPatient(null),
+                  style: IconButton.styleFrom(
+                    backgroundColor: isAddingFamilyMember
+                        ? const Color(0xFFDBEAFE)
+                        : const Color(0xFFF1F5F9),
+                    foregroundColor: isAddingFamilyMember
+                        ? const Color(0xFF1D4ED8)
+                        : const Color(0xFF475569),
+                  ),
+                  icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
+                ),
+              ),
+            ],
             if (isLoading)
               const Padding(
                 padding: EdgeInsets.only(left: 10.0),
@@ -140,19 +170,100 @@ class BookingPatientFields extends StatelessWidget {
                     ),
                   );
                 }),
-                ActionChip(
-                  avatar: const Icon(Icons.person_add_alt_1, size: 14),
-                  label: const Text(
-                    '+ Add Member',
-                    style: TextStyle(fontSize: 12),
+                ChoiceChip(
+                  avatar: Icon(
+                    Icons.person_add_alt_1,
+                    size: 14,
+                    color: isAddingFamilyMember
+                        ? Colors.white
+                        : const Color(0xFF2563EB),
                   ),
-                  onPressed: () => onSelectPatient(null),
+                  selected: isAddingFamilyMember,
+                  selectedColor: const Color(0xFF2563EB),
+                  label: Text(
+                    '+ Add Member',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isAddingFamilyMember
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: isAddingFamilyMember ? Colors.white : null,
+                    ),
+                  ),
+                  onSelected: (_) => onSelectPatient(null),
                 ),
               ],
             ),
           ),
         ],
-        const SizedBox(height: 14),
+
+        // Visual Confirmation Strip
+        if (selectedPatient != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFFBBF7D0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  size: 15,
+                  color: Color(0xFF16A34A),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Registered: ${selectedPatient.name} (${selectedPatient.formattedAge}) • Auto-filled',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF15803D),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else if (isAddingFamilyMember && resolvedPrimaryContact != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.group_add_rounded,
+                  size: 15,
+                  color: Color(0xFF2563EB),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'New Member for $resolvedPrimaryContact',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1D4ED8),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
 
         // 2. Patient Name (Full width for long names)
         TextFormField(

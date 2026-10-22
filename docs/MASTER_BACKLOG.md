@@ -579,16 +579,18 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-17 — Explicit "Patient Already Registered" Visual Banner on Phone Match
+### QOL-17 🟢 [RESOLVED] — Explicit "Patient Already Registered" Visual Banner on Phone Match & Family Member Attribution
 
 **Domain:** Reception Desk / Registration  
 **Affected Files:** `lib/widgets/booking/booking_patient_fields.dart`, `lib/widgets/booking/add_appointment_dialog.dart`  
 **Origin / Clinical Memory Dump:**  
 > *"She enters Hira's phone number. It says 'patient already exist' and immediately pre-fills all details like name, age, etc."*  
-**Current Implementation Gap:** When a 10-digit phone number matches existing records, the form renders family member chips and populates the text fields, but lacks an explicit status alert or banner confirming that an existing patient record was found.  
-**Specification:**
-- Render an immediate green confirmation chip or banner above the name field: `✅ Registered Patient Found: [Name] (Age) • Details auto-filled`.
-- Informs counter staff that the patient is in the database and prevents accidental duplicate creation.
+**Status:** Resolved in v1.40.4.
+- When an existing patient is selected, displays a compact green confirmation strip: `✅ Registered: [Name] ([Age]) • Auto-filled`.
+- When switching to `+ Add Member` (child / relative under household phone), displays a concise blue banner: `👨‍👩‍👧 New Member for [PrimaryContactName]`.
+- Added quick add-member icon button directly in the phone row next to discovery spinner.
+- Pre-fills `Guardian Name` with primary contact's name and `Guardian Relation` with `'Parent / Guardian'` when registering a new dependent.
+- Strictly budgeted within 460px modal width with single-line truncation (`TextOverflow.ellipsis`).
 
 ---
 
@@ -888,7 +890,7 @@ flutter test      # All 306+ tests pass
 
 | Author's Description | Implementation Reality | Status |
 |---|---|---|
-| Receptionist types phone number and system says *"Patient already exists"*, auto-fills all fields | Fields auto-fill and family chips appear — but no explicit green confirmation banner/chip is rendered | ⚠️ Gap → **QOL-17** |
+| Receptionist types phone number and system says *"Patient already exists"*, auto-fills all fields | Renders compact green confirmation strip for registered patients and blue banner for new family members (v1.40.4) | ✅ Verified |
 | New family member (`+ Add Member`) gets a new independent `patientId` linked to guardian's phone | Fully implemented via `BookingPatientFields` family picker + `PatientService.createPatient` with `guardianName`/`guardianRelation` | ✅ Verified |
 | Child patient identity zero cross-contamination with father's records | `patientId` is decoupled from phone. Phone is household contact index only. Confirmed via `SCHEMA_AND_MODELS.md`. | ✅ Verified |
 | Emergency / no-mobile patient registration | Not implemented — 1-tap dummy key feature pending | ⚠️ Gap → **QOL-01** |
