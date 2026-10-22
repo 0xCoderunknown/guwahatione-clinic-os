@@ -8,6 +8,19 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.9] — 22-10-2026
+
+### Counter Continuity & Security Simplification (AUDIT-03, AUDIT-04 & QOL-12)
+- **Purge of Terminal Lockout & Screen Freeze (AUDIT-04):**
+  - Completely removed the 30-second lockout timer, lockout state, and blocked inputs from `AuthProvider` and `LoginScreen`.
+  - In a real-world OPD clinic, mistyped PINs at the counter now immediately display an inline error without freezing the desk, ensuring uninterrupted patient registration and cash collection during peak morning rushes.
+- **Formal Cancellation of Doctor PIN Hashing (AUDIT-03):**
+  - Retained clean plaintext 4-digit PIN storage for doctors in Firestore, accessible exclusively to the authenticated Clinic Owner in `DoctorListScreen`.
+  - Solves the physical clinic reality where visiting doctors rotate across multiple clinics and forget PINs, allowing the owner to look up and remind the physician in 5 seconds without password resets.
+- **Friction-Free Chamber Queue Previews (QOL-12):**
+  - Confirmed and preserved friction-free queue inspection for receptionists and clinic owners without requiring doctor PIN entry.
+  - Rely on the core Doctor-Paced Chamber Handshake architecture (locked dispatch while consultation is active or during breather) to prevent accidental patient admission or sound announcements.
+
 ## [1.40.8] — 22-10-2026
 
 ### Reconciled Regimen In-Place Duration Dropdown & Inline Dosage Editing (QOL-14)

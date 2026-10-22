@@ -69,57 +69,7 @@ class AuthProvider with ChangeNotifier {
     defaultOwnerMasterPin,
   );
 
-  static const int maxFailedAttempts = 5;
-  static const Duration lockoutDuration = Duration(seconds: 30);
-  static const String _prefKeyLockoutUntil = 'auth_lockout_until_ms';
 
-  int _failedAttempts = 0;
-  DateTime? _lockoutUntil;
-
-  int get failedAttempts => _failedAttempts;
-
-  /// Whether authentication is temporarily locked out due to excessive failed attempts.
-  bool get isLockedOut {
-    if (_lockoutUntil == null) return false;
-    if (DateTime.now().isAfter(_lockoutUntil!)) {
-      _lockoutUntil = null;
-      _failedAttempts = 0;
-      return false;
-    }
-    return true;
-  }
-
-  /// Remaining seconds before lockout expires, or 0 if not locked out.
-  int get lockoutSecondsRemaining {
-    if (!isLockedOut || _lockoutUntil == null) return 0;
-    final diff = _lockoutUntil!.difference(DateTime.now()).inSeconds;
-    return diff > 0 ? diff : 0;
-  }
-
-  Future<void> _recordFailedAttempt() async {
-    _failedAttempts++;
-    if (_failedAttempts >= maxFailedAttempts) {
-      _lockoutUntil = DateTime.now().add(lockoutDuration);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_prefKeyLockoutUntil, _lockoutUntil!.millisecondsSinceEpoch);
-    }
-    notifyListeners();
-  }
-
-  Future<void> _resetLockout() async {
-    if (_failedAttempts > 0 || _lockoutUntil != null) {
-      _failedAttempts = 0;
-      _lockoutUntil = null;
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_prefKeyLockoutUntil);
-      notifyListeners();
-    }
-  }
-
-  /// Explicitly reset lockout (for testing or administrative overrides).
-  Future<void> resetLockout() async {
-    await _resetLockout();
-  }
 
   UserRole? _currentRole;
   Doctor? _currentDoctor;
@@ -200,17 +150,7 @@ class AuthProvider with ChangeNotifier {
       );
     }
 
-    // Restore persisted lockout if still active
-    final lockoutMs = prefs.getInt(_prefKeyLockoutUntil);
-    if (lockoutMs != null) {
-      final storedLockout = DateTime.fromMillisecondsSinceEpoch(lockoutMs);
-      if (storedLockout.isAfter(DateTime.now())) {
-        _lockoutUntil = storedLockout;
-        _failedAttempts = maxFailedAttempts;
-      } else {
-        await prefs.remove(_prefKeyLockoutUntil);
-      }
-    }
+
 
     final savedRole = prefs.getString(_prefKeyRole);
     final savedDoctorId = prefs.getString(_prefKeyDoctorId);
@@ -289,12 +229,6 @@ class AuthProvider with ChangeNotifier {
     required List<Doctor> doctors,
     UserRole? targetRole,
   }) async {
-    if (isLockedOut) {
-      return AuthResult.failed(
-        'Too many failed attempts. Locked for $lockoutSecondsRemaining seconds.',
-      );
-    }
-
     final cleanPin = pin.trim();
     final inputHash = hashPin(cleanPin);
     final prefs = await SharedPreferences.getInstance();
@@ -306,7 +240,6 @@ class AuthProvider with ChangeNotifier {
         _currentDoctor = null;
         await prefs.setString(_prefKeyRole, UserRole.owner.name);
         await prefs.remove(_prefKeyDoctorId);
-        await _resetLockout();
         notifyListeners();
         return AuthResult.success(UserRole.owner);
       }
@@ -315,7 +248,6 @@ class AuthProvider with ChangeNotifier {
         _currentDoctor = null;
         await prefs.setString(_prefKeyRole, UserRole.receptionist.name);
         await prefs.remove(_prefKeyDoctorId);
-        await _resetLockout();
         notifyListeners();
         return AuthResult.success(UserRole.receptionist);
       }
@@ -327,7 +259,6 @@ class AuthProvider with ChangeNotifier {
       _currentDoctor = null;
       await prefs.setString(_prefKeyRole, UserRole.owner.name);
       await prefs.remove(_prefKeyDoctorId);
-      await _resetLockout();
       notifyListeners();
       return AuthResult.success(UserRole.owner);
     }
@@ -339,7 +270,6 @@ class AuthProvider with ChangeNotifier {
       _currentDoctor = null;
       await prefs.setString(_prefKeyRole, UserRole.receptionist.name);
       await prefs.remove(_prefKeyDoctorId);
-      await _resetLockout();
       notifyListeners();
       return AuthResult.success(UserRole.receptionist);
     }
@@ -354,14 +284,12 @@ class AuthProvider with ChangeNotifier {
       _currentDoctor = doc;
       await prefs.setString(_prefKeyRole, UserRole.doctor.name);
       await prefs.setString(_prefKeyDoctorId, doc.id);
-      await _resetLockout();
       notifyListeners();
       return AuthResult.success(UserRole.doctor, doctor: doc);
     } else if (matchedDoctors.length > 1) {
       return AuthResult.multipleDoctors(matchedDoctors);
     }
 
-    await _recordFailedAttempt();
     return AuthResult.failed('Invalid Access PIN. Please try again.');
   }
 
@@ -378,7 +306,6 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> loginAsOwner(String pin) async {
-    if (isLockedOut) return false;
     final cleanPin = pin.trim();
     final inputHash = hashPin(cleanPin);
     if ((isTestingMode && cleanPin == '0000') ||
@@ -389,17 +316,14 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefKeyRole, _currentRole!.name);
       await prefs.remove(_prefKeyDoctorId);
-      await _resetLockout();
 
       notifyListeners();
       return true;
     }
-    await _recordFailedAttempt();
     return false;
   }
 
   Future<bool> loginAsReceptionist(String pin) async {
-    if (isLockedOut) return false;
     final cleanPin = pin.trim();
     final inputHash = hashPin(cleanPin);
     if ((isTestingMode && cleanPin == '0000') ||
@@ -410,12 +334,10 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefKeyRole, UserRole.receptionist.name);
       await prefs.remove(_prefKeyDoctorId);
-      await _resetLockout();
 
       notifyListeners();
       return true;
     }
-    await _recordFailedAttempt();
     return false;
   }
 
@@ -427,7 +349,6 @@ class AuthProvider with ChangeNotifier {
     String pin, {
     UserRole? targetRole,
   }) async {
-    if (isLockedOut) return false;
     final cleanPin = pin.trim();
     final inputHash = hashPin(cleanPin);
 
@@ -454,12 +375,10 @@ class AuthProvider with ChangeNotifier {
       return loginAsOwner(cleanPin);
     }
 
-    await _recordFailedAttempt();
     return false;
   }
 
   Future<bool> loginAsDoctor(Doctor doctor, String pin) async {
-    if (isLockedOut) return false;
     if (!doctor.isActive) return false;
     final cleanPin = pin.trim();
     if ((isTestingMode && cleanPin == '0000') ||
@@ -470,12 +389,10 @@ class AuthProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefKeyRole, UserRole.doctor.name);
       await prefs.setString(_prefKeyDoctorId, doctor.id);
-      await _resetLockout();
 
       notifyListeners();
       return true;
     }
-    await _recordFailedAttempt();
     return false;
   }
 

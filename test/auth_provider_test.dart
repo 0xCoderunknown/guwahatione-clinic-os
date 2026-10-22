@@ -382,61 +382,23 @@ void main() {
       },
     );
 
-    test('Brute force protection: 5 failed attempts triggers 30-second lockout', () async {
+    test('Clinic floor continuity: failed PIN attempts never trigger counter lockout', () async {
       final auth = AuthProvider();
       await auth.initSession(sampleDoctors);
 
-      expect(auth.isLockedOut, isFalse);
-      expect(auth.failedAttempts, 0);
-
-      // 4 failed attempts do not trigger lockout
-      for (int i = 0; i < 4; i++) {
+      // Multiple consecutive failed attempts
+      for (int i = 0; i < 10; i++) {
         final result = await auth.loginAsReceptionistOrOwner('999$i');
         expect(result, isFalse);
-        expect(auth.isLockedOut, isFalse);
-        expect(auth.failedAttempts, i + 1);
       }
 
-      // 5th failed attempt triggers lockout
-      final fifthFail = await auth.loginAsReceptionistOrOwner('9999');
-      expect(fifthFail, isFalse);
-      expect(auth.isLockedOut, isTrue);
-      expect(auth.failedAttempts, 5);
-      expect(auth.lockoutSecondsRemaining, inInclusiveRange(1, 30));
-
-      // Attempting login with correct credentials during lockout is rejected
-      expect(await auth.loginAsOwner('849201'), isFalse);
-      expect(await auth.loginAsReceptionist('0000'), isFalse);
-      final authResult = await auth.authenticateWithPin(
-        pin: '849201',
-        doctors: sampleDoctors,
-      );
-      expect(authResult.isSuccess, isFalse);
-      expect(authResult.errorMessage, contains('Too many failed attempts'));
-
-      // Resetting lockout restores normal login capability
-      await auth.resetLockout();
-      expect(auth.isLockedOut, isFalse);
-      expect(auth.failedAttempts, 0);
+      // Legitimate Owner and Reception logins immediately succeed without delay or lockout freeze
       expect(await auth.loginAsOwner('849201'), isTrue);
       expect(auth.isOwner, isTrue);
-    });
 
-    test('Successful authentication resets failed attempts counter', () async {
-      final auth = AuthProvider();
-      await auth.initSession(sampleDoctors);
-
-      // 3 failed attempts
-      await auth.loginAsReceptionistOrOwner('9991');
-      await auth.loginAsReceptionistOrOwner('9992');
-      await auth.loginAsReceptionistOrOwner('9993');
-      expect(auth.failedAttempts, 3);
-
-      // Successful login resets counter to 0
-      final success = await auth.loginAsOwner('849201');
-      expect(success, isTrue);
-      expect(auth.failedAttempts, 0);
-      expect(auth.isLockedOut, isFalse);
+      await auth.logout();
+      expect(await auth.loginAsReceptionist('0000'), isTrue);
+      expect(auth.isReceptionist, isTrue);
     });
   });
 

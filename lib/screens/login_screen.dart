@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -24,7 +23,6 @@ class _LoginScreenState extends State<LoginScreen>
   UserRole _selectedReceptionRole = UserRole.owner;
   String? _errorMessage;
   bool _isLoading = false;
-  Timer? _lockoutTickerTimer;
 
   @override
   void initState() {
@@ -32,20 +30,8 @@ class _LoginScreenState extends State<LoginScreen>
     _tabController = TabController(length: 2, vsync: this);
   }
 
-  void _syncLockoutTicker(bool isLockedOut) {
-    if (isLockedOut) {
-      _lockoutTickerTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
-      });
-    } else {
-      _lockoutTickerTimer?.cancel();
-      _lockoutTickerTimer = null;
-    }
-  }
-
   @override
   void dispose() {
-    _lockoutTickerTimer?.cancel();
     _tabController.dispose();
     _ownerPinController.dispose();
     _doctorPinController.dispose();
@@ -59,9 +45,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
     final effectiveDoctor =
         _selectedDoctor ?? (doctors.isNotEmpty ? doctors.first : null);
-    final authProvider = context.watch<AuthProvider>();
-    final isLockedOut = authProvider.isLockedOut;
-    _syncLockoutTicker(isLockedOut);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -178,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen>
                             doctors: doctors,
                             selectedDoctor: effectiveDoctor,
                             pinController: _doctorPinController,
-                            isLoading: _isLoading || isLockedOut,
+                            isLoading: _isLoading,
                             onDoctorChanged: (val) {
                               setState(() {
                                 _selectedDoctor = val;
@@ -190,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen>
                           // Reception Desk / Owner Tab
                           ReceptionLoginForm(
                             pinController: _ownerPinController,
-                            isLoading: _isLoading || isLockedOut,
+                            isLoading: _isLoading,
                             onLogin: _handleOwnerLogin,
                             onRoleChanged: (role) {
                               _selectedReceptionRole = role;
@@ -200,40 +183,7 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
 
-                    if (isLockedOut) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFFCA5A5)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.lock_clock_outlined,
-                              size: 18,
-                              color: Color(0xFFDC2626),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Too many failed attempts. Locked out for ${authProvider.lockoutSecondsRemaining}s.',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFFB91C1C),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ] else if (_errorMessage != null) ...[
+                    if (_errorMessage != null) ...[
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -278,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   Future<void> _handleDoctorLogin() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (_isLoading || authProvider.isLockedOut) return;
+    if (_isLoading) return;
     final clinic = Provider.of<ClinicProvider>(context, listen: false);
     final doc =
         _selectedDoctor ??
@@ -305,18 +255,14 @@ class _LoginScreenState extends State<LoginScreen>
 
     if (!success) {
       setState(() {
-        if (authProvider.isLockedOut) {
-          _errorMessage = null;
-        } else {
-          _errorMessage = 'Incorrect PIN for ${doc.name}. Please try again.';
-        }
+        _errorMessage = 'Incorrect PIN for ${doc.name}. Please try again.';
       });
     }
   }
 
   Future<void> _handleOwnerLogin() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (_isLoading || authProvider.isLockedOut) return;
+    if (_isLoading) return;
     final pin = _ownerPinController.text.trim();
     if (pin.isEmpty) {
       setState(() => _errorMessage = 'Please enter Reception or Owner PIN.');
@@ -338,11 +284,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     if (!success) {
       setState(() {
-        if (authProvider.isLockedOut) {
-          _errorMessage = null;
-        } else {
-          _errorMessage = 'Incorrect PIN. Please try again.';
-        }
+        _errorMessage = 'Incorrect PIN. Please try again.';
       });
     }
   }

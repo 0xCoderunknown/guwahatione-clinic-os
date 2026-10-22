@@ -74,23 +74,19 @@ Application-layer PIN checks do **not** protect Firestore. Rules are the only se
 
 ---
 
-### AUDIT-03 🔴 Doctor PINs Stored Plaintext in Firestore
+### AUDIT-03 🔴 [CANCELLED / SCRAPPED BY DESIGN] Doctor PIN Hashing at Rest
 
-**Files:** `lib/models/doctor.dart`, `lib/providers/auth_provider.dart` line 207
+**Files:** `lib/models/doctor.dart`, `lib/providers/auth_provider.dart`
 
-`AuthProvider.authenticateWithPin` hashes the value of `doctor.pin` at comparison time (`hashPin(d.pin) == inputHash`), but `doctor.pin` is loaded directly from Firestore as a plaintext 4-digit string (e.g. `'1234'`). SHA-256 hashing only protects Owner and Reception PINs in `SharedPreferences`. Doctor PINs in the `doctors` collection receive zero cryptographic protection at rest.
-
-**Fix:** Hash doctor PINs before writing to Firestore. Related: QOL-12 tracks the broader doctor PIN hardening work, but the specific Firestore plaintext storage issue must be addressed as part of AUDIT-02 resolution.
+**Decision (22-10-2026):** Formally scrapped by design per PM directive. In a real-world OPD clinic, visiting physicians rotate across 2–4 clinics per week and regularly forget their 4-digit chamber PINs. Cryptographic one-way hashing forces time-consuming manual resets. Storing readable 4-digit PINs in the `doctors` collection allows the Clinic Owner to instantly look up and remind the physician (`Chamber PIN: 1234` in `DoctorListScreen`) in 5 seconds. In an internal clinic with no public web access, plaintext doctor PINs are an intentional operational convenience.
 
 ---
 
-### AUDIT-04 🟢 [RESOLVED] No Brute-Force Protection on PIN Authentication
+### AUDIT-04 🔴 [CANCELLED / SCRAPPED BY DESIGN] Brute-Force Rate Limiting & Screen Lockout
 
 **Files:** `lib/screens/login_screen.dart`, `lib/providers/auth_provider.dart`
 
-Previously, there was no rate limiting or lockout threshold on PIN attempts.
-
-**Status:** Resolved in v1.40.6. Introduced client-side and persistent lockout defense in `AuthProvider`: 5 consecutive failed attempts triggers an automated 30-second lockout. During lockout, inputs are disabled and a real-time countdown alert banner is displayed in `LoginScreen`. Persistent lockout timestamp in `SharedPreferences` prevents bypassing via browser reload. Successful login resets failed attempts.
+**Decision (22-10-2026):** Formally purged from codebase in v1.40.9 per PM directive. In a busy clinic during peak morning OPD rush, an accidental mistyped PIN locking the counter terminal for 30–60 seconds halts walk-in registration, delays token issuing, and creates furious queues in the physical lobby. For an on-premise clinic tool used by 3 trusted staff roles, screen lockout is an operational hazard rather than a security benefit. The terminal now immediately displays an inline error without freezing the desk.
 
 ---
 
@@ -509,13 +505,14 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-12 — Doctor PIN Hashing & Chamber View Impersonation Lock
+### QOL-12 🔴 [CANCELLED / SCRAPPED BY DESIGN] — Doctor PIN Hashing & Chamber View Impersonation Lock
 
 **Domain:** Security / Chamber  
 **Affected Files:** `lib/models/doctor.dart`, `lib/screens/doctor_list_screen.dart`, `lib/screens/doctor_chamber_screen.dart`  
-**Specification:**
-- Hash Doctor PINs before writing to the `doctors` collection. (See also: AUDIT-03, AUDIT-12.)
-- Enforce strict chamber preview lock: preview mode displays view-only telemetry and suppresses all consultation triggers and door admissions without entering the doctor's PIN.
+**Decision (22-10-2026):** Formally scrapped by design per PM directive.
+- **Doctor PIN Hashing:** Cancelled (see AUDIT-03). Plaintext PIN storage in `doctors` is intentionally preserved so Clinic Owners can instantly look up forgotten PINs for visiting physicians.
+- **Preview PIN Lock:** Cancelled. Front-desk receptionists and clinic owners legitimately need to preview doctor queue occupancy from their terminals without entering the doctor's private PIN.
+- **Zero Pre-emption / Accidental Calling Guarantee:** Handshake architecture already enforces that reception cannot dispatch or chime patients while a doctor is examining someone or on break (`onDispatch = null` unless chamber status is `ready_for_next`). The system is structurally immune to pre-emption by design without adding artificial PIN barriers.
 
 ---
 
