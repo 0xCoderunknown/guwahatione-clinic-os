@@ -41,23 +41,77 @@ class ChamberControlBanner extends StatelessWidget {
         final isCompact = constraints.maxWidth < 600;
         switch (status) {
           case ChamberStatus.consultationEnded:
-            return _buildConsultationEndedCard(context, isCompact);
+            return _ConsultationEndedCard(
+              isCompact: isCompact,
+              lastCompletedQueueNumber: lastCompletedQueueNumber,
+              lastCompletedPatientName: lastCompletedPatientName,
+              isBusy: isBusy,
+              onNextPatient: onNextPatient,
+              onEndShift: onEndShift,
+            );
           case ChamberStatus.readyForNext:
-            return _buildReadyForNextCard(context, isCompact);
+            return _ReadyForNextCard(
+              isCompact: isCompact,
+              isBusy: isBusy,
+              onNextPatient: onNextPatient,
+              onEndShift: onEndShift,
+            );
           case ChamberStatus.calling:
-            return _buildCallingIncomingCard(context, isCompact);
+            return _CallingIncomingCard(
+              isCompact: isCompact,
+              activeQueueNumber: activeQueueNumber,
+              activePatientName: activePatientName,
+              onOpenActivePatient: onOpenActivePatient,
+            );
           case ChamberStatus.inConsultation:
-            return _buildInConsultationCard(context, isCompact);
+            return _InConsultationCard(
+              isCompact: isCompact,
+              activeQueueNumber: activeQueueNumber,
+              activePatientName: activePatientName,
+            );
           case ChamberStatus.shiftEnded:
-            return _buildShiftEndedCard(context, isCompact);
+            return _ShiftEndedCard(
+              isCompact: isCompact,
+              lastCompletedQueueNumber: lastCompletedQueueNumber,
+              isBusy: isBusy,
+              onReopenShift: onReopenShift,
+            );
           case ChamberStatus.idle:
-            return _buildIdleCard(context, isCompact);
+            return _IdleChamberCard(
+              isCompact: isCompact,
+              isBusy: isBusy,
+              onNextPatient: onNextPatient,
+              onEndShift: onEndShift,
+            );
         }
       },
     );
   }
+}
 
-  Widget _buildConsultationEndedCard(BuildContext context, bool isCompact) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Discrete Card Subwidgets
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ConsultationEndedCard extends StatelessWidget {
+  final bool isCompact;
+  final int? lastCompletedQueueNumber;
+  final String? lastCompletedPatientName;
+  final bool isBusy;
+  final VoidCallback onNextPatient;
+  final VoidCallback? onEndShift;
+
+  const _ConsultationEndedCard({
+    required this.isCompact,
+    required this.lastCompletedQueueNumber,
+    required this.lastCompletedPatientName,
+    required this.isBusy,
+    required this.onNextPatient,
+    required this.onEndShift,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final iconWidget = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -106,7 +160,6 @@ class ChamberControlBanner extends StatelessWidget {
     final buttonWidget = FilledButton.icon(
       style: FilledButton.styleFrom(
         backgroundColor: const Color(0xFF0F766E),
-        // Teal-700
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         elevation: 2,
@@ -180,7 +233,7 @@ class ChamberControlBanner extends StatelessWidget {
         vertical: isCompact ? 14 : 16,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB), // Soft warm amber
+        color: const Color(0xFFFFFBEB),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFFDE68A), width: 1.5),
         boxShadow: [
@@ -217,8 +270,23 @@ class ChamberControlBanner extends StatelessWidget {
             ),
     );
   }
+}
 
-  Widget _buildReadyForNextCard(BuildContext context, bool isCompact) {
+class _ReadyForNextCard extends StatelessWidget {
+  final bool isCompact;
+  final bool isBusy;
+  final VoidCallback onNextPatient;
+  final VoidCallback? onEndShift;
+
+  const _ReadyForNextCard({
+    required this.isCompact,
+    required this.isBusy,
+    required this.onNextPatient,
+    required this.onEndShift,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final iconWidget = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -323,7 +391,7 @@ class ChamberControlBanner extends StatelessWidget {
         vertical: isCompact ? 14 : 16,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4), // Soft emerald
+        color: const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFBBF7D0), width: 1.5),
         boxShadow: [
@@ -360,8 +428,23 @@ class ChamberControlBanner extends StatelessWidget {
             ),
     );
   }
+}
 
-  Widget _buildCallingIncomingCard(BuildContext context, bool isCompact) {
+class _CallingIncomingCard extends StatelessWidget {
+  final bool isCompact;
+  final int? activeQueueNumber;
+  final String? activePatientName;
+  final VoidCallback? onOpenActivePatient;
+
+  const _CallingIncomingCard({
+    required this.isCompact,
+    required this.activeQueueNumber,
+    required this.activePatientName,
+    required this.onOpenActivePatient,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final iconWidget = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -431,7 +514,7 @@ class ChamberControlBanner extends StatelessWidget {
         vertical: isCompact ? 14 : 16,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF), // Soft Blue
+        color: const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFBFDBFE), width: 1.5),
         boxShadow: [
@@ -472,8 +555,21 @@ class ChamberControlBanner extends StatelessWidget {
             ),
     );
   }
+}
 
-  Widget _buildInConsultationCard(BuildContext context, bool isCompact) {
+class _InConsultationCard extends StatelessWidget {
+  final bool isCompact;
+  final int? activeQueueNumber;
+  final String? activePatientName;
+
+  const _InConsultationCard({
+    required this.isCompact,
+    required this.activeQueueNumber,
+    required this.activePatientName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isCompact ? 16 : 20,
@@ -506,8 +602,23 @@ class ChamberControlBanner extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildIdleCard(BuildContext context, bool isCompact) {
+class _IdleChamberCard extends StatelessWidget {
+  final bool isCompact;
+  final bool isBusy;
+  final VoidCallback onNextPatient;
+  final VoidCallback? onEndShift;
+
+  const _IdleChamberCard({
+    required this.isCompact,
+    required this.isBusy,
+    required this.onNextPatient,
+    required this.onEndShift,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final iconWidget = Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -640,12 +751,27 @@ class ChamberControlBanner extends StatelessWidget {
             ),
     );
   }
+}
 
-  Widget _buildShiftEndedCard(BuildContext context, bool isCompact) {
+class _ShiftEndedCard extends StatelessWidget {
+  final bool isCompact;
+  final int? lastCompletedQueueNumber;
+  final bool isBusy;
+  final VoidCallback? onReopenShift;
+
+  const _ShiftEndedCard({
+    required this.isCompact,
+    required this.lastCompletedQueueNumber,
+    required this.isBusy,
+    required this.onReopenShift,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final iconWidget = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9), // Slate 100
+        color: const Color(0xFFF1F5F9),
         shape: BoxShape.circle,
         border: Border.all(color: const Color(0xFF94A3B8)),
       ),
