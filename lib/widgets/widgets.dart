@@ -49,6 +49,9 @@ export 'encounter/encounter_dialogs.dart';
 export 'encounter/encounter_form_state.dart';
 export 'encounter/patient_header_section.dart';
 // Prescribing Sub-Widgets
+export 'encounter/rx/custom_duration_dialog.dart';
+export 'encounter/rx/inline_dosage_edit_dialog.dart';
+export 'encounter/rx/new_prescription_row.dart';
 export 'encounter/rx/reconciliation_item_row.dart';
 export 'encounter/rx/rx_search_results_view.dart';
 export 'encounter/rx/staged_medicine_form.dart';

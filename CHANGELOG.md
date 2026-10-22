@@ -8,6 +8,18 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.17] — 22-10-2026
+
+### Rx Reconciliation File Modularization & Clean Component Extraction
+- **Rx Module Decomposition:**
+  - Decomposed the 1,135-line `reconciliation_item_row.dart` monolithic file into 4 focused, single-responsibility components under `lib/widgets/encounter/rx/`:
+    - `inline_dosage_edit_dialog.dart`: Encapsulates `InlineDosageEditDialog` for rapid in-place dosage, frequency, timing, and note adjustments.
+    - `custom_duration_dialog.dart`: Dedicated modal dialog for custom course duration entry.
+    - `new_prescription_row.dart`: Encapsulates `NewPrescriptionRow` and `NewPrescriptionsList` for encounter prescribing.
+    - `reconciliation_item_row.dart`: Retains `ReconciliationItemRow`, `CollapsedMedicineSummary`, and `ReconciliationListCard` while re-exporting all subcomponents for backward-compatible consumer imports.
+- **Export Organization:**
+  - Exported all new Rx prescribing dialogs and rows through `widgets.dart` barrel.
+
 ## [1.40.16] — 22-10-2026
 
 ### Pre-Demo Hardening: Chamber Service DI (AUDIT-16), Safe Amount Parsing & Chamber Date Bounds
