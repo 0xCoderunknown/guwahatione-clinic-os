@@ -16,8 +16,10 @@
 
 1. **Target Physical Architecture (Tier 2 City OPD Clinics):**
    - Designed specifically for OPD polyclinics and consulting chambers in Tier 2 Indian cities with **1–3 consulting doctors** and an **attached pharmacy in front**.
-   - Counter PCs / Laptops handle walk-in reception, token allocation, fee reconciliation, and physical arrival verification.
-   - Doctor chambers run desktop/tablet web sessions strictly synchronized via Firestore counters.
+   - Operating across **3 distinct physical hardware stations**:
+     1. **Doctor Chamber Devices:** 1–3 consulting physicians running simultaneously on tablets, laptops, or desktops. Multiple doctors consult concurrently in their respective chambers.
+     2. **Reception Counter PC:** Typically a single dedicated PC handling walk-in booking, atomic token allocation, arrival verification, upfront fee reconciliation, and thermal receipt slip printing.
+     3. **Clinic Owner / Admin Device:** A single mobile or desktop session used occasionally for fee configuration, doctor roster management, security PIN rotation, and financial tax audits.
 
 2. **100% AI Developed & Maintained:**
    - The codebase is 100% written and maintained by AI assistants. The human user acts strictly as the **Product Manager (PM) & Physical Tester**.
@@ -33,7 +35,7 @@
 
 5. **Public Open-Source Repository (MIT License on GitHub):**
    - The entire project is published publicly on GitHub under the **MIT License** (`LICENSE`).
-   - **Zero Security Through Obscurity:** Because the full repository is public, anyone can inspect the codebase, API models, and Firestore rules. Hardcoded test credentials (such as default PINs `849201`/`0000` in UI/providers) or open `allow read, write: if true` security rules represent immediate, publicly exploitable attack vectors rather than theoretical risks. Production deployments must strictly decouple secrets, enforce Firebase Authentication, and secure database rules before onboarding real clinical data.
+   - **Zero Security Through Obscurity:** Because the full repository is public, anyone can inspect the codebase, API models, and Firestore rules. Hardcoded test credentials (such as default PINs in UI/providers) represent security risks. For the private on-premise clinic pilot, trusted stations operate behind domain-salted SHA-256 PINs; strict Firebase Auth rules are scheduled for multi-tenant SaaS deployment before public hosting.
 
 ---
 
@@ -62,15 +64,13 @@ Default admin and reception PINs (`849201` and `0000`) were previously visibly o
 
 ---
 
-### AUDIT-02 🔴 Firestore Security Rules Are Open to the Public Internet
+### AUDIT-02 🟡 [DEFERRED TO SAAS PHASE] Firestore Security Rules Hardening
 
 **File:** `firestore.rules`
 
-Every collection allows `allow read: if true` and most allow `allow create, update: if true` from any unauthenticated request globally. Anyone with the Firebase project ID (embedded in the published web app's `firebase_options.dart`) can read every patient record, consultation, prescription, and doctor PIN via the Firestore REST API — no app required. Anyone can also write arbitrary data to `patients`, `doctors`, and `medicines`.
+Every collection currently allows open read/write access. Under production SaaS multi-tenancy, collections must require authenticated client sessions (`request.auth != null`).
 
-Application-layer PIN checks do **not** protect Firestore. Rules are the only server-side enforcement boundary. Under India's DPDP Act 2023, this constitutes a notifiable breach.
-
-**Fix:** Implement Firebase Anonymous Authentication (or email-based). Tie all Firestore rules to `request.auth != null`. This is the single most severe security issue in the system.
+**PM Decision (22-10-2026):** Formally deferred for the current on-premise clinic pilot. The clinic runs exclusively on 3 trusted internal hardware stations (receptionist PC, simultaneous doctor devices, owner device) protected by domain-salted SHA-256 PIN authentication. Enforcing Firebase Anonymous Authentication requires pre-configuring Firebase Console settings (failing with `operation-not-allowed` if omitted) and introduces offline cold-boot hydration failures during Tier 2 broadband dropouts. Strict Firebase Auth rules will be implemented for the multi-tenant SaaS cloud rollout.
 
 ---
 
@@ -110,13 +110,11 @@ The canonical `patients` schema uses `patientAgeDisplay`, not `formattedAge`. Pr
 
 ---
 
-### AUDIT-07 🟠 TOCTOU Race in `notifyReadyForNext` Single-Doctor Mode
+### AUDIT-07 ⚪ [CANCELLED / INAPPLICABLE FOR MULTI-DOCTOR CLINICS] TOCTOU Race in `notifyReadyForNext` Single-Doctor Mode
 
 **File:** `lib/services/chamber_service.dart` lines 151–169
 
-The `enforceSingleActiveDoctor` check in `notifyReadyForNext` performs a `get()` then `set()` outside of a Firestore transaction — a classic Time-of-Check-Time-of-Use race. Two doctors could simultaneously signal ready and both pass the guard, bypassing the single-doctor constraint. The correct `callTokenIntoChamber` path uses a transaction; `notifyReadyForNext` does not.
-
-**Fix:** Wrap the single-doctor check + `ready_for_next` write in a Firestore transaction.
+**PM Decision (22-10-2026):** Formally cancelled/closed as inapplicable for multi-doctor clinics per PM directive. The clinic operates with multiple doctors consulting simultaneously (`enforceSingleActiveDoctor: false`, the system default). The single-doctor TOCTOU condition only applied to the artificial solo-doctor OPD booth flag. Multi-chamber clinics allow each doctor to independently manage their own chamber session without cross-doctor locks.
 
 ---
 
@@ -280,13 +278,17 @@ Clinical free-text fields (`chiefComplaints`, `clinicalExamination`, `provisiona
 
 ---
 
-### AUDIT-22 🔵 No `availableDays` Check When Booking Advance Appointments
+### AUDIT-22 🟢 [RESOLVED] Doctor Sitting Days (`availableDays`) Enforced in Advance Booking
 
-**File:** `lib/providers/delegates/live_queue_delegate.dart` lines 228–243
+**Files:** `lib/core/engines/appointment_engine.dart`, `lib/providers/delegates/live_queue_delegate.dart`, `lib/widgets/booking/add_appointment_dialog.dart`, `lib/widgets/booking/booking_duplicate_warning_banner.dart`
 
-Advance booking validates `isDateBlocked` (holidays) and `isDoctorOnLeave` (personal leave) but does **not** call `AppointmentEngine.isDoctorAvailableOnDate` — whether the date falls within the doctor's configured working days. A Monday-only doctor can be booked for a Sunday without warning.
+Advance booking validates `isDateBlocked` (holidays) and `isDoctorOnLeave` (personal leave) but previously skipped `AppointmentEngine.isDoctorAvailableOnDate`. In a multi-doctor clinic where visiting specialists rotate on specific weekdays (e.g. Mon/Wed/Fri), doctors could previously be booked in advance for non-sitting days.
 
-**Fix:** Add an `isDoctorAvailableOnDate` check in the booking validation path alongside existing guards.
+**Status:** Resolved in v1.40.12 (22-10-2026).
+- Upgraded `AppointmentEngine.isDoctorAvailableOnDate` to normalize both 3-letter abbreviations (`'Mon'`) and full names (`'Monday'`) with case-insensitivity and whitespace trimming.
+- Enforced validation in `LiveQueueDelegate.bookAppointment`: throws exception `"$docTitle does not consult on ${dayName}s (Schedule: $schedule)."` when booking on off-days.
+- Hardened `AddAppointmentDialog`: disables submission (`isDisabled == true`) and renders `BookingOffDayWarningBanner` instructing reception to pick an active OPD day.
+- Covered by dedicated test suite in `test/doctor_sitting_days_advance_booking_test.dart`.
 
 ---
 
@@ -359,12 +361,12 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 | ID | 🔴🟠🟡🔵 | Domain | Issue |
 |---|---|---|---|
 | AUDIT-01 | 🟢 (Resolved) | Security / UX | Test credentials visible in login UI |
-| AUDIT-02 | 🔴 | Security | Firestore open to public internet — all PHI exposed |
-| AUDIT-03 | 🔴 | Security | Doctor PINs plaintext in Firestore |
-| AUDIT-04 | 🟢 (Resolved) | Security | No brute-force protection on PIN login |
+| AUDIT-02 | 🟡 (Deferred) | Security | Firestore rules hardening deferred to SaaS multi-tenancy |
+| AUDIT-03 | 🔴 (Scrapped) | Security | Doctor PINs plaintext in Firestore (intentional operational lookup) |
+| AUDIT-04 | 🟢 (Resolved) | Security | No brute-force protection on PIN login (purged lockout) |
 | AUDIT-05 | 🟢 (Resolved) | Data Integrity | Firestore batch overflow in `closeDoctorSessionForDate` |
 | AUDIT-06 | 🟢 (Resolved) | Schema | Ghost field `formattedAge` replaced with `patientAgeDisplay` |
-| AUDIT-07 | 🟠 | Clinical Integrity | TOCTOU race in single-doctor mode `notifyReadyForNext` |
+| AUDIT-07 | ⚪ (Inapplicable) | Clinical Integrity | Single-doctor TOCTOU cancelled for concurrent multi-doctor clinics |
 | AUDIT-08 | 🟢 (Resolved) | Search / UX | Patient name search silently misses >50 patients |
 | AUDIT-09 | 🟢 (Resolved) | Business Logic | Free review enforces window, consumption, and doctor policy |
 | AUDIT-10 | 🟢 (Resolved) | Business Logic | Dual default fee constants can silently drift |
@@ -379,7 +381,7 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 | AUDIT-19 | 🔵 | Ops | No counter document archiving strategy |
 | AUDIT-20 | 🔵 | Ops | Single-doctor query missing Firestore index |
 | AUDIT-21 | 🔵 | Stability | No input length limits on clinical free-text fields |
-| AUDIT-22 | 🔵 | Business Logic | No `availableDays` check in advance booking |
+| AUDIT-22 | 🟢 (Resolved) | Business Logic | Doctor sitting days enforced in advance booking |
 | AUDIT-23 | 🟢 (Resolved) | Security | Plaintext default PINs exposed as `AuthProvider` getters |
 | AUDIT-24 | 🔵 | UX | No debounce on print button (double-print risk) |
 | AUDIT-25 | 🟢 (Resolved) | Analytics | `free` metric includes `unpaid` appointments |
@@ -405,14 +407,11 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-02 — Thermal POS Token Slip Printing
+### QOL-02 ❌ [CANCELLED / SCRAPPED BY DESIGN] — Thermal POS Token Slip Printing
 
 **Domain:** Reception Desk  
 **Affected Files:** `lib/widgets/print/token_receipt_dialog.dart`, `lib/utils/platform_print_web.dart`  
-**Problem:** Standard web printing triggers the browser's full-page preview. Token receipt slips need an isolated layout for thermal paper rolls.  
-**Specification:**
-- Dedicated CSS print stylesheet and hidden DOM iframe for 58mm / 80mm thermal receipt slips.
-- Sub-second monochrome print execution at counter desk.
+**Decision (22-10-2026):** Formally scrapped per PM directive. Physical thermal roll token slips are not needed at the clinic counter. Walk-in tokens and waiting times are tracked digitally on live screens, reception queue cards, and via WhatsApp digital receipts. Eliminates unnecessary thermal printer hardware coupling and roll alignment maintenance.
 
 ---
 
@@ -740,6 +739,8 @@ A decoupled external analytics sink collecting pure aggregate counts of prescrib
 | **`PaymentType.freeConcession`** | Fully redundant with `PaymentType.freeFamily`. | Use `freeFamily` for all authorized discretionary waivers. Never add redundant payment type variants. |
 | **"Stepped Out" / "Skipped" Token Intermediate Queue Status (QOL-20)** | Dispatch authority lies 100% with receptionist who can call any lobby patient in any order; intermediate status adds state complexity with zero clinical benefit. | Never add stepped-out, skipped, or paused intermediate token statuses to the patient queue. |
 | **Reception Emergency Encounter Takeover (QOL-16)** | Doctor smartphone already provides 100% responsive mobile chamber; for physical paper prescriptions, reception already has `Mark Complete`. Avoids UI bloat and role confusion. | Keep clinical encounter entry restricted to doctor chamber sessions; never add reception desk clinical takeover dialogs. |
+| **Single-Doctor Chamber Mutex / Concurrency Lock (AUDIT-07)** | Real clinics operate multiple doctors consulting simultaneously across separate chambers. Artificially locking all chambers to one doctor creates counter bottlenecks. | Never introduce global single-doctor mutex locks across independent doctor chambers. |
+| **Thermal POS Token Slip Printing (QOL-02)** | Unnecessary hardware coupling and roll alignment maintenance. Queue tokens and waiting times are tracked digitally on live screens and WhatsApp. | Rely on digital queue cards and screens; avoid adding dedicated thermal receipt layouts. |
 
 ---
 

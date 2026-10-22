@@ -8,6 +8,15 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.12] — 22-10-2026
+
+### Doctor Sitting Days (`availableDays`) Guard in Advance Booking (AUDIT-22)
+- **Multi-Doctor Schedule Protection in Advance Booking:**
+  - Upgraded `AppointmentEngine.isDoctorAvailableOnDate` to handle 3-letter abbreviations (`'Mon'`), full weekday names (`'Monday'`), and case-insensitivity with whitespace trimming.
+  - Enforced schedule validation in `LiveQueueDelegate.bookAppointment`: throws a clear domain exception (`"$docTitle does not consult on ${dayName}s (Schedule: $schedule)."`) when booking on a doctor's off-day.
+  - Hardened `AddAppointmentDialog`: dynamically disables the submit button (`isDisabled == true`) and renders `BookingOffDayWarningBanner` instructing counter staff to select an active OPD day whenever a non-sitting weekday is chosen.
+  - Eliminates the operational hazard where visiting physicians who only practice on specific weekdays (e.g. Mon/Wed/Fri) could previously be booked in advance for non-sitting days.
+
 ## [1.40.11] — 22-10-2026
 
 ### Emergency Walk-Ins, Chamber Demographics Edit & 1-Click CSV Data Export (QOL-01, QOL-04 & IDEA-1)

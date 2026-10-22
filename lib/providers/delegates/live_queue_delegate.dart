@@ -242,6 +242,27 @@ class LiveQueueDelegate {
       throw Exception('$summary on this date.');
     }
 
+    if (!AppointmentEngine.isDoctorAvailableOnDate(
+      doctor: selectedDoctor,
+      date: scheduledDate,
+    )) {
+      const dayNames = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ];
+      final dayName = dayNames[scheduledDate.weekday - 1];
+      final docTitle = selectedDoctor.titleName;
+      final schedule = selectedDoctor.availableDays.join(', ');
+      throw Exception(
+        '$docTitle does not consult on ${dayName}s (Schedule: $schedule).',
+      );
+    }
+
     final hasDuplicate = await _bookingService.hasAppointmentForDate(
       phone: phoneNumber,
       date: scheduledDate,

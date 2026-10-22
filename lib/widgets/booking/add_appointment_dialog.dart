@@ -403,6 +403,10 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
                 AppointmentEngine.isDoctorOnLeave(
                   doctor: _selectedDoctor,
                   date: _selectedDate,
+                ) ||
+                !AppointmentEngine.isDoctorAvailableOnDate(
+                  doctor: _selectedDoctor,
+                  date: _selectedDate,
                 ),
             submitFocusNode: _submitFocusNode,
             onCancel: () => Navigator.pop(context),
@@ -778,6 +782,33 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('⚠️ $summary on this date.'),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+      return;
+    }
+
+    if (!AppointmentEngine.isDoctorAvailableOnDate(
+      doctor: _selectedDoctor,
+      date: _selectedDate,
+    )) {
+      const dayNames = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ];
+      final dayName = dayNames[_selectedDate.weekday - 1];
+      final docName = AppFormatters.doctorTitle(_selectedDoctor!.name);
+      final schedule = _selectedDoctor!.availableDays.join(', ');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '⚠️ $docName does not consult on ${dayName}s (Schedule: $schedule).',
+          ),
           backgroundColor: Colors.red.shade700,
         ),
       );

@@ -141,7 +141,7 @@ class BookingOffDayWarningBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '⚠️ ${AppFormatters.doctorTitle(doctor.name)} does not normally sit on ${dayName}s (Schedule: ${doctor.availableDays.join(", ")}). Booking is allowed if on special duty.',
+              '⚠️ ${AppFormatters.doctorTitle(doctor.name)} does not consult on ${dayName}s (Schedule: ${doctor.availableDays.join(", ")}). Please select an active OPD day.',
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,

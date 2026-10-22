@@ -112,6 +112,8 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 - **🏷️ Doctor Prescribing Search Preferences** — Configurable `searchPreference` (`brandFirst` vs `compositionFirst`) with dual-mode ranking in `MedicineEngine` and an inline `[🏷️ Brand | 🧪 Salt]` toggle.
 - **Strict 5-Step Clinical Encounter (`ConsultationEncounterScreen`)** — Guides physicians through allergies, vitals, past labs, medication reconciliation, and advice.
 - **Medication Reconciliation State Machine** — Explicit lifecycle states (`START`, `CONTINUE`, `STOP`) on prescription items. Frictionless 1-tap continuation for ongoing chronic regimens (`durationDays = null`) and 1-tap discontinuation without intrusive modal popups, plus 1-tap "Not Needed / SOS" follow-up chip.
+- **In-Chamber Patient Demographics Correction (`QOL-04`)** — Allows physicians to correct misheard patient names, ages, and genders directly from the consultation encounter header without closing the encounter, synchronizing changes across active consultation state, appointment records, and master patient directory.
+- **Reconciled Regimen In-Place Duration Dropdown & Inline Dosage Editing (`QOL-14`)** — Direct clinical duration dropdown menu on reconciled medication cards (`To Continue`, `3 Days`, `5 Days`, `7 Days`, `14 Days`, `1 Month`, `SOS`, `STOP`, and `Custom...`) plus 1-tap inline dosage/timing modal to adjust quantities, frequencies, and instructions without removing and re-searching drugs.
 - **🛑 Staged Medicine Discard Guard** — Intercepts "Complete & Sign" when a configured medicine is staged but not added, offering doctors an interactive dialog with `[Add to Prescription & Sign]`, `[Discard & Sign]`, and `[Review / Cancel]`.
 - **🧪 Flexible Multi-Modal Duration Engine** — `MedicineEngine.parseDuration` accepts acute numeric days (`1 to 300` days), as-needed (`SOS`), and ongoing chronic therapy (`To continue`), strictly blocking out-of-bounds day values with clear feedback.
 - **Composition-First Medicine Engine (`MedicineEngine`)** — Prioritizes chemical molecule matches at the top with associated clinic trade brands grouped underneath.
@@ -125,7 +127,10 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 
 ### 🏢 Clinic Operations & Ledger Integrity
 - **⚡ Agile Reception Queue & Discretionary Chamber Dispatch (`AppointmentListScreen`)** — Top-level collapsible `CompletedConsultationsAccordion` archives finished consultations, keeping the lobby list focused on waiting patients. Clean FIFO lobby queue visibility with single-expansion controlled accordion, high-visibility `[SEND IN]` button, and reception full discretionary dispatch. Chamber occupancy collision guard alerts reception before replacing an in-consultation patient.
-- **🔍 Pure Dart `PatientSearchEngine` & Multi-Attribute Lookup** — Blazing fast pure Dart search with phone normalization (strips +91, 0, whitespace), multi-word name tokenization, `pat_*` canonical ID search, and multi-tier relevance ranking (exact phone > exact name > surname prefix > partial matches).
+- **🔍 Pure Dart `PatientSearchEngine` & Scalable N-Gram Lookup (`AUDIT-08`)** — Blazing fast pure Dart search with phone normalization (strips +91, 0, whitespace), multi-word name tokenization, and 2+ character prefix n-grams (`searchTokens`) indexed in Firestore, eliminating document ceilings and supporting scale beyond 50+ records with surname and middle-name discovery.
+- **⚡ 1-Tap Emergency / No-Mobile Walk-In Registration (`QOL-01`)** — Collision-resistant `99`-prefixed placeholder key generation (`AppointmentEngine.generateEmergencyDummyPhone()`) and 1-tap `[⚡ No Phone]` button in booking modal for trauma walk-ins and elderly patients without active phones.
+- **📊 1-Click Client-Side Full Data Export (`IDEA-1`)** — Pure Dart RFC-4180 CSV generation engine (`DataExportEngine`) exporting 5 full datasets (Revenue & Tax Ledger, Appointments & Queue, Patient Directory, Medicine Formulary, Clinical Encounters) with Indian date format (`DD-MM-YYYY`) and local browser download (`dart:js_interop`) ensuring zero PHI leaves the clinic.
+- **🔐 Cloud-Synced Security PIN Store & Multi-Terminal Rotation UI (`QOL-13`)** — Persists salted SHA-256 PIN hashes in `clinic_config/security`, synchronizing credential updates across all clinic terminals in real time with 2-step verification (`SecuritySettingsDialog`).
 - **⌨️ Keyboard-First Walk-In Registration (`AddAppointmentDialog`)** — 100% mouse-free counter operation: Tab focus progression, physical hotkey Sex toggle (`M`/`F`/`O` and arrows) with no accidental Male default, 10-digit auto-fill search jumping straight to doctor selection, and global Enter-key booking commitment.
 - **🎟️ Live Provisional Token & Estimated Wait Time Badge** — Immediately calculates and displays next queue token (`#X`) and dynamic arrival window (`~hh:mm A – hh:mm B`) upon doctor selection via pure domain `AppointmentEngine`.
 - **🛑 Same-Day Duplicate Booking Guard & Family Exception** — Composite uniqueness validation `(Date + DoctorId + Normalized Patient Name + Phone)` with live amber alert banner and submit lockout preventing double bookings for the same patient, while explicitly preserving family member bookings under shared phone numbers.
@@ -158,7 +163,7 @@ Every consultation encounter follows a strict, physician-aligned clinical sequen
 |---|---|
 | Platforms | Web (Desktop Counter / Tablet / Mobile), Android |
 | UI Framework | Flutter 3.x (Material 3 Responsive) |
-| Domain Engines | Pure Dart (`RevenueEngine`, `AppointmentEngine`, `CashHandoverEngine`, `MedicineEngine`, `WhatsAppEngine`, `PatientSearchEngine`) |
+| Domain Engines | Pure Dart (`RevenueEngine`, `AppointmentEngine`, `CashHandoverEngine`, `DataExportEngine`, `MedicineEngine`, `WhatsAppEngine`, `PatientSearchEngine`) |
 | State Management | Provider |
 | Backend / DB | Cloud Firestore (Firebase) |
 | Hosting | Firebase Hosting (SPA Web App) |
@@ -211,7 +216,7 @@ In your Firebase Console, the following collections are utilized:
 | `counters` | Atomic sequence counters for daily queue numbering (`queue_{doctorId}_{date}`) and real-time chamber calling sync (`chamber_{doctorId}_{date}`) |
 | `consultations` | Append-only longitudinal consultation encounters per patient |
 | `medicines` | Master clinical catalogue of chemical compositions, brands, and strengths |
-| `clinic_config` | Clinic-wide settings and SHA-256 hashed Owner Master PIN (`settings` document) |
+| `clinic_config` | Clinic-wide configurations, runtime flags, and cloud-synced SHA-256 PIN credentials (`security` document) |
 
 **Firestore Indexes Configuration**:
 Index definitions are tracked in [`firestore.indexes.json`](firestore.indexes.json) and linked via `firebase.json`:
@@ -253,13 +258,10 @@ firebase deploy --only hosting
 * **Reception Desk:** `0000` (4-digit PIN: counter booking, queue management, physical arrival check, cash collection)
 * **Doctor Chamber View:** Default `1234` (4-digit PIN: configurable per doctor in Doctor management, consultation encounter)
 
-All tunable constants live in [`lib/utils/app_constants.dart`](lib/utils/app_constants.dart):
+All tunable constants live in [`lib/utils/app_constants.dart`](lib/utils/app_constants.dart) and runtime clinic settings in [`lib/config/clinic_config.dart`](lib/config/clinic_config.dart):
 
 ```dart
 class AppConstants {
-  // Global fallback consultation fee
-  static const int defaultConsultationFee = 500;
-
   // Clinic holiday dates stored as ISO strings (presented as DD-MM-YYYY in UI).
   static const List<String> blockedDates = [
     // '2026-10-02',
@@ -286,6 +288,7 @@ lib/
 │       ├── revenue_engine.dart              # Pure realized revenue math, chamber KPIs & doctor rollups
 │       ├── appointment_engine.dart          # Doctor-configured free review eligibility, fee resolution & queue states
 │       ├── cash_handover_engine.dart        # End-of-day closing reconciliation & denomination counter
+│       ├── data_export_engine.dart          # Pure Dart RFC-4180 CSV serializer for revenue, queue, patient & Rx ledgers
 │       ├── medicine_engine.dart             # Chemical search scoring, default OPD regimens & Rx segregation
 │       ├── patient_search_engine.dart       # Pure Dart patient lookup, phone normalization & relevance ranking
 │       └── whatsapp_engine.dart             # Structured clinical summary formatting & wa.me deep links
@@ -318,6 +321,7 @@ lib/
 │   ├── catalogue_service.dart               # Formulary curation, deterministic seeds & deduplication
 │   ├── doctor_service.dart                  # Doctor roster & chamber credential management
 │   ├── patient_service.dart                 # Patient demographics & allergy directory queries
+│   ├── security_service.dart                # Cloud-synchronized SHA-256 PIN credentials store
 │   ├── offline_queue_cache_service.dart     # Silent local queue caching & dropout resilience
 │   ├── sound_service.dart                   # In-clinic queue chime & vocal token callout (mute-persistent, deduplication-guarded)
 │   └── firestore_paths.dart                 # Centralized type-safe collection & counter path builders
@@ -435,7 +439,7 @@ The repository maintains an active automated testing suite covering domain busin
 flutter test
 ```
 
-- **306 Automated Unit & Widget Tests:** Sub-second execution covering realized revenue math, cash drawer handover & note denomination calculations with upfront collection & refund tracking, offline queue caching, WhatsApp clinical formatting & deep linking, doctor-configurable free review eligibility terms (0 to 30 days) including same-day lab reviews, prescription reconciliation (`START`/`CONTINUE`/`STOP`) with 1-click `[CARRY FORWARD]` longitudinal history, natural dosage & timing synthesis, staged medicine discard guard, multi-modal duration bounds checks, prescription template preset evaluation & duplicate suppression, in-clinic sound chime mute/unmute persistence, chemical search scoring, pure Dart `PatientSearchEngine` relevance ranking, asynchronous booking/check-in, emergency door runways, historical shift archiving, automatic midnight date rollover observer, doctor revenue share split & fee payout math, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, chamber collision locks & single-occupant integrity, print schedule segregation, reception token cap threshold transitions, mobile walk-in FAB & responsive queue cards, multi-doctor patient lookup with zero-egress search, doctor sitting day validations, counter token receipt slip rendering, and atomic bulk doctor absence session closures — all with 100% pass rate.
+- **356 Automated Unit & Widget Tests:** Sub-second execution covering realized revenue math, cash drawer handover & note denomination calculations with upfront collection & refund tracking, offline queue caching, WhatsApp clinical formatting & deep linking, doctor-configurable free review eligibility terms (0 to 30 days) including same-day lab reviews, prescription reconciliation (`START`/`CONTINUE`/`STOP`) with 1-click `[CARRY FORWARD]` longitudinal history, natural dosage & timing synthesis, staged medicine discard guard, multi-modal duration bounds checks, prescription template preset evaluation & duplicate suppression, in-clinic sound chime mute/unmute persistence, chemical search scoring, pure Dart `PatientSearchEngine` relevance ranking, asynchronous booking/check-in, emergency door runways, historical shift archiving, automatic midnight date rollover observer, doctor revenue share split & fee payout math, modular queue dispatch & status workflows, 3-tier auth role guards with SHA-256 PIN hashing, chamber collision locks & single-occupant integrity, print schedule segregation, reception token cap threshold transitions, mobile walk-in FAB & responsive queue cards, multi-doctor patient lookup with zero-egress search, doctor sitting day validations, counter token receipt slip rendering, and atomic bulk doctor absence session closures — all with 100% pass rate.
 - **Continuous Integration:** Automated test execution and `flutter analyze` run on every push and pull request via GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ---

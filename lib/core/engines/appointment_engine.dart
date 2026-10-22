@@ -601,9 +601,24 @@ abstract class AppointmentEngine {
     required DateTime date,
   }) {
     if (doctor == null || doctor.availableDays.isEmpty) return true;
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final currentDay = dayNames[date.weekday - 1];
-    return doctor.availableDays.contains(currentDay);
+    const shortDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const fullDays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    final shortDay = shortDays[date.weekday - 1];
+    final fullDay = fullDays[date.weekday - 1];
+    return doctor.availableDays.any((d) {
+      final normalized = d.trim().toLowerCase();
+      return normalized == shortDay.toLowerCase() ||
+          normalized == fullDay.toLowerCase() ||
+          normalized.startsWith(shortDay.toLowerCase());
+    });
   }
 
   /// Evaluates whether a doctor is on planned leave on the given target date.
