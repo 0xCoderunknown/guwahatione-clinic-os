@@ -8,6 +8,19 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.8] — 22-10-2026
+
+### Reconciled Regimen In-Place Duration Dropdown & Inline Dosage Editing (QOL-14)
+- **In-Place Duration Dropdown Menu:**
+  - Added a clinical duration dropdown directly on reconciled medication cards (`ReconciliationItemRow`) with Indian OPD presets: `To Continue`, `3 Days`, `5 Days`, `7 Days`, `14 Days`, `1 Month`, `SOS`, `STOP`, and `Custom...`.
+  - Selecting any duration preset automatically shifts the item action to `continueAction`, sets the duration label/days, and clears previous stop reasons.
+  - Selecting `STOP` immediately marks the therapy discontinued with strikethrough styling and `stopReason: 'Discontinued by doctor'`.
+- **Custom Duration Modal (`CustomDurationDialog`):**
+  - Integrated a numeric input dialog allowing doctors to assign custom course lengths (e.g. `21 Days`) with instant validation.
+- **Inline Dosage & Timing Editing Modal (`InlineDosageEditDialog`):**
+  - Tapping on Column 2 (dosage/timing) in both reconciled and newly prescribed rows opens an in-place editor.
+  - Provides 1-tap dosage chips (`1 Tablet`, `0.5 Tablet`, `2 Tablets`, `5 ml`, `10 ml`, `1 Capsule`), frequency schedule chips (`1-0-1`, `1-0-0`, `0-0-1`, `1-1-1`, `SOS`), timing chips (`After Food / PC`, `Before Food / Khali Pet / AC`, `At Bedtime / HS`), and special instruction notes without requiring doctors to remove and re-search medications.
+
 ## [1.40.7] — 22-10-2026
 
 ### Cloud-Synced Security PIN Store & Multi-Terminal Synchronization UI (QOL-13)

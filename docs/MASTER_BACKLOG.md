@@ -532,16 +532,17 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 
 ---
 
-### QOL-14 — Reconciled Regimen In-Place Duration Dropdown & Inline Dosage Editing
+### QOL-14 🟢 [RESOLVED] — Reconciled Regimen In-Place Duration Dropdown & Inline Dosage Editing
 
 **Domain:** Doctor Chamber / Encounter  
-**Affected Files:** `lib/widgets/encounter/rx/reconciliation_item_row.dart`, `lib/models/prescription_item.dart`  
+**Affected Files:** [reconciliation_item_row.dart](file:///k:/Android/guwahatione-clinic-os/lib/widgets/encounter/rx/reconciliation_item_row.dart), [rx_reconciliation_section.dart](file:///k:/Android/guwahatione-clinic-os/lib/widgets/encounter/rx_reconciliation_section.dart)  
 **Origin / Clinical Memory Dump:**  
 > *"Telma 40 tablet [TELMISARTAN 40mg] | 1 tablet daily morning before food | to continue. Each and every part is editable. He can click on continue which is a dropdown and change to STOP, 3 days, 5 days, [custom]."*  
-**Current Implementation Gap:** `ReconciliationItemRow` currently provides binary `ChoiceChip` toggles: `[CONTINUE]` and `[STOP]`. There is no inline dropdown on the card to switch duration to `3 days`, `5 days`, or `Custom`, nor an in-place editor for dosage/timing without discarding and re-searching the medication.  
-**Specification:**
-- Add an in-place duration preset dropdown on the reconciled card: `To continue`, `3 days`, `5 days`, `7 days`, `14 days`, `SOS`, `STOP`, and `Custom...`.
-- Tapping on the dosage/timing text (`Column 2`) allows inline editing if the doctor needs to tweak the strength or timing of an existing chronic therapy.
+**Resolution Details:**
+- **In-Place Duration Dropdown Menu:** Added a clinical duration dropdown directly on reconciled cards with presets (`To Continue`, `3 Days`, `5 Days`, `7 Days`, `14 Days`, `1 Month`, `SOS`, `STOP`, and `Custom...`). Selecting any continuation preset atomically switches action to `continueAction` and updates duration. Selecting `STOP` marks the item discontinued.
+- **Custom Duration Dialog (`CustomDurationDialog`):** Number input dialog for arbitrary course durations in days with validation.
+- **Inline Dosage & Timing Editing (`InlineDosageEditDialog`):** Tapping on the dosage/timing row (`Column 2`) opens a compact modal to adjust dosage quantity, frequency schedule, timing relation to food, and instructions without re-searching the catalogue. Also enabled for newly prescribed items.
+- **Automated Test Suite:** Verified via 5 automated tests in `test/reconciliation_inline_editing_test.dart`.
 
 ---
 

@@ -186,6 +186,10 @@ class RxReconciliationSection extends StatelessWidget {
                           );
                       onUpdate();
                     },
+                    onItemUpdated: (idx, updated) {
+                      form.reconciliationItems[idx] = updated;
+                      onUpdate();
+                    },
                     onPromptStop: onPromptStopReason,
                   ),
                   const SizedBox(height: 16),
@@ -301,6 +305,10 @@ class RxReconciliationSection extends StatelessWidget {
                   items: form.newPrescriptions,
                   onRemove: (idx) {
                     form.newPrescriptions.removeAt(idx);
+                    onUpdate();
+                  },
+                  onItemUpdated: (idx, updated) {
+                    form.newPrescriptions[idx] = updated;
                     onUpdate();
                   },
                 ),
