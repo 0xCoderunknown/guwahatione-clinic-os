@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../models/diagnostic_investigation.dart';
+import '../../utils/app_constants.dart';
 import '../../utils/formatters.dart';
 import '../common/section_card.dart';
 import 'encounter_form_state.dart';
@@ -91,6 +93,11 @@ class AdviceAndOrdersSection extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: orderedTestInputController,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(
+                      AppConstants.maxLabOrderLength,
+                    ),
+                  ],
                   decoration: const InputDecoration(
                     hintText:
                         'e.g., Fasting Blood Sugar, Serum Creatinine, ECG...',
@@ -142,6 +149,24 @@ class AdviceAndOrdersSection extends StatelessWidget {
           TextField(
             controller: adviceController,
             maxLines: 2,
+            maxLength: AppConstants.maxAdviceNotesLength,
+            buildCounter: (
+              context, {
+              required currentLength,
+              required isFocused,
+              maxLength,
+            }) {
+              if (currentLength == 0) return null;
+              return Text(
+                '$currentLength / $maxLength',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: currentLength > (maxLength! * 0.9)
+                      ? Colors.red
+                      : Colors.grey.shade600,
+                ),
+              );
+            },
             decoration: const InputDecoration(
               hintText: 'e.g., Low salt diet, hydrate well, avoid cold drinks, consult SOS if fever persists...',
               border: OutlineInputBorder(),

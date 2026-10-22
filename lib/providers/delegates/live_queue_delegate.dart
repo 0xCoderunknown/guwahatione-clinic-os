@@ -24,6 +24,7 @@ class LiveQueueDelegate {
   DateTime? _offlineCacheTimestamp;
   DateTime? _activeListeningDate;
   Timer? _midnightObserverTimer;
+  Timer? _cacheDebounceTimer;
   bool _isCustomDateSelected = false;
   String _dashboardSearchQuery = '';
 
@@ -161,6 +162,7 @@ class LiveQueueDelegate {
     }
     _activeListeningDate = targetDate;
     _appointmentSub?.cancel();
+    _cacheDebounceTimer?.cancel();
 
     // Check if offline cached queue exists for instant display if currently empty
     if (_todayAppointments.isEmpty) {
@@ -184,10 +186,15 @@ class LiveQueueDelegate {
             _isOfflineFallback = false;
             _offlineCacheTimestamp = null;
             _notifyListeners();
-            unawaited(
-              OfflineQueueCacheService.saveQueue(targetDate, appointments)
-                  .catchError((_) {}),
-            );
+            // AUDIT-15: Debounce offline cache write (3 seconds) to prevent UI frame drops
+            // and disk thrashing on rapid consecutive Firestore snapshot bursts.
+            _cacheDebounceTimer?.cancel();
+            _cacheDebounceTimer = Timer(const Duration(seconds: 3), () {
+              unawaited(
+                OfflineQueueCacheService.saveQueue(targetDate, appointments)
+                    .catchError((_) {}),
+              );
+            });
           },
           onError: (err) async {
             try {
@@ -480,5 +487,6 @@ class LiveQueueDelegate {
   void dispose() {
     _midnightObserverTimer?.cancel();
     _appointmentSub?.cancel();
+    _cacheDebounceTimer?.cancel();
   }
 }

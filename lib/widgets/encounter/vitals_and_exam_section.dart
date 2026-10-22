@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../utils/app_constants.dart';
 import '../common/section_card.dart';
 import 'encounter_form_state.dart';
 
@@ -71,6 +73,11 @@ class VitalsAndExamSection extends StatelessWidget {
                     Expanded(
                       child: TextField(
                         controller: form.complaintInputController,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(
+                            AppConstants.maxComplaintLength,
+                          ),
+                        ],
                         decoration: const InputDecoration(
                           hintText:
                               'e.g., Fever x 3 days, dry cough, headache...',
@@ -133,6 +140,11 @@ class VitalsAndExamSection extends StatelessWidget {
                     Expanded(
                       child: TextField(
                         controller: form.diagnosisInputController,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(
+                            AppConstants.maxDiagnosisLength,
+                          ),
+                        ],
                         decoration: const InputDecoration(
                           hintText: 'e.g., Acute Viral Bronchitis, Essential Hypertension...',
                           isDense: true,
@@ -199,8 +211,27 @@ class VitalsAndExamSection extends StatelessWidget {
                 TextField(
                   controller: form.examController,
                   maxLines: 2,
+                  maxLength: AppConstants.maxExamNotesLength,
+                  buildCounter: (
+                    context, {
+                    required currentLength,
+                    required isFocused,
+                    maxLength,
+                  }) {
+                    if (currentLength == 0) return null;
+                    return Text(
+                      '$currentLength / $maxLength',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: currentLength > (maxLength! * 0.9)
+                            ? Colors.red
+                            : Colors.grey.shade600,
+                      ),
+                    );
+                  },
                   decoration: const InputDecoration(
-                    hintText: 'e.g., Chest clear, no wheezing, throat congested, abdomen soft...',
+                    hintText:
+                        'e.g., Chest clear, no wheezing, throat congested, abdomen soft...',
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.all(12),
                   ),

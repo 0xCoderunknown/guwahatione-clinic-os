@@ -205,13 +205,13 @@ The AppBar `_pickDate()` hardcodes `firstDate: DateTime(2025)`. The `ClinicDateN
 
 ---
 
-### AUDIT-15 🟡 Offline Cache Writes on Every Firestore Snapshot Without Debounce
+### AUDIT-15 🟢 [RESOLVED] Offline Cache Writes on Every Firestore Snapshot Without Debounce
 
-**File:** `lib/providers/delegates/live_queue_delegate.dart` lines 187–190
+**File:** `lib/providers/delegates/live_queue_delegate.dart` lines 187–195
 
-Every Firestore snapshot triggers a full JSON serialization and `SharedPreferences` write. In a busy OPD session with multiple concurrent status changes, this produces a burst of sequential writes. On lower-end clinic hardware, repeated `SharedPreferences` writes can block the main isolate and produce UI jank.
+Every Firestore snapshot previously triggered a full JSON serialization and `SharedPreferences` write immediately and synchronously. In a busy OPD session with multiple concurrent status changes, this produced rapid bursts of sequential writes, causing UI frame drops on lower-spec clinic hardware.
 
-**Fix:** Debounce cache writes to at most once every 3–5 seconds using a `Timer` that resets on each incoming snapshot.
+**Status:** Resolved in v1.40.14 (22-10-2026). Added a 3-second debounce timer (`_cacheDebounceTimer`) in `LiveQueueDelegate`. Rapid snapshot bursts collapse into a single disk write once the stream settles, and timers are safely cancelled on listening date switch and `dispose()`.
 
 ---
 
@@ -270,11 +270,13 @@ The `counters` collection grows by 2 documents per doctor per day (queue counter
 
 ---
 
-### AUDIT-21 🔵 No Input Length Limits on Clinical Free-Text Fields
+### AUDIT-21 🟢 [RESOLVED] No Input Length Limits on Clinical Free-Text Fields
 
-Clinical free-text fields (`chiefComplaints`, `clinicalExamination`, `provisionalDiagnosis`, `adviceNotes`) have no length limits. Extremely long inputs approach Firestore's 1MB per-document limit, overflow print layouts, and inflate Firebase read costs for every future consultation load.
+**Files:** `lib/utils/app_constants.dart`, `lib/widgets/encounter/vitals_and_exam_section.dart`, `lib/widgets/encounter/advice_and_orders_section.dart`, `lib/widgets/encounter/encounter_dialogs.dart`
 
-**Fix:** Add form validators capping each field (e.g., 2,000 chars for notes, 500 chars per complaint).
+Clinical free-text fields previously had no length limits. Accidental paste explosions could approach Firestore's 1MB per-document limit, overflow print layouts, and degrade UI performance.
+
+**Status:** Resolved in v1.40.14 (22-10-2026). Enforced generous, MBBS/MD-aligned clinical character caps defined in `AppConstants` (`maxComplaintLength: 150`, `maxDiagnosisLength: 200`, `maxExamNotesLength: 2000`, `maxAdviceNotesLength: 2000`, `maxAllergyLength: 100`, `maxLabOrderLength: 150`, `maxLabResultLength: 200`). Live character counters render on multi-line notes fields.
 
 ---
 
@@ -302,13 +304,13 @@ Previously exposed unhashed default PIN strings as public getters (`receptionist
 
 ---
 
-### AUDIT-24 🔵 No Debounce on Prescription Print Button
+### AUDIT-24 🟢 [RESOLVED] No Debounce on Prescription Print Button
 
 **File:** `lib/screens/prescription_print_screen.dart`
 
-The print button has no loading lock. A double-tap on a slow clinic PC triggers two concurrent browser print dialogs, wasting paper.
+The print button previously had no loading lock. A rapid double-tap on a touchscreen tablet or slow clinic PC could trigger two concurrent browser print dialogs, causing confusion and wasting letterhead paper.
 
-**Fix:** Add `bool _isPrinting` state guard — disable the button between the click and the browser print callback.
+**Status:** Resolved in v1.40.14 (22-10-2026). Added `_isPrinting` state guard with a 1500ms cooldown. During print invocation, the button transitions to "Printing..." with a circular progress spinner and disables `onPressed`, preventing duplicate print dialogs.
 
 ---
 
@@ -374,16 +376,16 @@ Described deployment model: annual subscription + 1-month grace period. Currentl
 | AUDIT-12 | 🟡 | Security | Double-hashing will break on QOL-12 implementation |
 | AUDIT-13 | 🟢 (Resolved) | Clinical Integrity | Discard path leaves appointment stuck as `inConsultation` |
 | AUDIT-14 | 🟡 | UX | Statistics date pickers have inconsistent bounds |
-| AUDIT-15 | 🟡 | Performance | Offline cache writes on every Firestore event |
+| AUDIT-15 | 🟢 (Resolved) | Performance | Offline cache writes debounced (3s timer) |
 | AUDIT-16 | 🟡 | Architecture | `DoctorChamberScreen` bypasses DI — own service instances |
 | AUDIT-17 | 🟡 | Clinical Integrity | `lastVisitDate` uses client clock (drift = wrong free review) |
 | AUDIT-18 | 🟡 | SaaS / Ops | Static `ClinicConfig` requires recompile per tenant |
 | AUDIT-19 | 🔵 | Ops | No counter document archiving strategy |
 | AUDIT-20 | 🔵 | Ops | Single-doctor query missing Firestore index |
-| AUDIT-21 | 🔵 | Stability | No input length limits on clinical free-text fields |
+| AUDIT-21 | 🟢 (Resolved) | Stability | Generous MBBS character limits on clinical inputs |
 | AUDIT-22 | 🟢 (Resolved) | Business Logic | Doctor sitting days enforced in advance booking |
 | AUDIT-23 | 🟢 (Resolved) | Security | Plaintext default PINs exposed as `AuthProvider` getters |
-| AUDIT-24 | 🔵 | UX | No debounce on print button (double-print risk) |
+| AUDIT-24 | 🟢 (Resolved) | UX | Print button debounced with loading spinner |
 | AUDIT-25 | 🟢 (Resolved) | Analytics | `free` metric includes `unpaid` appointments |
 | AUDIT-26 | 🔵 | Business / Ops | Subscription expiry has no runtime enforcement |
 | AUDIT-27 | 🔵 | Ops | Default test medicines unsuppressible in production |

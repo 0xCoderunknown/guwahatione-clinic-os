@@ -8,6 +8,28 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+## [1.40.14] — 22-10-2026
+
+### Operational Hardening: Cache Debounce, Print Guard & Clinical Input Limits (AUDIT-15, AUDIT-21, AUDIT-24)
+- **Offline Queue Cache Debounce (AUDIT-15):**
+  - Added a 3-second debounce timer (`_cacheDebounceTimer`) in `LiveQueueDelegate` for `OfflineQueueCacheService.saveQueue`.
+  - Rapid consecutive Firestore snapshot bursts (patients checking in, tokens advancing, arrivals updating) now collapse into a single local disk serialization once the stream settles.
+  - Eliminates main isolate UI thread stutter and frame drops on lower-spec clinic counter laptops during peak morning rush.
+  - Ensured active debounce timers are safely cancelled on listening date switch and `dispose()`.
+- **Prescription Print Button Double-Tap Guard (AUDIT-24):**
+  - Added `_isPrinting` state guard with a 1500ms cooldown in `PrescriptionPrintScreen`.
+  - While print processing is active, the button transitions to `"Printing..."` with a circular progress spinner and disables `onPressed`, ignoring repeated clicks and keyboard Enter shortcuts.
+  - Prevents accidental double-print dialog triggers on clinic touchscreens or slow PCs, eliminating letterhead paper waste.
+- **Clinical Input Character Limits & Paste Caps (AUDIT-21):**
+  - Enforced generous MBBS/MD clinical character limits defined in `AppConstants` across consultation encounter fields:
+    - Chief complaints: 150 characters per complaint chip.
+    - Provisional diagnosis: 200 characters per diagnosis chip.
+    - Physical & systemic examination notes: 2,000 characters with live character counter indicator.
+    - Lifestyle & diet instructions: 2,000 characters with live character counter indicator.
+    - Documented patient drug allergies: 100 characters per allergen chip.
+    - Outside laboratory test orders and results: 150 and 200 characters.
+  - Prevents accidental clipboard paste explosions, protects Firestore document size limits (< 1 MB), and guarantees printable prescription letterhead layout stability.
+
 ## [1.40.13] — 22-10-2026
 
 ### Prepaid Carry-Over & Patient No-Show Revisit (QOL-03) and Disease Presets Purge (QOL-05)

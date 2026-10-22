@@ -13,4 +13,16 @@ class AppConstants {
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     return blockedDates.contains(dateString);
   }
+
+  // ---------------------------------------------------------------------------
+  // Clinical Input Length Limits (AUDIT-21)
+  // Generous caps to prevent paste explosions and preserve letterhead layout.
+  // ---------------------------------------------------------------------------
+  static const int maxComplaintLength = 150;
+  static const int maxDiagnosisLength = 200;
+  static const int maxExamNotesLength = 2000;
+  static const int maxAdviceNotesLength = 2000;
+  static const int maxAllergyLength = 100;
+  static const int maxLabOrderLength = 150;
+  static const int maxLabResultLength = 200;
 }

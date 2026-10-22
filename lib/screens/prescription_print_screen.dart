@@ -45,12 +45,24 @@ class PrescriptionPrintScreen extends StatefulWidget {
 class _PrescriptionPrintScreenState extends State<PrescriptionPrintScreen> {
   bool _usePrePrintedLetterhead = false;
   PaperSize _paperSize = PaperSize.a4;
+  bool _isPrinting = false;
+
+  void _handlePrint() {
+    if (_isPrinting) return;
+    setState(() => _isPrinting = true);
+    printDocument();
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        setState(() => _isPrinting = false);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
-        const SingleActivator(LogicalKeyboardKey.enter): () => printDocument(),
+        const SingleActivator(LogicalKeyboardKey.enter): _handlePrint,
         const SingleActivator(LogicalKeyboardKey.escape): () =>
             Navigator.pop(context),
       },
@@ -102,15 +114,26 @@ class _PrescriptionPrintScreenState extends State<PrescriptionPrintScreen> {
           const SizedBox(width: 8),
           FilledButton.icon(
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.teal.shade700,
+              backgroundColor: _isPrinting
+                  ? Colors.teal.shade400
+                  : Colors.teal.shade700,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
-            icon: const Icon(Icons.print_rounded, size: 18),
-            label: const Text(
-              'Print Prescription',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            icon: _isPrinting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.print_rounded, size: 18),
+            label: Text(
+              _isPrinting ? 'Printing...' : 'Print Prescription',
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            onPressed: () => printDocument(),
+            onPressed: _isPrinting ? null : _handlePrint,
           ),
           const SizedBox(width: 12),
         ],

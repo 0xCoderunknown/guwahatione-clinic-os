@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/consultation.dart';
 import '../../models/diagnostic_investigation.dart';
 import '../../models/prescription_item.dart';
 import '../../providers/clinic_provider.dart';
+import '../../utils/app_constants.dart';
 import '../../utils/formatters.dart';
 
 /// Modal dialogs and sheets used during a clinical consultation encounter.
@@ -24,6 +26,9 @@ class EncounterDialogs {
         content: TextField(
           controller: controller,
           autofocus: true,
+          inputFormatters: [
+            LengthLimitingTextInputFormatter(AppConstants.maxAllergyLength),
+          ],
           decoration: const InputDecoration(
             labelText: 'Allergen / Drug Name',
             hintText: 'e.g., Penicillin, Sulfa, NSAIDs, Peanuts...',
@@ -69,6 +74,9 @@ class EncounterDialogs {
             TextField(
               controller: nameCtrl,
               autofocus: true,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(AppConstants.maxLabOrderLength),
+              ],
               decoration: const InputDecoration(
                 labelText: 'Test Name',
                 hintText: 'e.g., HbA1c, Lipid Profile, Ultrasound...',
@@ -77,6 +85,9 @@ class EncounterDialogs {
             const SizedBox(height: 12),
             TextField(
               controller: resultCtrl,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(AppConstants.maxLabResultLength),
+              ],
               decoration: const InputDecoration(
                 labelText: 'Findings / Result Value',
                 hintText: 'e.g., 6.8%, Normal sinus rhythm...',
