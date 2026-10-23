@@ -58,14 +58,14 @@ class PatientHeaderSection extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: hasAllergies ? Colors.red.shade200 : const Color(0xFFE2E8F0),
-          width: hasAllergies ? 1.5 : 1,
+          color: hasAllergies ? Colors.red.shade300 : const Color(0xFFCBD5E1),
+          width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),

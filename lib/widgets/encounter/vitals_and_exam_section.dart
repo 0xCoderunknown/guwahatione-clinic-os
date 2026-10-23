@@ -478,6 +478,11 @@ class VitalsInputGrid extends StatelessWidget {
             ],
             decoration: InputDecoration(
               hintText: hint,
+              hintStyle: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF94A3B8),
+                fontStyle: FontStyle.italic,
+              ),
               suffixText: unit,
               suffixStyle: const TextStyle(fontSize: 10, color: Colors.grey),
               isDense: true,

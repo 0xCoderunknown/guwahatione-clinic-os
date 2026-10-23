@@ -33,12 +33,12 @@ class SectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -56,20 +56,27 @@ class SectionCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: headerBgColor ?? const Color(0xFFF8FAFC),
+                color: headerBgColor ?? const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.vertical(
                   top: const Radius.circular(12),
                   bottom: Radius.circular(showContent ? 0 : 12),
                 ),
                 border: showContent
-                    ? const Border(bottom: BorderSide(color: Color(0xFFE2E8F0)))
+                    ? const Border(bottom: BorderSide(color: Color(0xFFCBD5E1), width: 1.2))
                     : null,
               ),
               child: Row(
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 18, color: const Color(0xFF0F766E)),
-                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F766E).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(icon, size: 18, color: const Color(0xFF0F766E)),
+                    ),
+                    const SizedBox(width: 10),
                   ],
                   Expanded(
                     child: Row(

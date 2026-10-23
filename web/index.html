@@ -112,6 +112,37 @@
         console.error('File download failed:', e);
       }
     };
+
+    window.printHtmlDocument = function(htmlContent) {
+      try {
+        let iframe = document.getElementById('clinic_print_frame');
+        if (!iframe) {
+          iframe = document.createElement('iframe');
+          iframe.id = 'clinic_print_frame';
+          iframe.style.position = 'fixed';
+          iframe.style.right = '0';
+          iframe.style.bottom = '0';
+          iframe.style.width = '0';
+          iframe.style.height = '0';
+          iframe.style.border = '0';
+          document.body.appendChild(iframe);
+        }
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(htmlContent);
+        doc.close();
+        setTimeout(function() {
+          try {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          } catch (e) {
+            console.error('Print trigger failed:', e);
+          }
+        }, 350);
+      } catch (err) {
+        console.error('Print iframe error:', err);
+      }
+    };
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

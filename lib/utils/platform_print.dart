@@ -1,6 +1,7 @@
 import 'platform_print_stub.dart'
     if (dart.library.js_interop) 'platform_print_web.dart';
 
-void printDocument() {
-  triggerBrowserPrint();
+void printDocument({String? html}) {
+  triggerBrowserPrint(html: html);
 }
+

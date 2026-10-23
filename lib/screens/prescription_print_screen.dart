@@ -52,7 +52,16 @@ class _PrescriptionPrintScreenState extends State<PrescriptionPrintScreen> {
   void _handlePrint() {
     if (_isPrinting) return;
     setState(() => _isPrinting = true);
-    printDocument();
+    final html = PrescriptionPrintEngine.generateHtml(
+      consultation: widget.consultation,
+      appointment: widget.appointment,
+      patientAllergies: widget.patientAllergies,
+      doctorSpecialty: widget.doctorSpecialty,
+      doctorRegNumber: widget.doctorRegNumber,
+      usePrePrintedLetterhead: _usePrePrintedLetterhead,
+      isA5: _paperSize == PaperSize.a5,
+    );
+    printDocument(html: html);
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
         setState(() => _isPrinting = false);

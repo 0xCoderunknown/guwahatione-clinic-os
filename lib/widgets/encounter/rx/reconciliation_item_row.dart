@@ -108,7 +108,12 @@ class ReconciliationItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isContinued = item.action == MedicationAction.continueAction;
+    final isContinuedIndefinite = isContinued &&
+        (item.durationDays == null ||
+            item.durationText == null ||
+            item.durationText == 'To Continue');
     final isStopped = item.action == MedicationAction.stop;
+
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -311,7 +316,7 @@ class ReconciliationItemRow extends StatelessWidget {
               'CONTINUE',
               style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
             ),
-            selected: isContinued,
+            selected: isContinuedIndefinite,
             selectedColor: Colors.teal.shade100,
             onSelected: (val) {
               if (val) onContinue(index);

@@ -226,5 +226,43 @@ void main() {
       expect(updatedItem, isNotNull);
       expect(updatedItem!.dosage, '2 Tablets');
     });
+
+    testWidgets('ReconciliationItemRow highlights CONTINUE chip only for indefinite continuation', (tester) async {
+      final indefiniteItem = sampleItem.copyWith(durationText: 'To Continue');
+      final acuteItem = sampleItem.copyWith(durationText: '3 Days', durationDays: 3);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ReconciliationItemRow(
+              item: indefiniteItem,
+              index: 0,
+              onContinue: (_) {},
+              onStop: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      final continueChipFinder = find.widgetWithText(ChoiceChip, 'CONTINUE');
+      expect(tester.widget<ChoiceChip>(continueChipFinder).selected, isTrue);
+
+      // Pump acute item
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ReconciliationItemRow(
+              item: acuteItem,
+              index: 0,
+              onContinue: (_) {},
+              onStop: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.widget<ChoiceChip>(continueChipFinder).selected, isFalse);
+    });
   });
 }
+

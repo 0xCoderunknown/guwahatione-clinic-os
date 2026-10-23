@@ -42,6 +42,13 @@ class ClinicApp extends StatelessWidget {
             foregroundColor: Color(0xFF0F172A),
             elevation: 0.5,
           ),
+          inputDecorationTheme: const InputDecorationTheme(
+            hintStyle: TextStyle(
+              color: Color(0xFF94A3B8),
+              fontWeight: FontWeight.normal,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
         ),
         home: const AuthGate(),
       ),

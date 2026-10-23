@@ -9,6 +9,25 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
 
+## [1.5.3] — 24-10-2026
+
+### Clinical UI Ergonomics, Step Hierarchy & Vector-Crisp Print/PDF Engine
+- **Vector-Crisp HTML Printing & Blank PDF Resolution:**
+  - Introduced pure Dart `PrescriptionPrintEngine` with zero Flutter UI dependencies, generating semantic, self-contained HTML for clinical prescriptions with strict 3-column table isolation, Indian date formatting (`DD-MM-YYYY`), and NMC generic uppercase standards.
+  - Implemented `window.printHtmlDocument` iframe printing bridge in `web/index.html` and `platform_print_web.dart`, bypassing Flutter Web CanvasKit WebGL print spooling context drops and eliminating blank output in browser print and "Save as PDF".
+- **Separation of Print Preview and Clinical Sign-Off:**
+  - Decoupled `_previewCurrentPrescription` (`[Print Preview]`) into a pure read-only preview mode (`isPreSign: false`) that does not finalize the consultation or discharge the patient.
+  - Preserved `_completeAndSignConsultation` (`[Finish Consultation & Sign]`) as the official one-way medical-legal sign-off pipeline (`isPreSign: true`).
+- **Tablet Duration & CONTINUE Highlight Disambiguation:**
+  - Refined `ChoiceChip('CONTINUE')` selection in `ReconciliationItemRow` to activate only when medication is explicitly set to indefinite chronic continuation (`To Continue`).
+  - Selecting specific acute durations like `3 Days`, `5 Days`, or `7 Days` from the duration dropdown displays the chosen duration without conflicting active highlights on the `CONTINUE` chip.
+- **Visual Step Hierarchy & Elevated Section Cards:**
+  - Upgraded `SectionCard` and `PatientHeaderSection` with crisp slate borders (`#CBD5E1`), soft drop shadows (`alpha: 0.05`), and distinct cool grey step headers (`#F1F5F9`) with tinted teal icon containers, providing clear visual separation between Step 1 through Step 5.
+- **Muted Placeholder Hint Styling:**
+  - Added global `inputDecorationTheme` with soft muted italic hints (`#94A3B8`) across `main.dart` and `vitals_and_exam_section.dart`, preventing numeric hints (`120`, `80`, `98.6`) from being mistaken for entered data.
+
+---
+
 ## [1.5.2] — 23-10-2026
 
 ### Doctor Chamber Shift Ergonomics, Gender Tab Traversal & Dummy Phone Collision Guard

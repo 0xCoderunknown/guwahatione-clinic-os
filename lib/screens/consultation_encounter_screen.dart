@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../core/engines/engines.dart';
 import '../models/models.dart';
 import '../providers/clinic_provider.dart';
 import '../services/booking_service.dart';
@@ -313,7 +314,16 @@ class _ConsultationEncounterScreenState
       );
       await EncounterFormState.clearDraft(widget.appointment.id);
 
-      printDocument();
+      final printHtml = PrescriptionPrintEngine.generateHtml(
+        consultation: consultation,
+        appointment: widget.appointment,
+        patientAllergies: form.allergies,
+        doctorSpecialty: widget.doctor.specialty,
+        doctorRegNumber: widget.doctor.medicalRegNumber,
+        usePrePrintedLetterhead: false,
+        isA5: false,
+      );
+      printDocument(html: printHtml);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -476,10 +486,8 @@ class _ConsultationEncounterScreenState
       doctorName: widget.doctor.name,
       doctorRegNumber: widget.doctor.medicalRegNumber,
     );
-    final confirmed = await _navigateToPrint(candidate, isPreSign: true);
-    if (confirmed == true && mounted) {
-      await _commitConsultationAndSign(candidate);
-    }
+    // Pure preview mode (isPreSign: false): allows printing / review without signing or discharging
+    await _navigateToPrint(candidate, isPreSign: false);
   }
 
   @override
