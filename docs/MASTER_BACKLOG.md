@@ -9,7 +9,7 @@
 
 ## 🚀 Active Roadmap Runway (What Is Left to Build)
 
-### 📌 Milestone 1.41 — Master Formulary Editor & Chamber Architecture (Next Up)
+### 📌 Milestone 1.5.1 — Master Formulary Editor & Chamber Architecture (Next Up)
 
 #### 1. IDEA-3 — In-App Master Medicine Editor
 - **Domain:** Catalogue Management / Clinic Administration
@@ -24,7 +24,7 @@
 
 ---
 
-### ⏳ Milestone 1.42+ — Operational & Commercial Enhancements (Backlog)
+### ⏳ Milestone 1.5.2+ — Operational & Commercial Enhancements (Backlog)
 
 #### 3. IDEA-2 — Prescribe-to-Formulary Auto-Ingest
 - **Domain:** Doctor Chamber / Prescribing
@@ -51,6 +51,17 @@
 - **Specification:**
   - `counters/chamber_{doctorId}_{date}` documents accumulate daily (~730 docs/year for a 2-doctor clinic).
   - Define an automated or owner-triggered archival job to prune chamber sync documents older than 90–180 days while permanently preserving atomic queue counter records (`counters/queue_*`).
+
+#### 6. IDEA-5 — Break-Glass Developer / Maintenance Mode (Remote Support & Data Purge)
+- **Domain:** DevOps / Platform Maintenance / Support
+- **Status:** Under Architecture Evaluation (Future Goal)
+- **Concept:** A restricted developer/superadmin maintenance tier designed for remote technical support, test/dummy data cleanup (e.g., removing erroneous demo doctors, test patients, or corrupted counter docs), and recovery without exposing destructive operations to standard clinic roles (Owner, Doctor, Reception).
+- **Key Safety & Isolation Guardrails:**
+  - **Dead-Code Elimination / Build Stripping:** Gated behind compile-time flags (`--dart-define=ENABLE_DEV_MODE=true` or `kDebugMode`) so that standard production client binaries have destructive paths completely eliminated by the Dart tree shaker.
+  - **Off-Band Break-Glass Auth:** Independent from the clinic owner PIN. Activated only via an off-band developer master key or a secure remote flag in Firestore (`/clinic_settings/system.maintenanceMode = true`).
+  - **Visual Hazard Branding:** High-contrast red/purple hazard banner (`⚠️ DEVELOPER MAINTENANCE MODE — DESTRUCTIVE CAPABILITIES ACTIVE`) across the app shell to prevent accidental usage during live clinic operations.
+  - **Explicit Confirmation Gates:** Irreversible actions (e.g., deleting a dummy doctor, clearing corrupted test tokens, or purging test patients) require typing exact confirmation phrases (e.g., typing `"PURGE DOCTOR"`).
+  - **Immutable Maintenance Audit Trail:** All maintenance actions write append-only event logs to `_maintenance_audit_logs` before executing document mutations.
 
 ---
 
@@ -89,14 +100,14 @@
 | **AUDIT-16** | 🟢 Resolved | Architecture | Constructor DI for `BookingService` and `ChamberService` in chamber screen | v1.40.16 |
 | **AUDIT-17** | 🟢 Resolved | Schema | Standardized `lastVisitDate` write to native Firestore `Timestamp` | v1.40.15 |
 | **AUDIT-18** | 🟡 Deferred | Architecture | Dynamic runtime tenant config migration deferred to SaaS phase | SaaS Phase |
-| **AUDIT-19** | 🔵 Open | Maintenance | Chamber counter document retention strategy (tracked above in Milestone 1.42) | Milestone 1.42 |
+| **AUDIT-19** | 🔵 Open | Maintenance | Chamber counter document retention strategy (tracked above in Milestone 1.5.2+) | Milestone 1.5.2+ |
 | **AUDIT-20** | 🟢 Resolved | Firestore Ops | Verified single-field automatic indexing on `counters.date` queries | v1.40.15 |
 | **AUDIT-21** | 🟢 Resolved | Clinical UX | Enforced MBBS/MD character caps and live counters on free-text inputs | v1.40.14 |
 | **AUDIT-22** | 🟢 Resolved | Business Logic | Doctor sitting days (`availableDays`) enforced in advance booking modal | v1.40.12 |
 | **AUDIT-23** | 🟢 Resolved | Security | Purged plaintext PIN getters from `AuthProvider`; strictly hashed in memory | v1.40.6 |
 | **AUDIT-24** | 🟢 Resolved | Hardware Print | Debounced print button with 1500ms cooldown and progress indicator | v1.40.14 |
 | **AUDIT-25** | 🟢 Resolved | Analytics | Fixed `free` metric in revenue engine to exclude `unpaid` bookings | v1.40.10 |
-| **AUDIT-26** | 🔵 Open | Commercial | Subscription expiry runtime enforcement (tracked above in Milestone 1.42) | Milestone 1.42 |
+| **AUDIT-26** | 🔵 Open | Commercial | Subscription expiry runtime enforcement (tracked above in Milestone 1.5.2+) | Milestone 1.5.2+ |
 | **AUDIT-27** | 🟢 Resolved | Formulary Ops | Added `enableSeedDefaultMedicines` flag to suppress test seeds in production | v1.40.15 |
 | **AUDIT-28** | 🟢 Resolved | Performance | Added `limit: 100` query bound to `getAppointmentsForPatient` | v1.40.15 |
 
@@ -133,9 +144,10 @@
 | ID | Status | Summary | Outcome |
 |---|---|---|---|
 | **IDEA-1** | 🟢 Resolved | Pure Dart RFC-4180 CSV export for 5 clinic ledgers (`DataExportEngine`) | Shipped in v1.40.11 |
-| **IDEA-2** | 🟡 Backlog | Prescribe-to-formulary auto-ingest checkbox for outside medicines | Backlog Milestone 1.42 |
-| **IDEA-3** | 🟢 Approved | In-app master medicine editor for clinic owners (`MedicineCatalogueScreen`) | Approved for Milestone 1.41 |
+| **IDEA-2** | 🟡 Backlog | Prescribe-to-formulary auto-ingest checkbox for outside medicines | Backlog Milestone 1.5.2+ |
+| **IDEA-3** | 🟢 Approved | In-app master medicine editor for clinic owners (`MedicineCatalogueScreen`) | Approved for Milestone 1.5.1 |
 | **IDEA-4** | ⚪ Deferred | Anonymized prescription volume telemetry for regional disease intelligence | Under evaluation |
+| **IDEA-5** | ⚪ Architecture Evaluation | Break-Glass Developer / Maintenance Mode (remote support & dummy data purge) | Future Goal |
 
 ---
 

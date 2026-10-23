@@ -1,6 +1,7 @@
 // Barrel export file for GuwahatiOne Clinic OS widgets.
 // Booking Widgets
 export 'booking/add_appointment_dialog.dart';
+export 'booking/booking_carry_over_banner.dart';
 export 'booking/booking_date_and_mode_section.dart';
 export 'booking/booking_dialog_actions.dart';
 export 'booking/booking_duplicate_warning_banner.dart';
@@ -41,7 +42,10 @@ export 'dashboard/dashboard_kpi_strip.dart';
 export 'dashboard/dashboard_queue_card.dart';
 export 'dashboard/dashboard_queue_item_row.dart';
 export 'dashboard/queue_doctor_filter_bar.dart';
+export 'dashboard/security_settings_dialog.dart';
 export 'dashboard/upcoming_bookings_section.dart';
+// Doctor Admin Widgets
+export 'doctor/doctor_leave_calendar_section.dart';
 // Clinical Encounter Widgets
 export 'encounter/advice_and_orders_section.dart';
 export 'encounter/diagnostic_review_section.dart';
@@ -54,6 +58,7 @@ export 'encounter/rx/inline_dosage_edit_dialog.dart';
 export 'encounter/rx/new_prescription_row.dart';
 export 'encounter/rx/reconciliation_item_row.dart';
 export 'encounter/rx/rx_search_results_view.dart';
+export 'encounter/rx/rx_template_presets_bar.dart';
 export 'encounter/rx/staged_medicine_form.dart';
 export 'encounter/rx_reconciliation_section.dart';
 export 'encounter/vitals_and_exam_section.dart';
@@ -64,6 +69,7 @@ export 'patient/patient_lookup_card.dart';
 export 'print/print_header_and_demographics.dart';
 export 'print/print_medications_table.dart';
 export 'print/print_orders_and_footer.dart';
+export 'print/token_receipt_dialog.dart';
 // Queue Management Widgets
 export 'queue/accordion_dispatch_section.dart';
 export 'queue/accordion_status_actions.dart';

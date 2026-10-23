@@ -132,6 +132,7 @@
 | `calledAt` | `Timestamp?` | No | Server timestamp recorded when patient is called into chamber. |
 | `readyAt` | `Timestamp?` | No | Server timestamp recorded when doctor signals readiness for next token. |
 | `endedAt` | `Timestamp?` | No | Server timestamp recorded when doctor completes encounter (breather). |
+| `pausedAt` | `Timestamp?` | No | Server timestamp recorded when doctor pauses an in-progress encounter. |
 | `shiftEndedAt` | `Timestamp?` | No | Server timestamp recorded when doctor concludes consultations for the day. |
 | `clearedAt` | `Timestamp?` | No | Server timestamp recorded when chamber session resets to idle. |
 
