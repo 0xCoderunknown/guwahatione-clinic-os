@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../config/clinic_config.dart';
@@ -359,6 +360,10 @@ class DoctorLoginForm extends StatelessWidget {
           obscureText: true,
           enabled: !isLoading,
           keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(4),
+          ],
           decoration: InputDecoration(
             labelText: 'Chamber PIN',
             hintText: 'Enter 4-digit Chamber PIN',
@@ -484,6 +489,10 @@ class _ReceptionLoginFormState extends State<ReceptionLoginForm> {
           obscureText: true,
           enabled: !widget.isLoading,
           keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(6),
+          ],
           decoration: InputDecoration(
             labelText: isTesting
                 ? (_selectedRole == UserRole.owner

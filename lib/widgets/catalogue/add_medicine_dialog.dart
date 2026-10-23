@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/engines/medicine_engine.dart';
@@ -87,6 +88,9 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
                 TextFormField(
                   controller: _brandCtrl,
                   autofocus: true,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(100),
+                  ],
                   decoration: const InputDecoration(
                     labelText: 'Product Name (Brand & Form)',
                     hintText: 'e.g., Telma 40 tablet, Dolo 650 tablet, Ascoril D Plus syrup',
@@ -102,6 +106,9 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
                 // 2. Chemical Composition with Strength
                 TextFormField(
                   controller: _compCtrl,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(150),
+                  ],
                   decoration: const InputDecoration(
                     labelText: 'Active Composition & Strength',
                     hintText: 'e.g., Telmisartan 40mg, Paracetamol 650mg, Cefixime 200mg',
@@ -118,6 +125,9 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
                 // 3. Manufacturer
                 TextFormField(
                   controller: _mfgCtrl,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(80),
+                  ],
                   decoration: const InputDecoration(
                     labelText: 'Manufacturer / Pharma Brand (Optional)',
                     hintText:
@@ -183,6 +193,9 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
                         flex: 2,
                         child: TextFormField(
                           controller: _dosageCtrl,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(40),
+                          ],
                           decoration: const InputDecoration(
                             labelText: 'Default Dosage',
                             hintText: '1 Tablet / 5 ml',
@@ -282,6 +295,10 @@ class _AddMedicineDialogState extends State<AddMedicineDialog> {
                     TextFormField(
                       controller: _customDurationCtrl,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(3),
+                      ],
                       decoration: const InputDecoration(
                         labelText: 'Duration in Days',
                         hintText: 'e.g., 21',

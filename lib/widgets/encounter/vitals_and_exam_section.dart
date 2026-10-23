@@ -472,6 +472,10 @@ class VitalsInputGrid extends StatelessWidget {
           TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              LengthLimitingTextInputFormatter(6),
+            ],
             decoration: InputDecoration(
               hintText: hint,
               suffixText: unit,

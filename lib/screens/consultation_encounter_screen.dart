@@ -237,6 +237,49 @@ class _ConsultationEncounterScreenState
       }
     }
 
+    // Soft confirmation for blank advisory encounter (no meds, complaints, or diagnoses)
+    final isBlankEncounter = form.allPrescriptionItems.isEmpty &&
+        form.chiefComplaints.isEmpty &&
+        form.provisionalDiagnoses.isEmpty;
+
+    if (isBlankEncounter) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.amber.shade800),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Blank Advisory Encounter?',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'This consultation has no medications, chief complaints, or provisional diagnoses recorded.\n\n'
+            'Do you wish to proceed and sign as a blank advisory encounter?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Review Encounter'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.amber.shade800,
+              ),
+              child: const Text('Sign Blank Encounter'),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true || !mounted) return;
+    }
+
     final candidate = form.buildConsultation(
       id: _uuid.v4(),
       appointmentId: widget.appointment.id,

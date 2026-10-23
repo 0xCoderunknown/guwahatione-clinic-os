@@ -8,6 +8,33 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **No Verification Gates:** Internal CI/test execution metrics (`flutter analyze`, `flutter test`) belong strictly to terminal logs and git commits, never in this changelog.  
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
+
+## [1.5.1] — 23-10-2026
+
+### Non-IT Real-World Robustness Audit, Input Hardening & 7-Day Booking Horizon
+- **Smart Indian Phone Normalization Formatter:**
+  - Introduced `IndianPhoneInputFormatter` to sanitize phone inputs on keystroke and paste without silent digit loss.
+  - Automatically strips country code prefixes (`+91` or `91` when total digits > 10) and trunk/STD prefixes (`0` when total digits > 10) while preserving 10-digit mobile numbers natively starting with `91`.
+  - Automatically strips spaces, dashes, parentheses, and non-numeric characters across patient booking and doctor management.
+- **Financial & Registration Field Input Hardening:**
+  - Enforced `FilteringTextInputFormatter.digitsOnly` and 6-digit caps with strict numeric validators on the booking amount field in `BookingPaymentSection`, preventing accidental `₹0` saves from inputs like `"500.00"` or letter typos (`"5OO"`).
+  - Hardened Chamber PIN (4 digits) and Staff/Owner PIN (6 digits) on `LoginScreen` with digits-only formatters to prevent keyboard typos on web and counter PC setups.
+  - Hardened `AddDoctorScreen` with digits-only formatters and range validation across consultation fees (`₹0` to `₹50,000`), Chamber PINs (strictly 4 numeric digits), daily token caps (`1` to `200`), and free review windows (`0` to `30` days).
+  - Added length caps on doctor name (60), custom specialty (60), and medical council registration number (40).
+- **Clinical Bounds & Vitals Sanitization:**
+  - Added input formatters (`0-9.` with 6-char caps) to all vitals fields in `VitalsAndExamSection`.
+  - Added clinical sanity bounding in `EncounterFormState.buildVitals()` (Systolic BP: 40–300, Diastolic BP: 20–200, Pulse: 30–250, Temp: 70–115°F, Weight: 0.5–500kg, SpO2: 40–100%), discarding physically impossible or negative inputs as `null` rather than printing invalid vitals on prescriptions.
+  - Bounded custom prescription regimen duration to 1–365 days in `CustomDurationDialog`.
+  - Enforced character length bounds in `AddMedicineDialog` for trade brand (100), chemical composition (150), manufacturer (80), and default dosage (40) to prevent prescription table overflow.
+- **Blank Advisory Encounter Confirmation Dialog:**
+  - Added soft confirmation modal in `ConsultationEncounterScreen` when a doctor clicks "Complete & Sign" with zero medicines, complaints, or diagnoses, preventing accidental one-click empty record submission while permitting valid advisory consultations.
+- **Configurable 7-Day Pre-Booking Horizon:**
+  - Added `maxAdvanceBookingDays: 7` to `ClinicConfig` and dynamically bounded `showDatePicker` in `AddAppointmentDialog`, tightening advance booking from 30 days to 7 days to eliminate high OPD no-show rates.
+- **Roadmap Backlog Expansion:**
+  - Catalogued `IDEA-6` (Doctor Retrospective Leave Conflict Detection & WhatsApp Cancellation Notices) and `IDEA-7` (Emergency Off-Day Booking Override) in `docs/MASTER_BACKLOG.md`.
+
+---
+
 ## [1.5.0] — 23-10-2026
 
 ### Pre-Demo Production Baseline, Codebase Polish & Architecture Hardening

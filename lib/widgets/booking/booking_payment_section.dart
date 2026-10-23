@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../config/clinic_config.dart';
 import '../../core/engines/engines.dart';
@@ -343,8 +344,16 @@ class BookingPaymentSection extends StatelessWidget {
                         : null,
               ),
               keyboardType: TextInputType.number,
-              validator: (val) =>
-                  (val == null || val.isEmpty) ? 'Required' : null,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(6),
+              ],
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) return 'Required';
+                final parsed = int.tryParse(val.trim());
+                if (parsed == null) return 'Enter a valid amount';
+                return null;
+              },
               onFieldSubmitted: (_) => onSubmitted?.call(),
             );
           },

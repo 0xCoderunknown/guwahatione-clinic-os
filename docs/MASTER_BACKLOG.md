@@ -63,6 +63,28 @@
   - **Explicit Confirmation Gates:** Irreversible actions (e.g., deleting a dummy doctor, clearing corrupted test tokens, or purging test patients) require typing exact confirmation phrases (e.g., typing `"PURGE DOCTOR"`).
   - **Immutable Maintenance Audit Trail:** All maintenance actions write append-only event logs to `_maintenance_audit_logs` before executing document mutations.
 
+#### 7. IDEA-6 — Doctor Retrospective Leave Conflict Detection & WhatsApp Cancellation Notices
+- **Domain:** Clinical Operations / Reception & Patient Communication
+- **Status:** Pending PM Prioritization (Future Milestone)
+- **Problem:** When an appointment is booked in advance (e.g., next week) and the doctor subsequently declares leave or blocks that date via `DoctorLeaveCalendarSection`, the system currently preserves the appointment (Rule #1 Zero Deletions) but does not alert the owner during leave save or provide an immediate resolution path to notify the patient.
+- **Specification:**
+  - **Pre-Save Leave Conflict Warning:** When clinic owner or doctor blocks date(s) in `DoctorLeaveCalendarSection`, query for existing active appointments on those dates. If found, display a high-priority confirmation modal:  
+    *"⚠️ Dr. Sharma already has N booked appointment(s) on [Date(s)]. Blocking this date requires contacting and rescheduling or refunding these patients. Proceed to block?"*
+  - **Visual Conflict Alert Badge:** On `AppointmentListScreen` and `DashboardQueueCard`, any appointment scheduled on a date where the assigned doctor is marked on leave displays a prominent red badge: `[⚠️ DOCTOR ON LEAVE — RESCHEDULE / CANCEL]`.
+  - **1-Tap WhatsApp Cancellation Notice:** Inside `AppointmentAccordion` for conflicted appointments, provide a 1-tap WhatsApp button using `WhatsAppEngine.buildDeepLink`:  
+    > *"Dear [Patient Name], your appointment (Token #T) with Dr. [Doctor] at GuwahatiOne Clinic on [DD-MM-YYYY] cannot be held as the doctor will be unavailable/on leave. Please contact clinic reception at [Phone] to reschedule your visit or receive a refund if paid. We sincerely regret the inconvenience."*
+  - **Cancellation Resolution:** Reception can mark `AppointmentStatus.absent` (audit-proof with ₹0 fee collected) or carry over payment to a rescheduled date.
+
+#### 8. IDEA-7 — Emergency Off-Day Booking Override with Prominent Reception Warning
+- **Domain:** Booking & Queue Management / Front-Desk Flexibility
+- **Status:** Pending PM Prioritization (Future Milestone)
+- **Problem:** Currently, selecting a doctor on a day they do not sit (e.g., Thursday when doctor only sits Mon/Wed/Fri) completely disables the "Book Appointment" button (`BookingOffDayWarningBanner`). In real-world clinics, patients occasionally arrive for urgent/emergency reviews, or a doctor comes in for a special unscheduled procedure.
+- **Specification:**
+  - In `AddAppointmentDialog`, keep the high-visibility warning banner:  
+    `"⚠️ Note: Dr. [Doctor] does not regularly sit on [Weekday]. Regular OPD days: [Mon, Wed, Fri]."`
+  - Instead of strictly disabling the submission button, provide an explicit **[Emergency / Off-Day Booking Override]** confirmation checkbox.
+  - If checked, reception can proceed with booking. The created appointment document records `isEmergencyOffDayOverride: true` and displays an `[OFF-DAY SPECIAL ADMISSION]` amber badge in the queue to alert chamber and accounting.
+
 ---
 
 ### ☁️ SaaS Multi-Tenant Cloud Phase (Formally Deferred)

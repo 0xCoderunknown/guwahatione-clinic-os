@@ -32,6 +32,9 @@ class ClinicConfig {
   /// Default top margin reserved for physical pre-printed clinic letterheads (in millimeters).
   final double defaultLetterheadTopMarginMm;
 
+  /// Maximum advance booking horizon in days for scheduling future appointments (default: 7).
+  final int maxAdvanceBookingDays;
+
   /// Client-specific feature toggles.
   final ClinicFeatureFlags features;
 
@@ -45,6 +48,7 @@ class ClinicConfig {
     this.defaultConsultationFee = 500,
     this.freeReviewValidityDays = 14,
     this.defaultLetterheadTopMarginMm = 35.0,
+    this.maxAdvanceBookingDays = 7,
     this.features = const ClinicFeatureFlags(),
   });
 
@@ -54,6 +58,7 @@ class ClinicConfig {
     clinicName: 'GuwahatiOne ClinicOS',
     address: 'Guwahati, Assam',
     contactPhone: '12345 67890',
+    maxAdvanceBookingDays: 7,
     features: ClinicFeatureFlags(
       enableTestingMode: true,
     ),

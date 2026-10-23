@@ -54,8 +54,8 @@ class _CustomDurationDialogState extends State<CustomDurationDialog> {
   void _apply() {
     final text = _controller.text.trim();
     final parsed = int.tryParse(text);
-    if (parsed == null || parsed <= 0) {
-      setState(() => _error = 'Enter a valid number of days (e.g. 10)');
+    if (parsed == null || parsed <= 0 || parsed > 365) {
+      setState(() => _error = 'Enter a valid course duration (1 to 365 days)');
       return;
     }
     widget.onApply(parsed);
@@ -84,7 +84,10 @@ class _CustomDurationDialogState extends State<CustomDurationDialog> {
           TextField(
             controller: _controller,
             keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(3),
+            ],
             autofocus: true,
             decoration: InputDecoration(
               labelText: 'Duration (Days)',

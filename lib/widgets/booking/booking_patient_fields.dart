@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/engines/appointment_engine.dart';
 import '../../models/patient.dart';
+import '../../utils/formatters.dart';
 
 /// Form fields for patient demographic data (Phone with search trigger, Family picker, Name, Age/Unit, Sex, Guardian).
 /// Ergonomically optimized for 100% keyboard navigation and mouse-free workflow.
@@ -126,9 +127,8 @@ class BookingPatientFields extends StatelessWidget {
                       : null,
                 ),
                 keyboardType: TextInputType.phone,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(10),
+                inputFormatters: const [
+                  IndianPhoneInputFormatter(),
                 ],
                 validator: (val) => (val == null || val.length < 10)
                     ? 'Enter valid 10-digit phone'
@@ -330,6 +330,9 @@ class BookingPatientFields extends StatelessWidget {
           controller: nameController,
           focusNode: nameFocusNode,
           textInputAction: TextInputAction.next,
+          inputFormatters: [
+            LengthLimitingTextInputFormatter(70),
+          ],
           decoration: const InputDecoration(
             labelText: 'Patient Name',
             border: OutlineInputBorder(),
@@ -422,6 +425,9 @@ class BookingPatientFields extends StatelessWidget {
                 controller: guardianNameController,
                 focusNode: guardianFocusNode,
                 textInputAction: TextInputAction.next,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(70),
+                ],
                 decoration: const InputDecoration(
                   labelText: 'Guardian / c/o (Optional)',
                   border: OutlineInputBorder(),
@@ -439,6 +445,9 @@ class BookingPatientFields extends StatelessWidget {
                 controller: guardianRelationController,
                 focusNode: guardianRelationFocusNode,
                 textInputAction: TextInputAction.next,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(30),
+                ],
                 decoration: const InputDecoration(
                   labelText: 'Relation',
                   border: OutlineInputBorder(),

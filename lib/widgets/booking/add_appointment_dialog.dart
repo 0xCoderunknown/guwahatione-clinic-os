@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/clinic_config.dart';
+
 import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
 import '../../models/doctor.dart';
@@ -448,7 +450,9 @@ class _AddAppointmentDialogState extends State<AddAppointmentDialog> {
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 30)),
+      lastDate: DateTime.now().add(
+        Duration(days: ClinicConfig.current.maxAdvanceBookingDays),
+      ),
     );
     if (picked != null) {
       setState(() => _selectedDate = picked);

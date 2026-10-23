@@ -341,13 +341,25 @@ class EncounterFormState {
   // ---------------------------------------------------------------------------
 
   Vitals buildVitals() {
+    int? parseBoundedInt(String raw, int min, int max) {
+      final v = int.tryParse(raw.trim());
+      if (v == null || v < min || v > max) return null;
+      return v;
+    }
+
+    double? parseBoundedDouble(String raw, double min, double max) {
+      final v = double.tryParse(raw.trim());
+      if (v == null || v < min || v > max) return null;
+      return v;
+    }
+
     return Vitals(
-      systolicBp: int.tryParse(systolicBpController.text.trim()),
-      diastolicBp: int.tryParse(diastolicBpController.text.trim()),
-      pulseRate: int.tryParse(pulseController.text.trim()),
-      temperature: double.tryParse(tempController.text.trim()),
-      weightKg: double.tryParse(weightController.text.trim()),
-      spO2: int.tryParse(spo2Controller.text.trim()),
+      systolicBp: parseBoundedInt(systolicBpController.text, 40, 300),
+      diastolicBp: parseBoundedInt(diastolicBpController.text, 20, 200),
+      pulseRate: parseBoundedInt(pulseController.text, 30, 250),
+      temperature: parseBoundedDouble(tempController.text, 70.0, 115.0),
+      weightKg: parseBoundedDouble(weightController.text, 0.5, 500.0),
+      spO2: parseBoundedInt(spo2Controller.text, 40, 100),
     );
   }
 

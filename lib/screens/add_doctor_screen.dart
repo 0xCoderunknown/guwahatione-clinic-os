@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../models/doctor.dart';
@@ -282,6 +283,9 @@ class _DoctorFormState extends State<DoctorForm> {
           // 1. Doctor Name
           TextFormField(
             controller: _nameController,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(60),
+            ],
             decoration: const InputDecoration(
               labelText: 'Doctor Name (e.g., Dr. Sharma)',
               prefixIcon: Icon(Icons.person),
@@ -313,6 +317,9 @@ class _DoctorFormState extends State<DoctorForm> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _customSpecialtyController,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(60),
+              ],
               decoration: const InputDecoration(
                 labelText: 'Specify Custom Specialty',
                 hintText: 'e.g., Diabetologist, Oncologist, etc.',
@@ -332,11 +339,21 @@ class _DoctorFormState extends State<DoctorForm> {
               prefixIcon: Icon(Icons.phone),
             ),
             keyboardType: TextInputType.phone,
-            validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+            inputFormatters: const [
+              IndianPhoneInputFormatter(),
+            ],
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Phone number required';
+              if (v.trim().length != 10) return 'Must be valid 10-digit mobile';
+              return null;
+            },
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _regNumberController,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(40),
+            ],
             decoration: const InputDecoration(
               labelText: 'Medical Council Reg No. (Optional)',
               hintText: 'e.g., AMC-24891 / NMC-10293',
@@ -356,8 +373,18 @@ class _DoctorFormState extends State<DoctorForm> {
                     prefixIcon: Icon(Icons.currency_rupee),
                   ),
                   keyboardType: TextInputType.number,
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Required' : null,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(5),
+                  ],
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Fee required';
+                    final val = int.tryParse(v.trim());
+                    if (val == null || val < 0 || val > 50000) {
+                      return 'Enter fee (₹0 - ₹50,000)';
+                    }
+                    return null;
+                  },
                 ),
               ),
               const SizedBox(width: 12),
@@ -370,9 +397,13 @@ class _DoctorFormState extends State<DoctorForm> {
                     prefixIcon: Icon(Icons.lock_outline),
                   ),
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(4),
+                  ],
                   validator: (v) {
-                    if (v == null || v.trim().length < 4) {
-                      return 'Min 4 digits';
+                    if (v == null || v.trim().length != 4) {
+                      return 'Must be 4 digits';
                     }
                     return null;
                   },
@@ -385,6 +416,11 @@ class _DoctorFormState extends State<DoctorForm> {
           // 4b. Doctor Revenue Share Split (Admin Only)
           TextFormField(
             controller: _sharePercentageController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(3),
+            ],
             decoration: const InputDecoration(
               labelText: 'Doctor Revenue Share Split (%)',
               hintText: '100',
@@ -393,7 +429,6 @@ class _DoctorFormState extends State<DoctorForm> {
               helperText:
                   'Percentage of consultation fee paid to doctor (0 to 100%; admin-only)',
             ),
-            keyboardType: TextInputType.number,
             validator: (v) {
               if (v == null || v.trim().isEmpty) return 'Required';
               final val = int.tryParse(v.trim());
@@ -489,9 +524,18 @@ class _DoctorFormState extends State<DoctorForm> {
               prefixIcon: Icon(Icons.confirmation_number_outlined),
             ),
             keyboardType: TextInputType.number,
-            validator: (v) => v == null || int.tryParse(v.trim()) == null
-                ? 'Number required'
-                : null,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(3),
+            ],
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Cap required';
+              final val = int.tryParse(v.trim());
+              if (val == null || val < 1 || val > 200) {
+                return 'Enter cap between 1 and 200';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
 
@@ -505,6 +549,10 @@ class _DoctorFormState extends State<DoctorForm> {
               suffixText: 'Days',
             ),
             keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(2),
+            ],
             validator: (v) {
               if (v == null || v.trim().isEmpty) return 'Required';
               final val = int.tryParse(v.trim());

@@ -119,5 +119,37 @@ void main() {
       expect(AppFormatters.doctorInitials(''), '');
       expect(AppFormatters.doctorInitials(null), '');
     });
+
+    test('IndianPhoneInputFormatter correctly sanitizes +91, 0, spaces and limits to 10 digits', () {
+      const formatter = IndianPhoneInputFormatter();
+
+      TextEditingValue format(String text) {
+        return formatter.formatEditUpdate(
+          TextEditingValue.empty,
+          TextEditingValue(text: text),
+        );
+      }
+
+      // Pasting with +91 country code and spaces
+      expect(format('+91 98640 12345').text, '9864012345');
+
+      // Pasting with 91 prefix without plus
+      expect(format('919864012345').text, '9864012345');
+
+      // Pasting/typing with leading 0 (STD / trunk prefix)
+      expect(format('09864012345').text, '9864012345');
+
+      // Valid 10-digit number that naturally starts with 91 (should NOT be stripped)
+      expect(format('9123456789').text, '9123456789');
+
+      // Pasting with hyphens and brackets
+      expect(format('(98640) 12-345').text, '9864012345');
+
+      // Typing more than 10 digits
+      expect(format('98640123459999').text, '9864012345');
+
+      // Empty string
+      expect(format('').text, '');
+    });
   });
 }

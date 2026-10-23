@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 /// Centralized date, time, and currency formatters for GuwahatiOne Clinic OS.
@@ -103,5 +104,45 @@ class AppFormatters {
     final first = parts.first[0].toUpperCase();
     final last = parts.last[0].toUpperCase();
     return '$first$last';
+  }
+}
+
+/// Smart Indian phone number input formatter that cleanly handles:
+/// - Leading '+91' or '91' country code (strips prefix when length > 10)
+/// - Leading '0' trunk prefix (strips STD/trunk prefix when length > 10)
+/// - Non-numeric characters (spaces, dashes, parentheses stripped)
+/// - Strict 10-digit limit without truncating actual phone digits on paste
+class IndianPhoneInputFormatter extends TextInputFormatter {
+  const IndianPhoneInputFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+
+    // 1. Strip all non-digit characters
+    var digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+
+    // 2. Strip country code '91' if total digits > 10
+    if (digits.startsWith('91') && digits.length > 10) {
+      digits = digits.substring(2);
+    }
+
+    // 3. Strip leading '0' if total digits > 10
+    if (digits.startsWith('0') && digits.length > 10) {
+      digits = digits.substring(1);
+    }
+
+    // 4. Cap at 10 digits
+    if (digits.length > 10) {
+      digits = digits.substring(0, 10);
+    }
+
+    return TextEditingValue(
+      text: digits,
+      selection: TextSelection.collapsed(offset: digits.length),
+    );
   }
 }
