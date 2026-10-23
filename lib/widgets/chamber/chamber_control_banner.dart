@@ -47,14 +47,10 @@ class ChamberControlBanner extends StatelessWidget {
               lastCompletedPatientName: lastCompletedPatientName,
               isBusy: isBusy,
               onNextPatient: onNextPatient,
-              onEndShift: onEndShift,
             );
           case ChamberStatus.readyForNext:
             return _ReadyForNextCard(
               isCompact: isCompact,
-              isBusy: isBusy,
-              onNextPatient: onNextPatient,
-              onEndShift: onEndShift,
             );
           case ChamberStatus.calling:
             return _CallingIncomingCard(
@@ -81,7 +77,6 @@ class ChamberControlBanner extends StatelessWidget {
               isCompact: isCompact,
               isBusy: isBusy,
               onNextPatient: onNextPatient,
-              onEndShift: onEndShift,
             );
         }
       },
@@ -99,7 +94,6 @@ class _ConsultationEndedCard extends StatelessWidget {
   final String? lastCompletedPatientName;
   final bool isBusy;
   final VoidCallback onNextPatient;
-  final VoidCallback? onEndShift;
 
   const _ConsultationEndedCard({
     required this.isCompact,
@@ -107,7 +101,6 @@ class _ConsultationEndedCard extends StatelessWidget {
     required this.lastCompletedPatientName,
     required this.isBusy,
     required this.onNextPatient,
-    required this.onEndShift,
   });
 
   @override
@@ -186,46 +179,9 @@ class _ConsultationEndedCard extends StatelessWidget {
       onPressed: isBusy ? null : onNextPatient,
     );
 
-    final endShiftBtn = onEndShift != null
-        ? OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF92400E),
-              side: const BorderSide(color: Color(0xFFFBBF24)),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            icon: const Icon(Icons.nightlife_rounded, size: 16),
-            label: const Text(
-              'END SHIFT',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            onPressed: isBusy ? null : onEndShift,
-          )
-        : null;
-
     final actionsWidget = isCompact
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              buttonWidget,
-              if (endShiftBtn != null) ...[
-                const SizedBox(height: 8),
-                endShiftBtn,
-              ],
-            ],
-          )
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (endShiftBtn != null) ...[
-                endShiftBtn,
-                const SizedBox(width: 8),
-              ],
-              buttonWidget,
-            ],
-          );
+        ? SizedBox(width: double.infinity, child: buttonWidget)
+        : buttonWidget;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -274,15 +230,9 @@ class _ConsultationEndedCard extends StatelessWidget {
 
 class _ReadyForNextCard extends StatelessWidget {
   final bool isCompact;
-  final bool isBusy;
-  final VoidCallback onNextPatient;
-  final VoidCallback? onEndShift;
 
   const _ReadyForNextCard({
     required this.isCompact,
-    required this.isBusy,
-    required this.onNextPatient,
-    required this.onEndShift,
   });
 
   @override
@@ -333,58 +283,6 @@ class _ReadyForNextCard extends StatelessWidget {
       ],
     );
 
-    final buttonWidget = OutlinedButton.icon(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFF0F766E),
-        side: const BorderSide(color: Color(0xFF0F766E)),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      ),
-      icon: const Icon(Icons.refresh_rounded, size: 16),
-      label: const Text('Re-Signal Reception', style: TextStyle(fontSize: 12)),
-      onPressed: onNextPatient,
-    );
-
-    final endShiftBtn = onEndShift != null
-        ? OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF475569),
-              side: const BorderSide(color: Color(0xFFCBD5E1)),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            icon: const Icon(Icons.nightlife_rounded, size: 16),
-            label: const Text(
-              'End Shift',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-            onPressed: isBusy ? null : onEndShift,
-          )
-        : null;
-
-    final actionsWidget = isCompact
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              buttonWidget,
-              if (endShiftBtn != null) ...[
-                const SizedBox(height: 8),
-                endShiftBtn,
-              ],
-            ],
-          )
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (endShiftBtn != null) ...[
-                endShiftBtn,
-                const SizedBox(width: 8),
-              ],
-              buttonWidget,
-            ],
-          );
-
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isCompact ? 16 : 20,
@@ -402,30 +300,13 @@ class _ReadyForNextCard extends StatelessWidget {
           ),
         ],
       ),
-      child: isCompact
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    iconWidget,
-                    const SizedBox(width: 12),
-                    const Expanded(child: textWidget),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                actionsWidget,
-              ],
-            )
-          : Row(
-              children: [
-                iconWidget,
-                const SizedBox(width: 16),
-                const Expanded(child: textWidget),
-                const SizedBox(width: 16),
-                actionsWidget,
-              ],
-            ),
+      child: Row(
+        children: [
+          iconWidget,
+          const SizedBox(width: 14),
+          const Expanded(child: textWidget),
+        ],
+      ),
     );
   }
 }
@@ -608,13 +489,11 @@ class _IdleChamberCard extends StatelessWidget {
   final bool isCompact;
   final bool isBusy;
   final VoidCallback onNextPatient;
-  final VoidCallback? onEndShift;
 
   const _IdleChamberCard({
     required this.isCompact,
     required this.isBusy,
     required this.onNextPatient,
-    required this.onEndShift,
   });
 
   @override
@@ -674,46 +553,9 @@ class _IdleChamberCard extends StatelessWidget {
       onPressed: isBusy ? null : onNextPatient,
     );
 
-    final endShiftBtn = onEndShift != null
-        ? OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF475569),
-              side: const BorderSide(color: Color(0xFFCBD5E1)),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            icon: const Icon(Icons.nightlife_rounded, size: 16),
-            label: const Text(
-              'Close Shift',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-            onPressed: isBusy ? null : onEndShift,
-          )
-        : null;
-
     final actionsWidget = isCompact
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              buttonWidget,
-              if (endShiftBtn != null) ...[
-                const SizedBox(height: 8),
-                endShiftBtn,
-              ],
-            ],
-          )
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (endShiftBtn != null) ...[
-                endShiftBtn,
-                const SizedBox(width: 8),
-              ],
-              buttonWidget,
-            ],
-          );
+        ? SizedBox(width: double.infinity, child: buttonWidget)
+        : buttonWidget;
 
     return Container(
       padding: EdgeInsets.symmetric(

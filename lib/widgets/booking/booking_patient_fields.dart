@@ -515,6 +515,7 @@ class _KeyboardGenderSelectorState extends State<KeyboardGenderSelector> {
 
     return Focus(
       focusNode: widget.focusNode,
+      descendantsAreFocusable: false,
       onFocusChange: (_) => setState(() {}),
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent) {
@@ -572,6 +573,7 @@ class _KeyboardGenderSelectorState extends State<KeyboardGenderSelector> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
                     child: InkWell(
+                      canRequestFocus: false,
                       onTap: () {
                         widget.focusNode.requestFocus();
                         widget.onGenderChanged(option);

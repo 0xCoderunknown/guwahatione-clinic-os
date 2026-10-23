@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../models/models.dart';
+import '../providers/auth_provider.dart';
 import '../services/services.dart';
 import '../utils/app_constants.dart';
 import '../widgets/widgets.dart';
@@ -149,75 +151,6 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
     }
   }
 
-  Future<void> _handleEndShift() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.nightlife_rounded, color: Color(0xFF475569)),
-            SizedBox(width: 8),
-            Text('Conclude OPD Shift for Today?'),
-          ],
-        ),
-        content: const Text(
-          'This will inform Reception that you have concluded consultations for today. New patient dispatches will be held.\n\nYou can reopen your shift at any time if needed.',
-          style: TextStyle(fontSize: 13, height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF334155),
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('End Shift'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !mounted) return;
-
-    setState(() => _isBusySignaling = true);
-    try {
-      await _chamberService.notifyShiftEnded(
-        doctorId: widget.doctor.id,
-        date: _selectedDate,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
-                SizedBox(width: 8),
-                Text('OPD Shift concluded for today. Reception notified.'),
-              ],
-            ),
-            backgroundColor: Color(0xFF475569),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error concluding shift: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isBusySignaling = false);
-    }
-  }
-
   Future<void> _handleReopenShift() async {
     setState(() => _isBusySignaling = true);
     try {
@@ -251,6 +184,56 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
       }
     } finally {
       if (mounted) setState(() => _isBusySignaling = false);
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.nightlife_rounded, color: Color(0xFF334155)),
+            SizedBox(width: 8),
+            Text('End Shift & Logout?'),
+          ],
+        ),
+        content: const Text(
+          'This will conclude your OPD shift for today, notify reception that consultations are closed, and log you out.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF334155),
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.logout_rounded, size: 16),
+            label: const Text('End Shift & Logout'),
+            onPressed: () => Navigator.pop(ctx, true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      if (_isToday) {
+        await _chamberService.notifyShiftEnded(
+          doctorId: widget.doctor.id,
+          date: _selectedDate,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error concluding shift on logout: $e');
+    }
+
+    if (mounted) {
+      await Provider.of<AuthProvider>(context, listen: false).logout();
     }
   }
 
@@ -405,6 +388,7 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
       appBar: ChamberAppBar(
         doctor: widget.doctor,
         isPreviewMode: widget.isPreviewMode,
+        onLogout: _handleLogout,
       ),
       body: StreamBuilder<List<Appointment>>(
         stream: _bookingService.getAppointmentsForDoctorAndDate(
@@ -510,7 +494,6 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
                                   _activeCallingApptId!,
                                 )
                               : null,
-                          onEndShift: _handleEndShift,
                           onReopenShift: _handleReopenShift,
                         ),
                         if (doorEligibleTokens.isNotEmpty) ...[

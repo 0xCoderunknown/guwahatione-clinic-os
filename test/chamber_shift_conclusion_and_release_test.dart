@@ -1,6 +1,8 @@
 import 'package:appointment_app/config/clinic_config.dart';
 import 'package:appointment_app/models/chamber_session.dart';
+import 'package:appointment_app/models/doctor.dart';
 import 'package:appointment_app/providers/auth_provider.dart';
+import 'package:appointment_app/widgets/chamber/chamber_app_bar.dart';
 import 'package:appointment_app/widgets/chamber/chamber_control_banner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,8 +73,8 @@ void main() {
       expect(reopened, isTrue);
     });
 
-    testWidgets('renders END SHIFT button during breather (consultationEnded) and triggers onEndShift', (tester) async {
-      bool endShiftCalled = false;
+    testWidgets('renders NEXT PATIENT during breather (consultationEnded) without redundant banner end shift button', (tester) async {
+      bool nextPatientCalled = false;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -80,48 +82,82 @@ void main() {
             body: ChamberControlBanner(
               status: ChamberStatus.consultationEnded,
               lastCompletedQueueNumber: 5,
-              onNextPatient: () {},
-              onEndShift: () => endShiftCalled = true,
+              onNextPatient: () => nextPatientCalled = true,
             ),
           ),
         ),
       );
 
-      expect(find.text('END SHIFT'), findsOneWidget);
+      expect(find.text('END SHIFT'), findsNothing);
       expect(find.text('NEXT PATIENT'), findsOneWidget);
 
-      await tester.tap(find.text('END SHIFT'));
+      await tester.tap(find.text('NEXT PATIENT'));
       await tester.pump();
 
-      expect(endShiftCalled, isTrue);
+      expect(nextPatientCalled, isTrue);
     });
 
-    testWidgets('renders Close Shift button when idle and triggers onEndShift', (tester) async {
-      bool endShiftCalled = false;
+    testWidgets('renders READY FOR FIRST PATIENT when idle without redundant banner close shift button', (tester) async {
+      bool firstPatientCalled = false;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: ChamberControlBanner(
               status: ChamberStatus.idle,
-              onNextPatient: () {},
-              onEndShift: () => endShiftCalled = true,
+              onNextPatient: () => firstPatientCalled = true,
             ),
           ),
         ),
       );
 
-      expect(find.text('Close Shift'), findsOneWidget);
+      expect(find.text('Close Shift'), findsNothing);
       expect(find.text('READY FOR FIRST PATIENT'), findsOneWidget);
 
-      await tester.tap(find.text('Close Shift'));
+      await tester.tap(find.text('READY FOR FIRST PATIENT'));
       await tester.pump();
 
-      expect(endShiftCalled, isTrue);
+      expect(firstPatientCalled, isTrue);
     });
 
     test('enforceSingleActiveDoctor flag is disabled by default to support multi-chamber polyclinics', () {
       expect(ClinicConfig.current.features.enforceSingleActiveDoctor, isFalse);
+    });
+
+    testWidgets('ChamberAppBar renders End Shift & Exit button and invokes onLogout', (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      bool logoutCalled = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            appBar: ChamberAppBar(
+              doctor: Doctor(
+                id: 'doc_test',
+                name: 'Dr. Test',
+                specialty: 'Medicine',
+                phone: '1234567890',
+                consultationFee: 500,
+                availableDays: const ['Mon'],
+                blockedDates: const [],
+              ),
+              isPreviewMode: false,
+              onLogout: () => logoutCalled = true,
+            ),
+          ),
+        ),
+      );
+
+      final endShiftBtn = find.text('End Shift & Exit');
+      expect(endShiftBtn, findsOneWidget);
+
+      await tester.tap(endShiftBtn);
+      await tester.pump();
+
+      expect(logoutCalled, isTrue);
     });
   });
 }

@@ -787,22 +787,24 @@ abstract class AppointmentEngine {
   /// Generates a valid 10-digit dummy contact phone number for illiterate, elderly,
   /// or emergency trauma walk-ins who arrive without a mobile phone.
   ///
-  /// Conforms to the 10-digit national schema using the reserved internal prefix '99'
+  /// Conforms to the 10-digit national schema using the reserved non-mobile prefix '00'
   /// plus the last 8 digits of the current millisecond timestamp for guaranteed uniqueness.
-  /// Example: '99' + '12345678' -> '9912345678'.
+  /// Indian telecom regulations (TRAI) prohibit real mobile numbers starting with '0',
+  /// guaranteeing zero possibility of collision with a real patient's mobile number.
+  /// Example: '00' + '12345678' -> '0012345678'.
   static String generateEmergencyDummyPhone({DateTime? timestamp}) {
     final now = timestamp ?? DateTime.now();
     final msStr = now.millisecondsSinceEpoch.toString();
     final suffix = msStr.length >= 8
         ? msStr.substring(msStr.length - 8)
         : msStr.padLeft(8, '0');
-    return '99$suffix';
+    return '00$suffix';
   }
 
   /// Whether a phone number is an internal dummy phone generated for emergency/no-phone walk-ins.
   static bool isEmergencyDummyPhone(String phone) {
     final clean = phone.trim();
-    return clean.length == 10 && clean.startsWith('99');
+    return clean.length == 10 && clean.startsWith('00');
   }
 }
 

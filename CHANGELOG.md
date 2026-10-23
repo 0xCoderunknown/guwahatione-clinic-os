@@ -9,6 +9,20 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
 
+## [1.5.2] — 23-10-2026
+
+### Doctor Chamber Shift Ergonomics, Gender Tab Traversal & Dummy Phone Collision Guard
+- **Doctor Chamber Unified Shift End & Exit:**
+  - Consolidated redundant shift buttons into a single clear `[ 🌙 End Shift & Exit ]` action in `ChamberAppBar`, concluding the shift on the reception roster and securely returning the doctor to the login screen in one atomic tap.
+  - Eliminated redundant "Close Shift" and "Re-Signal Reception" cards from `ChamberControlBanner`.
+- **Gender Selector Keyboard Tab Traversal Hardening:**
+  - Prevented child `InkWell` options in `KeyboardGenderSelector` from intercepting Tab navigation (`canRequestFocus: false`, `descendantsAreFocusable: false`).
+  - Hitting `Tab` after selecting Male/Female/Other via `M`/`F`/`O` keys now directly advances to the next form field (`Guardian / c/o`) without cycling between option buttons.
+- **Emergency Dummy Mobile Range Isolation (`00` Prefix):**
+  - Updated dummy emergency patient phone generator in `AppointmentEngine` from `99` to `00` prefix (`0000000001` - `0000999999`), mathematically isolating emergency/unconscious walk-in records from genuine Indian 10-digit mobile numbers.
+
+---
+
 ## [1.5.1] — 23-10-2026
 
 ### Non-IT Real-World Robustness Audit, Input Hardening & 7-Day Booking Horizon

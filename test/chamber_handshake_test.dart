@@ -55,7 +55,7 @@ void main() {
 
         expect(find.text('Chamber Ready for Next Patient'), findsOneWidget);
         expect(find.text('SIGNAL SENT'), findsOneWidget);
-        expect(find.text('Re-Signal Reception'), findsOneWidget);
+        expect(find.text('Re-Signal Reception'), findsNothing);
       },
     );
 

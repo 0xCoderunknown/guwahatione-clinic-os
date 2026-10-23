@@ -8,12 +8,12 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('QOL-01: Emergency / No-Mobile Walk-In Dummy Phone Tests', () {
-    test('generateEmergencyDummyPhone produces valid 10-digit string starting with 99', () {
+    test('generateEmergencyDummyPhone produces valid 10-digit string starting with 00', () {
       final t1 = DateTime(2026, 10, 22, 10, 30, 0);
       final phone1 = AppointmentEngine.generateEmergencyDummyPhone(timestamp: t1);
 
       expect(phone1.length, 10);
-      expect(phone1.startsWith('99'), isTrue);
+      expect(phone1.startsWith('00'), isTrue);
       expect(int.tryParse(phone1), isNotNull);
 
       // Verify different timestamps produce distinct dummy keys
@@ -23,15 +23,16 @@ void main() {
       expect(phone1, isNot(equals(phone2)));
     });
 
-    test('isEmergencyDummyPhone correctly identifies 99-prefixed internal dummy numbers', () {
-      expect(AppointmentEngine.isEmergencyDummyPhone('9912345678'), isTrue);
-      expect(AppointmentEngine.isEmergencyDummyPhone('9900000001'), isTrue);
+    test('isEmergencyDummyPhone correctly identifies 00-prefixed internal dummy numbers', () {
+      expect(AppointmentEngine.isEmergencyDummyPhone('0012345678'), isTrue);
+      expect(AppointmentEngine.isEmergencyDummyPhone('0000000001'), isTrue);
 
-      // Regular Indian mobile numbers
+      // Real Indian mobile numbers (starts with 6, 7, 8, or 9 - never treated as dummy)
+      expect(AppointmentEngine.isEmergencyDummyPhone('9954012345'), isFalse);
       expect(AppointmentEngine.isEmergencyDummyPhone('9864012345'), isFalse);
       expect(AppointmentEngine.isEmergencyDummyPhone('7002012345'), isFalse);
       expect(AppointmentEngine.isEmergencyDummyPhone('8638012345'), isFalse);
-      expect(AppointmentEngine.isEmergencyDummyPhone('99123'), isFalse); // Short
+      expect(AppointmentEngine.isEmergencyDummyPhone('00123'), isFalse); // Short
     });
 
     testWidgets('BookingPatientFields renders No Phone button and triggers callback', (tester) async {
@@ -65,7 +66,7 @@ void main() {
                 guardianRelationController: guardianRelationController,
                 onGenerateEmergencyPhone: () {
                   emergencyTriggered = true;
-                  phoneController.text = '9912345678';
+                  phoneController.text = '0012345678';
                 },
               ),
             ),
@@ -82,7 +83,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(emergencyTriggered, isTrue);
-      expect(phoneController.text, '9912345678');
+      expect(phoneController.text, '0012345678');
 
       // Re-pump to see emergency alert banner
       await tester.pumpWidget(
@@ -111,7 +112,7 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('No-Mobile / Emergency Walk-In Key: 9912345678'), findsOneWidget);
+      expect(find.textContaining('No-Mobile / Emergency Walk-In Key: 0012345678'), findsOneWidget);
     });
   });
 }

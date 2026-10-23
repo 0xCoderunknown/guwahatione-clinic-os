@@ -8,11 +8,13 @@ import '../../providers/auth_provider.dart';
 class ChamberAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Doctor doctor;
   final bool isPreviewMode;
+  final VoidCallback? onLogout;
 
   const ChamberAppBar({
     super.key,
     required this.doctor,
     required this.isPreviewMode,
+    this.onLogout,
   });
 
   @override
@@ -99,10 +101,44 @@ class ChamberAppBar extends StatelessWidget implements PreferredSizeWidget {
             onPressed: () => Navigator.pop(context),
           )
         else
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-            tooltip: 'Logout of Chamber',
-            onPressed: () => _confirmLogout(context),
+          Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: MediaQuery.of(context).size.width >= 600
+                ? OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF334155),
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.nightlife_rounded,
+                      size: 16,
+                      color: Color(0xFF475569),
+                    ),
+                    label: const Text(
+                      'End Shift & Exit',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF334155),
+                      ),
+                    ),
+                    onPressed: onLogout ?? () => _confirmLogout(context),
+                  )
+                : IconButton(
+                    icon: const Icon(
+                      Icons.nightlife_rounded,
+                      color: Color(0xFF475569),
+                    ),
+                    tooltip: 'End Shift & Exit',
+                    onPressed: onLogout ?? () => _confirmLogout(context),
+                  ),
           ),
       ],
     );
@@ -112,22 +148,32 @@ class ChamberAppBar extends StatelessWidget implements PreferredSizeWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Exit Chamber?'),
+        title: const Row(
+          children: [
+            Icon(Icons.nightlife_rounded, color: Color(0xFF334155)),
+            SizedBox(width: 8),
+            Text('End Shift & Exit?'),
+          ],
+        ),
         content: const Text(
-          'Do you want to log out of this doctor chamber session?',
+          'This will conclude your OPD shift for today, notify reception that consultations are closed, and log you out.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF334155),
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.logout_rounded, size: 16),
+            label: const Text('End Shift & Exit'),
             onPressed: () {
               Navigator.pop(ctx);
               Provider.of<AuthProvider>(context, listen: false).logout();
             },
-            child: const Text('Logout'),
           ),
         ],
       ),
