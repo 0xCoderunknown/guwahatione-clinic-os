@@ -243,36 +243,42 @@ void main() {
       final existingAppointments = [motherAppt, babyAppt];
 
       // 1. Mother trying to book AGAIN on the same day with same doctor -> DUPLICATE
-      final isMotherDuplicate = AppointmentEngine.hasDuplicateAppointment(
-        existingAppointments: existingAppointments,
-        patientPhone: sharedPhone,
-        patientName: 'Sunita Sharma',
-        patientId: 'pat_mother_101',
-        doctorId: 'doc_shared',
-        targetDate: today,
-      );
+      final isMotherDuplicate =
+          AppointmentEngine.findDuplicateBooking(
+            appointments: existingAppointments,
+            patientPhone: sharedPhone,
+            patientName: 'Sunita Sharma',
+            patientId: 'pat_mother_101',
+            doctorId: 'doc_shared',
+            targetDate: today,
+          ) !=
+          null;
       expect(isMotherDuplicate, isTrue);
 
       // 2. Baby trying to book AGAIN on the same day with same doctor -> DUPLICATE
-      final isBabyDuplicate = AppointmentEngine.hasDuplicateAppointment(
-        existingAppointments: existingAppointments,
-        patientPhone: sharedPhone,
-        patientName: 'Aarav Sharma',
-        patientId: 'pat_baby_102',
-        doctorId: 'doc_shared',
-        targetDate: today,
-      );
+      final isBabyDuplicate =
+          AppointmentEngine.findDuplicateBooking(
+            appointments: existingAppointments,
+            patientPhone: sharedPhone,
+            patientName: 'Aarav Sharma',
+            patientId: 'pat_baby_102',
+            doctorId: 'doc_shared',
+            targetDate: today,
+          ) !=
+          null;
       expect(isBabyDuplicate, isTrue);
 
       // 3. Grandfather (new family member on same phone) booking on same day -> ALLOWED (NOT DUPLICATE)
-      final isGrandfatherDuplicate = AppointmentEngine.hasDuplicateAppointment(
-        existingAppointments: existingAppointments,
-        patientPhone: sharedPhone,
-        patientName: 'Ramesh Sharma',
-        patientId: 'pat_elder_103',
-        doctorId: 'doc_shared',
-        targetDate: today,
-      );
+      final isGrandfatherDuplicate =
+          AppointmentEngine.findDuplicateBooking(
+            appointments: existingAppointments,
+            patientPhone: sharedPhone,
+            patientName: 'Ramesh Sharma',
+            patientId: 'pat_elder_103',
+            doctorId: 'doc_shared',
+            targetDate: today,
+          ) !=
+          null;
       expect(isGrandfatherDuplicate, isFalse);
     });
   });

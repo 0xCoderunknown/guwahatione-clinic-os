@@ -89,28 +89,6 @@ abstract class RevenueEngine {
         .fold(0, (sum, a) => sum + a.effectiveFee);
   }
 
-  /// Calculates total fees collected specifically for a doctor across their completed appointments.
-  static int calculateDoctorTotalFees(List<Appointment> appointments) {
-    return appointments
-        .where(
-          (a) =>
-              a.status == AppointmentStatus.completed &&
-              (a.paymentType.isPaid ||
-                  (a.paymentType == PaymentType.postPay &&
-                      a.amountCollected > 0)),
-        )
-        .fold(0, (sum, a) => sum + a.effectiveFee);
-  }
-
-  /// Calculates doctor payout share based on agreed split percentage (0 to 100%).
-  static int calculateDoctorPayout({
-    required int totalDoctorFees,
-    required int doctorSharePercentage,
-  }) {
-    if (doctorSharePercentage <= 0) return 0;
-    if (doctorSharePercentage >= 100) return totalDoctorFees;
-    return ((totalDoctorFees * doctorSharePercentage) / 100).round();
-  }
 
   /// Computes reception-level daily metrics in a single pass.
   static DailyRevenueMetrics calculateDailyMetrics(

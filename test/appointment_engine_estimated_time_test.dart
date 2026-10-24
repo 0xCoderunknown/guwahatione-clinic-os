@@ -445,53 +445,6 @@ void main() {
       );
     });
 
-    test('partitionQueue segments into pending, completed, and absent', () {
-      final appts = [
-        Appointment(
-          id: '1',
-          patientPhone: '111',
-          patientName: 'A',
-          doctorId: 'doc_1',
-          doctorName: 'Dr. B',
-          scheduledDate: DateTime.now(),
-          amountCollected: 500,
-          paymentType: PaymentType.paidCash,
-          status: AppointmentStatus.pending,
-          queueNumber: 1,
-        ),
-        Appointment(
-          id: '2',
-          patientPhone: '222',
-          patientName: 'B',
-          doctorId: 'doc_1',
-          doctorName: 'Dr. B',
-          scheduledDate: DateTime.now(),
-          amountCollected: 500,
-          paymentType: PaymentType.paidCash,
-          status: AppointmentStatus.completed,
-          queueNumber: 2,
-        ),
-        Appointment(
-          id: '3',
-          patientPhone: '333',
-          patientName: 'C',
-          doctorId: 'doc_1',
-          doctorName: 'Dr. B',
-          scheduledDate: DateTime.now(),
-          amountCollected: 0,
-          paymentType: PaymentType.paidCash,
-          status: AppointmentStatus.absent,
-          queueNumber: 3,
-        ),
-      ];
-
-      final partition = AppointmentEngine.partitionQueue(appts);
-      expect(partition.pending.length, 1);
-      expect(partition.completed.length, 1);
-      expect(partition.absent.length, 1);
-      expect(partition.total, 3);
-    });
-
     test('calculateProvisionalNextToken increments highest queue number for doctor on date', () {
       final today = DateTime(2026, 10, 11);
       final appts = [

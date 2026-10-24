@@ -14,19 +14,6 @@ abstract class FirestorePaths {
 
   // Document Path Builders
   static const String securityDoc = 'security';
-  static String patientDoc(String phone) => phone;
-
-  static String appointmentDoc(String id) => id;
-
-  static String consultationDoc(String id) => id;
-
-  static String medicineDoc(String id) => id;
-
-  static String doctorDoc(String id) => id;
-
-  /// Normalizes patient name for composite keys (lowercase, whitespace condensed).
-  static String normalizePatientName(String name) =>
-      name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '_');
 
   /// Formats date into standard YYYY-MM-DD key.
   static String dateKey(DateTime date) =>

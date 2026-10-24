@@ -85,6 +85,14 @@
   - Instead of strictly disabling the submission button, provide an explicit **[Emergency / Off-Day Booking Override]** confirmation checkbox.
   - If checked, reception can proceed with booking. The created appointment document records `isEmergencyOffDayOverride: true` and displays an `[OFF-DAY SPECIAL ADMISSION]` amber badge in the queue to alert chamber and accounting.
 
+#### 9. AUDIT-29 — Historical Data Backfill & Legacy Fallback Query Purge
+- **Domain:** Data Architecture / Schema Modernization (Zero Backward-Compatibility Debt)
+- **Status:** Scheduled for Future Milestone (Milestone 2.0 / SaaS Migration)
+- **Specification:**
+  - **Prerequisite:** Run an automated Cloud Firestore migration/backfill script to populate canonical `patientId` on any early MVP appointment/consultation records and ensure `visitStatus` exists on all historical documents.
+  - **Code Cleanup:** Once backfilled, purge secondary `patientPhone` fallback queries in `BookingService.getAppointmentsForPatient` and `ConsultationService.getConsultationsForPatient`, and retire the `status` constructor adapter and `fromJson` schema shims in `Appointment` and `Patient`.
+  - **Preservation Notice:** Until the cloud backfill is executed, defensive fallbacks remain active to guarantee early prototype records and historical consultations never appear blank.
+
 ---
 
 ### ☁️ SaaS Multi-Tenant Cloud Phase (Formally Deferred)
@@ -132,6 +140,7 @@
 | **AUDIT-26** | 🔵 Open | Commercial | Subscription expiry runtime enforcement (tracked above in Milestone 1.5.2+) | Milestone 1.5.2+ |
 | **AUDIT-27** | 🟢 Resolved | Formulary Ops | Added `enableSeedDefaultMedicines` flag to suppress test seeds in production | v1.40.15 |
 | **AUDIT-28** | 🟢 Resolved | Performance | Added `limit: 100` query bound to `getAppointmentsForPatient` | v1.40.15 |
+| **AUDIT-29** | 🔵 Open | Data Architecture | Cloud Firestore data backfill & legacy phone fallback purge | Milestone 2.0 |
 
 ---
 

@@ -98,38 +98,6 @@ void main() {
     });
   });
 
-  group('RevenueEngine - calculateDoctorTotalFees Tests', () {
-    test('Calculates total fees for completed paid visits', () {
-      final appts = [
-        Appointment(
-          id: '1',
-          patientPhone: '9876543210',
-          patientName: 'Patient 1',
-          status: AppointmentStatus.completed,
-          paymentType: PaymentType.paidCash,
-          amountCollected: 700,
-          queueNumber: 1,
-          scheduledDate: DateTime(2026, 10, 11),
-          doctorId: 'doc-1',
-          doctorName: 'Dr. Baruah',
-        ),
-        Appointment(
-          id: '2',
-          patientPhone: '9876543211',
-          patientName: 'Patient 2',
-          status: AppointmentStatus.completed,
-          paymentType: PaymentType.freeFamily,
-          amountCollected: 0,
-          queueNumber: 2,
-          scheduledDate: DateTime(2026, 10, 11),
-          doctorId: 'doc-1',
-          doctorName: 'Dr. Baruah',
-        ),
-      ];
-
-      expect(RevenueEngine.calculateDoctorTotalFees(appts), 700);
-    });
-  });
 
   group('RevenueEngine - calculateDailyMetrics Tests', () {
     test('Empty list returns all zeros', () {

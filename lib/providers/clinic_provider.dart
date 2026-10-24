@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
-import '../core/engines/engines.dart';
 import '../models/models.dart';
 import '../services/services.dart';
 import 'delegates/catalogue_delegate.dart';
@@ -595,51 +594,7 @@ class ClinicProvider with ChangeNotifier {
     phone: phone,
   );
 
-  // ---------------------------------------------------------------------------
-  // Pure Domain Calculations (Passthrough)
-  // ---------------------------------------------------------------------------
 
-  PatientReviewEligibility checkReviewEligibility({
-    required List<Appointment> patientAppointments,
-    required String? doctorId,
-    required DateTime scheduledDate,
-    String? doctorName,
-    int freeReviewDays = 14,
-  }) => AppointmentEngine.evaluateReviewEligibility(
-    patientHistory: patientAppointments,
-    doctorId: doctorId,
-    targetDate: scheduledDate,
-    doctorName: doctorName,
-    freeReviewDays: freeReviewDays,
-  );
-
-  PaymentType calculatePaymentType({
-    required List<Appointment> patientAppointments,
-    required String? doctorId,
-    required DateTime scheduledDate,
-    int freeReviewDays = 14,
-  }) => AppointmentEngine.suggestPaymentType(
-    patientHistory: patientAppointments,
-    doctorId: doctorId,
-    targetDate: scheduledDate,
-    freeReviewDays: freeReviewDays,
-  );
-
-  int getProvisionalNextToken(String doctorId, {DateTime? targetDate}) =>
-      AppointmentEngine.calculateProvisionalNextToken(
-        appointments: _queueDelegate.todayAppointments,
-        doctorId: doctorId,
-        targetDate: targetDate ?? DateTime.now(),
-      );
-
-  EstimatedConsultationWindow getProvisionalEstimatedWindow(
-    String doctorId, {
-    DateTime? targetDate,
-  }) => AppointmentEngine.calculateProvisionalEstimatedWindow(
-    appointments: _queueDelegate.todayAppointments,
-    doctorId: doctorId,
-    targetDate: targetDate ?? DateTime.now(),
-  );
 
   @override
   void dispose() {

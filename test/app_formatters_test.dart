@@ -38,14 +38,6 @@ void main() {
     });
 
     test(
-      'isoDate generates internal Firestore counter key string (yyyy-MM-dd)',
-      () {
-        expect(AppFormatters.isoDate(sampleDateTime), '2026-10-12');
-        expect(AppFormatters.isoDate(null), '');
-      },
-    );
-
-    test(
       'currency formats Indian Rupee amounts with integer and decimal handling',
       () {
         expect(AppFormatters.currency(500), '₹500');

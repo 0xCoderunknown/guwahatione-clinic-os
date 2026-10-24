@@ -170,39 +170,6 @@ void main() {
   });
 
   group('Doctor Revenue Share & Fee Payout Tests', () {
-    test('RevenueEngine calculates doctor payout based on percentage split', () {
-      expect(
-        RevenueEngine.calculateDoctorPayout(
-          totalDoctorFees: 10000,
-          doctorSharePercentage: 100,
-        ),
-        10000,
-      );
-
-      expect(
-        RevenueEngine.calculateDoctorPayout(
-          totalDoctorFees: 10000,
-          doctorSharePercentage: 70,
-        ),
-        7000,
-      );
-
-      expect(
-        RevenueEngine.calculateDoctorPayout(
-          totalDoctorFees: 10000,
-          doctorSharePercentage: 0,
-        ),
-        0,
-      );
-
-      expect(
-        RevenueEngine.calculateDoctorPayout(
-          totalDoctorFees: 750,
-          doctorSharePercentage: 60,
-        ),
-        450,
-      );
-    });
 
     test('Doctor model serializes doctorSharePercentage with default 100', () {
       final doc = Doctor(

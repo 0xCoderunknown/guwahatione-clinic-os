@@ -4,13 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Atomic Counter Paths & Appointment Lifecycle Tests', () {
-    test('FirestorePaths.normalizePatientName normalizes names cleanly', () {
-      final norm1 = FirestorePaths.normalizePatientName('Rahul Sharma');
-      final norm2 = FirestorePaths.normalizePatientName(' rahul   sharma ');
-
-      expect(norm1, 'rahul_sharma');
-      expect(norm1, equals(norm2));
-    });
 
     test(
       'FirestorePaths generates deterministic daily queue and chamber keys',

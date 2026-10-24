@@ -11,7 +11,6 @@ class AppFormatters {
   static final DateFormat _dateTimeFormat = DateFormat('dd-MM-yyyy, hh:mm a');
   static final DateFormat _dateWithDayFormat = DateFormat('EEEE, dd-MM-yyyy');
   static final DateFormat _compactDateFormat = DateFormat('dd-MM-yy');
-  static final DateFormat _isoDateFormat = DateFormat('yyyy-MM-dd');
 
   /// Formats date to Indian format 'dd-MM-yyyy' (e.g., '07-10-2026'). Returns fallback if null.
   static String date(DateTime? dt, {String fallback = '—'}) {
@@ -41,12 +40,6 @@ class AppFormatters {
   static String compactDate(DateTime? dt, {String fallback = '—'}) {
     if (dt == null) return fallback;
     return _compactDateFormat.format(dt);
-  }
-
-  /// Formats ISO date string 'yyyy-MM-dd' for Firestore counter query keys.
-  static String isoDate(DateTime? dt) {
-    if (dt == null) return '';
-    return _isoDateFormat.format(dt);
   }
 
   /// Formats Indian Rupee currency (e.g., '₹500').

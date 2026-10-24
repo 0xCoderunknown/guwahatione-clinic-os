@@ -287,15 +287,6 @@ void main() {
       final realizedRevenue = RevenueEngine.calculateRealizedRevenue(appts);
       expect(realizedRevenue, 600);
 
-      final doctorFees = RevenueEngine.calculateDoctorTotalFees(appts);
-      expect(doctorFees, 600);
-
-      // 70% doctor share payout
-      final payout = RevenueEngine.calculateDoctorPayout(
-        totalDoctorFees: doctorFees,
-        doctorSharePercentage: 70,
-      );
-      expect(payout, 420);
 
       final chamberKpis = RevenueEngine.calculateChamberKpis(appts);
       expect(chamberKpis.paidCount, 1);

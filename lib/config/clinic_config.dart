@@ -8,9 +8,6 @@ class ClinicConfig {
   /// Name of the clinic displayed across dashboards, shells, and prints.
   final String clinicName;
 
-  /// Subtitle or branch designation (e.g. 'Reception Desk', 'Downtown Branch').
-  final String branchName;
-
   /// Tagline or department description.
   final String tagline;
 
@@ -26,9 +23,6 @@ class ClinicConfig {
   /// Default consultation fee when a doctor does not specify a custom fee.
   final int defaultConsultationFee;
 
-  /// Grace period in days for free follow-up review consultations.
-  final int freeReviewValidityDays;
-
   /// Default top margin reserved for physical pre-printed clinic letterheads (in millimeters).
   final double defaultLetterheadTopMarginMm;
 
@@ -40,13 +34,11 @@ class ClinicConfig {
 
   const ClinicConfig({
     this.clinicName = 'GuwahatiOne Clinic',
-    this.branchName = 'Reception Desk',
     this.tagline = 'OPD Consultation Chamber & Reception Desk',
     this.address = 'Guwahati, Assam',
     this.contactPhone = '',
     this.currencySymbol = '₹',
     this.defaultConsultationFee = 500,
-    this.freeReviewValidityDays = 14,
     this.defaultLetterheadTopMarginMm = 35.0,
     this.maxAdvanceBookingDays = 7,
     this.features = const ClinicFeatureFlags(),
@@ -67,20 +59,6 @@ class ClinicConfig {
 
 /// Feature flags that can be toggled on or off per client installation.
 class ClinicFeatureFlags {
-  // ─── Stable Operational Feature Flags ───────────────────────────────────────
-
-  /// Whether to show the pre-printed letterhead margin toggle on the print preview.
-  final bool enableLetterheadToggle;
-
-  /// Whether to allow the doctor emergency override button on the chamber banner.
-  final bool enableDoctorChamberOverride;
-
-  /// Whether 1-tap WhatsApp prescription sharing deep-links are enabled.
-  final bool enableWhatsAppPrescriptionShare;
-
-  /// Whether doctors must enter a 4-digit PIN to access their chamber.
-  final bool requireDoctorChamberPin;
-
   // ─── 🧪 Experimental Feature Flags (Customized per client installation) ───────
 
   /// 🧪 EXPERIMENT FLAG (P9): Whether hardcoded prescription template preset bundles
@@ -138,10 +116,6 @@ class ClinicFeatureFlags {
   final bool enableSeedDefaultMedicines;
 
   const ClinicFeatureFlags({
-    this.enableLetterheadToggle = true,
-    this.enableDoctorChamberOverride = true,
-    this.enableWhatsAppPrescriptionShare = true,
-    this.requireDoctorChamberPin = true,
     this.enablePrescriptionTemplatePresets = false,
     this.enableTokenReceiptPrint = false,
     this.enableBulkSessionClose = true,

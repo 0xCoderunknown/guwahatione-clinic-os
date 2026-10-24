@@ -3,20 +3,6 @@ import '../../models/models.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/formatters.dart';
 
-/// Partitioned appointment queue segments.
-class QueuePartition {
-  final List<Appointment> pending;
-  final List<Appointment> completed;
-  final List<Appointment> absent;
-
-  const QueuePartition({
-    required this.pending,
-    required this.completed,
-    required this.absent,
-  });
-
-  int get total => pending.length + completed.length + absent.length;
-}
 
 /// Reception desk queue partitioning model reflecting in-chamber status,
 /// top-level completed history, and waiting tokens.
@@ -334,32 +320,6 @@ abstract class AppointmentEngine {
     return null;
   }
 
-  /// Partitions an appointment list into Pending, Completed, and Absent segments.
-  static QueuePartition partitionQueue(List<Appointment> appointments) {
-    final List<Appointment> pending = [];
-    final List<Appointment> completed = [];
-    final List<Appointment> absent = [];
-
-    for (final a in appointments) {
-      switch (a.status) {
-        case AppointmentStatus.pending:
-          pending.add(a);
-          break;
-        case AppointmentStatus.completed:
-          completed.add(a);
-          break;
-        case AppointmentStatus.absent:
-          absent.add(a);
-          break;
-      }
-    }
-
-    return QueuePartition(
-      pending: pending,
-      completed: completed,
-      absent: absent,
-    );
-  }
 
   /// Partitions appointments for the Reception desk live queue view.
   ///
@@ -470,57 +430,6 @@ abstract class AppointmentEngine {
     return null;
   }
 
-  /// Evaluates whether an appointment already exists for the given patient identity
-  /// (matching patientId, or normalized name + phone) with this doctor on the target date.
-  static bool hasDuplicateAppointment({
-    required List<Appointment> existingAppointments,
-    required String patientPhone,
-    required String patientName,
-    String? patientId,
-    required String doctorId,
-    required DateTime targetDate,
-  }) {
-    return findDuplicateBooking(
-          appointments: existingAppointments,
-          doctorId: doctorId,
-          patientName: patientName,
-          patientPhone: patientPhone,
-          patientId: patientId,
-          targetDate: targetDate,
-        ) !=
-        null;
-  }
-
-  /// Validates whether a patient already has an active (non-absent) booking on the target date.
-  static bool hasDuplicateBookingOnDate({
-    required List<Appointment> appointments,
-    required String phoneNumber,
-    required DateTime targetDate,
-    String? patientName,
-    String? doctorId,
-    String? patientId,
-  }) {
-    if (patientName != null && doctorId != null) {
-      return findDuplicateBooking(
-            appointments: appointments,
-            doctorId: doctorId,
-            patientName: patientName,
-            patientPhone: phoneNumber,
-            patientId: patientId,
-            targetDate: targetDate,
-          ) !=
-          null;
-    }
-
-    final start = DateTime(targetDate.year, targetDate.month, targetDate.day);
-    final end = start.add(const Duration(days: 1));
-
-    return appointments.any((a) {
-      if (a.patientPhone != phoneNumber) return false;
-      if (a.status == AppointmentStatus.absent) return false;
-      return !a.scheduledDate.isBefore(start) && a.scheduledDate.isBefore(end);
-    });
-  }
 
   /// Calculates dynamic estimated consultation time window for a token in a doctor's queue.
   ///
