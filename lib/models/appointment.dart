@@ -359,22 +359,10 @@ class Appointment {
       parsedCarriedOverDate = DateTime.tryParse(rawCarriedDate);
     }
 
-    VisitStatus visitStatus;
-    if (json['visitStatus'] != null) {
-      visitStatus = VisitStatus.values.firstWhere(
-        (e) => e.name == json['visitStatus'],
-        orElse: () => VisitStatus.waitingInLobby,
-      );
-    } else {
-      final st = json['status'];
-      if (st == 'completed') {
-        visitStatus = VisitStatus.completed;
-      } else if (st == 'absent') {
-        visitStatus = VisitStatus.cancelled;
-      } else {
-        visitStatus = VisitStatus.waitingInLobby;
-      }
-    }
+    VisitStatus visitStatus = VisitStatus.values.firstWhere(
+      (e) => e.name == json['visitStatus'],
+      orElse: () => VisitStatus.waitingInLobby,
+    );
 
     // Single source of truth reconciliation: ensure terminal status states never desync
     final st = json['status'];

@@ -316,20 +316,6 @@ class BookingService {
       return Appointment.fromJson(data);
     }).toList();
 
-    // 2. Backward compatibility fallback for legacy records
-    if (list.isEmpty) {
-      final fallbackPhone = phone?.trim() ?? cleanId;
-      final phoneSnap = await _appointmentsRef
-          .where('patientPhone', isEqualTo: fallbackPhone)
-          .limit(limit)
-          .get();
-      list = phoneSnap.docs.map((doc) {
-        final data = Map<String, dynamic>.from(doc.data());
-        data['id'] ??= doc.id;
-        return Appointment.fromJson(data);
-      }).toList();
-    }
-
     list.sort((a, b) => b.scheduledDate.compareTo(a.scheduledDate));
     return list;
   }

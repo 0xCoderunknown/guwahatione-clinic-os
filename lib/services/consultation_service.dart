@@ -82,18 +82,6 @@ class ConsultationService {
         .map((doc) => Consultation.fromJson(doc.data()))
         .toList();
 
-    // 2. Backward compatibility fallback for legacy consultations
-    if (consultations.isEmpty) {
-      final fallbackPhone = phone?.trim() ?? cleanId;
-      final phoneSnapshot = await _consultationsRef
-          .where('patientPhone', isEqualTo: fallbackPhone)
-          .get();
-
-      consultations = phoneSnapshot.docs
-          .map((doc) => Consultation.fromJson(doc.data()))
-          .toList();
-    }
-
     consultations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return consultations;
   }

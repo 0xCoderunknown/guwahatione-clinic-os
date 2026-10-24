@@ -16,21 +16,29 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
    - If a patient leaves, cancels, or does not show up, their status is set to `AppointmentStatus.absent` with `amountCollected: 0`. The token slot is preserved permanently on screen and in database to ensure zero cheating between reception and consulting physicians.
    - Queue numbers must always be allocated atomically via Firestore transaction (`counters/queue_{doctorId}_{yyyy-MM-dd}`).
 
-2. **Longitudinal Clinical Records Over Paper Artifacts:**
+2. **Longitudinal Append-Only Clinical Records & Encounter Architecture:**
    - Prescriptions and consultations are **append-only** clinical events (`consultations` collection).
-   - Past consultations are never overwritten or edited on a follow-up visit.
+   - Past consultations are never overwritten or edited on follow-up visits.
    - Subsequent encounters record medication reconciliation states: `START` (new therapy), `CONTINUE` (reconciled chronic regimen), or `STOP` (explicit discontinuation with `stopReason`).
    - The printed prescription is a transient output; the append-only clinical history across visits is the core product.
-
-3. **Longitudinal Clinical Encounter Architecture:**
-   - Prescriptions and consultations are **append-only** clinical events (`consultations` collection). Past encounters are never overwritten or mutated.
    - Encounters are structured around familiar Indian MBBS/MD clinical workflows:
      - **Header & Passive Allergy Alert:** Patient demographics with passive free-text allergy chip.
      - **Clinical Observations:** Compact vitals grid + MBBS standard notes (`C/O` Chief Complaints, `O/E` On Examination, `Dx`/`P/D` Provisional Diagnosis).
-     - **Past History & 1-Click Carry Forward:** Prior visits viewable read-only; single `[CARRY FORWARD]` button copies prior regimen into active prescription as `CONTINUE` items.
+     - **Past History & 1-Click Carry Forward:** Prior visits viewable read-only; single `[CARRY FORWARD]` button copies prior chronic regimens into active prescription as `CONTINUE` items.
      - **Medication Reconciliation & Prescribing:** Unified brand/composition search, pre-filled clinical defaults, rapid frequency chips (`1-0-1`, `1-0-0`, `0-0-1`, `1-1-1`, `SOS`), and timing chips (`After Food / PC`, `Before Food / Khali Pet / AC`).
      - **Diagnostic Orders & Follow-Up Advice:** Ordered lab tests, free-form remarks/diet instructions, and structured next review dropdown (`3 days`, `7 days`, `14 days`, `1 month`, `3 months`, `Not Needed`).
-   - Clinical encounter sections are modular and collapsible (HK-1). Doctors can record observations in any order without forced linear roadblocks.
+   - Clinical encounter sections are modular and collapsible. Doctors can record observations in any order without forced linear roadblocks.
+
+3. **Doctor-Paced Chamber Handshake & Atomic Single Occupancy:**
+   - The consultation chamber is strictly single-occupant. At any given moment, exactly **zero or one** patient can be inside or actively called into a doctor's chamber.
+   - **Zero Pre-emption:** An active patient ($T_N$) undergoing consultation can **never** be superseded, interrupted, or displaced by another token ($T_{N+1}$) from reception queue cards, accordion panels, or doctor door overrides.
+   - The chamber real-time sync channel (`counters/chamber_{doctorId}_{yyyy-MM-dd}`) strictly enforces a 5-state synchronized lifecycle:
+     1. **Doctor Breather (`consultation_ended`):** When doctor completes an encounter ("Complete & Sign"), the consultation concludes, the encounter screen closes, and the chamber enters `consultation_ended` (Breather).
+     2. **Reception Locked During Breather:** Reception desk displays `"Doctor on Break (Waiting for Doctor)"` with the dispatch button **strictly disabled** (`onDispatch = null`). Reception can verify arrival and payment for the next patient in line, but **MUST NOT and CANNOT send anyone inside**.
+     3. **Doctor Signals Readiness (`ready_for_next`):** Once ready, the doctor hits the `"Next Patient"` button in `DoctorChamberScreen`. This transitions the chamber to `ready_for_next`.
+     4. **Reception Dispatches Next Patient (`calling`):** The reception button unlocks to `"SEND IN TO DOCTOR"`. Reception clicking "Send In" dispatches the verified patient into the chamber (`calling`).
+     5. **Auto-Load & Active Consultation (`in_consultation`):** Doctor chamber screen receives the calling event and auto-loads the consultation encounter screen, moving status to `in_consultation`. Reception dispatch immediately re-locks to `"Chamber Occupied (Token #N Inside)"` (`onDispatch = null`).
+   - **Emergency Door Self-Call Guardrail:** Any direct doctor door admission fallback (`ChamberDoorOverrideBar`) must strictly show ONLY the next 1–2 patients who are physically present in clinic (`waitingInLobby`) with confirmed payment/waiver (`PaymentType != unpaid`). Remote reservations (`VisitStatus.booked`) and unpaid tokens (`PaymentType.unpaid`) must NEVER appear in emergency self-call lists.
 
 4. **Product Boundaries (What Clinic OS Is NOT):**
    - **NOT** a Pharmacy ERP or retail billing software.
@@ -48,48 +56,29 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
 6. **Mandatory Indian Date Format (`DD-MM-YYYY`):**
    - **All dates displayed in UI, printed prescriptions, reports, changelogs (`CHANGELOG.md`), and markdown documentation MUST strictly use Indian numerical date formatting (`DD-MM-YYYY` or `DD-MM-YY`).**
    - Never use `YYYY-MM-DD` or `MM/DD/YYYY` in human-facing text, changelogs, release notes, or markdown documentation.
-   - Internal database storage and query tokens continue to use standard Firestore `Timestamp` or ISO-8601 strings, but any date presented to humans, doctors, patients, receptionists, or written in markdown files must strictly be formatted as `DD-MM-YYYY`.
+   - Internal database storage and query tokens continue to use standard Firestore `Timestamp` or date keys, but any date presented to humans or written in markdown files must strictly be formatted as `DD-MM-YYYY`.
 
-7. **Doctor-Paced Chamber Handshake Protocol (Zero Forced Admission & Zero Data Loss):**
-   - The chamber real-time sync channel (`counters/chamber_{doctorId}_{yyyy-MM-dd}`) strictly enforces a 5-state synchronized lifecycle:
-     1. **Doctor Breather (`consultation_ended`):** When doctor completes an encounter ("Complete & Sign"), the consultation concludes, the encounter screen closes, and the chamber enters `consultation_ended` (Breather).
-     2. **Reception Locked During Breather:** Reception desk displays `"Doctor on Break (Waiting for Doctor)"` with the dispatch button **strictly disabled** (`onDispatch = null`). Reception can verify arrival and payment for the next patient in line, but **MUST NOT and CANNOT send anyone inside**.
-     3. **Doctor Signals Readiness (`ready_for_next`):** Once ready, the doctor hits the `"Next Patient"` button in `DoctorChamberScreen`. This transitions the chamber to `ready_for_next`.
-     4. **Reception Dispatches Next Patient (`calling`):** The reception button unlocks to `"SEND IN TO DOCTOR"`. Reception clicking "Send In" dispatches the verified patient into the chamber (`calling`).
-     5. **Auto-Load & Active Consultation (`in_consultation`):** Doctor chamber screen receives the calling event and auto-loads the consultation encounter screen, moving status to `in_consultation`. Reception dispatch immediately re-locks to `"Chamber Occupied (Token #N Inside)"` (`onDispatch = null`).
-   - **Zero Pre-Emption Guarantee:** Reception cannot force or call a patient into the chamber during an active consultation or breather. A doctor typing an encounter can NEVER have another patient forced into their chamber, eliminating all possibility of unsaved data loss or consultation collisions.
-
-8. **Temporal Guarding & Read-Only Chamber Archive (Today-Only Live Operations):**
+7. **Temporal Guarding & Read-Only Chamber Archive (Today-Only Live Operations):**
    - Live physical actions (starting chamber shifts, signaling ready for next, emergency door admissions) are strictly restricted to the current active calendar date (`today`).
    - Historical dates (past) switch Doctor Chamber to immutable read-only mode (`ChamberArchiveBanner`), suppressing live calling triggers and rendering unresolved tokens as `UNATTENDED / NO-SHOW`.
 
-9. **Restricted Emergency Door Self-Call Guardrail:**
-   - Any direct doctor door admission fallback (`ChamberDoorOverrideBar`) must strictly show ONLY the next 1–2 patients who are physically present in clinic (`waitingInLobby`) with confirmed payment/waiver (`PaymentType != unpaid`).
-   - Remote reservations (`VisitStatus.booked`) and unpaid tokens (`PaymentType.unpaid`) must NEVER appear in emergency self-call lists.
+8. **Prescription Table Architecture (Strict 3-Column Isolation & NMC Generic Standard):**
+   - The printed and preview prescription table must strictly maintain 3 separated, unmixed columns:
+     - **Column 1 (Medicine):** Dedicated purely to medicine trade brand name and generic chemical composition in uppercase brackets (`Brand [COMPOSITION]`, e.g., `Telma 40 tablet [TELMISARTAN 40MG]`, conforming to National Medical Commission uppercase prescribing standards). When the experimental flag `hidePrescriptionComposition` is enabled, only the trade brand name is rendered (`Telma 40 tablet`). Never add badges like `[NEW]` or mix dosage/timing/duration into this column.
+     - **Column 2 (Dosage & Timing):** Dedicated purely to dosage instructions, frequency, timing, and optional notes (e.g., `1 tab • in morning • before food`). Never mix medicine name or course duration into this column.
+     - **Column 3 (Duration / Status):** Dedicated purely to course duration or continuation/discontinuation status (`To Continue`, `X Days`, or `To STOP`).
+   - **Zero Mixing:** There must be zero mixing between these 3 columns across printed prescriptions or preview tables.
 
-10. **Pre-2.0 Active Development Phase & Zero Backward-Compatibility Debt:**
-    - **Active Development Phase Until Version 2.0:** You are explicitly allowed to break schemas, data models, internal APIs, and component structures until version 2.0 is reached. Post-2.0, strict schema immutability, data migrations, and stability rules will apply.
-    - **Backward compatibility is NOT required in this codebase.** Never write fallback bridges, legacy adapters, deprecated aliases, migration shims, or polyfill glue solely to maintain backward compatibility with obsolete schemas or retired APIs.
-    - Clean, modern, unified domain code is always prioritized over legacy preservation.
-    - If backward compatibility happens naturally without extra code or compromises, that is fine; if not, breaking clean is explicitly encouraged.
-    - **MANDATORY:** Whenever a breaking change is introduced (schema mutation, model property shift, API signature rewrite), you MUST explicitly inform the Product Manager.
+9. **Pre-2.0 Active Development Phase & Zero Backward-Compatibility Debt:**
+   - **Active Development Phase Until Version 2.0:** You are explicitly allowed to break schemas, data models, internal APIs, and component structures until version 2.0 is reached. Post-2.0, strict schema immutability, data migrations, and stability rules will apply.
+   - **Zero Legacy Polyfills:** Never write fallback bridges, legacy adapters, deprecated aliases, migration shims, or polyfill glue solely to maintain backward compatibility with obsolete schemas or retired APIs.
+   - Clean, modern, unified domain code is always prioritized over legacy preservation.
+   - **MANDATORY:** Whenever a breaking change is introduced (schema mutation, model property shift, API signature rewrite), you MUST explicitly inform the Product Manager.
 
-11. **Single-Occupant Chamber Integrity & Collision Lock (Atomic Occupancy):**
-    - A consultation chamber is strictly single-occupant. At any given moment, exactly **zero or one** patient can be inside or actively called into a doctor's chamber.
-    - **Zero Pre-emption:** An active patient ($T_N$) undergoing consultation can **never** be superseded, interrupted, or displaced by another token ($T_{N+1}$) from reception queue cards, accordion panels, or doctor door overrides.
-    - `ConsultationEncounterScreen` must NEVER contain incoming patient switch alerts or route replacements. When an encounter is open, the doctor is in exclusive session with that patient until completion.
-    - Emergency door admission lists (`ChamberDoorOverrideBar`) and reception dispatch actions (`AccordionDispatchSection`, `DashboardQueueCard`) are strictly locked whenever a chamber is occupied.
-
-12. **Prescription Table Architecture (Strict 3-Column Isolation & NMC Generic Standard):**
-    - The printed and preview prescription table must strictly maintain 3 separated, unmixed columns:
-      - **Column 1 (Medicine):** Dedicated purely to medicine trade brand name and generic chemical composition in uppercase brackets (`Brand [COMPOSITION]`, e.g., `Telma 40 tablet [TELMISARTAN 40MG]`, conforming to National Medical Commission uppercase prescribing standards). When the experimental flag `hidePrescriptionComposition` is enabled, only the trade brand name is rendered (`Telma 40 tablet`). Never add badges like `[NEW]` or mix dosage/timing/duration into this column.
-      - **Column 2 (Dosage & Timing):** Dedicated purely to dosage instructions, frequency, timing, and optional notes (e.g., `1 tab • in morning • before food`). Never mix medicine name or course duration into this column.
-      - **Column 3 (Duration / Status):** Dedicated purely to course duration or continuation/discontinuation status (`To Continue`, `X Days`, or `To STOP`).
-    - **Zero Mixing:** There must be zero mixing between these 3 columns across printed prescriptions or preview tables.
-
-13. **Changelog Optimization & Minor Version Consolidation:**
-    - **Never Add Verification Gates to `CHANGELOG.md`:** Do not include repetitive "Verification Gate" sections, test passing counts, or static analysis outputs in `CHANGELOG.md`. CI/verification metrics belong strictly in git commit messages and terminal runs.
-    - **Consolidate Patch Releases by Minor Series:** When advancing minor versions (e.g. from 1.35 to 1.36, or 1.4 to 1.5), intermediate patch milestones (e.g. `1.4.1`, `1.4.2`, etc.) must be merged into a consolidated range entry (e.g. `## [1.4.0 – 1.4.5] — DD-MM-YYYY`), preventing excessive vertical bloat and keeping the changelog concise and readable.
+10. **Documentation Separation of Concerns:**
+    - **`README.md`:** The user-facing and architectural guide. Documents what the product does, live clinical workflows, domain engine capabilities, system setup, and responsive layout standards.
+    - **`CHANGELOG.md`:** The historical release ledger. Chronological record of shipped features and fixes. When advancing minor series, consolidate patch releases (`[1.5.0 – 1.5.5]`). Never include internal verification gates or terminal test outputs in this file.
+    - **`docs/MASTER_BACKLOG.md`:** The true backlog and future roadmap. Strictly contains unbuilt, pending, or prioritized work (`TODO`, `Backlog`, `Deferred`, `Anti-Goals`). **Never** store solved tickets or resolved historical audit findings here.
 
 ---
 
@@ -98,12 +87,12 @@ Any code or proposal that violates these tenets is strictly **REJECTED**:
 | Layer | Standard | Rule |
 |---|---|---|
 | **Framework** | Flutter 3.x (Web, Android) | Responsive codebase. Target web counter PC first. No iOS platform project is currently checked in. |
-| **Domain Engines** | Pure Dart (`lib/core/engines/`) | **Zero Flutter UI dependencies.** Screens and widgets are Flutter presentation components; revenue math, eligibility rules, queue partitioning, and pharmacological defaults belong in dedicated engines. |
+| **Domain Engines** | Pure Dart (`lib/core/engines/`) | **Zero Flutter UI dependencies.** Business logic, revenue math, eligibility rules, queue calculations, and printing HTML generation belong in dedicated pure engines (`AppointmentEngine`, `CashHandoverEngine`, `DataExportEngine`, `MedicineEngine`, `PatientSearchEngine`, `PrescriptionPrintEngine`, `RevenueEngine`, `WhatsAppEngine`). |
 | **State Management** | **Provider** (`ChangeNotifierProvider`) | **Strictly Provider only.** Do NOT introduce Riverpod, Bloc, MobX, GetX, or ad-hoc global state. |
 | **Backend & DB** | Cloud Firestore | Follow [SCHEMA_AND_MODELS.md](docs/SCHEMA_AND_MODELS.md). Never invent arbitrary field names. |
-| **Idempotency** | Deterministic IDs (`med_*`, `counters/*`) | Default OPD medicines must use canonical IDs. Queue counters use daily atomic keys. |
+| **Idempotency** | Deterministic IDs (`med_*`, `counters/*`) | Default OPD medicines use canonical IDs. Queue counters use daily atomic keys. |
 | **Auth & Security** | 3-Tier Role Guarding | Clinic Owner PIN (6 digits, master admin/fees), Doctor PIN (4 digits, chamber operations), Reception PIN (`0000`, counter booking/queue). Never bypass role guards. |
-| **Printing** | `platform_print.dart` | High-contrast monochrome A4/A5 letterhead printing via web `dart:js_interop` & desktop stubs. |
+| **Printing Engine** | Pure Dart HTML + Iframe Bridge | `PrescriptionPrintEngine` generates semantic HTML; web iframe print bridge (`platform_print_web.dart`) avoids CanvasKit WebGL print spooling context drops for vector-crisp prints & PDFs. |
 
 ---
 
@@ -120,22 +109,14 @@ You are being managed by a strict Product Manager. Follow this exact workflow:
 
 ### Step 2: Respect Existing Conventions
 - **Naming Casing:** Firestore field names use `camelCase` (e.g., `patientPhone`, `scheduledDate`, `amountCollected`).
-- **Date Storage:** Follow the storage type documented for each field in `docs/SCHEMA_AND_MODELS.md`; for example, appointment, consultation events, and `lastVisitDate` are `Timestamp` values (with defensive fallback parsing for legacy ISO-8601 strings).
+- **Date Storage:** Follow the storage type documented for each field in `docs/SCHEMA_AND_MODELS.md`; for example, appointment, consultation events, and `lastVisitDate` are stored as native Firestore `Timestamp` values.
 - **Enums:** Store enum values using `enum.name` strings (e.g., `'pending'`, `'completed'`, `'absent'`), never integer indices.
 
 ### Step 3: Verification Gate
 - After making changes, always ensure:
   - Code compiles cleanly with `flutter analyze` (Zero errors, zero warnings).
-  - All automated unit tests pass with `flutter test` (sub-second execution across pure domain engines and models).
+  - All automated unit tests pass with `flutter test` across pure domain engines, services, and models.
   - No broken imports or deprecated Flutter APIs introduced.
-
-### Step 4: Code Review Guardrails for Chamber & Encounter Integrity
-When reviewing or authoring any code that touches queue, chamber, or encounters, you MUST verify:
-1. **Zero Pre-emption:** Can token $T_{N+1}$ displace token $T_N$? (Must be impossible in UI, service, and Firestore transaction).
-2. **Atomic Occupancy:** Does `callTokenIntoChamber` verify that the chamber is empty before assigning a new token?
-3. **Modal Lock:** Does the chamber screen protect against concurrent or re-entrant navigation (`_isConsultationOpen`)?
-4. **Door Override Lockout:** Are direct doctor door admissions disabled when a patient is already in the chamber or being called?
-5. **Multi-Doctor Queue Partitioning:** When viewing all doctors, are in-chamber patients across all practitioners segregated from lobby waiting lists?
 
 ---
 
@@ -147,16 +128,17 @@ When reviewing or authoring any code that touches queue, chamber, or encounters,
 └── recipes/      -> Change checklists (add_clinical_field.md, modify_booking_rule.md)
 lib/
 ├── config/       -> Tenant configuration, branding, and feature flags (clinic_config.dart)
-├── core/         -> Pure domain engines (appointment_engine, cash_handover_engine, medicine_engine, patient_search_engine, revenue_engine, whatsapp_engine)
-├── models/       -> Pure data models (Appointment, Consultation, Patient, Doctor, Medicine, Vitals, ChamberSession, PrescriptionTemplate, UserRole)
-├── providers/    -> App state (AuthProvider, ClinicProvider facade, and domain delegates: doctor_state, live_queue, catalogue)
+├── core/engines/ -> Pure Dart domain engines (AppointmentEngine, CashHandoverEngine, DataExportEngine,
+│                    MedicineEngine, PatientSearchEngine, PrescriptionPrintEngine, RevenueEngine, WhatsAppEngine)
+├── models/       -> Pure data models (Appointment, Consultation, Patient, Doctor, Medicine, Vitals, ChamberSession, UserRole)
+├── providers/    -> App state (AuthProvider, ClinicProvider facade, and delegates: DoctorState, LiveQueue, Catalogue)
 ├── services/     -> Modular Firestore service layer (FirestorePaths, booking, consultation, chamber, catalogue, doctor, patient, sound_service, offline_queue_cache)
-├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, PrescriptionPrint, etc.)
+├── screens/      -> UI Screens (Dashboard, ConsultationEncounter, DoctorChamber, OwnerShell, etc.)
 ├── widgets/      -> Reusable UI sub-packages (booking, catalogue, chamber, common, dashboard, doctor, encounter, patient, print, queue)
 └── utils/        -> Helpers (Default medicines, app constants, platform print, platform sound, formatters)
-test/             -> Automated test suite (375 automated unit and widget tests covering engines, flows, models, and platform services)
+test/             -> Automated test suite covering pure engines, models, providers, and integration flows
 docs/
-├── MASTER_BACKLOG.md     -> Single source of truth for all issues, audit findings, QOL backlog, roadmap, compliance & AI guidelines
+├── MASTER_BACKLOG.md     -> Active backlog and future roadmap (what remains to be built)
 └── SCHEMA_AND_MODELS.md  -> Single source of truth for Firestore collections & models
 ```
 
@@ -164,20 +146,27 @@ docs/
 
 ## 🛑 5. Codebase Red Lines (Instant Failure Conditions)
 
-- ❌ **Deleting an appointment document from Firestore.** (Must use `AppointmentStatus.absent`).
-- ❌ **Changing state management library.** (Always use `Provider`).
-- ❌ **Adding unapproved Firestore fields without updating `docs/SCHEMA_AND_MODELS.md`.**
-- ❌ **Hardcoding doctor fees or bypassing doctor-configured free review logic (0 to 30 days).**
-- ❌ **Adding backward-compatibility bloatware, legacy polyfills, or adapter shims instead of writing clean modern domain code.**
-- ❌ **Introducing breaking changes without explicitly informing the Product Manager.**
-- ❌ **Putting financial math, review eligibility calculations, or pharmacological defaults directly inside UI widget `build()` methods.**
-- ❌ **Breaking responsive layout or introducing max-width bottlenecks** (e.g. hard-capping desktop screens at 1400px leaving large side margins, wasting vertical space with duplicate headers on 1366x768 laptops, or introducing stacked duplicate AppBars inside `OwnerShell`).
-- ❌ **Using non-Indian date formats (e.g. `YYYY-MM-DD` or `MM/DD/YYYY`) in UI, printed prescriptions, changelogs, release notes, or any markdown documentation.** (Must strictly use `DD-MM-YYYY` or `DD-MM-YY`).
-- ❌ **Bypassing 3-tier role authorization or exposing owner settings (doctor CRUD, fee configuration) to reception or chamber PIN sessions.**
-- ❌ **Forcing patient chamber admission during an active consultation or doctor breather (`consultation_ended`) without explicit `ready_for_next` handshake.**
-- ❌ **Allowing chamber collisions or pre-empting an active token in chamber.** (Never allow Token $N+1$ to be called or admitted into a chamber that is actively `calling` or `in_consultation` with Token $N$).
+### 🏥 Clinical Safety
+- ❌ **Deleting an appointment document from Firestore.** (Must use `AppointmentStatus.absent` with ₹0 fee).
+- ❌ **Overwriting or editing historical consultation records.** (Consultations and prescriptions are append-only forever).
+- ❌ **Allowing chamber collisions or pre-empting an active token in chamber.** (Never allow Token $N+1$ to displace Token $N$ during active consultation or breather).
 - ❌ **Stacking duplicate or secondary consultation encounter screens over an in-progress consultation.**
 - ❌ **Allowing live admissions, ready signals, or chamber operations on past historical dates.** (Must switch to immutable read-only mode).
 - ❌ **Exposing remote reservations (`VisitStatus.booked`) or uncollected dues (`PaymentType.unpaid`) in emergency door self-call lists.** (Strictly capped to top 1–2 verified lobby-checked-in patients).
-- ❌ **Mixing medicine names, dosages, or durations across prescription table columns, or adding badges like `[NEW]` (violating the strict 3-column isolation rule).**
+- ❌ **Mixing medicine names, dosages, or durations across prescription table columns, or adding badges like `[NEW]`** (violating the strict 3-column isolation rule).
 
+### 💰 Ledger & Financial Integrity
+- ❌ **Hardcoding doctor fees or bypassing doctor-configured free review logic (0 to 30 days).**
+- ❌ **Putting financial math, review eligibility calculations, or pharmacological defaults directly inside UI widget `build()` methods.**
+
+### 🏛️ Architecture & State
+- ❌ **Changing state management library.** (Strictly Provider only).
+- ❌ **Adding unapproved Firestore fields without updating `docs/SCHEMA_AND_MODELS.md`.**
+- ❌ **Adding backward-compatibility bloatware, legacy polyfills, or adapter shims instead of writing clean modern domain code.**
+- ❌ **Introducing breaking changes without explicitly informing the Product Manager.**
+
+### 🖥️ UI, Formatting & Documentation
+- ❌ **Breaking responsive layout or introducing max-width bottlenecks** (e.g. hard-capping desktop screens at 1400px leaving large side margins, wasting vertical space with duplicate headers on 1366x768 laptops, or introducing stacked duplicate AppBars inside `OwnerShell`).
+- ❌ **Using non-Indian date formats (e.g. `YYYY-MM-DD` or `MM/DD/YYYY`) in UI, printed prescriptions, changelogs, release notes, or any markdown documentation.** (Must strictly use `DD-MM-YYYY` or `DD-MM-YY`).
+- ❌ **Bypassing 3-tier role authorization or exposing owner settings (doctor CRUD, fee configuration) to reception or chamber PIN sessions.**
+- ❌ **Logging completed / solved items into `docs/MASTER_BACKLOG.md`.** (Backlog is strictly for unbuilt work).
