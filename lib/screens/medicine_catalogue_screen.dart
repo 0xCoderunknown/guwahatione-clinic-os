@@ -55,58 +55,84 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
 
     final uniqueCompositions = MedicineEngine.countUniqueMolecules(allMeds);
 
+    final canPop = Navigator.canPop(context);
+    final showAppBar = !isDesktop || canPop;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-          horizontal: isDesktop ? 32 : 16,
-          vertical: 24,
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1800),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 1. Header with Stats and Add Button
-                CatalogueHeaderAndStats(
-                  totalProducts: allMeds.length,
-                  totalMolecules: uniqueCompositions,
-                  onCleanDuplicates: () =>
-                      _handleDeduplicateCatalogue(context, auth.currentRole),
-                  onAddProduct: () =>
-                      _openAddMedicineDialog(context, auth.currentRole),
+      appBar: showAppBar
+          ? AppBar(
+              title: const Text('Medicine Catalogue'),
+            )
+          : null,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1800),
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  isDesktop ? 32 : 16,
+                  isDesktop ? 24 : 16,
+                  isDesktop ? 32 : 16,
+                  16,
                 ),
-                const SizedBox(height: 20),
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 1. Header with Stats and Add Button
+                      CatalogueHeaderAndStats(
+                        totalProducts: allMeds.length,
+                        totalMolecules: uniqueCompositions,
+                        onCleanDuplicates: () =>
+                            _handleDeduplicateCatalogue(context, auth.currentRole),
+                        onAddProduct: () =>
+                            _openAddMedicineDialog(context, auth.currentRole),
+                      ),
+                      const SizedBox(height: 20),
 
-                // 2. Search & Filter Toolbar
-                CatalogueSearchToolbar(
-                  searchController: _searchController,
-                  selectedFormFilter: _selectedFormFilter,
-                  formOptions: _formOptions,
-                  onFormFilterChanged: (val) {
-                    if (val != null) setState(() => _selectedFormFilter = val);
-                  },
-                  onSearchChanged: (_) => setState(() {}),
-                  onClearSearch: () =>
-                      setState(() => _searchController.clear()),
+                      // 2. Search & Filter Toolbar
+                      CatalogueSearchToolbar(
+                        searchController: _searchController,
+                        selectedFormFilter: _selectedFormFilter,
+                        formOptions: _formOptions,
+                        onFormFilterChanged: (val) {
+                          if (val != null) setState(() => _selectedFormFilter = val);
+                        },
+                        onSearchChanged: (_) => setState(() {}),
+                        onClearSearch: () =>
+                            setState(() => _searchController.clear()),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-
-                // 3. Medicine Catalogue List or Empty State
-                if (filtered.isEmpty)
-                  CatalogueEmptyState(
-                    onClearFilter: () {
-                      setState(() {
-                        _searchController.clear();
-                        _selectedFormFilter = 'All';
-                      });
-                    },
-                  )
-                else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
+              ),
+              if (filtered.isEmpty)
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 32 : 16,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: CatalogueEmptyState(
+                      onClearFilter: () {
+                        setState(() {
+                          _searchController.clear();
+                          _selectedFormFilter = 'All';
+                        });
+                      },
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    isDesktop ? 32 : 16,
+                    0,
+                    isDesktop ? 32 : 16,
+                    24,
+                  ),
+                  sliver: SliverList.separated(
                     itemCount: filtered.length,
                     separatorBuilder: (ctx, i) => const SizedBox(height: 8),
                     itemBuilder: (ctx, index) {
@@ -121,8 +147,8 @@ class _MedicineCatalogueScreenState extends State<MedicineCatalogueScreen> {
                       );
                     },
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),

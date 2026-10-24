@@ -135,9 +135,9 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // KPI Strip (Segregated Cash, UPI & Grand Total)
-                    Row(
-                      children: [
-                        _buildSummaryCard(
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final card1 = _buildSummaryCard(
                           title: 'Physical Cash',
                           value: AppFormatters.currency(
                             summary.totalPhysicalCash,
@@ -145,9 +145,8 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                           color: const Color(0xFF047857),
                           bgColor: const Color(0xFFECFDF5),
                           icon: Icons.payments_rounded,
-                        ),
-                        const SizedBox(width: 10),
-                        _buildSummaryCard(
+                        );
+                        final card2 = _buildSummaryCard(
                           title: 'UPI (Bank)',
                           value: AppFormatters.currency(
                             summary.totalUpiRevenue,
@@ -155,24 +154,56 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
                           color: const Color(0xFF0284C7),
                           bgColor: const Color(0xFFF0F9FF),
                           icon: Icons.account_balance_rounded,
-                        ),
-                        const SizedBox(width: 10),
-                        _buildSummaryCard(
+                        );
+                        final card3 = _buildSummaryCard(
                           title: 'Total Revenue',
                           value: AppFormatters.currency(summary.totalRevenue),
                           color: const Color(0xFF4F46E5),
                           bgColor: const Color(0xFFEEF2FF),
                           icon: Icons.account_balance_wallet_rounded,
-                        ),
-                        const SizedBox(width: 10),
-                        _buildSummaryCard(
+                        );
+                        final card4 = _buildSummaryCard(
                           title: 'Completed OPD',
                           value: '${summary.totalCompleted} Patients',
                           color: const Color(0xFF0F766E),
                           bgColor: const Color(0xFFF0FDFA),
                           icon: Icons.people_alt_rounded,
-                        ),
-                      ],
+                        );
+
+                        if (constraints.maxWidth < 560) {
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(child: card1),
+                                  const SizedBox(width: 10),
+                                  Expanded(child: card2),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Expanded(child: card3),
+                                  const SizedBox(width: 10),
+                                  Expanded(child: card4),
+                                ],
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          children: [
+                            Expanded(child: card1),
+                            const SizedBox(width: 10),
+                            Expanded(child: card2),
+                            const SizedBox(width: 10),
+                            Expanded(child: card3),
+                            const SizedBox(width: 10),
+                            Expanded(child: card4),
+                          ],
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 20),
@@ -333,44 +364,42 @@ class _DailyCashHandoverDialogState extends State<DailyCashHandoverDialog> {
     required Color bgColor,
     required IconData icon,
   }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: color,
-                    ),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: color,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: color,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

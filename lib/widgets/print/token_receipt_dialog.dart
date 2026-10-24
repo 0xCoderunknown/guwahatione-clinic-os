@@ -223,11 +223,81 @@ class TokenReceiptDialog extends StatelessWidget {
           icon: const Icon(Icons.print_rounded, size: 16),
           label: const Text('Print Slip'),
           onPressed: () {
-            printDocument();
+            final html = _generateThermalHtml(config);
+            printDocument(html: html);
           },
         ),
       ],
     );
+  }
+
+  String _generateThermalHtml(ClinicConfig config) {
+    final paymentInfo = appointment.amountCollected > 0
+        ? '₹${appointment.amountCollected} (${appointment.paymentType.methodLabel})'
+        : appointment.paymentType.displayName;
+    final checkedInStr = appointment.checkedInAt != null
+        ? AppFormatters.time(appointment.checkedInAt!)
+        : '--';
+
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Token_${appointment.queueNumber}</title>
+  <style>
+    @page { size: 80mm auto; margin: 4mm; }
+    body {
+      font-family: 'Courier New', Courier, monospace, sans-serif;
+      width: 72mm;
+      margin: 0 auto;
+      padding: 6px;
+      color: #000;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+    .center { text-align: center; }
+    .bold { font-weight: bold; }
+    .clinic-name { font-size: 15px; font-weight: 900; }
+    .divider { border-top: 1px dashed #000; margin: 6px 0; }
+    .token-box {
+      border: 2px solid #000;
+      padding: 6px;
+      margin: 6px 0;
+      text-align: center;
+    }
+    .token-num { font-size: 32px; font-weight: 900; line-height: 1; }
+    .row { display: flex; justify-content: space-between; margin: 3px 0; }
+    .label { color: #333; }
+    .val { font-weight: bold; }
+    .footer { font-size: 10px; text-align: center; margin-top: 8px; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div class="center clinic-name">${config.clinicName.toUpperCase()}</div>
+  ${config.tagline.isNotEmpty ? '<div class="center" style="font-size:10px;">${config.tagline}</div>' : ''}
+  ${config.address.isNotEmpty ? '<div class="center" style="font-size:9px;">${config.address}</div>' : ''}
+  <div class="divider"></div>
+  <div class="token-box">
+    <div style="font-size: 10px; font-weight: bold; letter-spacing: 1px;">OPD QUEUE TOKEN</div>
+    <div class="token-num">#${appointment.queueNumber}</div>
+    <div style="font-size: 11px;">Date: ${AppFormatters.date(appointment.scheduledDate)}</div>
+  </div>
+  <div class="divider"></div>
+  <div class="row"><span class="label">Doctor:</span><span class="val">${AppFormatters.doctorTitle(appointment.doctorName)}</span></div>
+  <div class="row"><span class="label">Patient:</span><span class="val">${appointment.patientName}</span></div>
+  <div class="row"><span class="label">Phone:</span><span class="val">${appointment.patientPhone}</span></div>
+  <div class="row"><span class="label">Payment:</span><span class="val">$paymentInfo</span></div>
+  ${appointment.checkedInAt != null ? '<div class="row"><span class="label">Checked In:</span><span class="val">$checkedInStr</span></div>' : ''}
+  <div class="divider"></div>
+  <div class="footer">
+    Please wait in the clinic waiting lobby.<br>
+    Your token number will be announced.
+    ${config.contactPhone.isNotEmpty ? '<br><b>Helpline: ${config.contactPhone}</b>' : ''}
+  </div>
+</body>
+</html>
+''';
   }
 
   Widget _buildDashedLine() {

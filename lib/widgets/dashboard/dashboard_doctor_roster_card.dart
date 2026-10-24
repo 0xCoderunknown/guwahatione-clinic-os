@@ -219,59 +219,55 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                             ),
                         ],
                       ),
-                      title: Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              AppFormatters.doctorTitle(doc.name),
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14.5,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                          ),
-                          if (!isShiftEnded) ...[
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Container(
+                      title: Text(
+                        AppFormatters.doctorTitle(doc.name),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.5,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 3.0),
+                        child: Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            if (!isShiftEnded)
+                              Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 7,
-                                  vertical: 2.5,
+                                  horizontal: 6,
+                                  vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
                                   color: statusBadgeBg,
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
                                   statusLabel,
-                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontSize: 10.5,
+                                    fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                     color: statusBadgeFg,
                                     letterSpacing: 0.3,
                                   ),
                                 ),
                               ),
+                            Text(
+                              statusSubtitle,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: isActivelyPresent
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                                color: isActivelyPresent
+                                    ? const Color(0xFF15803D)
+                                    : Colors.grey.shade700,
+                              ),
                             ),
                           ],
-                        ],
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 2.0),
-                        child: Text(
-                          statusSubtitle,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: isActivelyPresent
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                            color: isActivelyPresent
-                                ? const Color(0xFF15803D)
-                                : Colors.grey.shade700,
-                          ),
                         ),
                       ),
                       trailing: Row(
@@ -305,7 +301,7 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                               (session?.isShiftEnded ?? false)
                                   ? 'SHIFT ENDED'
                                   : (isReady
-                                      ? '▶ CALL NEXT'
+                                      ? 'DOCTOR READY'
                                       : ((isInConsultation || isCalling)
                                             ? 'Token #${session?.activeQueueNumber ?? '--'}'
                                             : (patientCount == 1

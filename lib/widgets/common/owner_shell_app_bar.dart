@@ -66,6 +66,8 @@ class OwnerShellAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0.5,
@@ -120,66 +122,154 @@ class OwnerShellAppBar extends StatelessWidget implements PreferredSizeWidget {
 
           // Security & PIN Settings Button for Owner
           if (isOwner) ...[
-            Tooltip(
-              message: 'Configure Receptionist PIN & Owner Master Passkey',
-              child: OutlinedButton.icon(
+            if (screenWidth < 1150) ...[
+              PopupMenuButton<String>(
+                tooltip: 'Owner Admin & Data Options',
+                icon: const Icon(
+                  Icons.admin_panel_settings_outlined,
+                  color: Color(0xFF0F766E),
+                  size: 20,
+                ),
+                itemBuilder: (ctx) => [
+                  const PopupMenuItem(
+                    value: 'security',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.shield_outlined,
+                          size: 16,
+                          color: Color(0xFF0F766E),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Security & PINs',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'export',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.file_download_outlined,
+                          size: 16,
+                          color: Color(0xFF0F766E),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Export Data',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'lock',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.lock_outline,
+                          size: 16,
+                          color: Colors.amber.shade900,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Lock to Reception',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.amber.shade900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                onSelected: (val) {
+                  if (val == 'security') {
+                    SecuritySettingsDialog.show(context);
+                  } else if (val == 'export') {
+                    ClinicDataExportDialog.show(context);
+                  } else if (val == 'lock') {
+                    onStepDown();
+                  }
+                },
+              ),
+              const SizedBox(width: 10),
+            ] else ...[
+              Tooltip(
+                message: 'Configure Receptionist PIN & Owner Master Passkey',
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF0F766E),
+                    backgroundColor: const Color(0xFFF0FDFA),
+                    side: const BorderSide(color: Color(0xFF99F6E4)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                  onPressed: () => SecuritySettingsDialog.show(context),
+                  icon: const Icon(Icons.shield_outlined, size: 16),
+                  label: const Text(
+                    'Security & PINs',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Tooltip(
+                message:
+                    'Export Clinic Data & Revenue Ledger to CSV (Tax Audits / Backups)',
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF0F766E),
+                    backgroundColor: const Color(0xFFF0FDFA),
+                    side: const BorderSide(color: Color(0xFF99F6E4)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                  ),
+                  onPressed: () => ClinicDataExportDialog.show(context),
+                  icon: const Icon(Icons.file_download_outlined, size: 16),
+                  label: const Text(
+                    'Export Data',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF0F766E),
-                  backgroundColor: const Color(0xFFF0FDFA),
-                  side: const BorderSide(color: Color(0xFF99F6E4)),
+                  foregroundColor: Colors.amber.shade900,
+                  backgroundColor: Colors.amber.shade50,
+                  side: BorderSide(color: Colors.amber.shade400),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
                   ),
                 ),
-                onPressed: () => SecuritySettingsDialog.show(context),
-                icon: const Icon(Icons.shield_outlined, size: 16),
+                onPressed: onStepDown,
+                icon: const Icon(Icons.lock_outline, size: 16),
                 label: const Text(
-                  'Security & PINs',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Tooltip(
-              message: 'Export Clinic Data & Revenue Ledger to CSV (Tax Audits / Backups)',
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF0F766E),
-                  backgroundColor: const Color(0xFFF0FDFA),
-                  side: const BorderSide(color: Color(0xFF99F6E4)),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
+                  'Lock to Reception',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
                   ),
                 ),
-                onPressed: () => ClinicDataExportDialog.show(context),
-                icon: const Icon(Icons.file_download_outlined, size: 16),
-                label: const Text(
-                  'Export Data',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.amber.shade900,
-                backgroundColor: Colors.amber.shade50,
-                side: BorderSide(color: Colors.amber.shade400),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-              ),
-              onPressed: onStepDown,
-              icon: const Icon(Icons.lock_outline, size: 16),
-              label: const Text(
-                'Lock to Reception',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-              ),
-            ),
-            const SizedBox(width: 14),
+              const SizedBox(width: 14),
+            ],
           ],
 
           // End-of-Day Cash Handover Button (Subtle Outline / Ghost)

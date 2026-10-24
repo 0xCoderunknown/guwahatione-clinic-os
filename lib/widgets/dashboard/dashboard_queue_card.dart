@@ -229,10 +229,48 @@ class _DashboardTodayQueueCardState extends State<DashboardTodayQueueCard> {
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: list.take(10).length,
+                itemCount: list.length > 10 ? 11 : list.length,
                 separatorBuilder: (_, index) =>
                     const Divider(height: 1, color: Color(0xFFF1F5F9)),
                 itemBuilder: (ctx, i) {
+                  if (i == 10) {
+                    final remaining = list.length - 10;
+                    return InkWell(
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AppointmentListScreen(),
+                        ),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 13,
+                          horizontal: 16,
+                        ),
+                        color: const Color(0xFFF8FAFC),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.people_outline_rounded,
+                              size: 16,
+                              color: Color(0xFF0F766E),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '+ $remaining more patients in queue — Tap to view full list',
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F766E),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
                   final appt = list[i];
 
                   final docAppointments = widget.provider.todayAppointments

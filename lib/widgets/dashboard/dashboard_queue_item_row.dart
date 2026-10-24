@@ -393,13 +393,6 @@ class DashboardQueueItemRow extends StatelessWidget {
       return QueueChamberDispatchAction(appointment: appt, isMobile: isMobile);
     }
 
-    if (isMobile) {
-      return const SizedBox.shrink();
-    }
-    return AppointmentStatusChip(
-      status: appt.status,
-      visitStatus: appt.visitStatus,
-      isCompact: true,
-    );
+    return const SizedBox.shrink();
   }
 }

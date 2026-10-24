@@ -34,10 +34,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   tooltip: 'Export CSV',
                   onPressed: () => ClinicDataExportDialog.show(context),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.calendar_today),
-                  onPressed: _pickDate,
-                ),
               ],
             )
           : null,
@@ -60,33 +56,35 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
-                Tooltip(
-                  message: 'Export Clinic Data & Financial Ledger to CSV',
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF0F766E),
-                      backgroundColor: const Color(0xFFF0FDFA),
-                      side: const BorderSide(color: Color(0xFF99F6E4)),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
+                if (isDesktop) ...[
+                  const SizedBox(width: 12),
+                  Tooltip(
+                    message: 'Export Clinic Data & Financial Ledger to CSV',
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0F766E),
+                        backgroundColor: const Color(0xFFF0FDFA),
+                        side: const BorderSide(color: Color(0xFF99F6E4)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () => ClinicDataExportDialog.show(context),
-                    icon: const Icon(Icons.file_download_outlined, size: 16),
-                    label: const Text(
-                      'Export CSV',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                      onPressed: () => ClinicDataExportDialog.show(context),
+                      icon: const Icon(Icons.file_download_outlined, size: 16),
+                      label: const Text(
+                        'Export CSV',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -99,8 +97,26 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Text("No appointments for this date."),
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.bar_chart_rounded,
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          "No appointments for this date.",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 }
 
@@ -140,18 +156,6 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ],
       ),
     );
-  }
-
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: AppConstants.clinicEpochDate,
-      lastDate: DateTime.now(), // Can't see future stats
-    );
-    if (picked != null) {
-      setState(() => _selectedDate = picked);
-    }
   }
 }
 

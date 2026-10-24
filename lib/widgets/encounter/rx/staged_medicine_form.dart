@@ -182,6 +182,132 @@ class StagedMedicineForm extends StatelessWidget {
       'Custom',
     ];
 
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    final dosageWidget = TextField(
+      controller: stagedDosageController,
+      textInputAction: TextInputAction.next,
+      onSubmitted: (_) => onConfirmAddStaged(),
+      decoration: const InputDecoration(
+        labelText: 'Dosage',
+        hintText: '1 Tablet / 5 ml',
+        isDense: true,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(),
+      ),
+    );
+
+    final frequencyWidget = DropdownButtonFormField<String>(
+      initialValue: stagedFrequency,
+      decoration: const InputDecoration(
+        labelText: 'Frequency',
+        isDense: true,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(),
+      ),
+      items: frequencyOptions
+          .map(
+            (f) => DropdownMenuItem(
+              value: f,
+              child: Text(f, style: const TextStyle(fontSize: 12)),
+            ),
+          )
+          .toList(),
+      onChanged: onFrequencyChanged,
+    );
+
+    final timingWidget = DropdownButtonFormField<String>(
+      initialValue: stagedTiming,
+      decoration: const InputDecoration(
+        labelText: 'Timing',
+        isDense: true,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(),
+      ),
+      items: timingOptions
+          .map(
+            (t) => DropdownMenuItem(
+              value: t,
+              child: Text(t, style: const TextStyle(fontSize: 12)),
+            ),
+          )
+          .toList(),
+      onChanged: onTimingChanged,
+    );
+
+    final durationWidget = DropdownButtonFormField<String>(
+      initialValue: currentDurationPreset,
+      decoration: const InputDecoration(
+        labelText: 'Duration',
+        isDense: true,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(),
+      ),
+      items: durationOptions
+          .map(
+            (d) => DropdownMenuItem(
+              value: d,
+              child: Text(
+                d == 'To continue'
+                    ? 'To continue (Chronic)'
+                    : d == 'SOS'
+                        ? 'SOS (As needed)'
+                        : d,
+                style: const TextStyle(fontSize: 12),
+              ),
+            ),
+          )
+          .toList(),
+      onChanged: (val) {
+        if (onDurationPresetChanged != null) {
+          onDurationPresetChanged!(val);
+        } else if (val == 'To continue') {
+          onChronicChanged(true);
+          stagedDurationController.text = 'To continue';
+        } else if (val == 'SOS') {
+          onChronicChanged(false);
+          stagedDurationController.text = 'SOS';
+        } else if (val != null && val.endsWith(' days')) {
+          onChronicChanged(false);
+          stagedDurationController.text = val;
+        } else {
+          onChronicChanged(false);
+        }
+      },
+    );
+
+    final customDurationWidget = TextField(
+      controller: stagedDurationController,
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => onConfirmAddStaged(),
+      decoration: const InputDecoration(
+        labelText: 'Custom Duration',
+        hintText: '1-300, cont, SOS',
+        isDense: true,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(),
+      ),
+    );
+
+    final instructionsWidget = TextField(
+      controller: stagedInstructionsController,
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => onConfirmAddStaged(),
+      decoration: const InputDecoration(
+        labelText: 'Instructions / Notes (Optional)',
+        hintText: 'e.g., Take with warm water...',
+        isDense: true,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(),
+      ),
+    );
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -271,157 +397,54 @@ class StagedMedicineForm extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: TextField(
-                  controller: stagedDosageController,
-                  textInputAction: TextInputAction.next,
-                  onSubmitted: (_) => onConfirmAddStaged(),
-                  decoration: const InputDecoration(
-                    labelText: 'Dosage',
-                    hintText: '1 Tablet / 5 ml',
-                    isDense: true,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 3,
-                child: DropdownButtonFormField<String>(
-                  initialValue: stagedFrequency,
-                  decoration: const InputDecoration(
-                    labelText: 'Frequency',
-                    isDense: true,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(),
-                  ),
-                  items: frequencyOptions
-                      .map(
-                        (f) => DropdownMenuItem(
-                          value: f,
-                          child: Text(f, style: const TextStyle(fontSize: 12)),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: onFrequencyChanged,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 3,
-                child: DropdownButtonFormField<String>(
-                  initialValue: stagedTiming,
-                  decoration: const InputDecoration(
-                    labelText: 'Timing',
-                    isDense: true,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(),
-                  ),
-                  items: timingOptions
-                      .map(
-                        (t) => DropdownMenuItem(
-                          value: t,
-                          child: Text(t, style: const TextStyle(fontSize: 12)),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: onTimingChanged,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: DropdownButtonFormField<String>(
-                  initialValue: currentDurationPreset,
-                  decoration: const InputDecoration(
-                    labelText: 'Duration',
-                    isDense: true,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(),
-                  ),
-                  items: durationOptions
-                      .map(
-                        (d) => DropdownMenuItem(
-                          value: d,
-                          child: Text(
-                            d == 'To continue'
-                                ? 'To continue (Chronic)'
-                                : d == 'SOS'
-                                    ? 'SOS (As needed)'
-                                    : d,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (val) {
-                    if (onDurationPresetChanged != null) {
-                      onDurationPresetChanged!(val);
-                    } else if (val == 'To continue') {
-                      onChronicChanged(true);
-                      stagedDurationController.text = 'To continue';
-                    } else if (val == 'SOS') {
-                      onChronicChanged(false);
-                      stagedDurationController.text = 'SOS';
-                    } else if (val != null && val.endsWith(' days')) {
-                      onChronicChanged(false);
-                      stagedDurationController.text = val;
-                    } else {
-                      onChronicChanged(false);
-                    }
-                  },
-                ),
-              ),
-              if (currentDurationPreset == 'Custom') ...[
+          if (isMobile) ...[
+            dosageWidget,
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: frequencyWidget),
                 const SizedBox(width: 8),
+                Expanded(child: timingWidget),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(child: durationWidget),
+                if (currentDurationPreset == 'Custom') ...[
+                  const SizedBox(width: 8),
+                  Expanded(child: customDurationWidget),
+                ],
+              ],
+            ),
+            const SizedBox(height: 10),
+            instructionsWidget,
+          ] else ...[
+            Row(
+              children: [
+                Expanded(flex: 2, child: dosageWidget),
+                const SizedBox(width: 8),
+                Expanded(flex: 3, child: frequencyWidget),
+                const SizedBox(width: 8),
+                Expanded(flex: 3, child: timingWidget),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(flex: 3, child: durationWidget),
+                if (currentDurationPreset == 'Custom') ...[
+                  const SizedBox(width: 8),
+                  Expanded(flex: 3, child: customDurationWidget),
+                ],
+                const SizedBox(width: 10),
                 Expanded(
-                  flex: 3,
-                  child: TextField(
-                    controller: stagedDurationController,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => onConfirmAddStaged(),
-                    decoration: const InputDecoration(
-                      labelText: 'Custom Duration',
-                      hintText: '1-300, cont, SOS',
-                      isDense: true,
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
+                  flex: currentDurationPreset == 'Custom' ? 4 : 5,
+                  child: instructionsWidget,
                 ),
               ],
-              const SizedBox(width: 10),
-              Expanded(
-                flex: currentDurationPreset == 'Custom' ? 4 : 5,
-                child: TextField(
-                  controller: stagedInstructionsController,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => onConfirmAddStaged(),
-                  decoration: const InputDecoration(
-                    labelText: 'Instructions / Notes (Optional)',
-                    hintText: 'e.g., Take with warm water...',
-                    isDense: true,
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,

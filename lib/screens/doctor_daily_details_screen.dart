@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/engines/engines.dart';
 import '../models/appointment.dart';
 import '../utils/formatters.dart';
+import '../widgets/widgets.dart';
 
 /// Screen displaying detailed patient-level financial and attendance breakdown for a doctor.
 class DoctorDailyDetailsScreen extends StatelessWidget {
@@ -91,10 +92,25 @@ class DoctorDailyBreakdownTable extends StatelessWidget {
         // Appointment Rows
         Expanded(
           child: appointments.isEmpty
-              ? const Center(
-                  child: Text(
-                    "No consultations recorded for this doctor on this date.",
-                    style: TextStyle(color: Colors.grey),
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.event_note_outlined,
+                        size: 48,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        "No consultations recorded for this doctor on this date.",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
                   ),
                 )
               : ListView.separated(
@@ -102,13 +118,6 @@ class DoctorDailyBreakdownTable extends StatelessWidget {
                   separatorBuilder: (ctx, i) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final appt = appointments[index];
-
-                    Color statusColor = Colors.grey;
-                    if (appt.status == AppointmentStatus.completed) {
-                      statusColor = Colors.green;
-                    } else if (appt.status == AppointmentStatus.absent) {
-                      statusColor = Colors.red;
-                    }
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(
@@ -146,12 +155,12 @@ class DoctorDailyBreakdownTable extends StatelessWidget {
                           ),
                           // Status
                           Expanded(
-                            child: Text(
-                              appt.status.name.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: statusColor,
-                                fontWeight: FontWeight.bold,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: AppointmentStatusChip(
+                                status: appt.status,
+                                visitStatus: appt.visitStatus,
+                                isCompact: true,
                               ),
                             ),
                           ),

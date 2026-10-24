@@ -25,56 +25,130 @@ class DoctorLeaveCalendarSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.event_busy,
-                size: 20,
-                color: Color(0xFFDC2626),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Planned Leave & Blocked Dates',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              const Spacer(),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF0F766E),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 480;
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.event_busy,
+                          size: 20,
+                          color: Color(0xFFDC2626),
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Planned Leave & Blocked Dates',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF0F766E),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
+                            ),
+                            onPressed: () => _pickSingleLeaveDate(context),
+                            icon: const Icon(Icons.add, size: 16),
+                            label: const Text(
+                              'Add Day',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0F766E),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
+                            ),
+                            onPressed: () => _pickLeaveDateRange(context),
+                            icon: const Icon(Icons.date_range, size: 16),
+                            label: const Text(
+                              'Add Week / Range',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  const Icon(
+                    Icons.event_busy,
+                    size: 20,
+                    color: Color(0xFFDC2626),
                   ),
-                ),
-                onPressed: () => _pickSingleLeaveDate(context),
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text(
-                  'Add Day',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F766E),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Planned Leave & Blocked Dates',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
                   ),
-                ),
-                onPressed: () => _pickLeaveDateRange(context),
-                icon: const Icon(Icons.date_range, size: 16),
-                label: const Text(
-                  'Add Week / Range',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ),
-            ],
+                  const Spacer(),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF0F766E),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                    ),
+                    onPressed: () => _pickSingleLeaveDate(context),
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text(
+                      'Add Day',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F766E),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                    ),
+                    onPressed: () => _pickLeaveDateRange(context),
+                    icon: const Icon(Icons.date_range, size: 16),
+                    label: const Text(
+                      'Add Week / Range',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 6),
           const Text(

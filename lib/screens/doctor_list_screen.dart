@@ -100,7 +100,10 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
               ? activeDoctors
               : (_selectedSegment == 0 ? activeDoctors : inactiveDoctors);
 
-          return Column(
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1400),
+              child: Column(
             children: [
               if (isOwner)
                 Container(
@@ -199,7 +202,9 @@ class _DoctorListScreenState extends State<DoctorListScreen> {
                       ),
               ),
             ],
-          );
+          ),
+        ),
+      );
         },
       ),
       floatingActionButton: isOwner
@@ -416,13 +421,19 @@ class DoctorRosterCard extends StatelessWidget {
                       ? Colors.blue.shade200
                       : Colors.orange.shade200),
             ),
-            Text(
-              doctor.availableDays.join(', '),
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade500,
+            if (doctor.availableDays.isNotEmpty)
+              _buildBadge(
+                icon: Icons.calendar_today_outlined,
+                label: doctor.availableDays.join(', '),
+                iconColor: isActive
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF94A3B8),
+                textColor: isActive
+                    ? const Color(0xFF475569)
+                    : const Color(0xFF94A3B8),
+                bgColor: const Color(0xFFF1F5F9),
+                borderColor: const Color(0xFFE2E8F0),
               ),
-            ),
           ],
         ),
       ],

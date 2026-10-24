@@ -153,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen>
 
                     // Tab View Content
                     SizedBox(
-                      height: 310,
+                      height: 335,
                       child: TabBarView(
                         controller: _tabController,
                         children: [
@@ -329,86 +329,89 @@ class DoctorLoginForm extends StatelessWidget {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        DropdownButtonFormField<Doctor>(
-          initialValue: selectedDoctor,
-          decoration: InputDecoration(
-            labelText: 'Select Doctor',
-            prefixIcon: const Icon(Icons.person_pin_rounded),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-          ),
-          items: doctors.map((doc) {
-            return DropdownMenuItem<Doctor>(
-              value: doc,
-              child: Text(
-                '${doc.titleName} (${doc.specialty})',
-                overflow: TextOverflow.ellipsis,
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DropdownButtonFormField<Doctor>(
+            initialValue: selectedDoctor,
+            decoration: InputDecoration(
+              labelText: 'Select Doctor',
+              prefixIcon: const Icon(Icons.person_pin_rounded),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
               ),
-            );
-          }).toList(),
-          onChanged: onDoctorChanged,
-        ),
-        const SizedBox(height: 14),
-        TextField(
-          controller: pinController,
-          obscureText: true,
-          enabled: !isLoading,
-          keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(4),
-          ],
-          decoration: InputDecoration(
-            labelText: 'Chamber PIN',
-            hintText: 'Enter 4-digit Chamber PIN',
-            helperText: ClinicConfig.current.features.isTestingModeActive
-                ? '🧪 Testing Mode Active'
-                : null,
-            helperStyle: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Colors.teal.shade700,
             ),
-            prefixIcon: const Icon(Icons.lock_outline_rounded),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-          ),
-          onSubmitted: (_) => onLogin(),
-        ),
-        const Spacer(),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: Colors.teal,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          onPressed: isLoading ? null : onLogin,
-          child: isLoading
-              ? const SizedBox(
-                  height: 18,
-                  width: 18,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Text(
-                  'Enter Chamber View',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            items: doctors.map((doc) {
+              return DropdownMenuItem<Doctor>(
+                value: doc,
+                child: Text(
+                  '${doc.titleName} (${doc.specialty})',
+                  overflow: TextOverflow.ellipsis,
                 ),
-        ),
-      ],
+              );
+            }).toList(),
+            onChanged: onDoctorChanged,
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: pinController,
+            obscureText: true,
+            enabled: !isLoading,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(4),
+            ],
+            decoration: InputDecoration(
+              labelText: 'Chamber PIN',
+              hintText: 'Enter 4-digit Chamber PIN',
+              helperText: ClinicConfig.current.features.isTestingModeActive
+                  ? '🧪 Testing Mode Active'
+                  : null,
+              helperStyle: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.teal.shade700,
+              ),
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
+            ),
+            onSubmitted: (_) => onLogin(),
+          ),
+          const SizedBox(height: 20),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.teal,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: isLoading ? null : onLogin,
+            child: isLoading
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Enter Chamber View',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -439,116 +442,119 @@ class _ReceptionLoginFormState extends State<ReceptionLoginForm> {
   Widget build(BuildContext context) {
     final isTesting = ClinicConfig.current.features.isTestingModeActive;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (isTesting) ...[
-          SegmentedButton<UserRole>(
-            showSelectedIcon: false,
-            style: const ButtonStyle(
-              visualDensity: VisualDensity.compact,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            segments: const [
-              ButtonSegment(
-                value: UserRole.owner,
-                label: Text('Admin Mode', style: TextStyle(fontSize: 12)),
-                icon: Icon(Icons.admin_panel_settings_outlined, size: 16),
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (isTesting) ...[
+            SegmentedButton<UserRole>(
+              showSelectedIcon: false,
+              style: const ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              ButtonSegment(
-                value: UserRole.receptionist,
-                label: Text('Reception Desk', style: TextStyle(fontSize: 12)),
-                icon: Icon(Icons.desk_outlined, size: 16),
-              ),
-            ],
-            selected: {_selectedRole},
-            onSelectionChanged: (set) {
-              setState(() => _selectedRole = set.first);
-              widget.onRoleChanged?.call(set.first);
-            },
-          ),
-          const SizedBox(height: 10),
-        ] else ...[
-          const Text(
-            'Reception Desk & Admin Mode',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF334155),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Full access to book appointments, manage doctors, and view financial reports.',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 16),
-        ],
-        TextField(
-          controller: widget.pinController,
-          obscureText: true,
-          enabled: !widget.isLoading,
-          keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(6),
-          ],
-          decoration: InputDecoration(
-            labelText: isTesting
-                ? (_selectedRole == UserRole.owner
-                    ? 'Admin PIN'
-                    : 'Reception PIN')
-                : 'Reception / Owner PIN',
-            hintText: 'Enter Staff PIN',
-            helperText: isTesting
-                ? '🧪 Testing Mode Active'
-                : null,
-            helperStyle: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Colors.blueGrey.shade700,
-            ),
-            prefixIcon: const Icon(Icons.security_rounded),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
-          ),
-          onSubmitted: (_) => widget.onLogin(),
-        ),
-        const Spacer(),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF0F172A),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          onPressed: widget.isLoading ? null : widget.onLogin,
-          child: widget.isLoading
-              ? const SizedBox(
-                  height: 18,
-                  width: 18,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : Text(
-                  isTesting
-                      ? (_selectedRole == UserRole.owner
-                          ? 'Enter as Admin (Owner)'
-                          : 'Enter as Receptionist')
-                      : 'Access Reception Desk',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
+              segments: const [
+                ButtonSegment(
+                  value: UserRole.owner,
+                  label: Text('Admin Mode', style: TextStyle(fontSize: 12)),
+                  icon: Icon(Icons.admin_panel_settings_outlined, size: 16),
                 ),
-        ),
-      ],
+                ButtonSegment(
+                  value: UserRole.receptionist,
+                  label: Text('Reception Desk', style: TextStyle(fontSize: 12)),
+                  icon: Icon(Icons.desk_outlined, size: 16),
+                ),
+              ],
+              selected: {_selectedRole},
+              onSelectionChanged: (set) {
+                setState(() => _selectedRole = set.first);
+                widget.onRoleChanged?.call(set.first);
+              },
+            ),
+            const SizedBox(height: 10),
+          ] else ...[
+            const Text(
+              'Reception Desk & Admin Mode',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF334155),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Full access to book appointments, manage doctors, and view financial reports.',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 16),
+          ],
+          TextField(
+            controller: widget.pinController,
+            obscureText: true,
+            enabled: !widget.isLoading,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6),
+            ],
+            decoration: InputDecoration(
+              labelText: isTesting
+                  ? (_selectedRole == UserRole.owner
+                      ? 'Admin PIN'
+                      : 'Reception PIN')
+                  : 'Reception / Owner PIN',
+              hintText: 'Enter Staff PIN',
+              helperText: isTesting
+                  ? '🧪 Testing Mode Active'
+                  : null,
+              helperStyle: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.blueGrey.shade700,
+              ),
+              prefixIcon: const Icon(Icons.security_rounded),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
+            ),
+            onSubmitted: (_) => widget.onLogin(),
+          ),
+          const SizedBox(height: 20),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF0F172A),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: widget.isLoading ? null : widget.onLogin,
+            child: widget.isLoading
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    isTesting
+                        ? (_selectedRole == UserRole.owner
+                            ? 'Enter as Admin (Owner)'
+                            : 'Enter as Receptionist')
+                        : 'Access Reception Desk',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

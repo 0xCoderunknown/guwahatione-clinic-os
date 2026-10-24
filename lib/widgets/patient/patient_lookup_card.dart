@@ -247,12 +247,14 @@ class PatientLookupCard extends StatelessWidget {
                   color: Colors.grey.shade500,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'No past clinical encounters recorded yet. Patient registered via counter check-in.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    fontStyle: FontStyle.italic,
+                Expanded(
+                  child: Text(
+                    'No past clinical encounters recorded yet. Patient registered via counter check-in.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
               ],
