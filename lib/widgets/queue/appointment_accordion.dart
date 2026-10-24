@@ -193,6 +193,7 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
             ),
             AppointmentStatusChip(
               status: widget.appointment.status,
+              visitStatus: widget.appointment.visitStatus,
               isCompact: true,
             ),
           ],

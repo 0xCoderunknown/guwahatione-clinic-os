@@ -281,6 +281,86 @@ class _ConsultationEncounterScreenState
       if (proceed != true || !mounted) return;
     }
 
+    // Clinical Guard: Check if prior chronic maintenance medications were omitted without explicit STOP
+    final lastRx = form.lastConsultationWithRx;
+    if (lastRx != null) {
+      final unreviewedChronic = <PrescriptionItem>[];
+      final currentMeds = form.allPrescriptionItems
+          .map((p) => p.effectiveName.trim().toLowerCase())
+          .toSet();
+
+      for (final item in lastRx.activePrescriptions) {
+        if (item.isChronic) {
+          final name = item.effectiveName.trim().toLowerCase();
+          if (!currentMeds.contains(name)) {
+            unreviewedChronic.add(item);
+          }
+        }
+      }
+
+      if (unreviewedChronic.isNotEmpty) {
+        final names = unreviewedChronic.map((p) => p.effectiveName).join(', ');
+        final proceed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            title: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange.shade800,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Unreconciled Chronic Regimen',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'Patient was prescribed the following chronic maintenance medication(s) on ${AppFormatters.date(lastRx.createdAt)}:\n\n'
+              '• $names\n\n'
+              'These medications are NOT included in today\'s prescription schedule. Did you intend to continue them, or proceed without them?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Back to Review'),
+              ),
+              FilledButton.tonal(
+                onPressed: () {
+                  for (final item in unreviewedChronic) {
+                    form.reconciliationItems.add(
+                      item.copyWith(
+                        id: _uuid.v4(),
+                        action: MedicationAction.continueAction,
+                        stopReason: null,
+                      ),
+                    );
+                  }
+                  setState(() {});
+                  Navigator.pop(ctx, true);
+                },
+                child: const Text('Continue Them & Proceed'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.orange.shade900,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Proceed Without Them'),
+              ),
+            ],
+          ),
+        );
+        if (proceed != true || !mounted) return;
+      }
+    }
+
     final candidate = form.buildConsultation(
       id: _uuid.v4(),
       appointmentId: widget.appointment.id,

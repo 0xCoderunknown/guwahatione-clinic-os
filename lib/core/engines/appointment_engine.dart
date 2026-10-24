@@ -535,10 +535,11 @@ abstract class AppointmentEngine {
   }) {
     final now = currentTime ?? DateTime.now();
 
-    // Count pending patients ahead of this target token
+    // Count pending patients ahead of this target token who are waiting in lobby
     final patientsAhead = doctorAppointments.where((a) {
       return a.queueNumber < targetQueueNumber &&
-          a.status == AppointmentStatus.pending;
+          a.status == AppointmentStatus.pending &&
+          a.visitStatus != VisitStatus.inConsultation;
     }).length;
 
     if (patientsAhead <= 0) {

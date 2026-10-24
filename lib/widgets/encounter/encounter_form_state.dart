@@ -101,6 +101,16 @@ class EncounterFormState {
   // Longitudinal History & Carried-Forward Regimens
   List<Consultation> pastConsultations = [];
 
+  /// Returns the most recent prior consultation that contains active prescription items.
+  Consultation? get lastConsultationWithRx {
+    for (final c in pastConsultations) {
+      if (c.activePrescriptions.isNotEmpty) {
+        return c;
+      }
+    }
+    return null;
+  }
+
   // Ergonomic Accordion Toggles
   bool isFindingsExpanded = true;
   bool isMedicineExpanded = true;
@@ -449,13 +459,17 @@ class EncounterFormState {
     );
     if (pastConsultations.isNotEmpty) {
       final latest = pastConsultations.first;
+      // Auto-prepopulate ongoing chronic maintenance medications as CONTINUE
       for (final item in latest.activePrescriptions) {
-        reconciliationItems.add(
-          item.copyWith(
-            id: uuidGenerator(),
-            action: MedicationAction.continueAction,
-          ),
-        );
+        if (item.isChronic) {
+          reconciliationItems.add(
+            item.copyWith(
+              id: uuidGenerator(),
+              action: MedicationAction.continueAction,
+              stopReason: null,
+            ),
+          );
+        }
       }
 
       final seenTestNames = <String>{};

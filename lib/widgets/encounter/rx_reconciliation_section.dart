@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../config/clinic_config.dart';
 import '../../core/engines/engines.dart';
-import '../../models/consultation.dart';
 import '../../models/medicine.dart';
 import '../../models/prescription_item.dart';
+import '../../utils/formatters.dart';
 import '../common/section_card.dart';
 import 'encounter_form_state.dart';
 import 'rx/reconciliation_item_row.dart';
@@ -88,16 +88,17 @@ class RxReconciliationSection extends StatelessWidget {
                     form.pastConsultations.isNotEmpty) ...[
                   Builder(
                     builder: (context) {
-                      Consultation? lastRx;
-                      for (final c in form.pastConsultations) {
-                        if (c.activePrescriptions.isNotEmpty) {
-                          lastRx = c;
-                          break;
-                        }
-                      }
+                      final lastRx = form.lastConsultationWithRx;
                       if (lastRx == null) return const SizedBox.shrink();
 
                       final count = lastRx.activePrescriptions.length;
+                      final d = lastRx.createdAt;
+                      final dateStr = AppFormatters.date(d);
+                      final daysAgo = DateTime.now().difference(d).inDays;
+                      final daysStr = daysAgo == 0
+                          ? 'today'
+                          : (daysAgo == 1 ? 'yesterday' : '$daysAgo days ago');
+
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 14),
                         child: Container(
@@ -123,7 +124,7 @@ class RxReconciliationSection extends StatelessWidget {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
-                                  'Prior Regimen Found: $count active medication${count > 1 ? 's' : ''} from last visit',
+                                  'Prior Regimen Found: $count active medication${count > 1 ? 's' : ''} (Last visit: $dateStr • $daysStr)',
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w600,
@@ -151,7 +152,7 @@ class RxReconciliationSection extends StatelessWidget {
                                 ),
                                 onPressed: () {
                                   form.carryForwardFromConsultation(
-                                    consultation: lastRx!,
+                                    consultation: lastRx,
                                     uuidGenerator: uuidGenerator,
                                   );
                                   onUpdate();
@@ -168,6 +169,7 @@ class RxReconciliationSection extends StatelessWidget {
                 if (form.reconciliationItems.isNotEmpty) ...[
                   ReconciliationListCard(
                     items: form.reconciliationItems,
+                    priorConsultation: form.lastConsultationWithRx,
                     onContinue: (idx) {
                       form.reconciliationItems[idx] = form
                           .reconciliationItems[idx]
@@ -192,8 +194,120 @@ class RxReconciliationSection extends StatelessWidget {
                     },
                     onPromptStop: onPromptStopReason,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                 ],
+
+                Builder(
+                  builder: (context) {
+                    final lastRx = form.lastConsultationWithRx;
+                    if (lastRx == null) return const SizedBox.shrink();
+
+                    final reconciledNames = form.reconciliationItems
+                        .map((r) => r.effectiveName.trim().toLowerCase())
+                        .toSet();
+                    final acuteCompleted = lastRx.activePrescriptions
+                        .where(
+                          (p) =>
+                              !p.isChronic &&
+                              !reconciledNames.contains(
+                                p.effectiveName.trim().toLowerCase(),
+                              ),
+                        )
+                        .toList();
+
+                    if (acuteCompleted.isEmpty) return const SizedBox.shrink();
+
+                    final d = lastRx.createdAt;
+                    final dateStr = AppFormatters.date(d);
+                    final daysAgo = DateTime.now().difference(d).inDays;
+                    final daysStr = daysAgo == 0
+                        ? 'today'
+                        : (daysAgo == 1 ? 'yesterday' : '$daysAgo days ago');
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.history_rounded,
+                                size: 15,
+                                color: Color(0xFF64748B),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Prior Completed Course(s) • Last visit: $dateStr ($daysStr)',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF475569),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ...acuteCompleted.map((acute) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 2.0,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '• ${acute.effectiveName} [${acute.composition.toUpperCase()}] — ${acute.formattedDosageTiming} — ${acute.effectiveDuration}',
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        color: Color(0xFF334155),
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton.icon(
+                                    style: TextButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.replay_rounded,
+                                      size: 13,
+                                    ),
+                                    label: const Text(
+                                      'Repeat Course',
+                                      style: TextStyle(fontSize: 11),
+                                    ),
+                                    onPressed: () {
+                                      form.reconciliationItems.add(
+                                        acute.copyWith(
+                                          id: uuidGenerator(),
+                                          action: MedicationAction.continueAction,
+                                          stopReason: null,
+                                        ),
+                                      );
+                                      onUpdate();
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    );
+                  },
+                ),
 
                 if (activeConfig
                     .features

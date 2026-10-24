@@ -9,6 +9,24 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
 
+## [1.5.5] — 24-10-2026
+
+### Reception-Chamber Presence Sync, Chronic Auto-Reconciliation & Pre-Sign Safety Guard
+- **Reception Queue "Schrödinger Patient" State Desynchronization Resolved:**
+  - Fixed `_buildVisitStatusBadge` in `DashboardQueueItemRow` to explicitly recognize `VisitStatus.inConsultation`, rendering a dedicated green `[IN CHAMBER]` badge with room icon and eliminating the duplicate amber `[WAITING]` badge.
+  - Updated `AppointmentStatusChip` with `visitStatus` parameter to display `IN CHAMBER` across all queue cards, accordions, and dialogs.
+  - Suppressed the queue wait estimate banner (`Next in line • Estimated wait: now`) for patients who are actively undergoing consultation, replacing it with an active in-consultation banner (`Actively in chamber with Dr. Name`).
+  - Updated `AppointmentEngine.calculateEstimatedWindow` to exclude in-consultation patients from the waiting lobby count (`patientsAhead`), providing accurate wait times for lobby-waiting patients.
+- **Chronic Regimen Auto-Reconciliation & Explicit Visit Telemetry:**
+  - Auto-prepopulates ongoing chronic maintenance medications (`durationText == 'To Continue'`) into `reconciliationItems` as active `CONTINUE` items on encounter load, eliminating manual carry-forward friction for long-term therapies.
+  - Isolates completed acute courses (e.g. 5-day antibiotics from past visits) into a distinct read-only summary with a dedicated 1-tap `[Repeat Course]` button, preventing unintended, blind renewal of completed acute medications.
+  - Contextualized reconciliation and prior history headers with exact Indian telemetry: `"Medication Reconciliation (Last visit: DD-MM-YYYY • X days ago • Dr. Name)"`, eliminating paper chart dependency.
+- **Clinical Safety Pre-Sign Guardrail for Omitted Chronic Regimens:**
+  - Added an automated clinical safety verification in `ConsultationEncounterScreen._completeAndSignConsultation` that verifies prior chronic medications against the current active prescription before signing.
+  - If a prior chronic maintenance medication is omitted without being explicitly discontinued or marked `STOP`, prompts the consulting doctor with a 1-tap confirmation: `[Continue Them & Proceed]` or `[Proceed Without Them]`, preventing accidental dropped prescriptions.
+
+---
+
 ## [1.5.4] — 24-10-2026
 
 ### Chamber Findings Inline History, Dosage Reconciliation UX & Chamber Roster Sync

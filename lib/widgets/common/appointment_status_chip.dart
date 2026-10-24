@@ -5,12 +5,14 @@ import '../../models/appointment.dart';
 /// Standardized status indicator chip for GuwahatiOne Clinic OS appointments.
 class AppointmentStatusChip extends StatelessWidget {
   final AppointmentStatus status;
+  final VisitStatus? visitStatus;
   final bool isCalling;
   final bool isCompact;
 
   const AppointmentStatusChip({
     super.key,
     required this.status,
+    this.visitStatus,
     this.isCalling = false,
     this.isCompact = false,
   });
@@ -27,6 +29,11 @@ class AppointmentStatusChip extends StatelessWidget {
       textColor = const Color(0xFF1D4ED8);
       label = 'CALLING';
       icon = Icons.campaign_rounded;
+    } else if (visitStatus == VisitStatus.inConsultation) {
+      bg = const Color(0xFFDCFCE7);
+      textColor = const Color(0xFF15803D);
+      label = 'IN CHAMBER';
+      icon = Icons.meeting_room_rounded;
     } else {
       switch (status) {
         case AppointmentStatus.pending:

@@ -1,6 +1,7 @@
 import 'package:appointment_app/core/engines/engines.dart';
 import 'package:appointment_app/models/models.dart';
 import 'package:appointment_app/widgets/encounter/encounter_form_state.dart';
+import 'package:appointment_app/widgets/common/appointment_status_chip.dart';
 import 'package:appointment_app/config/clinic_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -232,6 +233,97 @@ void main() {
     test('defaultLetterheadTopMarginMm defaults to 35.0 mm', () {
       const config = ClinicConfig();
       expect(config.defaultLetterheadTopMarginMm, 35.0);
+    });
+  });
+
+  group('AppointmentStatusChip & VisitStatus.inConsultation Sync Tests', () {
+    test('AppointmentStatusChip renders IN CHAMBER when visitStatus is inConsultation', () {
+      const chip = AppointmentStatusChip(
+        status: AppointmentStatus.pending,
+        visitStatus: VisitStatus.inConsultation,
+      );
+      expect(chip.visitStatus, VisitStatus.inConsultation);
+    });
+
+    test('AppointmentEngine.calculateEstimatedWindow excludes inConsultation patients from patientsAhead', () {
+      final apptInChamber = Appointment(
+        id: 'apt-1',
+        patientPhone: '9864012345',
+        patientName: 'In Chamber Patient',
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Thakuria',
+        queueNumber: 1,
+        paymentType: PaymentType.paidCash,
+        amountCollected: 500,
+        scheduledDate: DateTime.now(),
+        visitStatus: VisitStatus.inConsultation,
+      );
+
+      final apptInLobby = Appointment(
+        id: 'apt-2',
+        patientPhone: '9864099999',
+        patientName: 'Lobby Patient',
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Thakuria',
+        queueNumber: 2,
+        paymentType: PaymentType.paidCash,
+        amountCollected: 500,
+        scheduledDate: DateTime.now(),
+        visitStatus: VisitStatus.waitingInLobby,
+      );
+
+      final windowForToken2 = AppointmentEngine.calculateEstimatedWindow(
+        doctorAppointments: [apptInChamber, apptInLobby],
+        targetQueueNumber: 2,
+      );
+
+      // Token 2 has 0 waiting ahead in lobby because Token 1 is inside chamber!
+      expect(windowForToken2.patientsAhead, 0);
+      expect(windowForToken2.relativeSummary, 'Next in line');
+    });
+
+    test('lastConsultationWithRx resolves the latest consultation with active medicines', () {
+      final form = EncounterFormState();
+      final c1 = Consultation(
+        id: 'c-old',
+        appointmentId: 'a-old',
+        patientId: 'pat-1',
+        patientPhone: '9864012345',
+        patientName: 'Patient 1',
+        patientAge: 45,
+        patientGender: 'Male',
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Thakuria',
+        createdAt: DateTime(2026, 10, 10),
+        prescriptionItems: const [
+          PrescriptionItem(
+            id: 'rx-old-1',
+            action: MedicationAction.start,
+            medicineName: 'Telma 40 tablet',
+            composition: 'TELMISARTAN 40MG',
+            durationText: 'To Continue',
+          ),
+        ],
+      );
+
+      final c2NoRx = Consultation(
+        id: 'c-advisory',
+        appointmentId: 'a-adv',
+        patientId: 'pat-1',
+        patientPhone: '9864012345',
+        patientName: 'Patient 1',
+        patientAge: 45,
+        patientGender: 'Male',
+        doctorId: 'doc-1',
+        doctorName: 'Dr. Thakuria',
+        createdAt: DateTime(2026, 10, 15),
+        prescriptionItems: const [],
+      );
+
+      form.pastConsultations = [c2NoRx, c1];
+      expect(form.lastConsultationWithRx, isNotNull);
+      expect(form.lastConsultationWithRx!.id, 'c-old');
+      expect(form.lastConsultationWithRx!.consultationDate, DateTime(2026, 10, 10));
     });
   });
 }

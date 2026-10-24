@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../models/consultation.dart';
 import '../../../models/prescription_item.dart';
+import '../../../utils/formatters.dart';
 import 'custom_duration_dialog.dart';
 import 'inline_dosage_edit_dialog.dart';
 
@@ -432,6 +434,7 @@ class CollapsedMedicineSummary extends StatelessWidget {
 /// Container displaying prior visit chronic medications for reconciliation.
 class ReconciliationListCard extends StatelessWidget {
   final List<PrescriptionItem> items;
+  final Consultation? priorConsultation;
   final ValueChanged<int> onContinue;
   final void Function(PrescriptionItem item, int index)? onPromptStop;
   final ValueChanged<int>? onStop;
@@ -440,6 +443,7 @@ class ReconciliationListCard extends StatelessWidget {
   const ReconciliationListCard({
     super.key,
     required this.items,
+    this.priorConsultation,
     required this.onContinue,
     this.onPromptStop,
     this.onStop,
@@ -449,6 +453,21 @@ class ReconciliationListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) return const SizedBox.shrink();
+
+    String titleText = "Medication Reconciliation (From Prior Visits)";
+    String? subtitleText;
+
+    if (priorConsultation != null) {
+      final d = priorConsultation!.createdAt;
+      final dateStr = AppFormatters.date(d);
+      final daysAgo = DateTime.now().difference(d).inDays;
+      final daysStr = daysAgo == 0
+          ? 'today'
+          : (daysAgo == 1 ? 'yesterday' : '$daysAgo days ago');
+      titleText = "Medication Reconciliation (Last visit: $dateStr • $daysStr)";
+      subtitleText =
+          "Prescribed by ${AppFormatters.doctorTitle(priorConsultation!.doctorName)}";
+    }
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -468,15 +487,34 @@ class ReconciliationListCard extends StatelessWidget {
                 color: Colors.blue,
               ),
               const SizedBox(width: 8),
-              const Text(
-                "Medication Reconciliation (From Prior Visits)",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: Color(0xFF1E3A8A),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      titleText,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitleText != null) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        subtitleText,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.blue.shade800,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Text(
                 "${items.length} active previously",
                 style: TextStyle(fontSize: 11, color: Colors.blue.shade700),

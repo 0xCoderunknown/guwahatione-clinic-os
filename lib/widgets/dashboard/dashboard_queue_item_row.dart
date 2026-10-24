@@ -89,7 +89,8 @@ class DashboardQueueItemRow extends StatelessWidget {
               _buildVisitStatusBadge(appt),
             ],
           ),
-          if (appt.status == AppointmentStatus.pending) ...[
+          if (appt.status == AppointmentStatus.pending &&
+              appt.visitStatus != VisitStatus.inConsultation) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -113,6 +114,37 @@ class DashboardQueueItemRow extends StatelessWidget {
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
                         color: Colors.blue.shade900,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (appt.visitStatus == VisitStatus.inConsultation) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFF86EFAC)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.medical_services_rounded,
+                    size: 13,
+                    color: Color(0xFF15803D),
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      'Actively in chamber with ${AppFormatters.doctorTitle(appt.doctorName)}',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF166534),
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -175,7 +207,8 @@ class DashboardQueueItemRow extends StatelessWidget {
               "${AppFormatters.doctorTitle(appt.doctorName)} • ${appt.paymentSummary}",
               style: const TextStyle(fontSize: 12.5, color: Color(0xFF475569)),
             ),
-            if (appt.status == AppointmentStatus.pending) ...[
+            if (appt.status == AppointmentStatus.pending &&
+                appt.visitStatus != VisitStatus.inConsultation) ...[
               const SizedBox(height: 5),
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -213,6 +246,41 @@ class DashboardQueueItemRow extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11.5,
                           color: Colors.blue.shade800,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (appt.visitStatus == VisitStatus.inConsultation) ...[
+              const SizedBox(height: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3.5,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFF86EFAC)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.medical_services_rounded,
+                      size: 13,
+                      color: Color(0xFF15803D),
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        "Actively in chamber with ${AppFormatters.doctorTitle(appt.doctorName)}",
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF166534),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -263,8 +331,36 @@ class DashboardQueueItemRow extends StatelessWidget {
           ),
         ),
       );
+    } else if (appt.visitStatus == VisitStatus.inConsultation) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDCFCE7),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFF22C55E)),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.meeting_room_rounded, size: 12, color: Color(0xFF15803D)),
+            SizedBox(width: 4),
+            Text(
+              'IN CHAMBER',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF15803D),
+              ),
+            ),
+          ],
+        ),
+      );
     }
-    return AppointmentStatusChip(status: appt.status, isCompact: true);
+    return AppointmentStatusChip(
+      status: appt.status,
+      visitStatus: appt.visitStatus,
+      isCompact: true,
+    );
   }
 
   Widget _buildActionRow(
@@ -300,6 +396,10 @@ class DashboardQueueItemRow extends StatelessWidget {
     if (isMobile) {
       return const SizedBox.shrink();
     }
-    return AppointmentStatusChip(status: appt.status, isCompact: true);
+    return AppointmentStatusChip(
+      status: appt.status,
+      visitStatus: appt.visitStatus,
+      isCompact: true,
+    );
   }
 }

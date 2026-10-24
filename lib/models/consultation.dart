@@ -68,6 +68,8 @@ class Consultation {
            ? patientPhone
            : patientId;
 
+  DateTime get consultationDate => createdAt;
+
   /// Medications that are active for today's visit (START + CONTINUE)
   List<PrescriptionItem> get activePrescriptions =>
       prescriptionItems.where((p) => p.isActive).toList();
