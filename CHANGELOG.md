@@ -9,6 +9,29 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
 
+## [1.5.6] — 24-10-2026
+
+### Cloud Data Backfill, Legacy Fallback Purge, Zero-Debt Clean-Up & UI Polish Remediation
+- **Cloud Firestore Migration & Historical Data Backfill (AUDIT-29):**
+  - Executed automated Cloud Firestore migration on live database (`doctor-appointment-16292`), backfilling canonical `patientId` and `visitStatus` across 19 historical appointments and 2 consultations.
+  - Achieved 100% canonical database conformance (0 documents missing `patientId`, 0 documents missing `visitStatus`).
+- **Zero Backward-Compatibility Debt & Query Fallback Purge:**
+  - Purged secondary fallback queries (`where('patientPhone')`) in `BookingService.getAppointmentsForPatient` and `ConsultationService.getConsultationsForPatient`, eliminating redundant dual-roundtrip queries.
+  - Simplified `Appointment.fromJson` schema handling to parse `visitStatus` directly from the canonical field.
+- **Repository-Wide Dead Code & Legacy Configuration Purge:**
+  - Removed obsolete feature flags and unused config parameters from `ClinicConfig` (`branchName`, `freeReviewValidityDays`, `requireDoctorChamberPin`, `enableLetterheadToggle`, `enableDoctorChamberOverride`, `enableWhatsAppPrescriptionShare`).
+  - Purged dead engine algorithms from `AppointmentEngine` (`QueuePartition`, `partitionQueue`, `hasDuplicateAppointment`, `hasDuplicateBookingOnDate`) and `RevenueEngine` (`calculateDoctorTotalFees`, `calculateDoctorPayout`).
+  - Purged uncalled provider stubs from `ClinicProvider` and unused path helpers from `FirestorePaths`.
+- **UI & Ergonomic Polish Remediation (15 Issues Shipped):**
+  - **Counter Desktop & Laptop Layouts:** Expanded desktop shell constraints to `maxWidth: 1800` to eliminate dead horizontal margins on FHD displays, optimized vertical layout budgeting for 1366×768 laptops, and suppressed secondary inner AppBars on embedded desktop views inside `OwnerShell`.
+  - **Visual Contrast & Hierarchy:** Refined section card borders, drop shadows, and cool grey step headers across clinical encounter and dashboard components.
+  - **Formatting & Telemetry:** Enforced Indian numerical date formatting (`DD-MM-YYYY`) and aligned chamber status indicators, focus flows, and queue estimate banners.
+- **AI Operating Constitution & Backlog Governance:**
+  - Consolidated `AGENTS.md` to eliminate redundancies, obsolete tags, and internal contradictions.
+  - Purged historical resolved audit and QOL ledgers from `docs/MASTER_BACKLOG.md`, realigning active roadmap milestones with versions `1.6.0+` and `2.0`.
+
+---
+
 ## [1.5.5] — 24-10-2026
 
 ### Reception-Chamber Presence Sync, Chronic Auto-Reconciliation & Pre-Sign Safety Guard
