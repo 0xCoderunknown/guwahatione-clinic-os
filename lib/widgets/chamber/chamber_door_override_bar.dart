@@ -179,30 +179,17 @@ class ChamberDoorOverrideBar extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Text(
-                      appt.paymentType.displayName,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: appt.amountCollected > 0
-                            ? const Color(0xFF15803D)
-                            : Colors.blueGrey.shade600,
-                      ),
-                    ),
-                    if (appt.amountCollected > 0) ...[
-                      const SizedBox(width: 4),
-                      Text(
-                        '(${AppFormatters.currency(appt.amountCollected)})',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF15803D),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ],
+                Text(
+                  appt.amountCollected > 0
+                      ? '${AppFormatters.currency(appt.amountCollected)} • ${appt.paymentType.methodLabel}'
+                      : appt.paymentType.displayName,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: appt.amountCollected > 0
+                        ? const Color(0xFF15803D)
+                        : Colors.blueGrey.shade600,
+                  ),
                 ),
               ],
             ),

@@ -1,6 +1,7 @@
 /// Strongly typed domain status for chamber operational state.
 enum ChamberStatus {
   idle,
+  inChamber,
   readyForNext,
   calling,
   inConsultation,
@@ -9,6 +10,8 @@ enum ChamberStatus {
 
   static ChamberStatus fromString(String? val) {
     switch (val) {
+      case 'in_chamber':
+        return ChamberStatus.inChamber;
       case 'ready_for_next':
         return ChamberStatus.readyForNext;
       case 'calling':
@@ -27,6 +30,8 @@ enum ChamberStatus {
 
   String get wireName {
     switch (this) {
+      case ChamberStatus.inChamber:
+        return 'in_chamber';
       case ChamberStatus.readyForNext:
         return 'ready_for_next';
       case ChamberStatus.calling:
@@ -112,6 +117,8 @@ class ChamberSession {
   }
 
   // Typed status indicator getters
+  bool get isInChamber => status == 'in_chamber';
+
   bool get isReadyForNext => status == 'ready_for_next';
 
   bool get isConsultationEnded => status == 'consultation_ended';

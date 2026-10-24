@@ -72,6 +72,7 @@ class ChamberControlBanner extends StatelessWidget {
               isBusy: isBusy,
               onReopenShift: onReopenShift,
             );
+          case ChamberStatus.inChamber:
           case ChamberStatus.idle:
             return _IdleChamberCard(
               isCompact: isCompact,

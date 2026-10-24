@@ -109,6 +109,9 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                     final isReady = session?.isReadyForNext ?? false;
                     final isCalling = session?.isCalling ?? false;
                     final isInConsultation = session?.isInConsultation ?? false;
+                    final isConsultationEnded =
+                        session?.isConsultationEnded ?? false;
+                    final isInChamber = session?.isInChamber ?? false;
 
                     Color statusBadgeBg;
                     Color statusBadgeFg;
@@ -149,7 +152,15 @@ class DashboardDoctorRosterCard extends StatelessWidget {
                           (activePatient != null && activePatient.isNotEmpty)
                           ? 'Consulting: $activePatient'
                           : 'CONSULTING';
-                    } else if (hasArrived) {
+                    } else if (isReady) {
+                      statusBadgeBg = const Color(0xFFCCFBF1);
+                      statusBadgeFg = const Color(0xFF0F766E);
+                      statusLabel = 'READY FOR PATIENT';
+                    } else if (isConsultationEnded) {
+                      statusBadgeBg = const Color(0xFFFEF3C7);
+                      statusBadgeFg = const Color(0xFFB45309);
+                      statusLabel = 'ON BREAK';
+                    } else if (isInChamber || hasArrived) {
                       statusBadgeBg = const Color(0xFFDCFCE7);
                       statusBadgeFg = const Color(0xFF15803D);
                       statusLabel = 'IN CHAMBER';

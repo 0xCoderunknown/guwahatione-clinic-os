@@ -231,21 +231,21 @@ class _AppointmentAccordionState extends State<AppointmentAccordion> {
                   spacing: 8.0,
                   runSpacing: 6.0,
                   children: [
-                    _buildChoiceChip(PaymentType.paidCash, 'Paid (Cash)'),
-                    _buildChoiceChip(PaymentType.paidUpi, 'Paid (UPI)'),
+                    _buildChoiceChip(PaymentType.paidCash, 'Paid Cash'),
+                    _buildChoiceChip(PaymentType.paidUpi, 'Paid UPI'),
                     if (widget.appointment.paymentType ==
                         PaymentType.paidCarryOver)
                       _buildChoiceChip(
                         PaymentType.paidCarryOver,
-                        'Paid (Carry-Over)',
+                        'Prepaid Carry-Over',
                       ),
                     _buildChoiceChip(PaymentType.freeReview, 'Free Review'),
                     _buildChoiceChip(
                       PaymentType.freeFamily,
-                      'Family / Complimentary',
+                      'Courtesy Waiver',
                     ),
                     _buildChoiceChip(PaymentType.unpaid, 'Unpaid'),
-                    _buildChoiceChip(PaymentType.postPay, 'Post-Pay (Exit)'),
+                    _buildChoiceChip(PaymentType.postPay, 'Post-Pay'),
                   ],
                 ),
                 const SizedBox(height: 16),

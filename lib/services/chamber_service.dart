@@ -230,6 +230,33 @@ class ChamberService {
     }, SetOptions(merge: true));
   }
 
+  /// Broadcasts doctor arrival in clinic/chamber to reception desk.
+  /// Sets status to 'in_chamber' if doc does not exist or status is currently 'idle'.
+  Future<void> notifyDoctorArrived({
+    required String doctorId,
+    required DateTime date,
+  }) async {
+    final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);
+    final docRef = _countersRef.doc(chamberDocId);
+    final snap = await docRef.get();
+    if (!snap.exists) {
+      await docRef.set({
+        'doctorId': doctorId,
+        'date': FirestorePaths.dateKey(date),
+        'status': 'in_chamber',
+        'arrivedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } else {
+      final currentStatus = snap.data()?['status'] as String?;
+      if (currentStatus == null || currentStatus == 'idle') {
+        await docRef.set({
+          'status': 'in_chamber',
+          'arrivedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+    }
+  }
+
   /// Clears active chamber session, returning queue display to idle.
   Future<void> clearChamberSession(String doctorId, DateTime date) async {
     final chamberDocId = FirestorePaths.chamberSyncDoc(doctorId, date);
@@ -241,3 +268,4 @@ class ChamberService {
     }, SetOptions(merge: true));
   }
 }
+

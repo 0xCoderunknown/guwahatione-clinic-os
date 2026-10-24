@@ -162,7 +162,9 @@ class TokenReceiptDialog extends StatelessWidget {
                 const SizedBox(height: 6),
                 _buildFactRow(
                   'Payment',
-                  '₹${appointment.amountCollected} (${appointment.paymentType.displayName})',
+                  appointment.amountCollected > 0
+                      ? '₹${appointment.amountCollected} • ${appointment.paymentType.methodLabel}'
+                      : appointment.paymentType.displayName,
                   isBold: true,
                   valueColor: appointment.amountCollected > 0
                       ? const Color(0xFF15803D)

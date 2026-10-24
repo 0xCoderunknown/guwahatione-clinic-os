@@ -29,8 +29,8 @@ class PaymentBadge extends StatelessWidget {
         textColor = const Color(0xFF065F46);
         final amtStr = amount != null && amount! > 0
             ? AppFormatters.currency(amount)
-            : 'Paid (Cash)';
-        label = amtStr.startsWith('₹') ? '$amtStr (Cash)' : amtStr;
+            : 'Paid Cash';
+        label = amtStr.startsWith('₹') ? '$amtStr • Cash' : amtStr;
         icon = Icons.payments_rounded;
         break;
       case PaymentType.paidUpi:
@@ -38,8 +38,8 @@ class PaymentBadge extends StatelessWidget {
         textColor = const Color(0xFF1D4ED8);
         final amtStr = amount != null && amount! > 0
             ? AppFormatters.currency(amount)
-            : 'Paid (UPI)';
-        label = amtStr.startsWith('₹') ? '$amtStr (UPI)' : amtStr;
+            : 'Paid UPI';
+        label = amtStr.startsWith('₹') ? '$amtStr • UPI' : amtStr;
         icon = Icons.qr_code_2_rounded;
         break;
       case PaymentType.paidCarryOver:
@@ -48,25 +48,27 @@ class PaymentBadge extends StatelessWidget {
         final amtStr = amount != null && amount! > 0
             ? AppFormatters.currency(amount)
             : 'Prepaid';
-        label = '$amtStr (Carry-Over)';
+        label = amtStr.startsWith('₹')
+            ? '$amtStr • Carry-Over'
+            : 'Prepaid Carry-Over';
         icon = Icons.replay_circle_filled_rounded;
         break;
       case PaymentType.freeReview:
         bg = const Color(0xFFF0FDF4);
         textColor = const Color(0xFF15803D);
-        label = 'Free Review (14d)';
+        label = 'Free Review';
         icon = Icons.verified_outlined;
         break;
       case PaymentType.freeFamily:
         bg = const Color(0xFFEDE9FE);
         textColor = const Color(0xFF6D28D9);
-        label = 'Courtesy / Family';
+        label = 'Courtesy Waiver';
         icon = Icons.favorite_outline_rounded;
         break;
       case PaymentType.postPay:
         bg = const Color(0xFFFFFBEB);
         textColor = const Color(0xFFB45309);
-        label = 'Post-Pay (Exit)';
+        label = 'Post-Pay';
         icon = Icons.hourglass_bottom_rounded;
         break;
       case PaymentType.unpaid:

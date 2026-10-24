@@ -157,41 +157,41 @@ class BookingPaymentSection extends StatelessWidget {
                     ClinicConfig.current.defaultConsultationFee;
                 switch (type) {
                   case PaymentType.paidCash:
-                    label = 'Paid (Cash) — ₹$fee';
+                    label = 'Paid Cash — ₹$fee';
                     break;
                   case PaymentType.paidUpi:
-                    label = 'Paid (UPI) — ₹$fee';
+                    label = 'Paid UPI — ₹$fee';
                     break;
                   case PaymentType.paidCarryOver:
-                    label = 'Paid (Carry-Over) — ₹0 (Paid on prior visit)';
+                    label = 'Prepaid Carry-Over — ₹0 (Paid on prior visit)';
                     break;
                   case PaymentType.freeReview:
                     if (!reviewEligibility.hasVisitedDoctorEarlier) {
                       enabled = false;
-                      label = 'FREE (Review) — Returning patients only';
+                      label = 'Free Review — Returning patients only';
                     } else if (reviewEligibility.isReviewAlreadyConsumed) {
                       enabled = false;
-                      label = 'FREE (Review) — Already used for last visit';
+                      label = 'Free Review — Already used for last visit';
                     } else if (reviewEligibility.allowedReviewDays == 0) {
                       enabled = false;
-                      label = 'FREE (Review) — Doctor offers 0 review days';
+                      label = 'Free Review — Doctor offers 0 review days';
                     } else if (reviewEligibility.isWithinReviewPeriod) {
                       label =
-                          'FREE (Review) — Within ${reviewEligibility.allowedReviewDays} days';
+                          'Free Review — Within ${reviewEligibility.allowedReviewDays} days';
                     } else {
                       enabled = false;
                       label =
-                          'FREE (Review) — ⚠️ >${reviewEligibility.allowedReviewDays} days passed (Expired)';
+                          'Free Review — ⚠️ >${reviewEligibility.allowedReviewDays} days passed (Expired)';
                     }
                     break;
                   case PaymentType.freeFamily:
-                    label = 'Family / Complimentary';
+                    label = 'Courtesy Waiver';
                     break;
                   case PaymentType.unpaid:
                     label = 'Unpaid (Phone Reservation)';
                     break;
                   case PaymentType.postPay:
-                    label = 'Post-Pay (Exit Collect — Use with Caution)';
+                    label = 'Post-Pay (Collect on Exit)';
                     break;
                 }
 

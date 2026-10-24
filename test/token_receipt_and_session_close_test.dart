@@ -111,7 +111,7 @@ void main() {
         expect(find.text('Anindita Das'), findsOneWidget);
         expect(find.text('9864099999'), findsOneWidget);
         expect(find.text('Dr. Bhaskar Baruah'), findsOneWidget);
-        expect(find.text('₹500 (Paid (Cash))'), findsOneWidget);
+        expect(find.text('₹500 • Cash'), findsOneWidget);
 
         // Check Print and Close buttons
         expect(find.text('Print Slip'), findsOneWidget);

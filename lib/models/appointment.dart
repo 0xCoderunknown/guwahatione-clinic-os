@@ -57,15 +57,34 @@ enum PaymentType {
   String get displayName {
     switch (this) {
       case PaymentType.paidCash:
-        return 'Paid (Cash)';
+        return 'Paid Cash';
       case PaymentType.paidUpi:
-        return 'Paid (UPI)';
+        return 'Paid UPI';
       case PaymentType.paidCarryOver:
-        return 'Paid (Carry-Over)';
+        return 'Prepaid Carry-Over';
       case PaymentType.freeReview:
-        return 'Free (Review)';
+        return 'Free Review';
       case PaymentType.freeFamily:
-        return 'Free (Family)';
+        return 'Courtesy Waiver';
+      case PaymentType.postPay:
+        return 'Post-Pay';
+      case PaymentType.unpaid:
+        return 'Unpaid';
+    }
+  }
+
+  String get methodLabel {
+    switch (this) {
+      case PaymentType.paidCash:
+        return 'Cash';
+      case PaymentType.paidUpi:
+        return 'UPI';
+      case PaymentType.paidCarryOver:
+        return 'Carry-Over';
+      case PaymentType.freeReview:
+        return 'Free Review';
+      case PaymentType.freeFamily:
+        return 'Courtesy Waiver';
       case PaymentType.postPay:
         return 'Post-Pay';
       case PaymentType.unpaid:

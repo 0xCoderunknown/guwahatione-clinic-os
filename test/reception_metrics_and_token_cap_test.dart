@@ -479,7 +479,36 @@ void main() {
     );
 
     testWidgets(
-      'Displays IN CHAMBER status when doctor signals ready for patients',
+      'Displays IN CHAMBER status when doctor logs into chamber',
+      (tester) async {
+        final inChamberSession = ChamberSession(
+          doctorId: 'doc-test-1',
+          date: DateTime.now(),
+          status: 'in_chamber',
+        );
+        final authProvider = AuthProvider();
+
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [ChangeNotifierProvider.value(value: authProvider)],
+            child: MaterialApp(
+              home: Scaffold(
+                body: DashboardDoctorRosterCard(
+                  provider: _FakeClinicProvider(testDoctor, inChamberSession),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        expect(find.text('IN CHAMBER'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Displays READY FOR PATIENT status when doctor signals ready for patients',
       (tester) async {
         final readySession = ChamberSession(
           doctorId: 'doc-test-1',
@@ -503,7 +532,7 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        expect(find.text('IN CHAMBER'), findsOneWidget);
+        expect(find.text('READY FOR PATIENT'), findsOneWidget);
       },
     );
 

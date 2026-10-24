@@ -85,6 +85,17 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
       return;
     }
 
+    if (_isToday && !widget.isPreviewMode) {
+      _chamberService
+          .notifyDoctorArrived(
+            doctorId: widget.doctor.id,
+            date: _selectedDate,
+          )
+          .catchError((e) {
+            debugPrint('Error notifying doctor arrived: $e');
+          });
+    }
+
     _chamberSessionSub = _chamberService
         .streamChamberSession(widget.doctor.id, _selectedDate)
         .listen((session) {

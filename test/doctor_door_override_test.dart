@@ -276,8 +276,8 @@ void main() {
         // Verify token items
         expect(find.text('Priya Das'), findsOneWidget);
         expect(find.text('Rahul Sharma'), findsOneWidget);
-        expect(find.text('Paid (Cash)'), findsOneWidget);
-        expect(find.text('Free (Review)'), findsOneWidget);
+        expect(find.text('₹500 • Cash'), findsOneWidget);
+        expect(find.text('Free Review'), findsOneWidget);
 
         // Tap Admit on first token
         final admitButtons = find.text('Admit');
