@@ -199,48 +199,55 @@ class _DoctorChamberScreenState extends State<DoctorChamberScreen> {
   }
 
   Future<void> _handleLogout() async {
-    final confirmed = await showDialog<bool>(
+    final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.nightlife_rounded, color: Color(0xFF334155)),
+            Icon(Icons.lock_person_rounded, color: Color(0xFF334155)),
             SizedBox(width: 8),
-            Text('End Shift & Logout?'),
+            Text('Doctor Session & Logout'),
           ],
         ),
         content: const Text(
-          'This will conclude your OPD shift for today, notify reception that consultations are closed, and log you out.',
+          'Choose whether to lock your session temporarily, or conclude your OPD shift for today.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Navigator.pop(ctx, 'cancel'),
             child: const Text('Cancel'),
+          ),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.lock_outline_rounded, size: 16),
+            label: const Text('Lock / Log Out Only'),
+            onPressed: () => Navigator.pop(ctx, 'logout_only'),
           ),
           FilledButton.icon(
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF334155),
               foregroundColor: Colors.white,
             ),
-            icon: const Icon(Icons.logout_rounded, size: 16),
+            icon: const Icon(Icons.nightlife_rounded, size: 16),
             label: const Text('End Shift & Logout'),
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => Navigator.pop(ctx, 'end_shift'),
           ),
         ],
       ),
     );
 
-    if (confirmed != true || !mounted) return;
+    if (result == null || result == 'cancel' || !mounted) return;
 
-    try {
-      if (_isToday) {
-        await _chamberService.notifyShiftEnded(
-          doctorId: widget.doctor.id,
-          date: _selectedDate,
-        );
+    if (result == 'end_shift') {
+      try {
+        if (_isToday) {
+          await _chamberService.notifyShiftEnded(
+            doctorId: widget.doctor.id,
+            date: _selectedDate,
+          );
+        }
+      } catch (e) {
+        debugPrint('Error concluding shift on logout: $e');
       }
-    } catch (e) {
-      debugPrint('Error concluding shift on logout: $e');
     }
 
     if (mounted) {

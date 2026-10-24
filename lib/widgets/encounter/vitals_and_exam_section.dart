@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../models/consultation.dart';
 import '../../utils/app_constants.dart';
+import '../../utils/formatters.dart';
 import '../common/section_card.dart';
 import 'encounter_form_state.dart';
 
@@ -54,6 +56,19 @@ class VitalsAndExamSection extends StatelessWidget {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (form.pastConsultations.isNotEmpty) ...[
+                  _PreviousVisitFindingsCard(
+                    previous: form.pastConsultations.first,
+                    onCopyVitals: () {
+                      form.copyVitalsFromConsultation(
+                        form.pastConsultations.first,
+                      );
+                      onUpdate();
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                ],
+
                 // Compact Vitals Grid
                 VitalsInputGrid(form: form),
                 const SizedBox(height: 18),
@@ -495,6 +510,183 @@ class VitalsInputGrid extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Compact clinical card displaying the patient's previous visit vitals, diagnosis, and complaints.
+class _PreviousVisitFindingsCard extends StatelessWidget {
+  final Consultation previous;
+  final VoidCallback onCopyVitals;
+
+  const _PreviousVisitFindingsCard({
+    required this.previous,
+    required this.onCopyVitals,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final v = previous.vitals;
+    final vitalsParts = <String>[];
+    if (v != null) {
+      if (v.bpFormatted != null) vitalsParts.add("BP: ${v.bpFormatted}");
+      if (v.pulseRate != null) vitalsParts.add("Pulse: ${v.pulseRate} bpm");
+      if (v.spO2 != null) vitalsParts.add("SpO2: ${v.spO2}%");
+      if (v.temperature != null) vitalsParts.add("Temp: ${v.temperature}°F");
+      if (v.weightKg != null) vitalsParts.add("Weight: ${v.weightKg} kg");
+      if (v.bloodSugar != null) vitalsParts.add("Sugar: ${v.bloodSugar} mg/dL");
+      if (v.respiratoryRate != null) {
+        vitalsParts.add("RR: ${v.respiratoryRate}/min");
+      }
+    }
+
+    final hasVitals = vitalsParts.isNotEmpty;
+    final hasComplaints = previous.chiefComplaints.isNotEmpty;
+    final hasDiagnosis = previous.provisionalDiagnosis.isNotEmpty;
+    final hasExam = previous.clinicalExamination != null &&
+        previous.clinicalExamination!.trim().isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFCBD5E1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.history_rounded,
+                    size: 16,
+                    color: Color(0xFF0F766E),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Last Visit Findings (${AppFormatters.date(previous.createdAt)})',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  if (previous.doctorName.isNotEmpty) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      '• ${AppFormatters.doctorTitle(previous.doctorName)}',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (hasVitals)
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    foregroundColor: const Color(0xFF0F766E),
+                  ),
+                  icon: const Icon(Icons.content_copy_rounded, size: 13),
+                  label: const Text(
+                    'Copy Vitals',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: onCopyVitals,
+                ),
+            ],
+          ),
+          if (hasVitals) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: vitalsParts
+                  .map(
+                    (vp) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Text(
+                        vp,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF334155),
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ] else
+            const Padding(
+              padding: EdgeInsets.only(top: 4.0),
+              child: Text(
+                'No numerical vitals recorded on previous visit.',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontStyle: FontStyle.italic,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
+            ),
+          if (hasDiagnosis || hasComplaints || hasExam) ...[
+            const SizedBox(height: 8),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (hasDiagnosis)
+                  Text(
+                    'Prior Dx: ${previous.provisionalDiagnosis.join(', ')}',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF4338CA),
+                    ),
+                  ),
+                if (hasComplaints)
+                  Text(
+                    'Prior C/O: ${previous.chiefComplaints.join(', ')}',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                if (hasExam)
+                  Text(
+                    'Prior O/E: ${previous.clinicalExamination}',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     );

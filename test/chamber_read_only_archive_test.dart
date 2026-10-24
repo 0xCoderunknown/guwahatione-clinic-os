@@ -354,21 +354,18 @@ void main() {
           ),
         );
 
-        // Total Tokens: 3, subtitle: Shift closed
-        expect(find.text('Total Tokens'), findsOneWidget);
-        expect(find.text('3'), findsOneWidget);
-        expect(find.text('Shift closed'), findsOneWidget);
-        expect(find.textContaining('in queue'), findsNothing);
-
         // Consulted: 1
         expect(find.text('Consulted'), findsOneWidget);
         expect(find.text('1'), findsOneWidget);
+
+        // Waiting: 0, subtitle: Shift closed
+        expect(find.text('Waiting'), findsOneWidget);
+        expect(find.text('Shift closed'), findsOneWidget);
 
         // Absent / No-Show: 2 (2 unresolved tokens on past date)
         expect(find.text('Absent / No-Show'), findsOneWidget);
         expect(find.text('2'), findsOneWidget);
         expect(find.text('Unattended'), findsOneWidget);
-        expect(find.text('Queue record retained'), findsNothing);
 
         // Doctor's Fees: ₹600 from 1 paid visit
         expect(find.text("Doctor's Fees"), findsOneWidget);
@@ -378,7 +375,7 @@ void main() {
     );
 
     testWidgets(
-      'Maintains live waiting queue and preserved slots subtitle on current date',
+      'Maintains live waiting and pending counts on current date',
       (tester) async {
         await tester.pumpWidget(
           MaterialApp(
@@ -392,12 +389,13 @@ void main() {
           ),
         );
 
-        // Live mode: 1 waiting in lobby, 0 absent
-        expect(find.text('1 in queue'), findsOneWidget);
+        // Live mode: 1 waiting in lobby, 1 pending arrival
+        expect(find.text('Waiting'), findsOneWidget);
+        expect(find.text('1 in lobby'), findsOneWidget);
         expect(find.text('Shift closed'), findsNothing);
-        expect(find.text('Queue record retained'), findsOneWidget);
+        expect(find.text('Pending'), findsOneWidget);
         expect(find.text('Unattended'), findsNothing);
-        expect(find.text('0'), findsOneWidget); // 0 absent
+        expect(find.text('1'), findsNWidgets(3)); // 1 consulted, 1 waiting, 1 pending
       },
     );
   });

@@ -161,6 +161,18 @@ class EncounterFormState {
     provisionalDiagnoses.remove(text);
   }
 
+  /// Copies recorded numerical vitals from a prior consultation into the active form controllers.
+  void copyVitalsFromConsultation(Consultation past) {
+    final v = past.vitals;
+    if (v == null) return;
+    if (v.systolicBp != null) systolicBpController.text = v.systolicBp.toString();
+    if (v.diastolicBp != null) diastolicBpController.text = v.diastolicBp.toString();
+    if (v.pulseRate != null) pulseController.text = v.pulseRate.toString();
+    if (v.spO2 != null) spo2Controller.text = v.spO2.toString();
+    if (v.temperature != null) tempController.text = v.temperature.toString();
+    if (v.weightKg != null) weightController.text = v.weightKg.toString();
+  }
+
   // ---------------------------------------------------------------------------
   // Orders & Allergies Handlers
   // ---------------------------------------------------------------------------

@@ -9,6 +9,25 @@ All notable updates, clinical workflows, and architectural changes to **Guwahati
 > - **Date Standard:** All release and display dates strictly follow Indian numerical formatting (`DD-MM-YYYY`).
 
 
+## [1.5.4] — 24-10-2026
+
+### Chamber Findings Inline History, Dosage Reconciliation UX & Chamber Roster Sync
+- **Inline Prior Clinical Findings & 1-Tap Vitals Carry-Forward:**
+  - Added `_PreviousVisitFindingsCard` directly above the vitals input grid in `VitalsAndExamSection`, surfacing the patient's prior encounter date (`DD-MM-YYYY`), consulting doctor, past vitals badges (BP, pulse, SpO2, temp, weight, blood sugar, RR), provisional diagnosis, chief complaints, and examination notes.
+  - Implemented `copyVitalsFromConsultation` in `EncounterFormState` with a 1-tap `[Copy Vitals]` button to copy prior baseline vitals directly into active input controllers.
+- **Medication Reconciliation Duration & CONTINUE Chip Alignment:**
+  - Synchronized `ChoiceChip('CONTINUE')` selection in `ReconciliationItemRow` to stay active and accented whenever medication is continuing, regardless of whether duration is set to indefinite (`To Continue`) or acute courses (e.g. `3 Days`).
+  - Added 1-tap reset to chronic indefinite continuation on tapping `[CONTINUE]`.
+  - Harmonized duration selector button styling with accent teal (`#E6FFFA` background, `#0D9488` border) when continuing, and cancellation red when stopped.
+- **Doctor Chamber Roster Card & Shift State Synchronization:**
+  - Automated reception roster notification upon doctor login (`notifyDoctorArrived` updating chamber state to `in_chamber`).
+  - Added distinct choices on chamber logout between "Lock / Log Out Only" and "End Shift & Log Out".
+  - Cleaned up `DashboardDoctorRosterCard` to turn off active presence indicators (green dot and schedule highlighting) when shift is ended, and removed duplicate `[SHIFT ENDED]` badges.
+- **Doctor Chamber 4-Card Operational KPI Grid:**
+  - Overhauled chamber metric cards to high-utility operational metrics: `[CONSULTED]`, `[WAITING]` (lobby checked-in), `[PENDING]` (unpaid / remote reservations), and `[DOCTOR'S FEES]`.
+
+---
+
 ## [1.5.3] — 24-10-2026
 
 ### Clinical UI Ergonomics, Step Hierarchy & Vector-Crisp Print/PDF Engine

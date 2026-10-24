@@ -108,10 +108,6 @@ class ReconciliationItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isContinued = item.action == MedicationAction.continueAction;
-    final isContinuedIndefinite = isContinued &&
-        (item.durationDays == null ||
-            item.durationText == null ||
-            item.durationText == 'To Continue');
     final isStopped = item.action == MedicationAction.stop;
 
 
@@ -267,19 +263,26 @@ class ReconciliationItemRow extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: isStopped ? Colors.red.shade50 : const Color(0xFFF0FDFA),
+                color: isStopped
+                    ? Colors.red.shade50
+                    : const Color(0xFFE6FFFA),
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: isStopped
                       ? Colors.red.shade200
-                      : const Color(0xFF99F6E4),
+                      : const Color(0xFF0D9488),
+                  width: 1.2,
                 ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    isStopped ? Icons.block_rounded : Icons.schedule_rounded,
+                    isStopped
+                        ? Icons.block_rounded
+                        : (item.effectiveDuration == 'To Continue'
+                            ? Icons.autorenew_rounded
+                            : Icons.schedule_rounded),
                     size: 13,
                     color: isStopped
                         ? Colors.red.shade700
@@ -312,23 +315,40 @@ class ReconciliationItemRow extends StatelessWidget {
 
           // 1-Tap CONTINUE Button
           ChoiceChip(
-            label: const Text(
+            label: Text(
               'CONTINUE',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: isContinued ? const Color(0xFF0F766E) : null,
+              ),
             ),
-            selected: isContinuedIndefinite,
-            selectedColor: Colors.teal.shade100,
-            onSelected: (val) {
-              if (val) onContinue(index);
+            selected: isContinued,
+            selectedColor: const Color(0xFFCCFBF1),
+            onSelected: (_) {
+              // Clicking CONTINUE always affirms continueAction and resets duration to 'To Continue'
+              onItemUpdated?.call(
+                index,
+                item.copyWith(
+                  action: MedicationAction.continueAction,
+                  clearDuration: true,
+                  stopReason: null,
+                ),
+              );
+              onContinue(index);
             },
           ),
           const SizedBox(width: 6),
 
           // 1-Tap STOP Button
           ChoiceChip(
-            label: const Text(
+            label: Text(
               'STOP',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: isStopped ? Colors.red.shade900 : null,
+              ),
             ),
             selected: isStopped,
             selectedColor: Colors.red.shade100,

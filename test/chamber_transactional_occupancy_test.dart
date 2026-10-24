@@ -158,5 +158,30 @@ void main() {
       expect(patientB.visitStatus, VisitStatus.waitingInLobby);
       expect(patientB.status, AppointmentStatus.pending);
     });
+
+    test('Doctor arrival transitions shift_ended and idle to in_chamber, preserving active consultations', () {
+      // Simulates ChamberService.notifyDoctorArrived transition logic
+      String resolveArrivalStatus(String? currentStatus) {
+        if (currentStatus == null ||
+            currentStatus == 'idle' ||
+            currentStatus == 'shift_ended') {
+          return 'in_chamber';
+        }
+        return currentStatus;
+      }
+
+      // Initial / empty chamber becomes in_chamber
+      expect(resolveArrivalStatus(null), 'in_chamber');
+      expect(resolveArrivalStatus('idle'), 'in_chamber');
+
+      // Crucial fix: shift_ended resets to in_chamber upon doctor login
+      expect(resolveArrivalStatus('shift_ended'), 'in_chamber');
+
+      // Active operational states are NEVER overwritten by doctor reconnect
+      expect(resolveArrivalStatus('ready_for_next'), 'ready_for_next');
+      expect(resolveArrivalStatus('calling'), 'calling');
+      expect(resolveArrivalStatus('in_consultation'), 'in_consultation');
+      expect(resolveArrivalStatus('consultation_ended'), 'consultation_ended');
+    });
   });
 }

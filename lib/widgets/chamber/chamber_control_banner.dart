@@ -77,6 +77,7 @@ class ChamberControlBanner extends StatelessWidget {
             return _IdleChamberCard(
               isCompact: isCompact,
               isBusy: isBusy,
+              lastCompletedQueueNumber: lastCompletedQueueNumber,
               onNextPatient: onNextPatient,
             );
         }
@@ -489,16 +490,21 @@ class _InConsultationCard extends StatelessWidget {
 class _IdleChamberCard extends StatelessWidget {
   final bool isCompact;
   final bool isBusy;
+  final int? lastCompletedQueueNumber;
   final VoidCallback onNextPatient;
 
   const _IdleChamberCard({
     required this.isCompact,
     required this.isBusy,
+    this.lastCompletedQueueNumber,
     required this.onNextPatient,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasPriorPatients =
+        lastCompletedQueueNumber != null && lastCompletedQueueNumber! > 0;
+
     final iconWidget = Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -512,10 +518,10 @@ class _IdleChamberCard extends StatelessWidget {
       ),
     );
 
-    const textWidget = Column(
+    final textWidget = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'OPD Chamber Open',
           style: TextStyle(
             fontWeight: FontWeight.bold,
@@ -523,10 +529,12 @@ class _IdleChamberCard extends StatelessWidget {
             color: Color(0xFF0F172A),
           ),
         ),
-        SizedBox(height: 2),
+        const SizedBox(height: 2),
         Text(
-          'Press "Ready for Next Patient" when ready to begin taking patients.',
-          style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+          hasPriorPatients
+              ? 'Chamber is open. Press "Ready for Next Patient" to resume OPD.'
+              : 'Press "Ready for Next Patient" when ready to begin taking patients.',
+          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
         ),
       ],
     );
@@ -547,9 +555,11 @@ class _IdleChamberCard extends StatelessWidget {
               ),
             )
           : const Icon(Icons.play_arrow_rounded, size: 18),
-      label: const Text(
-        'READY FOR FIRST PATIENT',
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+      label: Text(
+        hasPriorPatients
+            ? 'READY FOR NEXT PATIENT'
+            : 'READY FOR FIRST PATIENT',
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
       ),
       onPressed: isBusy ? null : onNextPatient,
     );
@@ -576,7 +586,7 @@ class _IdleChamberCard extends StatelessWidget {
                   children: [
                     iconWidget,
                     const SizedBox(width: 12),
-                    const Expanded(child: textWidget),
+                    Expanded(child: textWidget),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -587,7 +597,7 @@ class _IdleChamberCard extends StatelessWidget {
               children: [
                 iconWidget,
                 const SizedBox(width: 14),
-                const Expanded(child: textWidget),
+                Expanded(child: textWidget),
                 const SizedBox(width: 14),
                 actionsWidget,
               ],

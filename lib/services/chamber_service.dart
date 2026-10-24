@@ -231,7 +231,7 @@ class ChamberService {
   }
 
   /// Broadcasts doctor arrival in clinic/chamber to reception desk.
-  /// Sets status to 'in_chamber' if doc does not exist or status is currently 'idle'.
+  /// Sets status to 'in_chamber' if doc does not exist or status is currently 'idle' or 'shift_ended'.
   Future<void> notifyDoctorArrived({
     required String doctorId,
     required DateTime date,
@@ -248,7 +248,9 @@ class ChamberService {
       }, SetOptions(merge: true));
     } else {
       final currentStatus = snap.data()?['status'] as String?;
-      if (currentStatus == null || currentStatus == 'idle') {
+      if (currentStatus == null ||
+          currentStatus == 'idle' ||
+          currentStatus == 'shift_ended') {
         await docRef.set({
           'status': 'in_chamber',
           'arrivedAt': FieldValue.serverTimestamp(),

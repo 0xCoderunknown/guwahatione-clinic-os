@@ -130,6 +130,42 @@ void main() {
       expect(secondPass, 0);
       expect(form.reconciliationItems.length, 2);
     });
+
+    test('copyVitalsFromConsultation copies vitals into active form controllers', () {
+      final form = EncounterFormState();
+      final priorConsultation = Consultation(
+        id: 'c-prior-vitals',
+        appointmentId: 'apt-0',
+        patientId: 'pat-0',
+        patientPhone: '9864012345',
+        patientName: 'Test Patient',
+        patientAge: 40,
+        patientGender: 'Male',
+        doctorId: 'doc-0',
+        doctorName: 'Dr. Barua',
+        provisionalDiagnosis: const ['Hypertension'],
+        createdAt: DateTime(2026, 10, 10),
+        vitals: const Vitals(
+          systolicBp: 130,
+          diastolicBp: 85,
+          pulseRate: 78,
+          temperature: 98.6,
+          weightKg: 68.5,
+          spO2: 99,
+          bloodSugar: 110.0,
+          respiratoryRate: 18,
+        ),
+      );
+
+      form.copyVitalsFromConsultation(priorConsultation);
+
+      expect(form.systolicBpController.text, '130');
+      expect(form.diastolicBpController.text, '85');
+      expect(form.pulseController.text, '78');
+      expect(form.tempController.text, '98.6');
+      expect(form.weightController.text, '68.5');
+      expect(form.spo2Controller.text, '99');
+    });
   });
 
   group('Doctor Revenue Share & Fee Payout Tests', () {

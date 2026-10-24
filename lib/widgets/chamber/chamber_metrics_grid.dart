@@ -4,7 +4,7 @@ import '../../core/engines/engines.dart';
 import '../../models/appointment.dart';
 import '../common/metric_kpi_card.dart';
 
-/// Live KPI metrics grid for Doctor Chamber (Total, Consulted, Absent, Doctor Share).
+/// Live KPI metrics grid for Doctor Chamber (Consulted, Waiting, Pending, Doctor Fees).
 class ChamberMetricsGrid extends StatelessWidget {
   final int totalBooked;
   final int attendedCount;
@@ -12,6 +12,7 @@ class ChamberMetricsGrid extends StatelessWidget {
   final int freeCount;
   final int absentCount;
   final int waitingCount;
+  final int pendingArrivalCount;
   final int totalFees;
   final bool isDesktop;
   final bool isPastDate;
@@ -24,6 +25,7 @@ class ChamberMetricsGrid extends StatelessWidget {
     required this.freeCount,
     required this.absentCount,
     required this.waitingCount,
+    this.pendingArrivalCount = 0,
     required this.totalFees,
     required this.isDesktop,
     this.isPastDate = false,
@@ -46,7 +48,26 @@ class ChamberMetricsGrid extends StatelessWidget {
         )
         .length;
 
-    final waitingCount = isPastDate ? 0 : kpis.waitingCount;
+    final waitingCount = isPastDate
+        ? 0
+        : appointments
+            .where(
+              (a) =>
+                  a.status == AppointmentStatus.pending &&
+                  (a.visitStatus == VisitStatus.waitingInLobby ||
+                      a.visitStatus == VisitStatus.inConsultation),
+            )
+            .length;
+
+    final pendingArrivalCount = isPastDate
+        ? 0
+        : appointments
+            .where(
+              (a) =>
+                  a.status == AppointmentStatus.pending &&
+                  a.visitStatus == VisitStatus.booked,
+            )
+            .length;
 
     return ChamberMetricsGrid(
       key: key,
@@ -56,6 +77,7 @@ class ChamberMetricsGrid extends StatelessWidget {
       freeCount: kpis.freeCount,
       absentCount: absentCount,
       waitingCount: waitingCount,
+      pendingArrivalCount: pendingArrivalCount,
       totalFees: kpis.totalDoctorFees,
       isDesktop: isDesktop,
       isPastDate: isPastDate,
@@ -66,13 +88,6 @@ class ChamberMetricsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final cards = [
       ChamberMetricTile(
-        title: "Total Tokens",
-        value: "$totalBooked",
-        subtitle: isPastDate ? "Shift closed" : "$waitingCount in queue",
-        icon: Icons.confirmation_number_outlined,
-        color: Colors.blue,
-      ),
-      ChamberMetricTile(
         title: "Consulted",
         value: "$attendedCount",
         subtitle: "$paidCount paid • $freeCount free",
@@ -80,10 +95,23 @@ class ChamberMetricsGrid extends StatelessWidget {
         color: Colors.teal,
       ),
       ChamberMetricTile(
-        title: "Absent / No-Show",
-        value: "$absentCount",
-        subtitle: isPastDate ? "Unattended" : "Queue record retained",
-        icon: Icons.person_off_outlined,
+        title: "Waiting",
+        value: "$waitingCount",
+        subtitle: isPastDate ? "Shift closed" : "$waitingCount in lobby",
+        icon: Icons.meeting_room_outlined,
+        color: Colors.blue,
+      ),
+      ChamberMetricTile(
+        title: isPastDate ? "Absent / No-Show" : "Pending",
+        value: "${isPastDate ? absentCount : pendingArrivalCount}",
+        subtitle: isPastDate
+            ? "Unattended"
+            : (absentCount > 0
+                ? "$pendingArrivalCount pending • $absentCount absent"
+                : "Not arrived yet"),
+        icon: isPastDate
+            ? Icons.person_off_outlined
+            : Icons.pending_actions_rounded,
         color: const Color(0xFF64748B),
       ),
       ChamberMetricTile(

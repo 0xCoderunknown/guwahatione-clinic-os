@@ -227,9 +227,10 @@ void main() {
       expect(updatedItem!.dosage, '2 Tablets');
     });
 
-    testWidgets('ReconciliationItemRow highlights CONTINUE chip only for indefinite continuation', (tester) async {
+    testWidgets('ReconciliationItemRow highlights CONTINUE chip for all active continued items and resets duration on tap', (tester) async {
       final indefiniteItem = sampleItem.copyWith(durationText: 'To Continue');
       final acuteItem = sampleItem.copyWith(durationText: '3 Days', durationDays: 3);
+      final stoppedItem = sampleItem.copyWith(action: MedicationAction.stop);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -245,14 +246,42 @@ void main() {
       );
 
       final continueChipFinder = find.widgetWithText(ChoiceChip, 'CONTINUE');
+      final stopChipFinder = find.widgetWithText(ChoiceChip, 'STOP');
       expect(tester.widget<ChoiceChip>(continueChipFinder).selected, isTrue);
+      expect(tester.widget<ChoiceChip>(stopChipFinder).selected, isFalse);
 
-      // Pump acute item
+      // Pump acute item (3 Days): CONTINUE MUST remain selected because the medicine is continuing!
+      PrescriptionItem? resetItem;
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: ReconciliationItemRow(
               item: acuteItem,
+              index: 0,
+              onContinue: (_) {},
+              onStop: (_) {},
+              onItemUpdated: (_, itm) => resetItem = itm,
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.widget<ChoiceChip>(continueChipFinder).selected, isTrue);
+      expect(tester.widget<ChoiceChip>(stopChipFinder).selected, isFalse);
+
+      // Tapping CONTINUE on an acute item resets duration back to 'To Continue'
+      await tester.tap(continueChipFinder);
+      await tester.pumpAndSettle();
+      expect(resetItem, isNotNull);
+      expect(resetItem!.effectiveDuration, 'To Continue');
+      expect(resetItem!.action, MedicationAction.continueAction);
+
+      // Pump stopped item
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ReconciliationItemRow(
+              item: stoppedItem,
               index: 0,
               onContinue: (_) {},
               onStop: (_) {},
@@ -262,6 +291,7 @@ void main() {
       );
 
       expect(tester.widget<ChoiceChip>(continueChipFinder).selected, isFalse);
+      expect(tester.widget<ChoiceChip>(stopChipFinder).selected, isTrue);
     });
   });
 }
